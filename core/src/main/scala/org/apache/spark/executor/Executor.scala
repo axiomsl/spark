@@ -351,6 +351,12 @@ private[spark] class Executor(
     }
 
     override def run(): Unit = {
+
+      taskDescription.properties.asScala.filter(_._1.startsWith("mdc.")).foreach { item =>
+        val key = item._1.substring(4)
+        org.slf4j.MDC.put(key, item._2)
+      }
+
       threadId = Thread.currentThread.getId
       Thread.currentThread.setName(threadName)
       val threadMXBean = ManagementFactory.getThreadMXBean
