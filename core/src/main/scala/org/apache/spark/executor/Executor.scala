@@ -22,17 +22,17 @@ import java.lang.Thread.UncaughtExceptionHandler
 import java.lang.management.ManagementFactory
 import java.net.{URI, URL}
 import java.nio.ByteBuffer
+import java.util
 import java.util.Properties
 import java.util.concurrent._
+
 import javax.annotation.concurrent.GuardedBy
 
 import scala.collection.JavaConverters._
 import scala.collection.mutable.{ArrayBuffer, HashMap, Map}
 import scala.concurrent.duration._
 import scala.util.control.NonFatal
-
 import com.google.common.util.concurrent.ThreadFactoryBuilder
-
 import org.apache.spark._
 import org.apache.spark.deploy.SparkHadoopUtil
 import org.apache.spark.internal.Logging
@@ -44,6 +44,7 @@ import org.apache.spark.shuffle.FetchFailedException
 import org.apache.spark.storage.{StorageLevel, TaskResultBlockId}
 import org.apache.spark.util._
 import org.apache.spark.util.io.ChunkedByteBuffer
+import org.slf4j.MDC
 
 /**
  * Spark executor, backed by a threadpool to run tasks.
@@ -88,11 +89,12 @@ private[spark] class Executor(
   }
 
   // Start worker thread pool
-  private val threadPool = {
+  private val threadPool: ThreadPoolExecutor = {
     val threadFactory = new ThreadFactoryBuilder()
       .setDaemon(true)
       .setNameFormat("Executor task launch worker-%d")
       .setThreadFactory(new ThreadFactory {
+
         override def newThread(r: Runnable): Thread =
           // Use UninterruptibleThread to run tasks so that we can allow running codes without being
           // interrupted by `Thread.interrupt()`. Some issues, such as KAFKA-1894, HADOOP-10622,
@@ -100,7 +102,36 @@ private[spark] class Executor(
           new UninterruptibleThread(r, "unused") // thread name will be set by ThreadFactoryBuilder
       })
       .build()
-    Executors.newCachedThreadPool(threadFactory).asInstanceOf[ThreadPoolExecutor]
+
+    new ThreadPoolExecutor(0, Integer.MAX_VALUE,
+      60L, TimeUnit.SECONDS,
+      new SynchronousQueue[Runnable](),
+      threadFactory) {
+
+      override def execute(runnable: Runnable) {
+        super.execute(new Runnable {
+          val callerThreadMDC: util.Map[String, String] = getMDCMap
+
+          override def run() {
+            val threadMDC = getMDCMap
+            MDC.setContextMap(callerThreadMDC)
+            try {
+              runnable.run()
+            } finally {
+              MDC.setContextMap(threadMDC)
+            }
+          }
+        })
+      }
+
+      private def getMDCMap: util.Map[String, String] = {
+        MDC.getCopyOfContextMap match {
+          case null => new util.HashMap[String, String]()
+          case m    => m
+        }
+      }
+    }
+
   }
   private val executorSource = new ExecutorSource(threadPool, executorId)
   // Pool used for threads that supervise task killing / cancellation

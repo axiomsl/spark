@@ -17,19 +17,20 @@
 
 package org.apache.spark.util
 
+import java.util
 import java.util.concurrent._
 
 import scala.collection.TraversableLike
 import scala.collection.generic.CanBuildFrom
 import scala.language.higherKinds
-
 import com.google.common.util.concurrent.{MoreExecutors, ThreadFactoryBuilder}
+
 import scala.concurrent.{Awaitable, ExecutionContext, ExecutionContextExecutor, Future}
 import scala.concurrent.duration.{Duration, FiniteDuration}
 import scala.concurrent.forkjoin.{ForkJoinPool => SForkJoinPool, ForkJoinWorkerThread => SForkJoinWorkerThread}
 import scala.util.control.NonFatal
-
 import org.apache.spark.SparkException
+import org.slf4j.MDC
 
 private[spark] object ThreadUtils {
 
@@ -56,7 +57,31 @@ private[spark] object ThreadUtils {
    */
   def newDaemonCachedThreadPool(prefix: String): ThreadPoolExecutor = {
     val threadFactory = namedThreadFactory(prefix)
-    Executors.newCachedThreadPool(threadFactory).asInstanceOf[ThreadPoolExecutor]
+
+    new ThreadPoolExecutor(0, Integer.MAX_VALUE, 60L, TimeUnit.SECONDS, new SynchronousQueue[Runnable], threadFactory) {
+      override def execute(runnable: Runnable) {
+        super.execute(new Runnable {
+          val callerThreadMDC: util.Map[String, String] = getMDCMap
+
+          override def run() {
+            val threadMDC = getMDCMap
+            MDC.setContextMap(callerThreadMDC)
+            try {
+              runnable.run()
+            } finally {
+              MDC.setContextMap(threadMDC)
+            }
+          }
+        })
+      }
+
+      private def getMDCMap: util.Map[String, String] = {
+        MDC.getCopyOfContextMap match {
+          case null => new util.HashMap[String, String]()
+          case m    => m
+        }
+      }
+    }
   }
 
   /**
@@ -66,13 +91,36 @@ private[spark] object ThreadUtils {
   def newDaemonCachedThreadPool(
       prefix: String, maxThreadNumber: Int, keepAliveSeconds: Int = 60): ThreadPoolExecutor = {
     val threadFactory = namedThreadFactory(prefix)
-    val threadPool = new ThreadPoolExecutor(
+    val threadPool: ThreadPoolExecutor = new ThreadPoolExecutor(
       maxThreadNumber, // corePoolSize: the max number of threads to create before queuing the tasks
       maxThreadNumber, // maximumPoolSize: because we use LinkedBlockingDeque, this one is not used
       keepAliveSeconds,
       TimeUnit.SECONDS,
       new LinkedBlockingQueue[Runnable],
-      threadFactory)
+      threadFactory) {
+      override def execute(runnable: Runnable) {
+        super.execute(new Runnable {
+          val callerThreadMDC: util.Map[String, String] = getMDCMap
+
+          override def run() {
+            val threadMDC = getMDCMap
+            MDC.setContextMap(callerThreadMDC)
+            try {
+              runnable.run()
+            } finally {
+              MDC.setContextMap(threadMDC)
+            }
+          }
+        })
+      }
+
+      private def getMDCMap: util.Map[String, String] = {
+        MDC.getCopyOfContextMap match {
+          case null => new util.HashMap[String, String]()
+          case m    => m
+        }
+      }
+    }
     threadPool.allowCoreThreadTimeOut(true)
     threadPool
   }
@@ -83,7 +131,30 @@ private[spark] object ThreadUtils {
    */
   def newDaemonFixedThreadPool(nThreads: Int, prefix: String): ThreadPoolExecutor = {
     val threadFactory = namedThreadFactory(prefix)
-    Executors.newFixedThreadPool(nThreads, threadFactory).asInstanceOf[ThreadPoolExecutor]
+    new ThreadPoolExecutor(nThreads, nThreads, 0L, TimeUnit.MILLISECONDS, new LinkedBlockingQueue[Runnable], threadFactory) {
+      override def execute(runnable: Runnable) {
+        super.execute(new Runnable {
+          val callerThreadMDC: util.Map[String, String] = getMDCMap
+
+          override def run() {
+            val threadMDC = getMDCMap
+            MDC.setContextMap(callerThreadMDC)
+            try {
+              runnable.run()
+            } finally {
+              MDC.setContextMap(threadMDC)
+            }
+          }
+        })
+      }
+
+      private def getMDCMap: util.Map[String, String] = {
+        MDC.getCopyOfContextMap match {
+          case null => new util.HashMap[String, String]()
+          case m    => m
+        }
+      }
+    }
   }
 
   /**
@@ -91,7 +162,35 @@ private[spark] object ThreadUtils {
    */
   def newDaemonSingleThreadExecutor(threadName: String): ExecutorService = {
     val threadFactory = new ThreadFactoryBuilder().setDaemon(true).setNameFormat(threadName).build()
-    Executors.newSingleThreadExecutor(threadFactory)
+//    Executors.newSingleThreadExecutor(threadFactory)
+    new ThreadPoolExecutor(1, 1, 0L, TimeUnit.MILLISECONDS, new LinkedBlockingQueue[Runnable], threadFactory) {
+      override def execute(runnable: Runnable) {
+        super.execute(new Runnable {
+          val callerThreadMDC: util.Map[String, String] = getMDCMap
+
+          override def run() {
+            val threadMDC = getMDCMap
+            MDC.setContextMap(callerThreadMDC)
+            try {
+              runnable.run()
+            } finally {
+              MDC.setContextMap(threadMDC)
+            }
+          }
+        })
+      }
+
+      override protected def finalize(): Unit = {
+        super.shutdown()
+      }
+
+      private def getMDCMap: util.Map[String, String] = {
+        MDC.getCopyOfContextMap match {
+          case null => new util.HashMap[String, String]()
+          case m    => m
+        }
+      }
+    }
   }
 
   /**
@@ -99,7 +198,30 @@ private[spark] object ThreadUtils {
    */
   def newDaemonSingleThreadScheduledExecutor(threadName: String): ScheduledExecutorService = {
     val threadFactory = new ThreadFactoryBuilder().setDaemon(true).setNameFormat(threadName).build()
-    val executor = new ScheduledThreadPoolExecutor(1, threadFactory)
+    val executor:ScheduledThreadPoolExecutor = new ScheduledThreadPoolExecutor(1, threadFactory) {
+      override def execute(runnable: Runnable) {
+        super.execute(new Runnable {
+          val callerThreadMDC: util.Map[String, String] = getMDCMap
+
+          override def run() {
+            val threadMDC = getMDCMap
+            MDC.setContextMap(callerThreadMDC)
+            try {
+              runnable.run()
+            } finally {
+              MDC.setContextMap(threadMDC)
+            }
+          }
+        })
+      }
+
+      private def getMDCMap: util.Map[String, String] = {
+        MDC.getCopyOfContextMap match {
+          case null => new util.HashMap[String, String]()
+          case m    => m
+        }
+      }
+    }
     // By default, a cancelled task is not automatically removed from the work queue until its delay
     // elapses. We have to enable it manually.
     executor.setRemoveOnCancelPolicy(true)
@@ -115,7 +237,30 @@ private[spark] object ThreadUtils {
       .setDaemon(true)
       .setNameFormat(s"$threadNamePrefix-%d")
       .build()
-    val executor = new ScheduledThreadPoolExecutor(numThreads, threadFactory)
+    val executor: ScheduledThreadPoolExecutor = new ScheduledThreadPoolExecutor(numThreads, threadFactory) {
+      override def execute(runnable: Runnable) {
+        super.execute(new Runnable {
+          val callerThreadMDC: util.Map[String, String] = getMDCMap
+
+          override def run() {
+            val threadMDC = getMDCMap
+            MDC.setContextMap(callerThreadMDC)
+            try {
+              runnable.run()
+            } finally {
+              MDC.setContextMap(threadMDC)
+            }
+          }
+        })
+      }
+
+      private def getMDCMap: util.Map[String, String] = {
+        MDC.getCopyOfContextMap match {
+          case null => new util.HashMap[String, String]()
+          case m    => m
+        }
+      }
+    }
     // By default, a cancelled task is not automatically removed from the work queue until its delay
     // elapses. We have to enable it manually.
     executor.setRemoveOnCancelPolicy(true)
@@ -194,7 +339,30 @@ private[spark] object ThreadUtils {
     new SForkJoinPool(maxThreadNumber, factory,
       null, // handler
       false // asyncMode
-    )
+    ) {
+      override def execute(runnable: Runnable) {
+        super.execute(new Runnable {
+          val callerThreadMDC: util.Map[String, String] = getMDCMap
+
+          override def run() {
+            val threadMDC = getMDCMap
+            MDC.setContextMap(callerThreadMDC)
+            try {
+              runnable.run()
+            } finally {
+              MDC.setContextMap(threadMDC)
+            }
+          }
+        })
+      }
+
+      private def getMDCMap: util.Map[String, String] = {
+        MDC.getCopyOfContextMap match {
+          case null => new util.HashMap[String, String]()
+          case m    => m
+        }
+      }
+    }
   }
 
   // scalastyle:off awaitresult
