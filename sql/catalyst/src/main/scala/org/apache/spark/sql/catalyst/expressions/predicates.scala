@@ -22,11 +22,13 @@ import scala.collection.immutable.TreeSet
 import org.apache.spark.sql.catalyst.CatalystTypeConverters.convertToScala
 import org.apache.spark.sql.catalyst.InternalRow
 import org.apache.spark.sql.catalyst.analysis.TypeCheckResult
-import org.apache.spark.sql.catalyst.expressions.codegen.{CodegenContext, CodeGenerator, ExprCode, FalseLiteral, GenerateSafeProjection, GenerateUnsafeProjection, Predicate => BasePredicate}
 import org.apache.spark.sql.catalyst.expressions.codegen.Block._
+import org.apache.spark.sql.catalyst.expressions.codegen.{CodeGenerator, CodegenContext, ExprCode, FalseLiteral, TrueLiteral, Predicate => BasePredicate}
 import org.apache.spark.sql.catalyst.plans.logical.LogicalPlan
 import org.apache.spark.sql.catalyst.util.TypeUtils
 import org.apache.spark.sql.types._
+
+import scala.collection.immutable.TreeSet
 
 
 object InterpretedPredicate {
@@ -245,7 +247,7 @@ case class In(value: Expression, list: Seq[Expression]) extends Predicate {
   }
 
   override def children: Seq[Expression] = value +: list
-  lazy val inSetConvertible = list.forall(_.isInstanceOf[Literal])
+  lazy val inSetConvertible: Boolean = list.forall(_.isInstanceOf[Literal])
   private lazy val ordering = TypeUtils.getInterpretedOrdering(value.dataType)
 
   override def nullable: Boolean = children.exists(_.nullable)
@@ -290,16 +292,31 @@ case class In(value: Expression, list: Seq[Expression]) extends Predicate {
     val valueArg = ctx.freshName("valueArg")
     // All the blocks are meant to be inside a do { ... } while (false); loop.
     // The evaluation of variables can be stopped when we find a matching value.
-    val listCode = listGen.map(x =>
+    val listCode = listGen.map{x =>
+   val ifPart = x.isNull match {
+      case FalseLiteral =>
+        s"""if (${ctx.genEqual(value.dataType, valueArg, x.value)}) {
+           |  $tmpResult = $MATCHED; // ${ev.isNull} = false; ${ev.value} = true;
+           |  continue;
+           |}
+        """.stripMargin
+      case TrueLiteral =>
+        s"""
+           |  $tmpResult = $HAS_NULL; // ${ev.isNull} = true;
+       """.stripMargin
+      case _ =>
+        s"""if (${x.isNull}) {
+           |  $tmpResult = $HAS_NULL; // ${ev.isNull} = true;
+           |} else if (${ctx.genEqual(value.dataType, valueArg, x.value)}) {
+           |  $tmpResult = $MATCHED; // ${ev.isNull} = false; ${ev.value} = true;
+           |  continue;
+           |}
+        """.stripMargin
+    }
       s"""
          |${x.code}
-         |if (${x.isNull}) {
-         |  $tmpResult = $HAS_NULL; // ${ev.isNull} = true;
-         |} else if (${ctx.genEqual(value.dataType, valueArg, x.value)}) {
-         |  $tmpResult = $MATCHED; // ${ev.isNull} = false; ${ev.value} = true;
-         |  continue;
-         |}
-       """.stripMargin)
+         |$ifPart
+       """.stripMargin}
 
     val codes = ctx.splitExpressionsWithCurrentInputs(
       expressions = listCode,
