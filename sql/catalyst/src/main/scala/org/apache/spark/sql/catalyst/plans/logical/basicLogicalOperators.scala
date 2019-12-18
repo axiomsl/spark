@@ -414,6 +414,7 @@ object AppendData {
  */
 case class InsertIntoTable(
     table: LogicalPlan,
+    columns: Option[Seq[Attribute]],
     partition: Map[String, Option[String]],
     query: LogicalPlan,
     overwrite: Boolean,
