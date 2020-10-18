@@ -1304,7 +1304,7 @@ object CodeGenerator extends Logging {
         val msg = s"failed to compile: ${e.toString}. \n\tYou may need to add -Xss to jvm option."
         logError(msg, e)
         logGeneratedCode(code)
-        throw e
+        throw new CompileException(msg, null ,e)
     }
 
     (evaluator.getClazz().newInstance().asInstanceOf[GeneratedClass], maxCodeSize)
