@@ -1305,6 +1305,16 @@ object CodeGenerator extends Logging {
         logError(msg, e)
         logGeneratedCode(code)
         throw new CompileException(msg, null ,e)
+      case e: RuntimeException if e.toString.contains("SNO: StringReader throws IOException") =>
+        val msg = s"failed to compile: ${e.toString}"
+        logError(msg, e)
+        logGeneratedCode(code)
+        throw new CompileException(msg, null ,e)
+      case e: RuntimeException =>
+        val msg = s"failed to compile: ${e.toString}"
+        logError(msg, e)
+        logGeneratedCode(code)
+        throw e
     }
 
     (evaluator.getClazz().newInstance().asInstanceOf[GeneratedClass], maxCodeSize)
