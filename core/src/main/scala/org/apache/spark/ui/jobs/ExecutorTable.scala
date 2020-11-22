@@ -78,10 +78,10 @@ private[ui] class ExecutorTable(stage: StageData, store: AppStatusStore) {
     <script>
       {Unparsed {
         """
-          |      window.onload = function() {
-          |        sorttable.innerSortFunction.apply(document.getElementById('executorid'), [])
-          |      };
-        """.stripMargin
+      window.onload = function() {
+        sorttable.innerSortFunction.apply(document.getElementById('executorid'), [])
+      };
+"""
       }}
     </script>
   }

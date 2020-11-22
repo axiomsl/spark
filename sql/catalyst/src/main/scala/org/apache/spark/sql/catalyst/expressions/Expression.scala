@@ -103,8 +103,8 @@ abstract class Expression extends TreeNode[Expression] {
       // as a function before. In that case, we just re-use it.
       ExprCode(ctx.registerComment(this.toString), subExprState.isNull, subExprState.value)
     }.getOrElse {
-      val isNull = ctx.freshName("isNull")
-      val value = ctx.freshName("value")
+      val isNull = ctx.freshName("isN")
+      val value = ctx.freshName("val")
       val eval = doGenCode(ctx, ExprCode(
         JavaCode.isNullVariable(isNull),
         JavaCode.variable(value, dataType)))
@@ -131,17 +131,17 @@ abstract class Expression extends TreeNode[Expression] {
       }
 
       val javaType = CodeGenerator.javaType(dataType)
-      val newValue = ctx.freshName("value")
+      val newValue = ctx.freshName("val")
 
       val funcName = ctx.freshName(nodeName)
       val funcFullName = ctx.addNewFunction(funcName,
         s"""
-           |private $javaType $funcName(InternalRow ${ctx.INPUT_ROW}) {
-           |  ${eval.code}
-           |  $setIsNull
-           |  return ${eval.value};
-           |}
-           """.stripMargin)
+private $javaType $funcName(InternalRow ${ctx.INPUT_ROW}) {
+  ${eval.code}
+  $setIsNull
+  return ${eval.value};
+}
+           """)
 
       eval.value = JavaCode.variable(newValue, dataType)
       eval.code = code"$javaType $newValue = $funcFullName(${ctx.INPUT_ROW});"

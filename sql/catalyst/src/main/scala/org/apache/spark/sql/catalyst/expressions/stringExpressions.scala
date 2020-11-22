@@ -115,7 +115,7 @@ case class ConcatWs(children: Seq[Expression])
         boolean ${ev.isNull} = ${ev.value} == null;
       """)
     } else {
-      val array = ctx.freshName("array")
+      val array = ctx.freshName("arr")
       val varargNum = ctx.freshName("varargNum")
       val idxVararg = ctx.freshName("idxInVararg")
 
@@ -159,10 +159,10 @@ case class ConcatWs(children: Seq[Expression])
         returnType = "int",
         makeSplitFunction = body =>
           s"""
-             |int $varargNum = 0;
-             |$body
-             |return $varargNum;
-           """.stripMargin,
+int $varargNum = 0;
+$body
+return $varargNum;
+           """,
         foldFunctions = _.map(funcCall => s"$varargNum += $funcCall;").mkString("\n"))
 
       val varargBuilds = ctx.splitExpressionsWithCurrentInputs(
@@ -172,9 +172,9 @@ case class ConcatWs(children: Seq[Expression])
         returnType = "int",
         makeSplitFunction = body =>
           s"""
-             |$body
-             |return $idxVararg;
-           """.stripMargin,
+$body
+return $idxVararg;
+           """,
         foldFunctions = _.map(funcCall => s"$idxVararg = $funcCall;").mkString("\n"))
 
       ev.copy(
@@ -253,20 +253,20 @@ case class Elt(children: Seq[Expression]) extends Expression {
   override protected def doGenCode(ctx: CodegenContext, ev: ExprCode): ExprCode = {
     val index = indexExpr.genCode(ctx)
     val inputs = inputExprs.map(_.genCode(ctx))
-    val indexVal = ctx.freshName("index")
-    val indexMatched = ctx.freshName("eltIndexMatched")
+    val indexVal = ctx.freshName("idx")
+    val indexMatched = ctx.freshName("eltIdxMtc")
 
-    val inputVal = ctx.addMutableState(CodeGenerator.javaType(dataType), "inputVal")
+    val inputVal = ctx.addMutableState(CodeGenerator.javaType(dataType), "inVal")
 
     val assignInputValue = inputs.zipWithIndex.map { case (eval, index) =>
       s"""
-         |if ($indexVal == ${index + 1}) {
-         |  ${eval.code}
-         |  $inputVal = ${eval.isNull} ? null : ${eval.value};
-         |  $indexMatched = true;
-         |  continue;
-         |}
-      """.stripMargin
+if ($indexVal == ${index + 1}) {
+  ${eval.code}
+  $inputVal = ${eval.isNull} ? null : ${eval.value};
+  $indexMatched = true;
+  continue;
+}
+      """
     }
 
     val codes = ctx.splitExpressionsWithCurrentInputs(
@@ -276,33 +276,33 @@ case class Elt(children: Seq[Expression]) extends Expression {
       returnType = CodeGenerator.JAVA_BOOLEAN,
       makeSplitFunction = body =>
         s"""
-           |${CodeGenerator.JAVA_BOOLEAN} $indexMatched = false;
-           |do {
-           |  $body
-           |} while (false);
-           |return $indexMatched;
-         """.stripMargin,
+${CodeGenerator.JAVA_BOOLEAN} $indexMatched = false;
+do {
+  $body
+} while (false);
+return $indexMatched;
+         """,
       foldFunctions = _.map { funcCall =>
         s"""
-           |$indexMatched = $funcCall;
-           |if ($indexMatched) {
-           |  continue;
-           |}
-         """.stripMargin
+$indexMatched = $funcCall;
+if ($indexMatched) {
+  continue;
+}
+         """
       }.mkString)
 
     ev.copy(
       code"""
-         |${index.code}
-         |final int $indexVal = ${index.value};
-         |${CodeGenerator.JAVA_BOOLEAN} $indexMatched = false;
-         |$inputVal = null;
-         |do {
-         |  $codes
-         |} while (false);
-         |final ${CodeGenerator.javaType(dataType)} ${ev.value} = $inputVal;
-         |final boolean ${ev.isNull} = ${ev.value} == null;
-       """.stripMargin)
+${index.code}
+final int $indexVal = ${index.value};
+${CodeGenerator.JAVA_BOOLEAN} $indexMatched = false;
+$inputVal = null;
+do {
+  $codes
+} while (false);
+final ${CodeGenerator.javaType(dataType)} ${ev.value} = $inputVal;
+final boolean ${ev.isNull} = ${ev.value} == null;
+       """)
   }
 }
 
@@ -1359,7 +1359,7 @@ case class FormatString(children: Expression*) extends Expression with ImplicitC
       funcName = "valueFormatString",
       extraArguments = ("Object[]", argList) :: Nil)
 
-    val form = ctx.freshName("formatter")
+    val form = ctx.freshName("frmt")
     val formatter = classOf[java.util.Formatter].getName
     val sb = ctx.freshName("sb")
     val stringBuffer = classOf[StringBuffer].getName

@@ -49,16 +49,16 @@ object GeneratePredicate extends CodeGenerator[Expression, Predicate] {
     val eval = predicate.genCode(ctx)
 
     val codeBody = s"""
-      public SpecificPredicate generate(Object[] references) {
-        return new SpecificPredicate(references);
+      public SpecificPredicate generate(Object[] refs) {
+        return new SpecificPredicate(refs);
       }
 
       class SpecificPredicate extends ${classOf[Predicate].getName} {
-        private final Object[] references;
+        private final Object[] refs;
         ${ctx.declareMutableStates()}
 
-        public SpecificPredicate(Object[] references) {
-          this.references = references;
+        public SpecificPredicate(Object[] refs) {
+          this.refs = refs;
           ${ctx.initMutableStates()}
         }
 

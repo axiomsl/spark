@@ -82,13 +82,13 @@ trait BaseLimitExec extends UnaryExecNode with CodegenSupport {
     """, inlineToOuterClass = true)
     val countTerm = ctx.addMutableState(CodeGenerator.JAVA_INT, "count") // init as count = 0
     s"""
-       | if ($countTerm < $limit) {
-       |   $countTerm += 1;
-       |   ${consume(ctx, input)}
-       | } else {
-       |   $stopEarly = true;
-       | }
-     """.stripMargin
+         if ($countTerm < $limit) {
+           $countTerm += 1;
+           ${consume(ctx, input)}
+         } else {
+           $stopEarly = true;
+         }
+     """
   }
 }
 

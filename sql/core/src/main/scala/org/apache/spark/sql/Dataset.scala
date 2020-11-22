@@ -2228,10 +2228,10 @@ class Dataset[T] private[sql](
    * Returns a new Dataset by adding columns or replacing the existing columns that has
    * the same names.
    */
-  private[spark] def withColumns(colNames: Seq[String], cols: Seq[Column]): DataFrame = {
-    require(colNames.size == cols.size,
-      s"The size of column names: ${colNames.size} isn't equal to " +
-        s"the size of columns: ${cols.size}")
+  def withColumns(colNames: Seq[String], cols: Seq[Column]): DataFrame = {
+    require(colNames.length == cols.length,
+      s"The size of column names: ${colNames.length} isn't equal to " +
+        s"the size of columns: ${cols.length}")
     SchemaUtils.checkColumnNameDuplication(
       colNames,
       "in given column names",
@@ -2240,7 +2240,7 @@ class Dataset[T] private[sql](
     val resolver = sparkSession.sessionState.analyzer.resolver
     val output = queryExecution.analyzed.output
 
-    val columnMap = colNames.zip(cols).toMap
+    val columnMap = colNames.zip(cols)
 
     val replacedAndExistingColumns = output.map { field =>
       columnMap.find { case (colName, _) =>
@@ -2251,7 +2251,7 @@ class Dataset[T] private[sql](
       }
     }
 
-    val newColumns = columnMap.filter { case (colName, col) =>
+    val newColumns = columnMap.filter { case (colName, _) =>
       !output.exists(f => resolver(f.name, colName))
     }.map { case (colName, col) => col.as(colName) }
 

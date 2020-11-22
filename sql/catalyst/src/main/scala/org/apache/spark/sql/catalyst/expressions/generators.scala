@@ -217,9 +217,9 @@ case class Stack(children: Seq[Expression]) extends Generator {
     val wrapperClass = classOf[mutable.WrappedArray[_]].getName
     ev.copy(code =
       code"""
-         |$code
-         |$wrapperClass<InternalRow> ${ev.value} = $wrapperClass$$.MODULE$$.make($rowData);
-       """.stripMargin, isNull = FalseLiteral)
+$code
+$wrapperClass<InternalRow> ${ev.value} = $wrapperClass$$.MODULE$$.make($rowData);
+       """, isNull = FalseLiteral)
   }
 }
 

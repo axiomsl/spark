@@ -171,49 +171,49 @@ class VectorizedHashMapGenerator(
     }
 
     s"""
-       |public ${classOf[MutableColumnarRow].getName} findOrInsert($groupingKeySignature) {
-       |  long h = hash(${groupingKeys.map(_.name).mkString(", ")});
-       |  int step = 0;
-       |  int idx = (int) h & (numBuckets - 1);
-       |  while (step < maxSteps) {
-       |    // Return bucket index if it's either an empty slot or already contains the key
-       |    if (buckets[idx] == -1) {
-       |      if (numRows < capacity) {
-       |
-       |        // Initialize aggregate keys
-       |        ${genCodeToSetKeys(groupingKeys).mkString("\n")}
-       |
-       |        ${buffVars.map(_.code).mkString("\n")}
-       |
-       |        // Initialize aggregate values
-       |        ${genCodeToSetAggBuffers(bufferValues).mkString("\n")}
-       |
-       |        buckets[idx] = numRows++;
-       |        aggBufferRow.rowId = buckets[idx];
-       |        return aggBufferRow;
-       |      } else {
-       |        // No more space
-       |        return null;
-       |      }
-       |    } else if (equals(idx, ${groupingKeys.map(_.name).mkString(", ")})) {
-       |      aggBufferRow.rowId = buckets[idx];
-       |      return aggBufferRow;
-       |    }
-       |    idx = (idx + 1) & (numBuckets - 1);
-       |    step++;
-       |  }
-       |  // Didn't find it
-       |  return null;
-       |}
-     """.stripMargin
+public ${classOf[MutableColumnarRow].getName} findOrInsert($groupingKeySignature) {
+  long h = hash(${groupingKeys.map(_.name).mkString(", ")});
+  int step = 0;
+  int idx = (int) h & (numBuckets - 1);
+  while (step < maxSteps) {
+    // Return bucket index if it's either an empty slot or already contains the key
+    if (buckets[idx] == -1) {
+      if (numRows < capacity) {
+
+        // Initialize aggregate keys
+        ${genCodeToSetKeys(groupingKeys).mkString("\n")}
+
+        ${buffVars.map(_.code).mkString("\n")}
+
+        // Initialize aggregate values
+        ${genCodeToSetAggBuffers(bufferValues).mkString("\n")}
+
+        buckets[idx] = numRows++;
+        aggBufferRow.rowId = buckets[idx];
+        return aggBufferRow;
+      } else {
+        // No more space
+        return null;
+      }
+    } else if (equals(idx, ${groupingKeys.map(_.name).mkString(", ")})) {
+      aggBufferRow.rowId = buckets[idx];
+      return aggBufferRow;
+    }
+    idx = (idx + 1) & (numBuckets - 1);
+    step++;
+  }
+  // Didn't find it
+  return null;
+}
+"""
   }
 
   protected def generateRowIterator(): String = {
     s"""
-       |public java.util.Iterator<${classOf[InternalRow].getName}> rowIterator() {
-       |  batch.setNumRows(numRows);
-       |  return batch.rowIterator();
-       |}
-     """.stripMargin
+public java.util.Iterator<${classOf[InternalRow].getName}> rowIterator() {
+  batch.setNumRows(numRows);
+  return batch.rowIterator();
+}
+"""
   }
 }

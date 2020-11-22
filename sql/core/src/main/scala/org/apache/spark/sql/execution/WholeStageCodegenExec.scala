@@ -19,10 +19,9 @@ package org.apache.spark.sql.execution
 
 import java.util.Locale
 import java.util.function.Supplier
-
 import scala.collection.mutable
 import scala.util.control.NonFatal
-import org.apache.spark.broadcast
+import org.apache.spark.{SparkContext, broadcast}
 import org.apache.spark.rdd.RDD
 import org.apache.spark.sql.catalyst.InternalRow
 import org.apache.spark.sql.catalyst.expressions._
@@ -37,6 +36,8 @@ import org.apache.spark.sql.internal.SQLConf
 import org.apache.spark.sql.types._
 import org.apache.spark.util.Utils
 
+import scala.util.{Failure, Success, Try}
+
 /**
  * An interface for those physical operators that support codegen.
  */
@@ -49,7 +50,13 @@ trait CodegenSupport extends SparkPlan {
     case _: SortMergeJoinExec => "smj"
     case _: RDDScanExec => "rdd"
     case _: DataSourceScanExec => "scan"
-    case _ => nodeName.toLowerCase(Locale.ROOT)
+    case _ =>
+      nodeName.toLowerCase(Locale.ROOT) match {
+        case "project" => "prj"
+        case "inputadapter" => "inadp"
+        case "filter" => "flt"
+        case t => t
+      }
   }
 
   /**
@@ -85,9 +92,9 @@ trait CodegenSupport extends SparkPlan {
     this.parent = parent
     ctx.freshNamePrefix = variablePrefix
     s"""
-       |${ctx.registerComment(s"PRODUCE: ${this.simpleString}")}
-       |${doProduce(ctx)}
-     """.stripMargin
+       ${ctx.registerComment(s"PRODUCE: ${this.simpleString}")}
+       ${doProduce(ctx)}
+     """
   }
 
   /**
@@ -124,9 +131,9 @@ trait CodegenSupport extends SparkPlan {
         ctx.currentVars = colVars
         val ev = GenerateUnsafeProjection.createCode(ctx, colExprs)
         val code = code"""
-          |$evaluateInputs
-          |${ev.code}
-         """.stripMargin
+$evaluateInputs
+${ev.code}
+"""
         ExprCode(code, FalseLiteral, ev.value)
       } else {
         // There are no columns
@@ -188,10 +195,10 @@ trait CodegenSupport extends SparkPlan {
       parent.doConsume(ctx, inputVars, rowVar)
     }
     s"""
-       |${ctx.registerComment(s"CONSUME: ${parent.simpleString}")}
-       |$evaluated
-       |$consumeFunc
-     """.stripMargin
+${ctx.registerComment(s"CONSUME: ${parent.simpleString}")}
+$evaluated
+$consumeFunc
+"""
   }
 
   /**
@@ -211,14 +218,14 @@ trait CodegenSupport extends SparkPlan {
 
     val doConsumeFuncName = ctx.addNewFunction(doConsume,
       s"""
-         | private void $doConsume(${params.mkString(", ")}) throws java.io.IOException {
-         |   ${parent.doConsume(ctx, inputVarsInFunc, rowVar)}
-         | }
-       """.stripMargin)
+  private void $doConsume(${params.mkString(", ")}) throws java.io.IOException {
+    ${parent.doConsume(ctx, inputVarsInFunc, rowVar)}
+  }
+""")
 
     s"""
-       | $doConsumeFuncName(${args.mkString(", ")});
-     """.stripMargin
+ $doConsumeFuncName(${args.mkString(", ")});
+ """
   }
 
   /**
@@ -397,12 +404,12 @@ case class InputAdapter(child: SparkPlan) extends UnaryExecNode with CodegenSupp
       forceInline = true)
     val row = ctx.freshName("row")
     s"""
-       | while ($input.hasNext() && !stopEarly()) {
-       |   InternalRow $row = (InternalRow) $input.next();
-       |   ${consume(ctx, null, row).trim}
-       |   if (shouldStop()) return;
-       | }
-     """.stripMargin
+ while ($input.hasNext() && !stopEarly()) {
+   InternalRow $row = (InternalRow) $input.next();
+   ${consume(ctx, null, row).trim}
+   if (shouldStop()) return;
+ }
+ """
   }
 
   override def generateTreeString(
@@ -553,8 +560,8 @@ case class WholeStageCodegenExec(child: SparkPlan)(val codegenStageId: Int)
     val className = generatedClassName()
 
     val source = s"""
-      public Object generate(Object[] references) {
-        return new $className(references);
+      public Object generate(Object[] refs) {
+        return new $className(refs);
       }
 
       ${ctx.registerComment(
@@ -564,12 +571,12 @@ case class WholeStageCodegenExec(child: SparkPlan)(val codegenStageId: Int)
       ${ctx.registerComment(s"codegenStageId=$codegenStageId", "wsc_codegenStageId", force = true)}
       final class $className extends ${classOf[BufferedRowIterator].getName} {
 
-        private Object[] references;
+        private Object[] refs;
         private scala.collection.Iterator[] inputs;
         ${ctx.declareMutableStates()}
 
-        public $className(Object[] references) {
-          this.references = references;
+        public $className(Object[] refs) {
+          this.refs = refs;
         }
 
         public void init(int index, scala.collection.Iterator[] inputs) {
@@ -676,9 +683,9 @@ case class WholeStageCodegenExec(child: SparkPlan)(val codegenStageId: Int)
       ""
     }
     s"""
-      |${row.code}
-      |append(${row.value}$doCopy);
-     """.stripMargin.trim
+${row.code}
+append(${row.value}$doCopy);
+""".trim
   }
 
   override def generateTreeString(
@@ -700,7 +707,7 @@ case class WholeStageCodegenExec(child: SparkPlan)(val codegenStageId: Int)
 /**
  * Find the chained plans that support codegen, collapse them together as WholeStageCodegen.
  */
-case class CollapseCodegenStages(conf: SQLConf) extends Rule[SparkPlan] {
+case class CollapseCodegenStages(conf: SQLConf, sparkContext: SparkContext) extends Rule[SparkPlan] {
 
   private def supportCodegen(e: Expression): Boolean = e match {
     case e: LeafExpression => true
@@ -750,7 +757,17 @@ case class CollapseCodegenStages(conf: SQLConf) extends Rule[SparkPlan] {
   }
 
   def apply(plan: SparkPlan): SparkPlan = {
-    if (conf.wholeStageEnabled) {
+    val localWholeStageEnabled =
+      sparkContext.getLocalProperty("spark.sql.local.codegen.wholeStage") match {
+        case null => true
+        case value => Try(value.toBoolean) match {
+          case Success(b) => b
+          case Failure(_) =>
+            log.warn("Failed to convert `spark.sql.local.codegen.wholeStage` into Boolean got [{}], using [true]", value)
+            true
+        }
+      }
+    if (conf.wholeStageEnabled && localWholeStageEnabled) {
       WholeStageCodegenId.resetPerQuery()
       insertWholeStageCodegen(plan)
     } else {

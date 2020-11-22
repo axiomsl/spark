@@ -410,16 +410,14 @@ case class SortMergeJoinExec(
 
   private def genComparison(ctx: CodegenContext, a: Seq[ExprCode], b: Seq[ExprCode]): String = {
     val comparisons = a.zip(b).zipWithIndex.map { case ((l, r), i) =>
-      s"""
-         |if (comp == 0) {
-         |  comp = ${ctx.genComp(leftKeys(i).dataType, l.value, r.value)};
-         |}
-       """.stripMargin.trim
+      s"""if (comp == 0) {
+  comp = ${ctx.genComp(leftKeys(i).dataType, l.value, r.value)};
+}"""
     }
     s"""
-       |comp = 0;
-       |${comparisons.mkString("\n")}
-     """.stripMargin
+comp = 0;
+${comparisons.mkString("\n")}
+"""
   }
 
   /**
@@ -447,66 +445,66 @@ case class SortMergeJoinExec(
     val inMemoryThreshold = getInMemoryThreshold
 
     // Inline mutable state since not many join operations in a task
-    val matches = ctx.addMutableState(clsName, "matches",
+    val matches = ctx.addMutableState(clsName, "mtc",
       v => s"$v = new $clsName($inMemoryThreshold, $spillThreshold);", forceInline = true)
     // Copy the left keys as class members so they could be used in next function call.
     val matchedKeyVars = copyKeys(ctx, leftKeyVars)
 
     ctx.addNewFunction("findNextInnerJoinRows",
       s"""
-         |private boolean findNextInnerJoinRows(
-         |    scala.collection.Iterator leftIter,
-         |    scala.collection.Iterator rightIter) {
-         |  $leftRow = null;
-         |  int comp = 0;
-         |  while ($leftRow == null) {
-         |    if (!leftIter.hasNext()) return false;
-         |    $leftRow = (InternalRow) leftIter.next();
-         |    ${leftKeyVars.map(_.code).mkString("\n")}
-         |    if ($leftAnyNull) {
-         |      $leftRow = null;
-         |      continue;
-         |    }
-         |    if (!$matches.isEmpty()) {
-         |      ${genComparison(ctx, leftKeyVars, matchedKeyVars)}
-         |      if (comp == 0) {
-         |        return true;
-         |      }
-         |      $matches.clear();
-         |    }
-         |
-         |    do {
-         |      if ($rightRow == null) {
-         |        if (!rightIter.hasNext()) {
-         |          ${matchedKeyVars.map(_.code).mkString("\n")}
-         |          return !$matches.isEmpty();
-         |        }
-         |        $rightRow = (InternalRow) rightIter.next();
-         |        ${rightKeyTmpVars.map(_.code).mkString("\n")}
-         |        if ($rightAnyNull) {
-         |          $rightRow = null;
-         |          continue;
-         |        }
-         |        ${rightKeyVars.map(_.code).mkString("\n")}
-         |      }
-         |      ${genComparison(ctx, leftKeyVars, rightKeyVars)}
-         |      if (comp > 0) {
-         |        $rightRow = null;
-         |      } else if (comp < 0) {
-         |        if (!$matches.isEmpty()) {
-         |          ${matchedKeyVars.map(_.code).mkString("\n")}
-         |          return true;
-         |        }
-         |        $leftRow = null;
-         |      } else {
-         |        $matches.add((UnsafeRow) $rightRow);
-         |        $rightRow = null;;
-         |      }
-         |    } while ($leftRow != null);
-         |  }
-         |  return false; // unreachable
-         |}
-       """.stripMargin, inlineToOuterClass = true)
+private boolean findNextInnerJoinRows(
+    scala.collection.Iterator leftIter,
+    scala.collection.Iterator rightIter) {
+  $leftRow = null;
+  int comp = 0;
+  while ($leftRow == null) {
+    if (!leftIter.hasNext()) return false;
+    $leftRow = (InternalRow) leftIter.next();
+    ${leftKeyVars.map(_.code).mkString("\n")}
+    if ($leftAnyNull) {
+      $leftRow = null;
+      continue;
+    }
+    if (!$matches.isEmpty()) {
+      ${genComparison(ctx, leftKeyVars, matchedKeyVars)}
+      if (comp == 0) {
+        return true;
+      }
+      $matches.clear();
+    }
+
+    do {
+      if ($rightRow == null) {
+        if (!rightIter.hasNext()) {
+          ${matchedKeyVars.map(_.code).mkString("\n")}
+          return !$matches.isEmpty();
+        }
+        $rightRow = (InternalRow) rightIter.next();
+        ${rightKeyTmpVars.map(_.code).mkString("\n")}
+        if ($rightAnyNull) {
+          $rightRow = null;
+          continue;
+        }
+        ${rightKeyVars.map(_.code).mkString("\n")}
+      }
+      ${genComparison(ctx, leftKeyVars, rightKeyVars)}
+      if (comp > 0) {
+        $rightRow = null;
+      } else if (comp < 0) {
+        if (!$matches.isEmpty()) {
+          ${matchedKeyVars.map(_.code).mkString("\n")}
+          return true;
+        }
+        $leftRow = null;
+      } else {
+        $matches.add((UnsafeRow) $rightRow);
+        $rightRow = null;;
+      }
+    } while ($leftRow != null);
+  }
+  return false; // unreachable
+}
+""", inlineToOuterClass = true)
 
     (leftRow, matches)
   }
@@ -529,14 +527,14 @@ case class SortMergeJoinExec(
         val isNull = ctx.freshName("isNull")
         val code =
           code"""
-             |$isNull = $leftRow.isNullAt($i);
-             |$value = $isNull ? $defaultValue : ($valueCode);
-           """.stripMargin
+$isNull = $leftRow.isNullAt($i);
+$value = $isNull ? $defaultValue : ($valueCode);
+"""
         val leftVarsDecl =
           s"""
-             |boolean $isNull = false;
-             |$javaType $value = $defaultValue;
-           """.stripMargin
+boolean $isNull = false;
+$javaType $value = $defaultValue;
+"""
         (ExprCode(code, JavaCode.isNullVariable(isNull), JavaCode.variable(value, a.dataType)),
           leftVarsDecl)
       } else {
@@ -609,20 +607,20 @@ case class SortMergeJoinExec(
       val cond = BindReferences.bindReference(condition.get, output).genCode(ctx)
       // evaluate the columns those used by condition before loop
       val before = s"""
-           |boolean $loaded = false;
-           |$leftBefore
-         """.stripMargin
+boolean $loaded = false;
+$leftBefore
+"""
 
       val checking = s"""
-         |$rightBefore
-         |${cond.code}
-         |if (${cond.isNull} || !${cond.value}) continue;
-         |if (!$loaded) {
-         |  $loaded = true;
-         |  $leftAfter
-         |}
-         |$rightAfter
-     """.stripMargin
+$rightBefore
+${cond.code}
+if (${cond.isNull} || !${cond.value}) continue;
+if (!$loaded) {
+  $loaded = true;
+  $leftAfter
+}
+$rightAfter
+"""
       (before, checking)
     } else {
       (evaluateVariables(leftVars), "")
@@ -632,20 +630,20 @@ case class SortMergeJoinExec(
     val eagerCleanup = s"$thisPlan.cleanupResources();"
 
     s"""
-       |while (findNextInnerJoinRows($leftInput, $rightInput)) {
-       |  ${leftVarDecl.mkString("\n")}
-       |  ${beforeLoop.trim}
-       |  scala.collection.Iterator<UnsafeRow> $iterator = $matches.generateIterator();
-       |  while ($iterator.hasNext()) {
-       |    InternalRow $rightRow = (InternalRow) $iterator.next();
-       |    ${condCheck.trim}
-       |    $numOutput.add(1);
-       |    ${consume(ctx, leftVars ++ rightVars)}
-       |  }
-       |  if (shouldStop()) return;
-       |}
-       |$eagerCleanup
-     """.stripMargin
+while (findNextInnerJoinRows($leftInput, $rightInput)) {
+  ${leftVarDecl.mkString("\n")}
+  ${beforeLoop.trim}
+  scala.collection.Iterator<UnsafeRow> $iterator = $matches.generateIterator();
+  while ($iterator.hasNext()) {
+    InternalRow $rightRow = (InternalRow) $iterator.next();
+    ${condCheck.trim}
+    $numOutput.add(1);
+    ${consume(ctx, leftVars ++ rightVars)}
+  }
+  if (shouldStop()) return;
+}
+$eagerCleanup
+"""
   }
 }
 

@@ -23,11 +23,9 @@ import java.nio.charset.StandardCharsets
 import java.sql.Timestamp
 import java.util.Locale
 import java.util.concurrent.TimeUnit
-
 import scala.collection.JavaConverters._
 import scala.collection.mutable.HashMap
 import scala.language.implicitConversions
-
 import org.apache.hadoop.conf.Configuration
 import org.apache.hadoop.hive.common.`type`.HiveDecimal
 import org.apache.hadoop.hive.conf.HiveConf
@@ -35,7 +33,6 @@ import org.apache.hadoop.hive.conf.HiveConf.ConfVars
 import org.apache.hadoop.hive.ql.session.SessionState
 import org.apache.hadoop.hive.serde2.io.{DateWritable, TimestampWritable}
 import org.apache.hadoop.util.VersionInfo
-
 import org.apache.spark.{SparkConf, SparkContext}
 import org.apache.spark.deploy.SparkHadoopUtil
 import org.apache.spark.internal.Logging
@@ -79,10 +76,10 @@ private[spark] object HiveUtils extends Logging {
       | Location of the jars that should be used to instantiate the HiveMetastoreClient.
       | This property can be one of three options: "
       | 1. "builtin"
-      |   Use Hive ${builtinHiveVersion}, which is bundled with the Spark assembly when
+      |   Use Hive $builtinHiveVersion, which is bundled with the Spark assembly when
       |   <code>-Phive</code> is enabled. When this option is chosen,
       |   <code>spark.sql.hive.metastore.version</code> must be either
-      |   <code>${builtinHiveVersion}</code> or not defined.
+      |   <code>$builtinHiveVersion</code> or not defined.
       | 2. "maven"
       |   Use Hive jars of specified version downloaded from Maven repositories.
       | 3. A classpath in the standard format for both Hive and Hadoop.
@@ -188,7 +185,27 @@ private[spark] object HiveUtils extends Logging {
     //
     // Here we enumerate all time `ConfVar`s and convert their values to numeric strings according
     // to their output time units.
-    Seq(
+
+    // The following configurations were removed by HIVE-12164(Hive 2.0)
+    val hardcodingTimeVars = try {
+      Seq(
+        ConfVars.HIVE_STATS_JDBC_TIMEOUT -> TimeUnit.SECONDS,
+        ConfVars.HIVE_STATS_RETRIES_WAIT -> TimeUnit.MILLISECONDS
+      ).map { case (confVar, unit) =>
+        confVar.varname -> HiveConf.getTimeVar(hadoopConf, confVar, unit).toString
+      }
+    } catch {
+      case _: java.lang.NoSuchFieldError =>
+        Seq(
+          ("hive.stats.jdbc.timeout", "30s") -> TimeUnit.SECONDS,
+          ("hive.stats.retries.wait", "3000ms") -> TimeUnit.MILLISECONDS
+        ).map { case ((key, defaultValue), unit) =>
+          val value = hadoopConf.get(key, defaultValue)
+          key -> HiveConf.toTime(value, unit, unit).toString
+        }
+    }
+
+    val commonTimeVars = Seq(
       ConfVars.METASTORE_CLIENT_CONNECT_RETRY_DELAY -> TimeUnit.SECONDS,
       ConfVars.METASTORE_CLIENT_SOCKET_TIMEOUT -> TimeUnit.SECONDS,
       ConfVars.METASTORE_CLIENT_SOCKET_LIFETIME -> TimeUnit.SECONDS,
@@ -201,8 +218,6 @@ private[spark] object HiveUtils extends Logging {
       ConfVars.METASTORE_AGGREGATE_STATS_CACHE_MAX_READER_WAIT -> TimeUnit.MILLISECONDS,
       ConfVars.HIVES_AUTO_PROGRESS_TIMEOUT -> TimeUnit.SECONDS,
       ConfVars.HIVE_LOG_INCREMENTAL_PLAN_PROGRESS_INTERVAL -> TimeUnit.MILLISECONDS,
-      ConfVars.HIVE_STATS_JDBC_TIMEOUT -> TimeUnit.SECONDS,
-      ConfVars.HIVE_STATS_RETRIES_WAIT -> TimeUnit.MILLISECONDS,
       ConfVars.HIVE_LOCK_SLEEP_BETWEEN_RETRIES -> TimeUnit.SECONDS,
       ConfVars.HIVE_ZOOKEEPER_SESSION_TIMEOUT -> TimeUnit.MILLISECONDS,
       ConfVars.HIVE_ZOOKEEPER_CONNECTION_BASESLEEPTIME -> TimeUnit.MILLISECONDS,
@@ -230,7 +245,9 @@ private[spark] object HiveUtils extends Logging {
       ConfVars.SPARK_RPC_CLIENT_HANDSHAKE_TIMEOUT -> TimeUnit.MILLISECONDS
     ).map { case (confVar, unit) =>
       confVar.varname -> HiveConf.getTimeVar(hadoopConf, confVar, unit).toString
-    }.toMap
+    }
+
+    (commonTimeVars ++ hardcodingTimeVars).toMap
   }
 
   /**
@@ -401,7 +418,7 @@ private[spark] object HiveUtils extends Logging {
     }
     propMap.put(WAREHOUSE_PATH.key, localMetastore.toURI.toString)
     propMap.put(HiveConf.ConfVars.METASTORECONNECTURLKEY.varname,
-      s"jdbc:derby:${withInMemoryMode};databaseName=${localMetastore.getAbsolutePath};create=true")
+      s"jdbc:derby:$withInMemoryMode;databaseName=${localMetastore.getAbsolutePath};create=true")
     propMap.put("datanucleus.rdbms.datastoreAdapterClassName",
       "org.datanucleus.store.rdbms.adapter.DerbyAdapter")
 

@@ -29,7 +29,7 @@ case class Sum(child: Expression) extends DeclarativeAggregate with ImplicitCast
 
   override def children: Seq[Expression] = child :: Nil
 
-  override def nullable: Boolean = true
+  override def nullable: Boolean = child.nullable
 
   // Return data type.
   override def dataType: DataType = resultType
@@ -48,15 +48,19 @@ case class Sum(child: Expression) extends DeclarativeAggregate with ImplicitCast
 
   private lazy val sumDataType = resultType
 
-  private lazy val sum = AttributeReference("sum", sumDataType)()
+  private lazy val sum = {
+    if (child.nullable) AttributeReference("sum", sumDataType)()
+    else AttributeReference("sum", sumDataType, nullable = false)()
+  }
 
-  private lazy val zero = Cast(Literal(0), sumDataType)
+  private lazy val zero = Literal.default(resultType)
 
   override lazy val aggBufferAttributes = sum :: Nil
 
-  override lazy val initialValues: Seq[Expression] = Seq(
-    /* sum = */ Literal.create(null, sumDataType)
-  )
+  override lazy val initialValues: Seq[Expression] = resultType match {
+    case _ if nullable => Seq(Literal(null, resultType))
+    case _ => Seq(zero)
+  }
 
   override lazy val updateExpressions: Seq[Expression] = {
     if (child.nullable) {
@@ -67,16 +71,25 @@ case class Sum(child: Expression) extends DeclarativeAggregate with ImplicitCast
     } else {
       Seq(
         /* sum = */
-        coalesce(sum, zero) + child.cast(sumDataType)
+//        If(child.isNull, sum, sum + KnownNotNull(child).cast(resultType))
+        sum + child.cast(resultType)
+//        coalesce(sum, zero) + child.cast(sumDataType)
       )
     }
   }
 
   override lazy val mergeExpressions: Seq[Expression] = {
-    Seq(
-      /* sum = */
-      coalesce(coalesce(sum.left, zero) + sum.right, sum.left)
-    )
+    if (child.nullable){
+      Seq(
+        /* sum = */
+        coalesce(coalesce(sum.left, zero) + sum.right, sum.left)
+      )
+    } else {
+      Seq(
+        /* sum = */
+        sum.left + sum.right
+      )
+    }
   }
 
   override lazy val evaluateExpression: Expression = sum

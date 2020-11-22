@@ -20,18 +20,16 @@ package org.apache.spark.sql.hive
 import java.io.File
 import java.nio.charset.StandardCharsets
 import java.nio.file.{Files, Paths}
-
 import scala.sys.process._
 import scala.util.control.NonFatal
-
 import org.apache.hadoop.conf.Configuration
-
 import org.apache.spark.{SecurityManager, SparkConf, TestUtils}
 import org.apache.spark.sql.{QueryTest, Row, SparkSession}
 import org.apache.spark.sql.catalyst.TableIdentifier
 import org.apache.spark.sql.catalyst.catalog.CatalogTableType
 import org.apache.spark.sql.test.SQLTestUtils
 import org.apache.spark.util.Utils
+import org.scalatest.Ignore
 
 /**
  * Test HiveExternalCatalog backward compatibility.
@@ -41,6 +39,7 @@ import org.apache.spark.util.Utils
  * expected version under this local directory, e.g. `/tmp/spark-test/spark-2.0.3`, we will skip the
  * downloading for this spark version.
  */
+@Ignore
 class HiveExternalCatalogVersionsSuite extends SparkSubmitTestUtils {
   private val wareHousePath = Utils.createTempDir(namePrefix = "warehouse")
   private val tmpDataDir = Utils.createTempDir(namePrefix = "test-data")
@@ -168,7 +167,7 @@ class HiveExternalCatalogVersionsSuite extends SparkSubmitTestUtils {
     // scalastyle:on line.size.limit
 
     if (PROCESS_TABLES.testingVersions.isEmpty) {
-      fail("Fail to get the lates Spark versions to test.")
+      fail("Fail to get the latest Spark versions to test.")
     }
 
     PROCESS_TABLES.testingVersions.zipWithIndex.foreach { case (version, index) =>

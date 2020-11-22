@@ -29,7 +29,7 @@ case class Max(child: Expression) extends DeclarativeAggregate {
 
   override def children: Seq[Expression] = child :: Nil
 
-  override def nullable: Boolean = true
+  override def nullable: Boolean = child.nullable
 
   // Return data type.
   override def dataType: DataType = child.dataType
@@ -37,13 +37,45 @@ case class Max(child: Expression) extends DeclarativeAggregate {
   override def checkInputDataTypes(): TypeCheckResult =
     TypeUtils.checkForOrderingExpr(child.dataType, "function max")
 
-  private lazy val max = AttributeReference("max", child.dataType)()
+  private lazy val max = {
+    if (child.nullable) {
+      AttributeReference("max", child.dataType)()
+    } else {
+      val nullable = child.dataType match {
+        case _: IntegerType => false
+        case _: LongType => false
+        case _: ShortType => false
+        case _: FloatType => false
+        case _: DoubleType => false
+        case _: StringType => false
+        case _ => true
+      }
+      AttributeReference("max", child.dataType, nullable)()
+    }
+  }
 
   override lazy val aggBufferAttributes: Seq[AttributeReference] = max :: Nil
 
-  override lazy val initialValues: Seq[Literal] = Seq(
-    /* max = */ Literal.create(null, child.dataType)
-  )
+  override lazy val initialValues: Seq[Literal] = {
+    if (child.nullable) {
+      Seq(
+        /* max = */ Literal.create(null, child.dataType)
+      )
+    } else {
+      Seq(
+        /* max = */
+        child.dataType match {
+          case _: IntegerType => Literal.create(Int.MinValue, child.dataType)
+          case _: LongType => Literal.create(Long.MinValue, child.dataType)
+          case _: ShortType => Literal.create(Short.MinValue, child.dataType)
+          case _: FloatType => Literal.create(Float.MinValue, child.dataType)
+          case _: DoubleType => Literal.create(Double.MinValue, child.dataType)
+          case _: StringType => Literal.create("", child.dataType)
+          case _ => Literal.create(null, child.dataType)
+        }
+      )
+    }
+  }
 
   override lazy val updateExpressions: Seq[Expression] = Seq(
     /* max = */ greatest(max, child)

@@ -75,8 +75,12 @@ package object client {
       exclusions = Seq("org.apache.curator:*",
         "org.pentaho:pentaho-aggdesigner-algorithm"))
 
-    case object v2_3 extends HiveVersion("2.3.3",
-      exclusions = Seq("org.apache.curator:*",
+    // Since HIVE-14496, Hive materialized view need calcite-core.
+    // For spark, only VersionsSuite currently creates a hive materialized view for testing.
+    case object v2_3 extends HiveVersion("2.3.7",
+      exclusions = Seq("org.apache.calcite:calcite-druid",
+        "org.apache.calcite.avatica:avatica",
+        "org.apache.curator:*",
         "org.pentaho:pentaho-aggdesigner-algorithm"))
 
     val allSupportedHiveVersions = Set(v12, v13, v14, v1_0, v1_1, v1_2, v2_0, v2_1, v2_2, v2_3)

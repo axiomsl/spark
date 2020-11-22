@@ -400,10 +400,7 @@ case class PreprocessTableInsertion(conf: SQLConf) extends Rule[LogicalPlan] {
                                      insert: InsertIntoTable,
                                      tblName: String,
                                      explicitTableOutput: Seq[Attribute]): Map[String, NamedExpression] = {
-    val mapping = DDLPreprocessingUtils.expectedTypeMapping(insert.query.output, explicitTableOutput, conf)
-    val mappedQueryOutput = insert.query.output.map(key => mapping.getOrElse(key,
-      throw new AnalysisException(s"Could not map property $key in current output to any " +
-        s"column in table $tblName. Possible values are: ${mapping.keys.mkString(",")}")))
+    val mappedQueryOutput = DDLPreprocessingUtils.expectedTypeMapping(insert.query.output, explicitTableOutput, conf)
     val queryOutputMapping = mappedQueryOutput.map(v => (v.name, v)).toMap
     queryOutputMapping
   }
@@ -581,22 +578,22 @@ object DDLPreprocessingUtils {
   def expectedTypeMapping(
         queryOutput: Seq[Attribute],
         tableOutput: Seq[Attribute],
-        conf: SQLConf): Map[Attribute, NamedExpression] = {
+        conf: SQLConf): List[NamedExpression] = {
     val newChildOutput = tableOutput.zip(queryOutput).map {
       case (expected, actual) =>
         if (expected.dataType.sameType(actual.dataType) &&
           expected.name == actual.name &&
           expected.metadata == actual.metadata) {
-          actual -> actual
+          actual
         } else {
           // Renaming is needed for handling the following cases like
           // 1) Column names/types do not match, e.g., INSERT INTO TABLE tab1 SELECT 1, 2
           // 2) Target tables have column metadata
-          actual -> Alias(
+          Alias(
             Cast(actual, expected.dataType, Option(conf.sessionLocalTimeZone)),
             expected.name)(explicitMetadata = Option(expected.metadata))
         }
     }
-    newChildOutput.toMap
+    newChildOutput.toList
   }
 }

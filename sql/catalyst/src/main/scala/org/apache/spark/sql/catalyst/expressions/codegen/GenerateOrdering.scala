@@ -82,10 +82,10 @@ object GenerateOrdering extends CodeGenerator[Seq[SortOrder], Ordering[InternalR
     val comparisons = ordering.map { order =>
       val eval = order.child.genCode(ctx)
       val asc = order.isAscending
-      val isNullA = ctx.freshName("isNullA")
-      val primitiveA = ctx.freshName("primitiveA")
-      val isNullB = ctx.freshName("isNullB")
-      val primitiveB = ctx.freshName("primitiveB")
+      val isNullA = ctx.freshName("isNA")
+      val primitiveA = ctx.freshName("primA")
+      val isNullB = ctx.freshName("isNB")
+      val primitiveB = ctx.freshName("primB")
       s"""
           ${ctx.INPUT_ROW} = a;
           boolean $isNullA;
@@ -140,7 +140,7 @@ object GenerateOrdering extends CodeGenerator[Seq[SortOrder], Ordering[InternalR
       },
       foldFunctions = { funCalls =>
         funCalls.zipWithIndex.map { case (funCall, i) =>
-          val comp = ctx.freshName("comp")
+          val comp = ctx.freshName("cmp")
           s"""
             int $comp = $funCall;
             if ($comp != 0) {
@@ -154,26 +154,26 @@ object GenerateOrdering extends CodeGenerator[Seq[SortOrder], Ordering[InternalR
     // make sure INPUT_ROW is declared even if splitExpressions
     // returns an inlined block
     s"""
-       |InternalRow $inputRow = null;
-       |$code
-     """.stripMargin
+InternalRow $inputRow = null;
+$code
+     """
   }
 
   protected def create(ordering: Seq[SortOrder]): BaseOrdering = {
     val ctx = newCodeGenContext()
     val comparisons = genComparisons(ctx, ordering)
     val codeBody = s"""
-      public SpecificOrdering generate(Object[] references) {
-        return new SpecificOrdering(references);
+      public SpecificOrdering generate(Object[] refs) {
+        return new SpecificOrdering(refs);
       }
 
       class SpecificOrdering extends ${classOf[BaseOrdering].getName} {
 
-        private Object[] references;
+        private Object[] refs;
         ${ctx.declareMutableStates()}
 
-        public SpecificOrdering(Object[] references) {
-          this.references = references;
+        public SpecificOrdering(Object[] refs) {
+          this.refs = refs;
           ${ctx.initMutableStates()}
         }
 
