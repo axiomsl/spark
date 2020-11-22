@@ -17,6 +17,7 @@
 
 package org.apache.spark.sql.catalyst.rules
 
+import org.apache.spark.SparkContext
 import org.apache.spark.internal.Logging
 import org.apache.spark.sql.catalyst.errors.TreeNodeException
 import org.apache.spark.sql.catalyst.trees.TreeNode
@@ -24,16 +25,26 @@ import org.apache.spark.sql.catalyst.util.sideBySide
 import org.apache.spark.util.Utils
 
 object RuleExecutor {
-  protected val queryExecutionMeter = QueryExecutionMetering()
+  protected val queryExecutionMeter: QueryExecutionMetering = QueryExecutionMetering()
 
   /** Dump statistics about time spent running specific rules. */
   def dumpTimeSpent(): String = {
     queryExecutionMeter.dumpTimeSpent()
   }
 
+  /** Dump statistics about time spent running specific rules. */
+  def dumpPerPlanTimeSpent(groupId: String): String = {
+    queryExecutionMeter.dumpPerPlanTimeSpent(groupId)
+  }
+
   /** Resets statistics about time spent running specific rules */
   def resetMetrics(): Unit = {
     queryExecutionMeter.resetMetrics()
+  }
+
+  /** Resets statistics about time spent running specific rules */
+  def resetMetricsByGroupId(groupId: String): Unit = {
+    queryExecutionMeter.resetMetricsByGroupId(groupId)
   }
 }
 
@@ -71,6 +82,9 @@ abstract class RuleExecutor[TreeType <: TreeNode[_]] extends Logging {
    */
   def execute(plan: TreeType): TreeType = {
     var curPlan = plan
+
+    val groupId = SparkContext.getActive.map(s => Option(s.getLocalProperty("jobGroupId")).getOrElse("")).getOrElse("")
+
     val queryExecutionMetrics = RuleExecutor.queryExecutionMeter
 
     batches.foreach { batch =>
@@ -88,16 +102,16 @@ abstract class RuleExecutor[TreeType <: TreeNode[_]] extends Logging {
             val runTime = System.nanoTime() - startTime
 
             if (!result.fastEquals(plan)) {
-              queryExecutionMetrics.incNumEffectiveExecution(rule.ruleName)
-              queryExecutionMetrics.incTimeEffectiveExecutionBy(rule.ruleName, runTime)
+              queryExecutionMetrics.incNumEffectiveExecution(rule.ruleName, groupId)
+              queryExecutionMetrics.incTimeEffectiveExecutionBy(rule.ruleName, runTime, groupId)
               logTrace(
                 s"""
                   |=== Applying Rule ${rule.ruleName} ===
                   |${sideBySide(plan.treeString, result.treeString).mkString("\n")}
                 """.stripMargin)
             }
-            queryExecutionMetrics.incExecutionTimeBy(rule.ruleName, runTime)
-            queryExecutionMetrics.incNumExecution(rule.ruleName)
+            queryExecutionMetrics.incExecutionTimeBy(rule.ruleName, runTime, groupId)
+            queryExecutionMetrics.incNumExecution(rule.ruleName, groupId)
 
             // Run the structural integrity checker against the plan after each rule.
             if (!isPlanIntegral(result)) {
