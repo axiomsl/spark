@@ -18,8 +18,7 @@
 package org.apache.spark.sql.catalyst.optimizer
 
 import scala.collection.immutable.HashSet
-import scala.collection.mutable.{ArrayBuffer, Stack}
-
+import scala.collection.mutable.ArrayBuffer
 import org.apache.spark.sql.catalyst.analysis._
 import org.apache.spark.sql.catalyst.expressions._
 import org.apache.spark.sql.catalyst.expressions.Literal.{FalseLiteral, TrueLiteral}
@@ -30,6 +29,8 @@ import org.apache.spark.sql.catalyst.plans.logical._
 import org.apache.spark.sql.catalyst.rules._
 import org.apache.spark.sql.internal.SQLConf
 import org.apache.spark.sql.types._
+
+import scala.collection.mutable
 
 /*
  * Optimization rules defined in this file should not affect the structure of the logical plan.
@@ -725,7 +726,7 @@ object SimplifyCaseConversionExpressions extends Rule[LogicalPlan] {
 object CombineConcats extends Rule[LogicalPlan] {
 
   private def flattenConcats(concat: Concat): Concat = {
-    val stack = Stack[Expression](concat)
+    val stack = mutable.Stack[Expression](concat)
     val flattened = ArrayBuffer.empty[Expression]
     while (stack.nonEmpty) {
       stack.pop() match {

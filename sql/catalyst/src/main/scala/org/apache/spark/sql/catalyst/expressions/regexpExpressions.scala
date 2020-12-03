@@ -51,7 +51,7 @@ abstract class StringRegexExpression extends BinaryExpression
     Pattern.compile(escape(str))
   }
 
-  protected def pattern(str: String) = if (cache == null) compile(str) else cache
+  protected def pattern(str: String): Pattern = if (cache == null) compile(str) else cache
 
   protected override def nullSafeEval(input1: Any, input2: Any): Any = {
     val regex = pattern(input2.asInstanceOf[UTF8String].toString)

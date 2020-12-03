@@ -576,6 +576,110 @@ case class Least(children: Seq[Expression]) extends ComplexTypeMergingExpression
   }
 }
 
+@ExpressionDescription(
+  usage = "_FUNC_(expr, ...) - Returns the least value of all parameters.",
+  examples = """
+    Examples:
+      > SELECT _FUNC_(10, 9, 2, 4, 3);
+       2
+      > SELECT _FUNC_(null, 9, 2, 4, 3);
+       null
+  """
+)
+case class LeastNullIntolerant(children: Seq[Expression]) extends ComplexTypeMergingExpression {
+
+  override def nullable: Boolean = children.forall(_.nullable)
+  override def foldable: Boolean = children.forall(_.foldable)
+
+  private lazy val ordering = TypeUtils.getInterpretedOrdering(dataType)
+
+  override def checkInputDataTypes(): TypeCheckResult = {
+    if (children.length <= 1) {
+      TypeCheckResult.TypeCheckFailure(s"input to function $prettyName requires at least two arguments")
+    } else if (!TypeCoercion.haveSameType(inputTypesForMerging)) {
+      TypeCheckResult.TypeCheckFailure(
+        "The expressions should all have the same type," +
+          s" got LEAST(${children.map(_.dataType.catalogString).mkString(", ")})."
+      )
+    } else {
+      TypeUtils.checkForOrderingExpr(dataType, s"function $prettyName")
+    }
+  }
+
+  override def eval(input: InternalRow): Any = {
+    var nullWasFound = false
+    children.foldLeft[Any](null)((r, c) => {
+      if (nullWasFound) {
+        null
+      } else {
+        val evalc = c.eval(input)
+        if (evalc == null) {
+          nullWasFound = true
+          null
+        } else if (evalc != null) {
+          if (r == null || ordering.lt(evalc, r)) evalc else r
+        } else {
+          r
+        }
+      }
+    })
+  }
+
+  override def doGenCode(ctx: CodegenContext, ev: ExprCode): ExprCode = {
+    val evalChildren = children.map(_.genCode(ctx))
+    val args = ctx.freshName("args")
+    val hasNull = ctx.freshName("hasNull")
+
+    val inputs = evalChildren.zip(children.map(_.nullable)).zipWithIndex.map {
+      case ((eval, true), index) =>
+        s"""
+           |if (!$hasNull) {
+           |  ${eval.code}
+           |  if (!${eval.isNull}) {
+           |    $args[$index] = ${eval.value};
+           |  } else {
+           |    $hasNull = true;
+           |  }
+           |}
+         """.stripMargin
+      case ((eval, false), index) =>
+        s"""
+           |if (!$hasNull) {
+           |  ${eval.code}
+           |  $args[$index] = ${eval.value};
+           |}
+         """.stripMargin
+    }
+
+    ev.isNull = JavaCode.isNullGlobal(ctx.addMutableState(CodeGenerator.JAVA_BOOLEAN, ev.isNull))
+    val resultType = CodeGenerator.boxedType(dataType)
+    val codes = ctx.splitExpressionsWithCurrentInputs(
+      expressions = inputs,
+      funcName = "greatest",
+      extraArguments = (s"$resultType[]", args) :: ("boolean", hasNull) :: Nil,
+      returnType = resultType,
+      makeSplitFunction = body => s"""
+                                     |$body
+                                     |return $hasNull;
+         """.stripMargin,
+      foldFunctions = _.map(funcCall => s"$hasNull = $funcCall;").mkString("\n")
+    )
+    ev.copy(code = code"""
+                         |boolean $hasNull = false;
+                         |$resultType[] $args = new $resultType[${evalChildren.length}];
+                         |$codes
+                         |${ev.isNull} = true;
+                         |$resultType ${ev.value} = ${CodeGenerator.defaultValue(resultType, typedNull = false)};
+                         |if (!$hasNull) {
+                         |   ${ev.value} = ($resultType) java.util.Collections.min(java.util.Arrays.asList($args));
+                         |}
+                         |boolean ${ev.isNull} = ${ev.value} == null;
+      """.stripMargin)
+  }
+
+}
+
+
 /**
  * A function that returns the greatest value of all parameters, skipping null values.
  * It takes at least 2 parameters, and returns null iff all parameters are null.
@@ -645,6 +749,133 @@ case class Greatest(children: Seq[Expression]) extends ComplexTypeMergingExpress
          |${ev.isNull} = true;
          |$resultType ${ev.value} = ${CodeGenerator.defaultValue(dataType)};
          |$codes
+      """.stripMargin)
+  }
+}
+
+/**
+ * A function that returns the greatest value of all parameters.
+ * It takes at least 2 parameters, and returns null if one parameters is null.
+ */
+@ExpressionDescription(
+  usage = "_FUNC_(expr, ...) - Returns the greatest value of all parameters.",
+  examples = """
+    Examples:
+      > SELECT _FUNC_(10, 9, 2, 4, 3);
+       10
+      > SELECT _FUNC_(null, 9, 2, 4, 3);
+       null
+  """
+)
+case class GreatestNullIntolerant(children: Seq[Expression]) extends NullIntolerant {
+
+  override def nullable: Boolean = children.exists(_.nullable)
+  override def foldable: Boolean = children.forall(_.foldable)
+
+  /**
+   * A collection of data types used for resolution the output type of the expression. By default,
+   * data types of all child expressions. The collection must not be empty.
+   */
+  @transient
+  lazy val inputTypesForMerging: Seq[DataType] = children.map(_.dataType)
+
+  def dataTypeCheck(): Unit = {
+    require(inputTypesForMerging.nonEmpty, "The collection of input data types must not be empty.")
+    require(
+      TypeCoercion.haveSameType(inputTypesForMerging),
+      "All input types must be the same except nullable, containsNull, valueContainsNull flags." +
+        s" The input types found are\n\t${inputTypesForMerging.mkString("\n\t")}"
+    )
+  }
+
+  override def dataType: DataType = {
+    dataTypeCheck()
+    inputTypesForMerging.reduceLeft(TypeCoercion.findCommonTypeDifferentOnlyInNullFlags(_, _).get)
+  }
+
+  private lazy val ordering = TypeUtils.getInterpretedOrdering(dataType)
+
+  override def checkInputDataTypes(): TypeCheckResult = {
+    if (children.length <= 1) {
+      TypeCheckResult.TypeCheckFailure(s"input to function $prettyName requires at least two arguments")
+    } else if (!TypeCoercion.haveSameType(inputTypesForMerging)) {
+      TypeCheckResult.TypeCheckFailure(
+        "The expressions should all have the same type," +
+          s" got GREATEST(${children.map(_.dataType.catalogString).mkString(", ")})."
+      )
+    } else {
+      TypeUtils.checkForOrderingExpr(dataType, s"function $prettyName")
+    }
+  }
+
+  override def eval(input: InternalRow): Any = {
+    var nullWasFound = false
+    children.foldLeft[Any](null)((r, c) => {
+      if (nullWasFound) {
+        null
+      } else {
+        val evalc = c.eval(input)
+        if (evalc == null) {
+          nullWasFound = true
+          null
+        } else if (evalc != null) {
+          if (r == null || ordering.gt(evalc, r)) evalc else r
+        } else {
+          r
+        }
+      }
+    })
+  }
+
+  override def doGenCode(ctx: CodegenContext, ev: ExprCode): ExprCode = {
+    val evalChildren = children.map(_.genCode(ctx))
+    val args = ctx.freshName("args")
+    val hasNull = ctx.freshName("hasNull")
+
+    val inputs = evalChildren.zip(children.map(_.nullable)).zipWithIndex.map {
+      case ((eval, true), index) =>
+        s"""
+           |if (!$hasNull) {
+           |  ${eval.code}
+           |  if (!${eval.isNull}) {
+           |    $args[$index] = ${eval.value};
+           |  } else {
+           |    $hasNull = true;
+           |  }
+           |}
+         """.stripMargin
+      case ((eval, false), index) =>
+        s"""
+           |if (!$hasNull) {
+           |  ${eval.code}
+           |  $args[$index] = ${eval.value};
+           |}
+         """.stripMargin
+    }
+
+    ev.isNull = JavaCode.isNullGlobal(ctx.addMutableState(CodeGenerator.JAVA_BOOLEAN, ev.isNull))
+    val resultType = CodeGenerator.boxedType(dataType)
+    val codes = ctx.splitExpressionsWithCurrentInputs(
+      expressions = inputs,
+      funcName = "greatest",
+      extraArguments = (s"$resultType[]", args) :: ("boolean", hasNull) :: Nil,
+      returnType = resultType,
+      makeSplitFunction = body => s"""
+                                     |$body
+                                     |return $hasNull;
+         """.stripMargin,
+      foldFunctions = _.map(funcCall => s"$hasNull = $funcCall;").mkString("\n")
+    )
+    ev.copy(code = code"""
+                         |boolean $hasNull = false;
+                         |$resultType[] $args = new $resultType[${evalChildren.length}];
+                         |$codes
+                         |${ev.isNull} = true;
+                         |$resultType ${ev.value} = ${CodeGenerator.defaultValue(resultType, typedNull = false)};
+                         |if (!$hasNull) {
+                         |   ${ev.value} = ($resultType) java.util.Collections.max(java.util.Arrays.asList($args));
+                         |}
+                         |boolean ${ev.isNull} = ${ev.value} == null;
       """.stripMargin)
   }
 }
