@@ -19,19 +19,16 @@ package org.apache.spark.sql.catalyst.expressions.codegen
 
 import java.io.ByteArrayInputStream
 import java.util.{Map => JavaMap}
-
 import scala.collection.JavaConverters._
 import scala.collection.mutable
-import scala.collection.mutable.ArrayBuffer
+import scala.collection.mutable.{ArrayBuffer, ListBuffer}
 import scala.language.existentials
 import scala.util.control.NonFatal
-
 import com.google.common.cache.{CacheBuilder, CacheLoader}
 import com.google.common.util.concurrent.{ExecutionError, UncheckedExecutionException}
 import org.codehaus.commons.compiler.CompileException
 import org.codehaus.janino.{ByteArrayClassLoader, ClassBodyEvaluator, InternalCompilerException, SimpleCompiler}
 import org.codehaus.janino.util.ClassFile
-
 import org.apache.spark.{SparkEnv, TaskContext, TaskKilledException}
 import org.apache.spark.executor.InputMetrics
 import org.apache.spark.internal.Logging
@@ -46,6 +43,8 @@ import org.apache.spark.unsafe.Platform
 import org.apache.spark.unsafe.array.ByteArrayMethods
 import org.apache.spark.unsafe.types._
 import org.apache.spark.util.{ParentClassLoader, Utils}
+
+import scala.annotation.tailrec
 
 /**
  * Java source for evaluating an [[Expression]] given a [[InternalRow]] of input.
@@ -193,13 +192,13 @@ class CodegenContext {
    * states for a certain type, and holds the next available slot of the current compacted array.
    */
   class MutableStateArrays {
-    val arrayNames = mutable.ListBuffer.empty[String]
+    val arrayNames: ListBuffer[String] = mutable.ListBuffer.empty[String]
     createNewArray()
 
     private[this] var currentIndex = 0
 
-    private def createNewArray() = {
-      val newArrayName = freshName("mutableStateArray")
+    private def createNewArray(): Unit = {
+      val newArrayName = freshName("mStArr")
       mutableStateNames += newArrayName
       arrayNames.append(newArrayName)
     }
@@ -631,12 +630,12 @@ class CodegenContext {
     case NullType => "0"
     case array: ArrayType =>
       val elementType = array.elementType
-      val elementA = freshName("elementA")
+      val elementA = freshName("elmA")
       val isNullA = freshName("isNullA")
-      val elementB = freshName("elementB")
+      val elementB = freshName("elmB")
       val isNullB = freshName("isNullB")
-      val compareFunc = freshName("compareArray")
-      val minLength = freshName("minLength")
+      val compareFunc = freshName("cmpArr")
+      val minLength = freshName("minLen")
       val jt = javaType(elementType)
       val funcCode: String =
         s"""
@@ -679,7 +678,7 @@ class CodegenContext {
       s"${addNewFunction(compareFunc, funcCode)}($c1, $c2)"
     case schema: StructType =>
       val comparisons = GenerateOrdering.genComparisons(this, schema)
-      val compareFunc = freshName("compareStruct")
+      val compareFunc = freshName("cmpStruct")
       val funcCode: String =
         s"""
           public int $compareFunc(InternalRow a, InternalRow b) {
@@ -756,11 +755,17 @@ class CodegenContext {
    */
   def nullSafeExec(nullable: Boolean, isNull: String)(execute: String): String = {
     if (nullable) {
-      s"""
-        if (!$isNull) {
-          $execute
-        }
-      """
+      if (isNull == "false"){
+        execute
+      } else if (isNull == "true"){
+        ""
+      } else {
+        s"""
+          if (!$isNull) {
+            $execute
+          }
+        """
+      }
     } else {
       "\n" + execute
     }
@@ -1471,8 +1476,7 @@ object CodeGenerator extends Logging {
       -1
     }
     s"""
-       |ArrayData $arrayName = ArrayData.allocateArrayData(
-       |  $elementSize, $numElements, "$additionalErrorMessage");
+       |ArrayData $arrayName = ArrayData.allocateArrayData($elementSize, $numElements, "$additionalErrorMessage");
      """.stripMargin
   }
 
@@ -1534,6 +1538,9 @@ object CodeGenerator extends Logging {
     if (nullable) {
       // Can't call setNullAt on DecimalType, because we need to keep the offset
       if (!isVectorized && dataType.isInstanceOf[DecimalType]) {
+        if (ev.isNull.toString == "false"){
+          s"""${setColumn(row, dataType, ordinal, ev.value)};"""
+        } else {
         s"""
            |if (!${ev.isNull}) {
            |  ${setColumn(row, dataType, ordinal, ev.value)};
@@ -1541,14 +1548,19 @@ object CodeGenerator extends Logging {
            |  ${setColumn(row, dataType, ordinal, "null")};
            |}
          """.stripMargin
+        }
       } else {
-        s"""
-           |if (!${ev.isNull}) {
-           |  ${setColumn(row, dataType, ordinal, ev.value)};
-           |} else {
-           |  $row.setNullAt($ordinal);
-           |}
-         """.stripMargin
+        if (ev.isNull.toString == "false"){
+          s"""$row.setNullAt($ordinal);"""
+        } else {
+          s"""
+             |if (!${ev.isNull}) {
+             |  ${setColumn(row, dataType, ordinal, ev.value)};
+             |} else {
+             |  $row.setNullAt($ordinal);
+             |}
+           """.stripMargin
+        }
       }
     } else {
       s"""${setColumn(row, dataType, ordinal, ev.value)};"""
@@ -1586,13 +1598,17 @@ object CodeGenerator extends Logging {
       "update"
     }
     if (isNull.isDefined && isPrimitiveType) {
-      s"""
-         |if (${isNull.get}) {
-         |  $array.setNullAt($i);
-         |} else {
-         |  $array.$setFunc($i, $value);
-         |}
-       """.stripMargin
+      if (isNull.get == "false"){
+        s"""$array.$setFunc($i, $value);"""
+      } else {
+        s"""
+           |if (${isNull.get}) {
+           |  $array.setNullAt($i);
+           |} else {
+           |  $array.$setFunc($i, $value);
+           |}
+         """.stripMargin
+      }
     } else {
       s"$array.$setFunc($i, $value);"
     }
@@ -1609,13 +1625,17 @@ object CodeGenerator extends Logging {
       ev: ExprCode,
       nullable: Boolean): String = {
     if (nullable) {
-      s"""
-         |if (!${ev.isNull}) {
-         |  ${setValue(vector, rowId, dataType, ev.value)}
-         |} else {
-         |  $vector.putNull($rowId);
-         |}
-       """.stripMargin
+      if (ev.isNull.toString == "false"){
+        s"""${setValue(vector, rowId, dataType, ev.value)}"""
+      } else {
+        s"""
+           |if (!${ev.isNull}) {
+           |  ${setValue(vector, rowId, dataType, ev.value)}
+           |} else {
+           |  $vector.putNull($rowId);
+           |}
+         """.stripMargin
+      }
     } else {
       s"""${setValue(vector, rowId, dataType, ev.value)};"""
     }
@@ -1668,6 +1688,7 @@ object CodeGenerator extends Logging {
     case _ => "Object"
   }
 
+  @tailrec
   def javaClass(dt: DataType): Class[_] = dt match {
     case BooleanType => java.lang.Boolean.TYPE
     case ByteType => java.lang.Byte.TYPE

@@ -219,7 +219,7 @@ object Block {
   implicit class BlockHelper(val sc: StringContext) extends AnyVal {
     def code(args: Any*): Block = {
       sc.checkLengths(args)
-      if (sc.parts.length == 0) {
+      if (sc.parts.isEmpty) {
         EmptyBlock
       } else {
         args.foreach {

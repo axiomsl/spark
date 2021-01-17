@@ -401,7 +401,7 @@ case class Pmod(left: Expression, right: Expression) extends BinaryArithmetic {
     } else {
       s"${eval2.value} == 0"
     }
-    val remainder = ctx.freshName("remainder")
+    val remainder = ctx.freshName("rmdr")
     val javaType = CodeGenerator.javaType(dataType)
 
     val result = dataType match {
@@ -628,7 +628,7 @@ case class LeastNullIntolerant(children: Seq[Expression]) extends ComplexTypeMer
   override def doGenCode(ctx: CodegenContext, ev: ExprCode): ExprCode = {
     val evalChildren = children.map(_.genCode(ctx))
     val args = ctx.freshName("args")
-    val hasNull = ctx.freshName("hasNull")
+    val hasNull = ctx.freshName("hasN")
 
     val inputs = evalChildren.zip(children.map(_.nullable)).zipWithIndex.map {
       case ((eval, true), index) =>
@@ -830,7 +830,7 @@ case class GreatestNullIntolerant(children: Seq[Expression]) extends NullIntoler
   override def doGenCode(ctx: CodegenContext, ev: ExprCode): ExprCode = {
     val evalChildren = children.map(_.genCode(ctx))
     val args = ctx.freshName("args")
-    val hasNull = ctx.freshName("hasNull")
+    val hasNull = ctx.freshName("hasN")
 
     val inputs = evalChildren.zip(children.map(_.nullable)).zipWithIndex.map {
       case ((eval, true), index) =>
