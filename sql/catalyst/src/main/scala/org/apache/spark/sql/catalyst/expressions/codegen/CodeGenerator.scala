@@ -133,7 +133,7 @@ class CodegenContext {
     val idx = references.length
     references += obj
     val clsName = Option(className).getOrElse(obj.getClass.getName)
-    s"(($clsName) references[$idx] /* $objName */)"
+    s"(($clsName) refs[$idx] /* $objName */)"
   }
 
   /**

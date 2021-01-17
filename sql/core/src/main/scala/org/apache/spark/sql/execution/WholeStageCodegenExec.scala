@@ -554,8 +554,8 @@ case class WholeStageCodegenExec(child: SparkPlan)(val codegenStageId: Int)
     val className = generatedClassName()
 
     val source = s"""
-      public Object generate(Object[] references) {
-        return new $className(references);
+      public Object generate(Object[] refs) {
+        return new $className(refs);
       }
 
       ${ctx.registerComment(
@@ -565,12 +565,12 @@ case class WholeStageCodegenExec(child: SparkPlan)(val codegenStageId: Int)
       ${ctx.registerComment(s"codegenStageId=$codegenStageId", "wsc_codegenStageId", force = true)}
       final class $className extends ${classOf[BufferedRowIterator].getName} {
 
-        private Object[] references;
+        private Object[] refs;
         private scala.collection.Iterator[] inputs;
         ${ctx.declareMutableStates()}
 
-        public $className(Object[] references) {
-          this.references = references;
+        public $className(Object[] refs) {
+          this.refs = refs;
         }
 
         public void init(int index, scala.collection.Iterator[] inputs) {
