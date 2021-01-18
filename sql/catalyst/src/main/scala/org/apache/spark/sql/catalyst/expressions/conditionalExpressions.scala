@@ -204,11 +204,18 @@ case class CaseWhen(
     val cases = branches.map { case (condExpr, valueExpr) =>
       val cond = condExpr.genCode(ctx)
       val res = valueExpr.genCode(ctx)
+
+      val resultStateValue = res.isNull.toString match {
+        case "false" => s"""(byte)$HAS_NONNULL"""
+        case "true" => s"""(byte)$HAS_NULL"""
+        case _ => s"""(byte)(${res.isNull} ? $HAS_NULL : $HAS_NONNULL)"""
+      }
+
       s"""
          |${cond.code}
          |if (!${cond.isNull} && ${cond.value}) {
          |  ${res.code}
-         |  $resultState = (byte)(${res.isNull} ? $HAS_NULL : $HAS_NONNULL);
+         |  $resultState = $resultStateValue;
          |  ${ev.value} = ${res.value};
          |  continue;
          |}
@@ -217,9 +224,16 @@ case class CaseWhen(
 
     val elseCode = elseValue.map { elseExpr =>
       val res = elseExpr.genCode(ctx)
+
+      val resultStateValue = res.isNull.toString match {
+        case "false" => s"""(byte)$HAS_NONNULL"""
+        case "true" => s"""(byte)$HAS_NULL"""
+        case _ => s"""(byte)(${res.isNull} ? $HAS_NULL : $HAS_NONNULL)"""
+      }
+
       s"""
          |${res.code}
-         |$resultState = (byte)(${res.isNull} ? $HAS_NULL : $HAS_NONNULL);
+         |$resultState = $resultStateValue;
          |${ev.value} = ${res.value};
        """.stripMargin
     }

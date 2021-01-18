@@ -1437,6 +1437,7 @@ object CodeGenerator extends Logging {
   /**
    * Returns the specialized code to access a value from `inputRow` at `ordinal`.
    */
+  @tailrec
   def getValue(input: String, dataType: DataType, ordinal: String): String = {
     val jt = javaType(dataType)
     dataType match {
@@ -1509,6 +1510,7 @@ object CodeGenerator extends Logging {
   /**
    * Returns the code to update a column in Row for a given DataType.
    */
+  @tailrec
   def setColumn(row: String, dataType: DataType, ordinal: Int, value: String): String = {
     val jt = javaType(dataType)
     dataType match {
@@ -1540,17 +1542,21 @@ object CodeGenerator extends Logging {
       if (!isVectorized && dataType.isInstanceOf[DecimalType]) {
         if (ev.isNull.toString == "false"){
           s"""${setColumn(row, dataType, ordinal, ev.value)};"""
+        } else if (ev.isNull.toString == "true"){
+          s"""${setColumn(row, dataType, ordinal, "null")};"""
         } else {
-        s"""
-           |if (!${ev.isNull}) {
-           |  ${setColumn(row, dataType, ordinal, ev.value)};
-           |} else {
-           |  ${setColumn(row, dataType, ordinal, "null")};
-           |}
-         """.stripMargin
+          s"""
+             |if (!${ev.isNull}) {
+             |  ${setColumn(row, dataType, ordinal, ev.value)};
+             |} else {
+             |  ${setColumn(row, dataType, ordinal, "null")};
+             |}
+           """.stripMargin
         }
       } else {
         if (ev.isNull.toString == "false"){
+          s"""$row.setNullAt($ordinal);"""
+        } else if (ev.isNull.toString == "true"){
           s"""$row.setNullAt($ordinal);"""
         } else {
           s"""
@@ -1600,6 +1606,8 @@ object CodeGenerator extends Logging {
     if (isNull.isDefined && isPrimitiveType) {
       if (isNull.get == "false"){
         s"""$array.$setFunc($i, $value);"""
+      } else if (isNull.get == "true"){
+        s"""$array.setNullAt($i);"""
       } else {
         s"""
            |if (${isNull.get}) {
@@ -1627,6 +1635,8 @@ object CodeGenerator extends Logging {
     if (nullable) {
       if (ev.isNull.toString == "false"){
         s"""${setValue(vector, rowId, dataType, ev.value)}"""
+      } else if (ev.isNull.toString == "true") {
+        s"""$vector.putNull($rowId);"""
       } else {
         s"""
            |if (!${ev.isNull}) {
