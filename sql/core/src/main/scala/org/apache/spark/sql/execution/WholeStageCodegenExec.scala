@@ -50,7 +50,13 @@ trait CodegenSupport extends SparkPlan {
     case _: SortMergeJoinExec => "smj"
     case _: RDDScanExec => "rdd"
     case _: DataSourceScanExec => "scan"
-    case _ => nodeName.toLowerCase(Locale.ROOT)
+    case _ =>
+      nodeName.toLowerCase(Locale.ROOT) match {
+        case "project" => "prj"
+        case "inputadapter" => "inadp"
+        case "filter" => "flt"
+        case t => t
+      }
   }
 
   /**
