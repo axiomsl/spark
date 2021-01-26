@@ -92,9 +92,9 @@ trait CodegenSupport extends SparkPlan {
     this.parent = parent
     ctx.freshNamePrefix = variablePrefix
     s"""
-       |${ctx.registerComment(s"PRODUCE: ${this.simpleString}")}
-       |${doProduce(ctx)}
-     """.stripMargin
+       ${ctx.registerComment(s"PRODUCE: ${this.simpleString}")}
+       ${doProduce(ctx)}
+     """
   }
 
   /**
@@ -131,9 +131,9 @@ trait CodegenSupport extends SparkPlan {
         ctx.currentVars = colVars
         val ev = GenerateUnsafeProjection.createCode(ctx, colExprs)
         val code = code"""
-          |$evaluateInputs
-          |${ev.code}
-         """.stripMargin
+$evaluateInputs
+${ev.code}
+"""
         ExprCode(code, FalseLiteral, ev.value)
       } else {
         // There are no columns
@@ -195,10 +195,10 @@ trait CodegenSupport extends SparkPlan {
       parent.doConsume(ctx, inputVars, rowVar)
     }
     s"""
-       |${ctx.registerComment(s"CONSUME: ${parent.simpleString}")}
-       |$evaluated
-       |$consumeFunc
-     """.stripMargin
+${ctx.registerComment(s"CONSUME: ${parent.simpleString}")}
+$evaluated
+$consumeFunc
+"""
   }
 
   /**
@@ -218,14 +218,14 @@ trait CodegenSupport extends SparkPlan {
 
     val doConsumeFuncName = ctx.addNewFunction(doConsume,
       s"""
-         | private void $doConsume(${params.mkString(", ")}) throws java.io.IOException {
-         |   ${parent.doConsume(ctx, inputVarsInFunc, rowVar)}
-         | }
-       """.stripMargin)
+  private void $doConsume(${params.mkString(", ")}) throws java.io.IOException {
+    ${parent.doConsume(ctx, inputVarsInFunc, rowVar)}
+  }
+""")
 
     s"""
-       | $doConsumeFuncName(${args.mkString(", ")});
-     """.stripMargin
+ $doConsumeFuncName(${args.mkString(", ")});
+ """
   }
 
   /**
@@ -404,12 +404,12 @@ case class InputAdapter(child: SparkPlan) extends UnaryExecNode with CodegenSupp
       forceInline = true)
     val row = ctx.freshName("row")
     s"""
-       | while ($input.hasNext() && !stopEarly()) {
-       |   InternalRow $row = (InternalRow) $input.next();
-       |   ${consume(ctx, null, row).trim}
-       |   if (shouldStop()) return;
-       | }
-     """.stripMargin
+ while ($input.hasNext() && !stopEarly()) {
+   InternalRow $row = (InternalRow) $input.next();
+   ${consume(ctx, null, row).trim}
+   if (shouldStop()) return;
+ }
+ """
   }
 
   override def generateTreeString(
@@ -683,9 +683,9 @@ case class WholeStageCodegenExec(child: SparkPlan)(val codegenStageId: Int)
       ""
     }
     s"""
-      |${row.code}
-      |append(${row.value}$doCopy);
-     """.stripMargin.trim
+${row.code}
+append(${row.value}$doCopy);
+""".trim
   }
 
   override def generateTreeString(

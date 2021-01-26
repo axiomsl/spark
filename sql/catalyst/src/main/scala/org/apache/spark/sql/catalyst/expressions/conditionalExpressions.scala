@@ -71,19 +71,19 @@ case class If(predicate: Expression, trueValue: Expression, falseValue: Expressi
 
     val code =
       code"""
-         |${condEval.code}
-         |boolean ${ev.isNull} = false;
-         |${CodeGenerator.javaType(dataType)} ${ev.value} = ${CodeGenerator.defaultValue(dataType)};
-         |if (!${condEval.isNull} && ${condEval.value}) {
-         |  ${trueEval.code}
-         |  ${ev.isNull} = ${trueEval.isNull};
-         |  ${ev.value} = ${trueEval.value};
-         |} else {
-         |  ${falseEval.code}
-         |  ${ev.isNull} = ${falseEval.isNull};
-         |  ${ev.value} = ${falseEval.value};
-         |}
-       """.stripMargin
+${condEval.code}
+boolean ${ev.isNull} = false;
+${CodeGenerator.javaType(dataType)} ${ev.value} = ${CodeGenerator.defaultValue(dataType)};
+if (!${condEval.isNull} && ${condEval.value}) {
+  ${trueEval.code}
+  ${ev.isNull} = ${trueEval.isNull};
+  ${ev.value} = ${trueEval.value};
+} else {
+  ${falseEval.code}
+  ${ev.isNull} = ${falseEval.isNull};
+  ${ev.value} = ${falseEval.value};
+}
+"""
     ev.copy(code = code)
   }
 
@@ -212,14 +212,14 @@ case class CaseWhen(
       }
 
       s"""
-         |${cond.code}
-         |if (!${cond.isNull} && ${cond.value}) {
-         |  ${res.code}
-         |  $resultState = $resultStateValue;
-         |  ${ev.value} = ${res.value};
-         |  continue;
-         |}
-       """.stripMargin
+${cond.code}
+if (!${cond.isNull} && ${cond.value}) {
+  ${res.code}
+  $resultState = $resultStateValue;
+  ${ev.value} = ${res.value};
+  continue;
+}
+"""
     }
 
     val elseCode = elseValue.map { elseExpr =>
@@ -232,10 +232,10 @@ case class CaseWhen(
       }
 
       s"""
-         |${res.code}
-         |$resultState = $resultStateValue;
-         |${ev.value} = ${res.value};
-       """.stripMargin
+${res.code}
+$resultState = $resultStateValue;
+${ev.value} = ${res.value};
+"""
     }
 
     val allConditions = cases ++ elseCode
@@ -264,30 +264,30 @@ case class CaseWhen(
       returnType = CodeGenerator.JAVA_BYTE,
       makeSplitFunction = func =>
         s"""
-           |${CodeGenerator.JAVA_BYTE} $resultState = $NOT_MATCHED;
-           |do {
-           |  $func
-           |} while (false);
-           |return $resultState;
-         """.stripMargin,
+${CodeGenerator.JAVA_BYTE} $resultState = $NOT_MATCHED;
+do {
+  $func
+} while (false);
+return $resultState;
+""",
       foldFunctions = _.map { funcCall =>
         s"""
-           |$resultState = $funcCall;
-           |if ($resultState != $NOT_MATCHED) {
-           |  continue;
-           |}
-         """.stripMargin
+$resultState = $funcCall;
+if ($resultState != $NOT_MATCHED) {
+  continue;
+}
+"""
       }.mkString)
 
     ev.copy(code =
       code"""
-         |${CodeGenerator.JAVA_BYTE} $resultState = $NOT_MATCHED;
-         |do {
-         |  $codes
-         |} while (false);
-         |// TRUE if any condition is met and the result is null, or no any condition is met.
-         |final boolean ${ev.isNull} = ($resultState != $HAS_NONNULL);
-       """.stripMargin)
+${CodeGenerator.JAVA_BYTE} $resultState = $NOT_MATCHED;
+do {
+  $codes
+} while (false);
+// TRUE if any condition is met and the result is null, or no any condition is met.
+final boolean ${ev.isNull} = ($resultState != $HAS_NONNULL);
+""")
   }
 }
 

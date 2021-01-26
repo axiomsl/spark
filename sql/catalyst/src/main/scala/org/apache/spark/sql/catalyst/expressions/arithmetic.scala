@@ -586,12 +586,33 @@ case class Least(children: Seq[Expression]) extends ComplexTypeMergingExpression
        null
   """
 )
-case class LeastNullIntolerant(children: Seq[Expression]) extends ComplexTypeMergingExpression {
+case class LeastNullIntolerant(children: Seq[Expression]) extends NullIntolerant {
 
-  override def nullable: Boolean = children.forall(_.nullable)
+  override def nullable: Boolean = children.exists(_.nullable)
   override def foldable: Boolean = children.forall(_.foldable)
 
   private lazy val ordering = TypeUtils.getInterpretedOrdering(dataType)
+
+  /**
+   * A collection of data types used for resolution the output type of the expression. By default,
+   * data types of all child expressions. The collection must not be empty.
+   */
+  @transient
+  lazy val inputTypesForMerging: Seq[DataType] = children.map(_.dataType)
+
+  def dataTypeCheck(): Unit = {
+    require(inputTypesForMerging.nonEmpty, "The collection of input data types must not be empty.")
+    require(
+      TypeCoercion.haveSameType(inputTypesForMerging),
+      "All input types must be the same except nullable, containsNull, valueContainsNull flags." +
+        s" The input types found are\n\t${inputTypesForMerging.mkString("\n\t")}"
+    )
+  }
+
+  override def dataType: DataType = {
+    dataTypeCheck()
+    inputTypesForMerging.reduceLeft(TypeCoercion.findCommonTypeDifferentOnlyInNullFlags(_, _).get)
+  }
 
   override def checkInputDataTypes(): TypeCheckResult = {
     if (children.length <= 1) {
@@ -655,7 +676,7 @@ case class LeastNullIntolerant(children: Seq[Expression]) extends ComplexTypeMer
     val resultType = CodeGenerator.boxedType(dataType)
     val codes = ctx.splitExpressionsWithCurrentInputs(
       expressions = inputs,
-      funcName = "greatest",
+      funcName = "least",
       extraArguments = (s"$resultType[]", args) :: ("boolean", hasNull) :: Nil,
       returnType = resultType,
       makeSplitFunction = body => s"""
