@@ -64,20 +64,20 @@ abstract class HashMapGenerator(
 
   def generate(): String = {
     s"""
-       |public class $generatedClassName {
-       |${initializeAggregateHashMap()}
-       |
-       |${generateFindOrInsert()}
-       |
-       |${generateEquals()}
-       |
-       |${generateHashFunction()}
-       |
-       |${generateRowIterator()}
-       |
-       |${generateClose()}
-       |}
-     """.stripMargin
+public class $generatedClassName {
+${initializeAggregateHashMap()}
+
+${generateFindOrInsert()}
+
+${generateEquals()}
+
+${generateHashFunction()}
+
+${generateRowIterator()}
+
+${generateClose()}
+}
+"""
   }
 
   protected def initializeAggregateHashMap(): String
@@ -130,10 +130,10 @@ abstract class HashMapGenerator(
 
   protected final def generateClose(): String = {
     s"""
-       |public void close() {
-       |  batch.close();
-       |}
-     """.stripMargin
+public void close() {
+  batch.close();
+}
+"""
   }
 
   protected final def genComputeHash(
