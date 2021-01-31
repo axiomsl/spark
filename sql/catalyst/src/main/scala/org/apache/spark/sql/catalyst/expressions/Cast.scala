@@ -722,9 +722,9 @@ case class Cast(child: Expression, dataType: DataType, timeZoneId: Option[String
       buffer: ExprValue,
       ctx: CodegenContext): Block = {
     val elementToStringCode = castToStringCode(et, ctx)
-    val funcName = ctx.freshName("elementToString")
-    val element = JavaCode.variable("element", et)
-    val elementStr = JavaCode.variable("elementStr", StringType)
+    val funcName = ctx.freshName("elm2Str")
+    val element = JavaCode.variable("elm", et)
+    val elementStr = JavaCode.variable("elmStr", StringType)
     val elementToStringFunc = inline"${ctx.addNewFunction(funcName,
       s"""
 private UTF8String $funcName(${CodeGenerator.javaType(et)} $element) {
