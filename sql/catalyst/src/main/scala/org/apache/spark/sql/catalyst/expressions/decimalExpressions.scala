@@ -94,13 +94,13 @@ case class CheckOverflow(child: Expression, dataType: DecimalType) extends Unary
     nullSafeCodeGen(ctx, ev, eval => {
       val tmp = ctx.freshName("tmp")
       s"""
-         | Decimal $tmp = $eval.clone();
-         | if ($tmp.changePrecision(${dataType.precision}, ${dataType.scale})) {
-         |   ${ev.value} = $tmp;
-         | } else {
-         |   ${ev.isNull} = true;
-         | }
-       """.stripMargin
+ Decimal $tmp = $eval.clone();
+ if ($tmp.changePrecision(${dataType.precision}, ${dataType.scale})) {
+   ${ev.value} = $tmp;
+ } else {
+   ${ev.isNull} = true;
+ }
+"""
     })
   }
 
