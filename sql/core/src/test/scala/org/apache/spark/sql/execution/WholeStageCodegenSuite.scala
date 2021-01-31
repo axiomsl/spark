@@ -245,13 +245,13 @@ class WholeStageCodegenSuite extends QueryTest with SharedSQLContext {
     Seq(true, false).foreach { config =>
       withSQLConf(SQLConf.WHOLESTAGE_SPLIT_CONSUME_FUNC_BY_OPERATOR.key -> s"$config") {
         val plan = df.queryExecution.executedPlan
-        val wholeStageCodeGenExec = plan.find(p => p match {
-          case wp: WholeStageCodegenExec => true
+        val wholeStageCodeGenExec = plan.find {
+          case _: WholeStageCodegenExec => true
           case _ => false
-        })
+        }
         assert(wholeStageCodeGenExec.isDefined)
         val code = wholeStageCodeGenExec.get.asInstanceOf[WholeStageCodegenExec].doCodeGen()._2
-        assert(code.body.contains("project_doConsume") == config)
+        assert(code.body.contains("prj_doConsume") == config)
       }
     }
   }
@@ -277,7 +277,7 @@ class WholeStageCodegenSuite extends QueryTest with SharedSQLContext {
           }
           assert(wholeStageCodeGenExec.isDefined)
           val code = wholeStageCodeGenExec.get.asInstanceOf[WholeStageCodegenExec].doCodeGen()._2
-          assert(code.body.contains("project_doConsume") == hasSplit)
+          assert(code.body.contains("prj_doConsume") == hasSplit)
         }
       }
     }
