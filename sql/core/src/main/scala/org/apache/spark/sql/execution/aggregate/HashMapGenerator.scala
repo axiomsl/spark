@@ -52,9 +52,9 @@ abstract class HashMapGenerator(
       val ev = e.genCode(ctx)
       val initVars =
         code"""
-           | $isNull = ${ev.isNull};
-           | $value = ${ev.value};
-       """.stripMargin
+ $isNull = ${ev.isNull};
+ $value = ${ev.value};
+"""
       ExprCode(
         ev.code + initVars,
         JavaCode.isNullGlobal(isNull),

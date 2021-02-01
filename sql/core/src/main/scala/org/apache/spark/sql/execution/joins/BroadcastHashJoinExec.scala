@@ -182,7 +182,7 @@ if ($matched != null) {
   private def getJoinCondition(
       ctx: CodegenContext,
       input: Seq[ExprCode]): (String, String, Seq[ExprCode]) = {
-    val matched = ctx.freshName("matched")
+    val matched = ctx.freshName("mtcd")
     val buildVars = genBuildSideVars(ctx, matched)
     val checkCondition = if (condition.isDefined) {
       val expr = condition.get
@@ -232,7 +232,7 @@ if ($matched != null) {
 """
 
     } else {
-      val matches = ctx.freshName("matches")
+      val matches = ctx.freshName("mtc")
       val iteratorCls = classOf[Iterator[UnsafeRow]].getName
       s"""
 // generate join key for stream side
@@ -258,7 +258,7 @@ if ($matches != null) {
   private def codegenOuter(ctx: CodegenContext, input: Seq[ExprCode]): String = {
     val (broadcastRelation, relationTerm) = prepareBroadcast(ctx)
     val (keyEv, anyNull) = genStreamSideJoinKey(ctx, input)
-    val matched = ctx.freshName("matched")
+    val matched = ctx.freshName("mtcd")
     val buildVars = genBuildSideVars(ctx, matched)
     val numOutput = metricTerm(ctx, "numOutputRows")
 
@@ -304,7 +304,7 @@ ${consume(ctx, resultVars)}
 """
 
     } else {
-      val matches = ctx.freshName("matches")
+      val matches = ctx.freshName("mtc")
       val iteratorCls = classOf[Iterator[UnsafeRow]].getName
       val found = ctx.freshName("found")
       s"""
@@ -350,7 +350,7 @@ if ($matched != null) {
 }
 """
     } else {
-      val matches = ctx.freshName("matches")
+      val matches = ctx.freshName("mtc")
       val iteratorCls = classOf[Iterator[UnsafeRow]].getName
       val found = ctx.freshName("found")
       s"""
@@ -408,7 +408,7 @@ if (!$found) {
 }
 """
     } else {
-      val matches = ctx.freshName("matches")
+      val matches = ctx.freshName("mtc")
       val iteratorCls = classOf[Iterator[UnsafeRow]].getName
       val found = ctx.freshName("found")
       s"""
@@ -446,7 +446,7 @@ if (!$found) {
     val numOutput = metricTerm(ctx, "numOutputRows")
     val existsVar = ctx.freshName("exists")
 
-    val matched = ctx.freshName("matched")
+    val matched = ctx.freshName("mtcd")
     val buildVars = genBuildSideVars(ctx, matched)
     val checkCondition = if (condition.isDefined) {
       val expr = condition.get
@@ -481,7 +481,7 @@ $numOutput.add(1);
 ${consume(ctx, resultVar)}
 """
     } else {
-      val matches = ctx.freshName("matches")
+      val matches = ctx.freshName("mtc")
       val iteratorCls = classOf[Iterator[UnsafeRow]].getName
       s"""
 // generate join key for stream side
