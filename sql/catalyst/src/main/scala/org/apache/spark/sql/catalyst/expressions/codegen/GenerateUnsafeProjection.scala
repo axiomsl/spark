@@ -67,17 +67,17 @@ object GenerateUnsafeProjection extends CodeGenerator[Seq[Expression], UnsafePro
       v => s"$v = new $rowWriterClass($rowWriter, ${fieldEvals.length});")
     val previousCursor = ctx.freshName("previousCursor")
     s"""
-       |final InternalRow $tmpInput = $input;
-       |if ($tmpInput instanceof UnsafeRow) {
-       |  $rowWriter.write($index, (UnsafeRow) $tmpInput);
-       |} else {
-       |  // Remember the current cursor so that we can calculate how many bytes are
-       |  // written later.
-       |  final int $previousCursor = $rowWriter.cursor();
-       |  ${writeExpressionsToBuffer(ctx, tmpInput, fieldEvals, schemas, structRowWriter)}
-       |  $rowWriter.setOffsetAndSizeFromPreviousCursor($index, $previousCursor);
-       |}
-     """.stripMargin
+final InternalRow $tmpInput = $input;
+if ($tmpInput instanceof UnsafeRow) {
+  $rowWriter.write($index, (UnsafeRow) $tmpInput);
+} else {
+  // Remember the current cursor so that we can calculate how many bytes are
+  // written later.
+  final int $previousCursor = $rowWriter.cursor();
+  ${writeExpressionsToBuffer(ctx, tmpInput, fieldEvals, schemas, structRowWriter)}
+  $rowWriter.setOffsetAndSizeFromPreviousCursor($index, $previousCursor);
+}
+     """
   }
 
   private def writeExpressionsToBuffer(
@@ -116,18 +116,18 @@ object GenerateUnsafeProjection extends CodeGenerator[Seq[Expression], UnsafePro
         val writeField = writeElement(ctx, input.value, index.toString, dt, rowWriter)
         if (!nullable) {
           s"""
-             |${input.code}
-             |${writeField.trim}
-           """.stripMargin
+${input.code}
+${writeField.trim}
+           """
         } else {
           s"""
-             |${input.code}
-             |if (${input.isNull}) {
-             |  ${setNull.trim}
-             |} else {
-             |  ${writeField.trim}
-             |}
-           """.stripMargin
+${input.code}
+if (${input.isNull}) {
+  ${setNull.trim}
+} else {
+  ${writeField.trim}
+}
+           """
         }
     }
 
@@ -142,9 +142,9 @@ object GenerateUnsafeProjection extends CodeGenerator[Seq[Expression], UnsafePro
         arguments = Seq("InternalRow" -> row))
     }
     s"""
-       |$resetWriter
-       |$writeFieldsCode
-     """.stripMargin
+$resetWriter
+$writeFieldsCode
+     """
   }
 
   private def writeArrayToBuffer(
@@ -176,29 +176,29 @@ object GenerateUnsafeProjection extends CodeGenerator[Seq[Expression], UnsafePro
 
     val elementAssignment = if (containsNull) {
       s"""
-         |if ($tmpInput.isNullAt($index)) {
-         |  $arrayWriter.setNull${elementOrOffsetSize}Bytes($index);
-         |} else {
-         |  ${writeElement(ctx, element, index, et, arrayWriter)}
-         |}
-       """.stripMargin
+if ($tmpInput.isNullAt($index)) {
+  $arrayWriter.setNull${elementOrOffsetSize}Bytes($index);
+} else {
+  ${writeElement(ctx, element, index, et, arrayWriter)}
+}
+       """
     } else {
       writeElement(ctx, element, index, et, arrayWriter)
     }
 
     s"""
-       |final ArrayData $tmpInput = $input;
-       |if ($tmpInput instanceof UnsafeArrayData) {
-       |  $rowWriter.write((UnsafeArrayData) $tmpInput);
-       |} else {
-       |  final int $numElements = $tmpInput.numElements();
-       |  $arrayWriter.initialize($numElements);
-       |
-       |  for (int $index = 0; $index < $numElements; $index++) {
-       |    $elementAssignment
-       |  }
-       |}
-     """.stripMargin
+final ArrayData $tmpInput = $input;
+if ($tmpInput instanceof UnsafeArrayData) {
+  $rowWriter.write((UnsafeArrayData) $tmpInput);
+} else {
+  final int $numElements = $tmpInput.numElements();
+  $arrayWriter.initialize($numElements);
+
+  for (int $index = 0; $index < $numElements; $index++) {
+    $elementAssignment
+  }
+}
+     """
   }
 
   private def writeMapToBuffer(

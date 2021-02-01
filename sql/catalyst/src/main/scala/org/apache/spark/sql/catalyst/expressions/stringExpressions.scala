@@ -159,10 +159,10 @@ case class ConcatWs(children: Seq[Expression])
         returnType = "int",
         makeSplitFunction = body =>
           s"""
-             |int $varargNum = 0;
-             |$body
-             |return $varargNum;
-           """.stripMargin,
+int $varargNum = 0;
+$body
+return $varargNum;
+           """,
         foldFunctions = _.map(funcCall => s"$varargNum += $funcCall;").mkString("\n"))
 
       val varargBuilds = ctx.splitExpressionsWithCurrentInputs(
@@ -172,9 +172,9 @@ case class ConcatWs(children: Seq[Expression])
         returnType = "int",
         makeSplitFunction = body =>
           s"""
-             |$body
-             |return $idxVararg;
-           """.stripMargin,
+$body
+return $idxVararg;
+           """,
         foldFunctions = _.map(funcCall => s"$idxVararg = $funcCall;").mkString("\n"))
 
       ev.copy(
@@ -260,13 +260,13 @@ case class Elt(children: Seq[Expression]) extends Expression {
 
     val assignInputValue = inputs.zipWithIndex.map { case (eval, index) =>
       s"""
-         |if ($indexVal == ${index + 1}) {
-         |  ${eval.code}
-         |  $inputVal = ${eval.isNull} ? null : ${eval.value};
-         |  $indexMatched = true;
-         |  continue;
-         |}
-      """.stripMargin
+if ($indexVal == ${index + 1}) {
+  ${eval.code}
+  $inputVal = ${eval.isNull} ? null : ${eval.value};
+  $indexMatched = true;
+  continue;
+}
+      """
     }
 
     val codes = ctx.splitExpressionsWithCurrentInputs(
@@ -276,33 +276,33 @@ case class Elt(children: Seq[Expression]) extends Expression {
       returnType = CodeGenerator.JAVA_BOOLEAN,
       makeSplitFunction = body =>
         s"""
-           |${CodeGenerator.JAVA_BOOLEAN} $indexMatched = false;
-           |do {
-           |  $body
-           |} while (false);
-           |return $indexMatched;
-         """.stripMargin,
+${CodeGenerator.JAVA_BOOLEAN} $indexMatched = false;
+do {
+  $body
+} while (false);
+return $indexMatched;
+         """,
       foldFunctions = _.map { funcCall =>
         s"""
-           |$indexMatched = $funcCall;
-           |if ($indexMatched) {
-           |  continue;
-           |}
-         """.stripMargin
+$indexMatched = $funcCall;
+if ($indexMatched) {
+  continue;
+}
+         """
       }.mkString)
 
     ev.copy(
       code"""
-         |${index.code}
-         |final int $indexVal = ${index.value};
-         |${CodeGenerator.JAVA_BOOLEAN} $indexMatched = false;
-         |$inputVal = null;
-         |do {
-         |  $codes
-         |} while (false);
-         |final ${CodeGenerator.javaType(dataType)} ${ev.value} = $inputVal;
-         |final boolean ${ev.isNull} = ${ev.value} == null;
-       """.stripMargin)
+${index.code}
+final int $indexVal = ${index.value};
+${CodeGenerator.JAVA_BOOLEAN} $indexMatched = false;
+$inputVal = null;
+do {
+  $codes
+} while (false);
+final ${CodeGenerator.javaType(dataType)} ${ev.value} = $inputVal;
+final boolean ${ev.isNull} = ${ev.value} == null;
+       """)
   }
 }
 

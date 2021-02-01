@@ -378,7 +378,7 @@ abstract class TreeNode[BaseType <: TreeNode[BaseType]] extends Product {
    */
   def makeCopy(newArgs: Array[AnyRef]): BaseType = attachTree(this, "makeCopy") {
     // Skip no-arg constructors that are just there for kryo.
-    val ctors = getClass.getConstructors.filter(_.getParameterTypes.size != 0)
+    val ctors = getClass.getConstructors.filter(_.getParameterTypes.length != 0)
     if (ctors.isEmpty) {
       sys.error(s"No valid constructor for $nodeName")
     }
@@ -510,8 +510,8 @@ abstract class TreeNode[BaseType <: TreeNode[BaseType]] extends Product {
     } else {
       number.i -= 1
       // Note that this traversal order must be the same as numberedTreeString.
-      innerChildren.map(_.getNodeNumbered(number)).find(_ != None).getOrElse {
-        children.map(_.getNodeNumbered(number)).find(_ != None).flatten
+      innerChildren.map(_.getNodeNumbered(number)).find(_.isDefined).getOrElse {
+        children.map(_.getNodeNumbered(number)).find(_.isDefined).flatten
       }
     }
   }
@@ -652,10 +652,10 @@ abstract class TreeNode[BaseType <: TreeNode[BaseType]] extends Product {
     case t: Seq[_] if t.forall(_.isInstanceOf[TreeNode[_]]) ||
       t.forall(_.isInstanceOf[Partitioning]) || t.forall(_.isInstanceOf[DataType]) =>
       JArray(t.map(parseToJson).toList)
-    case t: Seq[_] if t.length > 0 && t.head.isInstanceOf[String] =>
+    case t: Seq[_] if t.nonEmpty && t.head.isInstanceOf[String] =>
       JString(Utils.truncatedString(t, "[", ", ", "]"))
-    case t: Seq[_] => JNull
-    case m: Map[_, _] => JNull
+    case _: Seq[_] => JNull
+    case _: Map[_, _] => JNull
     // if it's a scala object, we can simply keep the full class path.
     // TODO: currently if the class name ends with "$", we think it's a scala object, there is
     // probably a better way to check it.
@@ -675,17 +675,17 @@ abstract class TreeNode[BaseType <: TreeNode[BaseType]] extends Product {
   }
 
   private def shouldConvertToJson(product: Product): Boolean = product match {
-    case exprId: ExprId => true
-    case field: StructField => true
-    case id: IdentifierWithDatabase => true
-    case join: JoinType => true
-    case spec: BucketSpec => true
-    case catalog: CatalogTable => true
-    case partition: Partitioning => true
-    case resource: FunctionResource => true
-    case broadcast: BroadcastMode => true
-    case table: CatalogTableType => true
-    case storage: CatalogStorageFormat => true
+    case _: ExprId => true
+    case _: StructField => true
+    case _: IdentifierWithDatabase => true
+    case _: JoinType => true
+    case _: BucketSpec => true
+    case _: CatalogTable => true
+    case _: Partitioning => true
+    case _: FunctionResource => true
+    case _: BroadcastMode => true
+    case _: CatalogTableType => true
+    case _: CatalogStorageFormat => true
     case _ => false
   }
 }

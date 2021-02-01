@@ -154,9 +154,9 @@ object GenerateOrdering extends CodeGenerator[Seq[SortOrder], Ordering[InternalR
     // make sure INPUT_ROW is declared even if splitExpressions
     // returns an inlined block
     s"""
-       |InternalRow $inputRow = null;
-       |$code
-     """.stripMargin
+InternalRow $inputRow = null;
+$code
+     """
   }
 
   protected def create(ordering: Seq[SortOrder]): BaseOrdering = {

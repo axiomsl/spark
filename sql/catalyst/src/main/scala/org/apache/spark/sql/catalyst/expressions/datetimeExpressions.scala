@@ -527,14 +527,14 @@ case class WeekOfYear(child: Expression) extends UnaryExpression with ImplicitCa
       val dtu = DateTimeUtils.getClass.getName.stripSuffix("$")
       ctx.addImmutableStateIfNotExists(cal, c, v =>
         s"""
-           |$v = $cal.getInstance($dtu.getTimeZone("UTC"));
-           |$v.setFirstDayOfWeek($cal.MONDAY);
-           |$v.setMinimalDaysInFirstWeek(4);
-         """.stripMargin)
+$v = $cal.getInstance($dtu.getTimeZone("UTC"));
+$v.setFirstDayOfWeek($cal.MONDAY);
+$v.setMinimalDaysInFirstWeek(4);
+         """)
       s"""
-         |$c.setTimeInMillis($time * 1000L * 3600L * 24L);
-         |${ev.value} = $c.get($cal.WEEK_OF_YEAR);
-       """.stripMargin
+ $c.setTimeInMillis($time * 1000L * 3600L * 24L);
+ ${ev.value} = $c.get($cal.WEEK_OF_YEAR);
+       """
     })
   }
 }
@@ -885,8 +885,7 @@ case class FromUnixTime(sec: Expression, format: Expression, timeZoneId: Option[
           ${CodeGenerator.javaType(dataType)} ${ev.value} = ${CodeGenerator.defaultValue(dataType)};
           if (!${ev.isNull}) {
             try {
-              ${ev.value} = UTF8String.fromString($formatterName.format(
-                new java.util.Date(${t.value} * 1000L)));
+              ${ev.value} = UTF8String.fromString($formatterName.format(new java.util.Date(${t.value} * 1000L)));
             } catch (java.lang.IllegalArgumentException e) {
               ${ev.isNull} = true;
             }
@@ -984,23 +983,23 @@ case class NextDay(startDate: Expression, dayOfWeek: Expression)
         val input = dayOfWeek.eval().asInstanceOf[UTF8String]
         if ((input eq null) || DateTimeUtils.getDayOfWeekFromString(input) == -1) {
           s"""
-             |${ev.isNull} = true;
-           """.stripMargin
+${ev.isNull} = true;
+           """
         } else {
           val dayOfWeekValue = DateTimeUtils.getDayOfWeekFromString(input)
           s"""
-             |${ev.value} = $dateTimeUtilClass.getNextDateForDayOfWeek($sd, $dayOfWeekValue);
-           """.stripMargin
+${ev.value} = $dateTimeUtilClass.getNextDateForDayOfWeek($sd, $dayOfWeekValue);
+           """
         }
       } else {
         s"""
-           |int $dayOfWeekTerm = $dateTimeUtilClass.getDayOfWeekFromString($dowS);
-           |if ($dayOfWeekTerm == -1) {
-           |  ${ev.isNull} = true;
-           |} else {
-           |  ${ev.value} = $dateTimeUtilClass.getNextDateForDayOfWeek($sd, $dayOfWeekTerm);
-           |}
-         """.stripMargin
+int $dayOfWeekTerm = $dateTimeUtilClass.getDayOfWeekFromString($dowS);
+if ($dayOfWeekTerm == -1) {
+  ${ev.isNull} = true;
+} else {
+  ${ev.value} = $dateTimeUtilClass.getNextDateForDayOfWeek($sd, $dayOfWeekTerm);
+}
+         """
       }
     })
   }
@@ -1085,9 +1084,9 @@ case class FromUTCTimestamp(left: Expression, right: Expression)
       val tz = right.eval().asInstanceOf[UTF8String]
       if (tz == null) {
         ev.copy(code = code"""
-           |boolean ${ev.isNull} = true;
-           |long ${ev.value} = 0;
-         """.stripMargin)
+boolean ${ev.isNull} = true;
+long ${ev.value} = 0;
+         """)
       } else {
         val tzClass = classOf[TimeZone].getName
         val dtu = DateTimeUtils.getClass.getName.stripSuffix("$")
@@ -1099,13 +1098,13 @@ case class FromUTCTimestamp(left: Expression, right: Expression)
           v => s"""$v = $dtu.getTimeZone("UTC");""")
         val eval = left.genCode(ctx)
         ev.copy(code = code"""
-           |${eval.code}
-           |boolean ${ev.isNull} = ${eval.isNull};
-           |long ${ev.value} = 0;
-           |if (!${ev.isNull}) {
-           |  ${ev.value} = $dtu.convertTz(${eval.value}, $utcTerm, $tzTerm);
-           |}
-         """.stripMargin)
+ ${eval.code}
+ boolean ${ev.isNull} = ${eval.isNull};
+ long ${ev.value} = 0;
+ if (!${ev.isNull}) {
+   ${ev.value} = $dtu.convertTz(${eval.value}, $utcTerm, $tzTerm);
+ }
+         """)
       }
     } else {
       defineCodeGen(ctx, ev, (timestamp, format) => {
@@ -1291,9 +1290,9 @@ case class ToUTCTimestamp(left: Expression, right: Expression)
       val tz = right.eval().asInstanceOf[UTF8String]
       if (tz == null) {
         ev.copy(code = code"""
-           |boolean ${ev.isNull} = true;
-           |long ${ev.value} = 0;
-         """.stripMargin)
+boolean ${ev.isNull} = true;
+long ${ev.value} = 0;
+         """)
       } else {
         val tzClass = classOf[TimeZone].getName
         val dtu = DateTimeUtils.getClass.getName.stripSuffix("$")
@@ -1305,13 +1304,13 @@ case class ToUTCTimestamp(left: Expression, right: Expression)
           v => s"""$v = $dtu.getTimeZone("UTC");""")
         val eval = left.genCode(ctx)
         ev.copy(code = code"""
-           |${eval.code}
-           |boolean ${ev.isNull} = ${eval.isNull};
-           |long ${ev.value} = 0;
-           |if (!${ev.isNull}) {
-           |  ${ev.value} = $dtu.convertTz(${eval.value}, $tzTerm, $utcTerm);
-           |}
-         """.stripMargin)
+${eval.code}
+boolean ${ev.isNull} = ${eval.isNull};
+long ${ev.value} = 0;
+if (!${ev.isNull}) {
+  ${ev.value} = $dtu.convertTz(${eval.value}, $tzTerm, $utcTerm);
+}
+         """)
       }
     } else {
       defineCodeGen(ctx, ev, (timestamp, format) => {

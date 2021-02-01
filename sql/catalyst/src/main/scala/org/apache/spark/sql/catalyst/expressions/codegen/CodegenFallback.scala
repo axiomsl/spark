@@ -38,9 +38,9 @@ trait CodegenFallback extends Expression {
         childIndex += 1
         ctx.addPartitionInitializationStatement(
           s"""
-             |((Nondeterministic) refs[$childIndex])
-             |  .initialize(partitionIndex);
-          """.stripMargin)
+((Nondeterministic) refs[$childIndex])
+  .initialize(partitionIndex);
+          """)
       case _ =>
     }
     val objectTerm = ctx.freshName("obj")
