@@ -696,7 +696,7 @@ $resultType ${ev.value} = ${CodeGenerator.defaultValue(resultType, typedNull = f
 if (!$hasNull) {
    ${ev.value} = ($resultType) java.util.Collections.min(java.util.Arrays.asList($args));
 }
-${ev.isNull} = ${ev.value} == null;
+${ev.isNull} = $hasNull;
 """)
   }
 
@@ -957,7 +957,7 @@ $resultType ${ev.value} = ${CodeGenerator.defaultValue(resultType, typedNull = f
 if (!$hasNull) {
    ${ev.value} = ($resultType) java.util.Collections.max(java.util.Arrays.asList($args));
 }
-${ev.isNull} = ${ev.value} == null;
+${ev.isNull} = hasNull;
       """)
 
   }

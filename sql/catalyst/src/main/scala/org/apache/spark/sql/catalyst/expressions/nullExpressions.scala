@@ -65,7 +65,7 @@ case class Coalesce(children: Seq[Expression]) extends ComplexTypeMergingExpress
   override def eval(input: InternalRow): Any = {
     var result: Any = null
     val childIterator = children.iterator
-    while (childIterator.hasNext && result == null) {
+    while (result == null && childIterator.hasNext) {
       result = childIterator.next().eval(input)
     }
     result
