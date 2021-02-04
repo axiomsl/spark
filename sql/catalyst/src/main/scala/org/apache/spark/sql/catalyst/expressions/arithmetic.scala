@@ -692,7 +692,7 @@ boolean $hasNull = false;
 $resultType[] $args = new $resultType[${evalChildren.length}];
 $codes
 ${ev.isNull} = true;
-$resultType ${ev.value} = ${CodeGenerator.defaultValue(resultType, typedNull = false)};
+$resultType ${ev.value} = ${CodeGenerator.defaultValue(resultType.toLowerCase, typedNull = false)};
 if (!$hasNull) {
    ${ev.value} = ($resultType) java.util.Collections.min(java.util.Arrays.asList($args));
 }
@@ -953,12 +953,12 @@ boolean $hasNull = false;
 $resultType[] $args = new $resultType[${evalChildren.length}];
 $codes
 ${ev.isNull} = true;
-$resultType ${ev.value} = ${CodeGenerator.defaultValue(resultType, typedNull = false)};
+$resultType ${ev.value} = ${CodeGenerator.defaultValue(resultType.toLowerCase, typedNull = false)};
 if (!$hasNull) {
    ${ev.value} = ($resultType) java.util.Collections.max(java.util.Arrays.asList($args));
 }
-${ev.isNull} = hasNull;
-      """)
+${ev.isNull} = $hasNull;
+""")
 
   }
 

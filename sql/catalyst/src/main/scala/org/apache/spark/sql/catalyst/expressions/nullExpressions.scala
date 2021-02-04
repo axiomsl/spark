@@ -99,14 +99,14 @@ do {
   $func
 } while (false);
 return ${ev.value};
-         """,
+""",
       foldFunctions = _.map { funcCall =>
         s"""
 ${ev.value} = $funcCall;
 if (!${ev.isNull}) {
   continue;
 }
-         """
+"""
       }.mkString)
 
 
@@ -117,7 +117,7 @@ $resultType ${ev.value} = ${CodeGenerator.defaultValue(dataType)};
 do {
   $codes
 } while (false);
-       """)
+""")
   }
 }
 
