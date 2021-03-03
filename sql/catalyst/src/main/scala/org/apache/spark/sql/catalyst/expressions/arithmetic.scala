@@ -928,12 +928,14 @@ return $hasNull;
 """,
       foldFunctions = _.map(funcCall => s"$hasNull = $funcCall;").mkString("\n")
     )
+    val defaultValueString =
+      CodeGenerator.defaultValue(resultType.toLowerCase(Locale.ROOT), typedNull = false)
     ev.copy(code = code"""
 boolean $hasNull = false;
 $resultType[] $args = new $resultType[${evalChildren.length}];
 $codes
 ${ev.isNull} = true;
-$resultType ${ev.value} = ${CodeGenerator.defaultValue(resultType.toLowerCase(Locale.ROOT), typedNull = false)};
+$resultType ${ev.value} = $defaultValueString;
 if (!$hasNull) {
    ${ev.value} = ($resultType) java.util.Collections.min(java.util.Arrays.asList($args));
 }
@@ -1119,7 +1121,9 @@ case class GreatestNullIntolerant(children: Seq[Expression]) extends NullIntoler
 
   override def checkInputDataTypes(): TypeCheckResult = {
     if (children.length <= 1) {
-      TypeCheckResult.TypeCheckFailure(s"input to function $prettyName requires at least two arguments")
+      TypeCheckResult.TypeCheckFailure(
+        s"input to function $prettyName requires at least two arguments"
+      )
     } else if (!TypeCoercion.haveSameType(inputTypesForMerging)) {
       TypeCheckResult.TypeCheckFailure(
         "The expressions should all have the same type," +
@@ -1190,12 +1194,14 @@ return $hasNull;
 """,
       foldFunctions = _.map(funcCall => s"$hasNull = $funcCall;").mkString("\n")
     )
+    val defaultValueString =
+      CodeGenerator.defaultValue(resultType.toLowerCase(Locale.ROOT), typedNull = false)
     ev.copy(code = code"""
 boolean $hasNull = false;
 $resultType[] $args = new $resultType[${evalChildren.length}];
 $codes
 ${ev.isNull} = true;
-$resultType ${ev.value} = ${CodeGenerator.defaultValue(resultType.toLowerCase(Locale.ROOT), typedNull = false)};
+$resultType ${ev.value} = $defaultValueString;
 if (!$hasNull) {
    ${ev.value} = ($resultType) java.util.Collections.max(java.util.Arrays.asList($args));
 }
