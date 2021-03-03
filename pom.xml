@@ -2983,6 +2983,7 @@
         </configuration>
         <executions>
           <execution>
+            <id>scala-style1</id>
             <goals>
               <goal>check</goal>
             </goals>
