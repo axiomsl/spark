@@ -17,6 +17,8 @@
 
 package org.apache.spark.sql.catalyst.expressions
 
+import java.util.Locale
+
 import org.apache.spark.sql.catalyst.InternalRow
 import org.apache.spark.sql.catalyst.analysis.{FunctionRegistry, TypeCheckResult, TypeCoercion}
 import org.apache.spark.sql.catalyst.expressions.codegen._
@@ -25,6 +27,7 @@ import org.apache.spark.sql.catalyst.util.{IntervalUtils, TypeUtils}
 import org.apache.spark.sql.internal.SQLConf
 import org.apache.spark.sql.types._
 import org.apache.spark.unsafe.types.CalendarInterval
+
 
 @ExpressionDescription(
   usage = "_FUNC_(expr) - Returns the negated value of `expr`.",
@@ -853,7 +856,8 @@ case class LeastNullIntolerant(children: Seq[Expression]) extends NullIntolerant
 
   override def checkInputDataTypes(): TypeCheckResult = {
     if (children.length <= 1) {
-      TypeCheckResult.TypeCheckFailure(s"input to function $prettyName requires at least two arguments")
+      TypeCheckResult
+        .TypeCheckFailure(s"input to function $prettyName requires at least two arguments")
     } else if (!TypeCoercion.haveSameType(inputTypesForMerging)) {
       TypeCheckResult.TypeCheckFailure(
         "The expressions should all have the same type," +
@@ -929,7 +933,7 @@ boolean $hasNull = false;
 $resultType[] $args = new $resultType[${evalChildren.length}];
 $codes
 ${ev.isNull} = true;
-$resultType ${ev.value} = ${CodeGenerator.defaultValue(resultType.toLowerCase, typedNull = false)};
+$resultType ${ev.value} = ${CodeGenerator.defaultValue(resultType.toLowerCase(Locale.ROOT), typedNull = false)};
 if (!$hasNull) {
    ${ev.value} = ($resultType) java.util.Collections.min(java.util.Arrays.asList($args));
 }
@@ -1191,7 +1195,7 @@ boolean $hasNull = false;
 $resultType[] $args = new $resultType[${evalChildren.length}];
 $codes
 ${ev.isNull} = true;
-$resultType ${ev.value} = ${CodeGenerator.defaultValue(resultType.toLowerCase, typedNull = false)};
+$resultType ${ev.value} = ${CodeGenerator.defaultValue(resultType.toLowerCase(Locale.ROOT), typedNull = false)};
 if (!$hasNull) {
    ${ev.value} = ($resultType) java.util.Collections.max(java.util.Arrays.asList($args));
 }

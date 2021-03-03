@@ -20,14 +20,19 @@ package org.apache.spark.sql.catalyst.expressions.codegen
 import java.io.ByteArrayInputStream
 import java.util.{Map => JavaMap}
 import scala.collection.JavaConverters._
+
+import scala.annotation.tailrec
 import scala.collection.mutable
 import scala.collection.mutable.ArrayBuffer
 import scala.util.control.NonFatal
+
 import com.google.common.cache.{CacheBuilder, CacheLoader}
 import com.google.common.util.concurrent.{ExecutionError, UncheckedExecutionException}
+
 import org.codehaus.commons.compiler.CompileException
 import org.codehaus.janino.{ByteArrayClassLoader, ClassBodyEvaluator, InternalCompilerException, SimpleCompiler}
 import org.codehaus.janino.util.ClassFile
+
 import org.apache.spark.{TaskContext, TaskKilledException}
 import org.apache.spark.executor.InputMetrics
 import org.apache.spark.internal.Logging
@@ -43,7 +48,6 @@ import org.apache.spark.unsafe.Platform
 import org.apache.spark.unsafe.types._
 import org.apache.spark.util.{LongAccumulator, ParentClassLoader, Utils}
 
-import scala.annotation.tailrec
 
 /**
  * Java source for evaluating an [[Expression]] given a [[InternalRow]] of input.
@@ -1295,7 +1299,8 @@ object ByteCodeStats {
 
 object CodeGenerator extends Logging {
 
-  final val JANINO_DEBUG_ENABLED = sys.props.getOrElse("org.codehaus.janino.source_debugging.enable", "false").toBoolean
+  final val JANINO_DEBUG_ENABLED =
+    sys.props.getOrElse("org.codehaus.janino.source_debugging.enable", "false").toBoolean
 
   // This is the default value of HugeMethodLimit in the OpenJDK HotSpot JVM,
   // beyond which methods will be rejected from JIT compilation
@@ -1428,12 +1433,12 @@ object CodeGenerator extends Logging {
         val msg = s"failed to compile: ${e.toString}. \n\tYou may need to add -Xss to jvm option."
         logError(msg, e)
         logGeneratedCode(code)
-        throw new CompileException(msg, null ,e)
+        throw new CompileException(msg, null, e)
       case e: RuntimeException if e.toString.contains("SNO: StringReader throws IOException") =>
         val msg = s"failed to compile: ${e.toString}"
         logError(msg, e)
         logGeneratedCode(code)
-        throw new CompileException(msg, null ,e)
+        throw new CompileException(msg, null, e)
       case e: RuntimeException =>
         val msg = s"failed to compile: ${e.toString}"
         logError(msg, e)
