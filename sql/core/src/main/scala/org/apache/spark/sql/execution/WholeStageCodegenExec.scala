@@ -19,11 +19,9 @@ package org.apache.spark.sql.execution
 
 import java.util.Locale
 import java.util.concurrent.atomic.{AtomicInteger, AtomicLong}
-
 import scala.collection.mutable
 import scala.util.control.NonFatal
-
-import org.apache.spark.broadcast
+import org.apache.spark.{SparkContext, broadcast}
 import org.apache.spark.rdd.RDD
 import org.apache.spark.sql.catalyst.InternalRow
 import org.apache.spark.sql.catalyst.expressions._
@@ -40,6 +38,8 @@ import org.apache.spark.sql.types._
 import org.apache.spark.sql.vectorized.ColumnarBatch
 import org.apache.spark.util.Utils
 
+import scala.util.{Failure, Success, Try}
+
 /**
  * An interface for those physical operators that support codegen.
  */
@@ -53,9 +53,15 @@ trait CodegenSupport extends SparkPlan {
     case _: SortMergeJoinExec => "smj"
     case _: RDDScanExec => "rdd"
     case _: DataSourceScanExec => "scan"
-    case _: InMemoryTableScanExec => "memoryScan"
-    case _: WholeStageCodegenExec => "wholestagecodegen"
-    case _ => nodeName.toLowerCase(Locale.ROOT)
+    case _: InMemoryTableScanExec => "mScan"
+    case _: WholeStageCodegenExec => "ws_codegen"
+    case _ =>
+      nodeName.toLowerCase(Locale.ROOT) match {
+        case "project" => "prj"
+        case "inputadapter" => "inadp"
+        case "filter" => "flt"
+        case t => t
+      }
   }
 
   /**
@@ -871,7 +877,7 @@ case class WholeStageCodegenExec(child: SparkPlan)(val codegenStageId: Int)
  * is created, e.g. for special fallback handling when an existing WholeStageCodegenExec
  * failed to generate/compile code.
  */
-case class CollapseCodegenStages(
+case class CollapseCodegenStages(sparkContext: SparkContext,
     codegenStageCounter: AtomicInteger = new AtomicInteger(0))
   extends Rule[SparkPlan] {
 
@@ -938,7 +944,17 @@ case class CollapseCodegenStages(
   }
 
   def apply(plan: SparkPlan): SparkPlan = {
-    if (conf.wholeStageEnabled) {
+    val localWholeStageEnabled =
+      sparkContext.getLocalProperty("spark.sql.local.codegen.wholeStage") match {
+        case null => true
+        case value => Try(value.toBoolean) match {
+          case Success(b) => b
+          case Failure(_) =>
+            log.warn("Failed to convert `spark.sql.local.codegen.wholeStage` into Boolean got [{}], using [true]", value)
+            true
+        }
+      }
+    if (conf.wholeStageEnabled && localWholeStageEnabled) {
       insertWholeStageCodegen(plan)
     } else {
       plan

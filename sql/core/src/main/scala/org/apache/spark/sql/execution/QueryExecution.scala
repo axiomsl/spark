@@ -354,7 +354,7 @@ object QueryExecution {
       RemoveRedundantSorts,
       DisableUnnecessaryBucketedScan,
       ApplyColumnarRulesAndInsertTransitions(sparkSession.sessionState.columnarRules),
-      CollapseCodegenStages(),
+      CollapseCodegenStages(sparkSession.sparkContext),
       ReuseExchange,
       ReuseSubquery
     )

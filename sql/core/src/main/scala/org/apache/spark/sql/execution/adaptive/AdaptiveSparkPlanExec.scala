@@ -106,7 +106,7 @@ case class AdaptiveSparkPlanExec(
   // plan to these rules has exchange as its root node.
   @transient private val postStageCreationRules = Seq(
     ApplyColumnarRulesAndInsertTransitions(context.session.sessionState.columnarRules),
-    CollapseCodegenStages()
+    CollapseCodegenStages(context.session.sparkContext)
   )
 
   // The partitioning of the query output depends on the shuffle(s) in the final stage. If the
