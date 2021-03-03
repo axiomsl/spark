@@ -265,7 +265,7 @@ class WholeStageCodegenSuite extends QueryTest with SharedSparkSession
         })
         assert(wholeStageCodeGenExec.isDefined)
         val code = wholeStageCodeGenExec.get.asInstanceOf[WholeStageCodegenExec].doCodeGen()._2
-        assert(code.body.contains("project_doConsume") == config)
+        assert(code.body.contains("prj_doConsume") == config)
       }
     }
   }
@@ -291,7 +291,7 @@ class WholeStageCodegenSuite extends QueryTest with SharedSparkSession
           }
           assert(wholeStageCodeGenExec.isDefined)
           val code = wholeStageCodeGenExec.get.asInstanceOf[WholeStageCodegenExec].doCodeGen()._2
-          assert(code.body.contains("project_doConsume") == hasSplit)
+          assert(code.body.contains("prj_doConsume") == hasSplit)
         }
       }
     }
