@@ -17,8 +17,6 @@
 
 package org.apache.spark.sql.catalyst.expressions
 
-import java.util.Locale
-
 import org.apache.spark.sql.catalyst.InternalRow
 import org.apache.spark.sql.catalyst.analysis.{FunctionRegistry, TypeCheckResult, TypeCoercion}
 import org.apache.spark.sql.catalyst.expressions.codegen._
@@ -895,7 +893,6 @@ case class LeastNullIntolerant(children: Seq[Expression]) extends NullIntolerant
     val inputs = evalChildren.zip(children.map(_.nullable)).zipWithIndex.map {
       case ((eval, true), index) =>
         s"""
-// LeastNullIntolerant
 if (!$hasNull) {
   ${eval.code}
   if (!${eval.isNull}) {
@@ -907,7 +904,6 @@ if (!$hasNull) {
 """
       case ((eval, false), index) =>
         s"""
-// LeastNullIntolerant
 if (!$hasNull) {
   ${eval.code}
   $args[$index] = ${eval.value};
@@ -930,12 +926,8 @@ return $hasNull;
 """,
       foldFunctions = _.map(funcCall => s"$hasNull = $funcCall;").mkString("\n")
     )
-    val typeName = resultType.toLowerCase(Locale.ROOT) match {
-      case "integer" => "int"
-      case t => t
-    }
     val defaultValueString =
-      CodeGenerator.defaultValue(typeName, typedNull = false)
+      CodeGenerator.defaultValue(CodeGenerator.javaType(dataType), typedNull = false)
     ev.copy(code = code"""
 boolean $hasNull = false;
 $resultType[] $args = new $resultType[${evalChildren.length}];
@@ -1200,12 +1192,8 @@ return $hasNull;
 """,
       foldFunctions = _.map(funcCall => s"$hasNull = $funcCall;").mkString("\n")
     )
-    val typeName = resultType.toLowerCase(Locale.ROOT) match {
-      case "integer" => "int"
-      case t => t
-    }
     val defaultValueString =
-      CodeGenerator.defaultValue(typeName, typedNull = false)
+      CodeGenerator.defaultValue(CodeGenerator.javaType(dataType), typedNull = false)
     ev.copy(code = code"""
 boolean $hasNull = false;
 $resultType[] $args = new $resultType[${evalChildren.length}];
