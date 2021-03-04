@@ -79,7 +79,7 @@ package object debug {
     concat.toString
   }
 
-  def writeCodegen(append: String => Unit, plan: SparkPlan): Unit = {
+  def writeCodegen(append: String => Boolean, plan: SparkPlan): Unit = {
     val codegenSeq = codegenStringSeq(plan)
     append(s"Found ${codegenSeq.size} WholeStageCodegen subtrees.\n")
     for (((subtree, code, codeStats), i) <- codegenSeq.zipWithIndex) {
