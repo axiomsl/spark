@@ -919,7 +919,7 @@ if (!$hasNull) {
       extraArguments = (s"$resultType[]", args) :: ("boolean", hasNull) :: Nil,
       returnType = "boolean",
       makeSplitFunction = body => s"""
-if (!$hasNull){
+if (!$hasNull) {
   $body
 }
 return $hasNull;
