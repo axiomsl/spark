@@ -919,17 +919,23 @@ if (!$hasNull) {
     val resultType = CodeGenerator.boxedType(dataType)
     val codes = ctx.splitExpressionsWithCurrentInputs(
       expressions = inputs,
-      funcName = "least",
+      funcName = "least_null",
       extraArguments = (s"$resultType[]", args) :: ("boolean", hasNull) :: Nil,
-      returnType = resultType,
+      returnType = "boolean",
       makeSplitFunction = body => s"""
-$body
+if (!$hasNull){
+  $body
+}
 return $hasNull;
 """,
       foldFunctions = _.map(funcCall => s"$hasNull = $funcCall;").mkString("\n")
     )
+    val typeName = resultType.toLowerCase(Locale.ROOT) match {
+      case "integer" => "int"
+      case t => t
+    }
     val defaultValueString =
-      CodeGenerator.defaultValue(resultType.toLowerCase(Locale.ROOT), typedNull = false)
+      CodeGenerator.defaultValue(typeName, typedNull = false)
     ev.copy(code = code"""
 boolean $hasNull = false;
 $resultType[] $args = new $resultType[${evalChildren.length}];
@@ -1153,8 +1159,6 @@ case class GreatestNullIntolerant(children: Seq[Expression]) extends NullIntoler
     })
   }
 
-
-
   override def doGenCode(ctx: CodegenContext, ev: ExprCode): ExprCode = {
     val evalChildren = children.map(_.genCode(ctx))
     val args = ctx.freshName("args")
@@ -1185,17 +1189,23 @@ if (!$hasNull) {
     val resultType = CodeGenerator.boxedType(dataType)
     val codes = ctx.splitExpressionsWithCurrentInputs(
       expressions = inputs,
-      funcName = "greatest",
+      funcName = "greatest_null",
       extraArguments = (s"$resultType[]", args) :: ("boolean", hasNull) :: Nil,
-      returnType = resultType,
+      returnType = "boolean",
       makeSplitFunction = body => s"""
-$body
+if (!$hasNull) {
+  $body
+}
 return $hasNull;
 """,
       foldFunctions = _.map(funcCall => s"$hasNull = $funcCall;").mkString("\n")
     )
+    val typeName = resultType.toLowerCase(Locale.ROOT) match {
+      case "integer" => "int"
+      case t => t
+    }
     val defaultValueString =
-      CodeGenerator.defaultValue(resultType.toLowerCase(Locale.ROOT), typedNull = false)
+      CodeGenerator.defaultValue(typeName, typedNull = false)
     ev.copy(code = code"""
 boolean $hasNull = false;
 $resultType[] $args = new $resultType[${evalChildren.length}];
