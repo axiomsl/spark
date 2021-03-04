@@ -478,7 +478,7 @@ object QueryPlan extends PredicateHelper {
    */
   def append[T <: QueryPlan[T]](
       plan: => QueryPlan[T],
-      append: String => Unit,
+      append: String => Boolean,
       verbose: Boolean,
       addSuffix: Boolean,
       maxFields: Int = SQLConf.get.maxToStringFields,

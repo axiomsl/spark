@@ -50,7 +50,7 @@ object ExplainUtils extends AdaptiveSparkPlanHelper {
    */
   private def processPlanSkippingSubqueries[T <: QueryPlan[T]](
       plan: => QueryPlan[T],
-      append: String => Unit,
+      append: String => Boolean,
       startOperatorID: Int): Int = {
 
     val operationIDs = new mutable.ArrayBuffer[(Int, QueryPlan[_])]()
@@ -84,7 +84,7 @@ object ExplainUtils extends AdaptiveSparkPlanHelper {
    */
   def processPlan[T <: QueryPlan[T]](
       plan: => QueryPlan[T],
-      append: String => Unit): Unit = {
+      append: String => Boolean): Unit = {
     try {
       val subqueries = ArrayBuffer.empty[(SparkPlan, Expression, BaseSubqueryExec)]
       var currentOperatorID = 0

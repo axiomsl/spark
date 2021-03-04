@@ -597,7 +597,7 @@ abstract class TreeNode[BaseType <: TreeNode[BaseType]] extends Product {
   }
 
   def treeString(
-      append: String => Unit,
+      append: String => Boolean,
       verbose: Boolean,
       addSuffix: Boolean,
       maxFields: Int,
@@ -641,8 +641,8 @@ abstract class TreeNode[BaseType <: TreeNode[BaseType]] extends Product {
     } else {
       number.i -= 1
       // Note that this traversal order must be the same as numberedTreeString.
-      innerChildren.map(_.getNodeNumbered(number)).find(_ != None).getOrElse {
-        children.map(_.getNodeNumbered(number)).find(_ != None).flatten
+      innerChildren.map(_.getNodeNumbered(number)).find(_.isDefined).getOrElse {
+        children.map(_.getNodeNumbered(number)).find(_.isDefined).flatten
       }
     }
   }
@@ -665,51 +665,64 @@ abstract class TreeNode[BaseType <: TreeNode[BaseType]] extends Product {
   def generateTreeString(
       depth: Int,
       lastChildren: Seq[Boolean],
-      append: String => Unit,
+      append: String => Boolean,
       verbose: Boolean,
       prefix: String = "",
       addSuffix: Boolean = false,
       maxFields: Int,
       printNodeId: Boolean,
       indent: Int = 0): Unit = {
-    append("   " * indent)
-    if (depth > 0) {
-      lastChildren.init.foreach { isLast =>
-        append(if (isLast) "   " else ":  ")
+    var isLimit = append("   " * indent)
+    if (!isLimit) {
+      if (depth > 0) {
+        lastChildren.init.foreach { isLast =>
+          append(if (isLast) "   " else ":  ")
+        }
+        isLimit = append(if (lastChildren.last) "+- " else ":- ")
       }
-      append(if (lastChildren.last) "+- " else ":- ")
-    }
 
-    val str = if (verbose) {
-      if (addSuffix) verboseStringWithSuffix(maxFields) else verboseString(maxFields)
-    } else {
-      if (printNodeId) {
-        simpleStringWithNodeId()
+      val str = if (verbose && !isLimit) {
+        if (addSuffix) verboseStringWithSuffix(maxFields) else verboseString(maxFields)
       } else {
-        simpleString(maxFields)
+        if (printNodeId) {
+          simpleStringWithNodeId()
+        } else {
+          simpleString(maxFields)
+        }
       }
-    }
-    append(prefix)
-    append(str)
-    append("\n")
+      append(prefix)
+      isLimit = append(str)
+      append("\n")
 
-    if (innerChildren.nonEmpty) {
-      innerChildren.init.foreach(_.generateTreeString(
-        depth + 2, lastChildren :+ children.isEmpty :+ false, append, verbose,
-        addSuffix = addSuffix, maxFields = maxFields, printNodeId = printNodeId, indent = indent))
-      innerChildren.last.generateTreeString(
-        depth + 2, lastChildren :+ children.isEmpty :+ true, append, verbose,
-        addSuffix = addSuffix, maxFields = maxFields, printNodeId = printNodeId, indent = indent)
-    }
+      if (innerChildren.nonEmpty && !isLimit) {
+        innerChildren.init.forall { c =>
+          c.generateTreeString(
+            depth + 2, lastChildren :+ children.isEmpty :+ false, append, verbose,
+            addSuffix = addSuffix, maxFields = maxFields,
+            printNodeId = printNodeId, indent = indent)
+          !append("") // here we check if we have more space
+        }
+        if (!append("")) {
+          innerChildren.last.generateTreeString(
+            depth + 2, lastChildren :+ children.isEmpty :+ true, append, verbose,
+            addSuffix = addSuffix, maxFields = maxFields,
+            printNodeId = printNodeId, indent = indent)
+        }
+      }
 
-    if (children.nonEmpty) {
-      children.init.foreach(_.generateTreeString(
-        depth + 1, lastChildren :+ false, append, verbose, prefix, addSuffix,
-        maxFields, printNodeId = printNodeId, indent = indent)
-      )
-      children.last.generateTreeString(
-        depth + 1, lastChildren :+ true, append, verbose, prefix,
-        addSuffix, maxFields, printNodeId = printNodeId, indent = indent)
+      if (children.nonEmpty && !append("")) {
+        children.init.forall { c =>
+          c.generateTreeString(
+            depth + 1, lastChildren :+ false, append, verbose, prefix, addSuffix,
+            maxFields, printNodeId = printNodeId, indent = indent)
+          !append("")
+        }
+        if (!append("")) {
+          children.last.generateTreeString(
+            depth + 1, lastChildren :+ true, append, verbose, prefix,
+            addSuffix, maxFields, printNodeId = printNodeId, indent = indent)
+        }
+      }
     }
   }
 

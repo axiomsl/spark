@@ -154,7 +154,7 @@ class QueryExecution(
   private def simpleString(
       formatted: Boolean,
       maxFields: Int,
-      append: String => Unit): Unit = {
+      append: String => Boolean): Unit = {
     append("== Physical Plan ==\n")
     if (formatted) {
       try {
@@ -178,7 +178,7 @@ class QueryExecution(
     }
   }
 
-  private def explainString(mode: ExplainMode, maxFields: Int, append: String => Unit): Unit = {
+  private def explainString(mode: ExplainMode, maxFields: Int, append: String => Boolean): Unit = {
     val queryExecution = if (logical.isStreaming) {
       // This is used only by explaining `Dataset/DataFrame` created by `spark.readStream`, so the
       // output mode does not matter since there is no `Sink`.
@@ -207,7 +207,7 @@ class QueryExecution(
     }
   }
 
-  private def writePlans(append: String => Unit, maxFields: Int): Unit = {
+  private def writePlans(append: String => Boolean, maxFields: Int): Unit = {
     val (verbose, addSuffix) = (true, false)
     append("== Parsed Logical Plan ==\n")
     QueryPlan.append(logical, append, verbose, addSuffix, maxFields)
@@ -236,7 +236,7 @@ class QueryExecution(
     }
   }
 
-  private def toString(maxFields: Int, append: String => Unit): Unit = {
+  private def toString(maxFields: Int, append: String => Boolean): Unit = {
     writePlans(append, maxFields)
   }
 
@@ -248,7 +248,7 @@ class QueryExecution(
     }
   }
 
-  private def stringWithStats(maxFields: Int, append: String => Unit): Unit = {
+  private def stringWithStats(maxFields: Int, append: String => Boolean): Unit = {
     val maxFields = SQLConf.get.maxToStringFields
 
     // trigger to compute stats for logical plans
@@ -311,12 +311,16 @@ class QueryExecution(
       val filePath = new Path(path)
       val fs = filePath.getFileSystem(sparkSession.sessionState.newHadoopConf())
       val writer = new BufferedWriter(new OutputStreamWriter(fs.create(filePath)))
+      val writerFunction = (s: String) => {
+        writer.write(s)
+        false
+      }
       try {
-        val mode = explainMode.map(ExplainMode.fromString(_)).getOrElse(ExtendedMode)
-        explainString(mode, maxFields, writer.write)
+        val mode = explainMode.map(ExplainMode.fromString).getOrElse(ExtendedMode)
+        explainString(mode, maxFields, writerFunction)
         if (mode != CodegenMode) {
           writer.write("\n== Whole Stage Codegen ==\n")
-          org.apache.spark.sql.execution.debug.writeCodegen(writer.write, executedPlan)
+          org.apache.spark.sql.execution.debug.writeCodegen(writerFunction, executedPlan)
         }
         log.info(s"Debug information was written at: $filePath")
       } finally {

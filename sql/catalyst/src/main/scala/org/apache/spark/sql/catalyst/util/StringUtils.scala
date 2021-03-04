@@ -115,20 +115,21 @@ object StringUtils extends Logging {
      * appended strings once in the toString method.  Returns true if the string still
      * has room for further appends before it hits its max limit.
      */
-    def append(s: String): Unit = {
-      if (s != null) {
+    def append(s: String): Boolean = {
+      if (s != null && s.nonEmpty) {
         val sLen = s.length
         if (!atLimit) {
           val available = maxLength - length
           val stringToAppend = if (available >= sLen) s else s.substring(0, available)
           strings.append(stringToAppend)
-        }
 
+        }
         // Keeps the total length of appended strings. Note that we need to cap the length at
         // `ByteArrayMethods.MAX_ROUNDED_ARRAY_LENGTH`; otherwise, we will overflow
         // length causing StringIndexOutOfBoundsException in the substring call above.
         length = Math.min(length.toLong + sLen, ByteArrayMethods.MAX_ROUNDED_ARRAY_LENGTH).toInt
       }
+      atLimit
     }
 
     /**
@@ -152,7 +153,7 @@ object StringUtils extends Logging {
       if (atLimit) {
         logWarning(
           "Truncated the string representation of a plan since it was too long. The " +
-            s"plan had length ${length} and the maximum is ${maxLength}. This behavior " +
+            s"plan had length $length and the maximum is $maxLength. This behavior " +
             s"can be adjusted by setting '${SQLConf.MAX_PLAN_STRING_LENGTH.key}'.")
         val truncateMsg = if (maxLength == 0) {
           s"Truncated plan of $length characters"

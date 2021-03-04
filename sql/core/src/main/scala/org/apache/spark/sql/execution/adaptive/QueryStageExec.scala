@@ -123,7 +123,7 @@ abstract class QueryStageExec extends LeafExecNode {
   override def generateTreeString(
       depth: Int,
       lastChildren: Seq[Boolean],
-      append: String => Unit,
+      append: String => Boolean,
       verbose: Boolean,
       prefix: String = "",
       addSuffix: Boolean = false,
@@ -140,7 +140,8 @@ abstract class QueryStageExec extends LeafExecNode {
       printNodeId,
       indent)
     plan.generateTreeString(
-      depth + 1, lastChildren :+ true, append, verbose, "", false, maxFields, printNodeId, indent)
+      depth + 1, lastChildren :+ true, append, verbose, "", addSuffix = false,
+        maxFields, printNodeId = printNodeId, indent)
   }
 }
 

@@ -733,7 +733,7 @@ abstract class BaseSubqueryExec extends SparkPlan {
   override def generateTreeString(
       depth: Int,
       lastChildren: Seq[Boolean],
-      append: String => Unit,
+      append: String => Boolean,
       verbose: Boolean,
       prefix: String = "",
       addSuffix: Boolean = false,
