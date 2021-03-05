@@ -360,25 +360,36 @@ class ArithmeticExpressionSuite extends SparkFunSuite with ExpressionEvalHelper 
 
     val nullLiteral = Literal.create(null, IntegerType)
     checkEvaluation(LeastNullIntolerant(Seq(nullLiteral, nullLiteral)), null)
-    checkEvaluation(LeastNullIntolerant(Seq(Literal(null), Literal(null))), null, InternalRow.empty)
+    checkEvaluation(
+      LeastNullIntolerant(Seq(Literal(null), Literal(null))), null, InternalRow.empty
+    )
     checkEvaluation(LeastNullIntolerant(Seq(Literal(-1.0), Literal(2.5))), -1.0, InternalRow.empty)
     checkEvaluation(LeastNullIntolerant(Seq(Literal(-1), Literal(2))), -1, InternalRow.empty)
     checkEvaluation(
-      LeastNullIntolerant(Seq(Literal((-1.0).toFloat), Literal(2.5.toFloat))), (-1.0).toFloat, InternalRow.empty)
+      LeastNullIntolerant(Seq(Literal((-1.0).toFloat), Literal(2.5.toFloat))), (-1.0).toFloat,
+      InternalRow.empty
+    )
     checkEvaluation(
-      LeastNullIntolerant(Seq(Literal(Long.MaxValue), Literal(Long.MinValue))), Long.MinValue, InternalRow.empty)
-    checkEvaluation(LeastNullIntolerant(Seq(Literal(1.toByte), Literal(2.toByte))), 1.toByte, InternalRow.empty)
+      LeastNullIntolerant(Seq(Literal(Long.MaxValue), Literal(Long.MinValue))), Long.MinValue,
+      InternalRow.empty
+    )
     checkEvaluation(
-      LeastNullIntolerant(Seq(Literal(1.toShort), Literal(2.toByte.toShort))), 1.toShort, InternalRow.empty)
-    checkEvaluation(LeastNullIntolerant(Seq(Literal("abc"), Literal("aaaa"))), "aaaa", InternalRow.empty)
-    checkEvaluation(LeastNullIntolerant(Seq(Literal(true), Literal(false))), false, InternalRow.empty)
+      LeastNullIntolerant(Seq(Literal(1.toByte), Literal(2.toByte))), 1.toByte, InternalRow.empty)
+    checkEvaluation(
+      LeastNullIntolerant(Seq(Literal(1.toShort), Literal(2.toByte.toShort))), 1.toShort,
+      InternalRow.empty)
+    checkEvaluation(LeastNullIntolerant(Seq(Literal("abc"), Literal("aaaa"))), "aaaa",
+      InternalRow.empty)
+    checkEvaluation(LeastNullIntolerant(Seq(Literal(true), Literal(false))), false,
+      InternalRow.empty)
     checkEvaluation(
       LeastNullIntolerant(Seq(
         Literal(BigDecimal("1234567890987654321123456")),
         Literal(BigDecimal("1234567890987654321123458")))),
       BigDecimal("1234567890987654321123456"), InternalRow.empty)
     checkEvaluation(
-      LeastNullIntolerant(Seq(Literal(Date.valueOf("2015-01-01")), Literal(Date.valueOf("2015-07-01")))),
+      LeastNullIntolerant(Seq(Literal(Date.valueOf("2015-01-01")),
+        Literal(Date.valueOf("2015-07-01")))),
       Date.valueOf("2015-01-01"), InternalRow.empty)
     checkEvaluation(
       LeastNullIntolerant(Seq(
@@ -476,19 +487,26 @@ class ArithmeticExpressionSuite extends SparkFunSuite with ExpressionEvalHelper 
 
     val nullLiteral = Literal.create(null, IntegerType)
     checkEvaluation(GreatestNullIntolerant(Seq(nullLiteral, nullLiteral)), null)
-    checkEvaluation(GreatestNullIntolerant(Seq(Literal(null), Literal(null))), null, InternalRow.empty)
-    checkEvaluation(GreatestNullIntolerant(Seq(Literal(-1.0), Literal(2.5))), 2.5, InternalRow.empty)
+    checkEvaluation(GreatestNullIntolerant(Seq(Literal(null), Literal(null))), null,
+      InternalRow.empty)
+    checkEvaluation(GreatestNullIntolerant(Seq(Literal(-1.0), Literal(2.5))), 2.5,
+      InternalRow.empty)
     checkEvaluation(GreatestNullIntolerant(Seq(Literal(-1), Literal(2))), 2, InternalRow.empty)
     checkEvaluation(
-      GreatestNullIntolerant(Seq(Literal((-1.0).toFloat), Literal(2.5.toFloat))), 2.5.toFloat, InternalRow.empty)
+      GreatestNullIntolerant(Seq(Literal((-1.0).toFloat), Literal(2.5.toFloat))), 2.5.toFloat,
+      InternalRow.empty)
     checkEvaluation(GreatestNullIntolerant(
       Seq(Literal(Long.MaxValue), Literal(Long.MinValue))), Long.MaxValue, InternalRow.empty)
     checkEvaluation(
-      GreatestNullIntolerant(Seq(Literal(1.toByte), Literal(2.toByte))), 2.toByte, InternalRow.empty)
+      GreatestNullIntolerant(Seq(Literal(1.toByte), Literal(2.toByte))), 2.toByte,
+      InternalRow.empty)
     checkEvaluation(
-      GreatestNullIntolerant(Seq(Literal(1.toShort), Literal(2.toByte.toShort))), 2.toShort, InternalRow.empty)
-    checkEvaluation(GreatestNullIntolerant(Seq(Literal("abc"), Literal("aaaa"))), "abc", InternalRow.empty)
-    checkEvaluation(GreatestNullIntolerant(Seq(Literal(true), Literal(false))), true, InternalRow.empty)
+      GreatestNullIntolerant(Seq(Literal(1.toShort), Literal(2.toByte.toShort))), 2.toShort,
+      InternalRow.empty)
+    checkEvaluation(GreatestNullIntolerant(Seq(Literal("abc"), Literal("aaaa"))), "abc",
+      InternalRow.empty)
+    checkEvaluation(GreatestNullIntolerant(Seq(Literal(true), Literal(false))), true,
+      InternalRow.empty)
     checkEvaluation(
       GreatestNullIntolerant(Seq(
         Literal(BigDecimal("1234567890987654321123456")),
