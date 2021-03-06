@@ -152,7 +152,7 @@ case class ShuffleQueryStageExec(
     override val id: Int,
     override val plan: SparkPlan) extends QueryStageExec {
 
-  @transient val shuffle = plan match {
+  @transient val shuffle: ShuffleExchangeLike = plan match {
     case s: ShuffleExchangeLike => s
     case ReusedExchangeExec(_, s: ShuffleExchangeLike) => s
     case _ =>
@@ -200,7 +200,7 @@ case class BroadcastQueryStageExec(
     override val id: Int,
     override val plan: SparkPlan) extends QueryStageExec {
 
-  @transient val broadcast = plan match {
+  @transient val broadcast: BroadcastExchangeLike = plan match {
     case b: BroadcastExchangeLike => b
     case ReusedExchangeExec(_, b: BroadcastExchangeLike) => b
     case _ =>
