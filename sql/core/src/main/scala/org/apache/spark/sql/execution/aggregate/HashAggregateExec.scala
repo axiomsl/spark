@@ -176,9 +176,9 @@ case class HashAggregateExec(
         // The initial expression should not access any column
         val ev = e.genCode(ctx)
         val initVars = code"""
-           |$isNull = ${ev.isNull};
-           |$value = ${ev.value};
-         """.stripMargin
+$isNull = ${ev.isNull};
+$value = ${ev.value};
+"""
         ExprCode(
           ev.code + initVars,
           JavaCode.isNullGlobal(isNull),
@@ -346,12 +346,12 @@ case class HashAggregateExec(
          """.stripMargin
       }
       code"""
-         |${ctx.registerComment(s"do aggregate for ${aggNames(i)}")}
-         |${ctx.registerComment("evaluate aggregate function")}
-         |${evaluateVariables(bufferEvalsForOneFunc)}
-         |${ctx.registerComment("update aggregation buffers")}
-         |${updates.mkString("\n").trim}
-       """.stripMargin
+${ctx.registerComment(s"do aggregate for ${aggNames(i)}")}
+${ctx.registerComment("evaluate aggregate function")}
+${evaluateVariables(bufferEvalsForOneFunc)}
+${ctx.registerComment("update aggregation buffers")}
+${updates.mkString("\n").trim}
+"""
     }
 
     val codeToEvalAggFunc = if (conf.codegenSplitAggregateFunc &&
@@ -954,11 +954,11 @@ case class HashAggregateExec(
           CodeGenerator.updateColumn(unsafeRowBuffer, dt, bufferOffset + j, ev, nullable)
         }
         code"""
-           |${ctx.registerComment(s"evaluate aggregate function for ${aggNames(i)}")}
-           |${evaluateVariables(rowBufferEvalsForOneFunc)}
-           |${ctx.registerComment("update unsafe row buffer")}
-           |${updateRowBuffers.mkString("\n").trim}
-         """.stripMargin
+${ctx.registerComment(s"evaluate aggregate function for ${aggNames(i)}")}
+${evaluateVariables(rowBufferEvalsForOneFunc)}
+${ctx.registerComment("update unsafe row buffer")}
+${updateRowBuffers.mkString("\n").trim}
+"""
       }
 
       val codeToEvalAggFunc = if (conf.codegenSplitAggregateFunc &&
@@ -1009,11 +1009,11 @@ case class HashAggregateExec(
                 isVectorized = true)
             }
             code"""
-               |${ctx.registerComment(s"evaluate aggregate function for ${aggNames(i)}")}
-               |${evaluateVariables(fastRowEvalsForOneFunc)}
-               |${ctx.registerComment("update fast row")}
-               |${updateRowBuffer.mkString("\n").trim}
-             """.stripMargin
+${ctx.registerComment(s"evaluate aggregate function for ${aggNames(i)}")}
+${evaluateVariables(fastRowEvalsForOneFunc)}
+${ctx.registerComment("update fast row")}
+${updateRowBuffer.mkString("\n").trim}
+"""
           }
 
 

@@ -629,15 +629,15 @@ case class MapConcat(children: Seq[Expression]) extends ComplexTypeMergingExpres
 
     ev.copy(
       code = code"""
-        |MapData[] $argsName = new MapData[${mapCodes.size}];
-        |boolean $hasNullName = false;
-        |$prepareMaps
-        |boolean ${ev.isNull} = $hasNullName;
-        |MapData ${ev.value} = null;
-        |if (!$hasNullName) {
-        |  $mapMerge
-        |}
-      """.stripMargin)
+MapData[] $argsName = new MapData[${mapCodes.size}];
+boolean $hasNullName = false;
+$prepareMaps
+boolean ${ev.isNull} = $hasNullName;
+MapData ${ev.value} = null;
+if (!$hasNullName) {
+  $mapMerge
+}
+""")
   }
 
   override def prettyName: String = "map_concat"
@@ -1624,16 +1624,16 @@ case class ArrayJoin(
     if (nullable) {
       ev.copy(
         code"""
-           |boolean ${ev.isNull} = true;
-           |UTF8String ${ev.value} = null;
-           |$code
-         """.stripMargin)
+boolean ${ev.isNull} = true;
+UTF8String ${ev.value} = null;
+$code
+""")
     } else {
       ev.copy(
         code"""
-           |UTF8String ${ev.value} = null;
-           |$code
-         """.stripMargin, FalseLiteral)
+UTF8String ${ev.value} = null;
+$code
+""", FalseLiteral)
     }
   }
 
@@ -1724,15 +1724,15 @@ case class ArrayMin(child: Expression)
       value = JavaCode.expression(CodeGenerator.getValue(childGen.value, dataType, i), dataType))
     ev.copy(code =
       code"""
-         |${childGen.code}
-         |boolean ${ev.isNull} = true;
-         |$javaType ${ev.value} = ${CodeGenerator.defaultValue(dataType)};
-         |if (!${childGen.isNull}) {
-         |  for (int $i = 0; $i < ${childGen.value}.numElements(); $i ++) {
-         |    ${ctx.reassignIfSmaller(dataType, ev, item)}
-         |  }
-         |}
-      """.stripMargin)
+${childGen.code}
+boolean ${ev.isNull} = true;
+$javaType ${ev.value} = ${CodeGenerator.defaultValue(dataType)};
+if (!${childGen.isNull}) {
+  for (int $i = 0; $i < ${childGen.value}.numElements(); $i ++) {
+    ${ctx.reassignIfSmaller(dataType, ev, item)}
+  }
+}
+""")
   }
 
   override protected def nullSafeEval(input: Any): Any = {
@@ -1792,15 +1792,15 @@ case class ArrayMax(child: Expression)
       value = JavaCode.expression(CodeGenerator.getValue(childGen.value, dataType, i), dataType))
     ev.copy(code =
       code"""
-         |${childGen.code}
-         |boolean ${ev.isNull} = true;
-         |$javaType ${ev.value} = ${CodeGenerator.defaultValue(dataType)};
-         |if (!${childGen.isNull}) {
-         |  for (int $i = 0; $i < ${childGen.value}.numElements(); $i ++) {
-         |    ${ctx.reassignIfGreater(dataType, ev, item)}
-         |  }
-         |}
-      """.stripMargin)
+${childGen.code}
+boolean ${ev.isNull} = true;
+$javaType ${ev.value} = ${CodeGenerator.defaultValue(dataType)};
+if (!${childGen.isNull}) {
+  for (int $i = 0; $i < ${childGen.value}.numElements(); $i ++) {
+    ${ctx.reassignIfGreater(dataType, ev, item)}
+  }
+}
+""")
   }
 
   override protected def nullSafeEval(input: Any): Any = {
@@ -1887,15 +1887,15 @@ case class ArrayPosition(left: Expression, right: Expression)
       val i = ctx.freshName("i")
       val getValue = CodeGenerator.getValue(arr, right.dataType, i)
       s"""
-         |int $pos = 0;
-         |for (int $i = 0; $i < $arr.numElements(); $i ++) {
-         |  if (!$arr.isNullAt($i) && ${ctx.genEqual(right.dataType, value, getValue)}) {
-         |    $pos = $i + 1;
-         |    break;
-         |  }
-         |}
-         |${ev.value} = (long) $pos;
-       """.stripMargin
+int $pos = 0;
+for (int $i = 0; $i < $arr.numElements(); $i ++) {
+  if (!$arr.isNullAt($i) && ${ctx.genEqual(right.dataType, value, getValue)}) {
+    $pos = $i + 1;
+    break;
+  }
+}
+${ev.value} = (long) $pos;
+"""
     })
   }
 }
@@ -2037,10 +2037,10 @@ case class ElementAt(
           val index = ctx.freshName("elementAtIndex")
           val nullCheck = if (arrayContainsNull) {
             s"""
-               |if ($eval1.isNullAt($index)) {
-               |  ${ev.isNull} = true;
-               |} else
-             """.stripMargin
+if ($eval1.isNullAt($index)) {
+  ${ev.isNull} = true;
+} else
+"""
           } else {
             ""
           }
@@ -2055,23 +2055,23 @@ case class ElementAt(
           }
 
           s"""
-             |int $index = (int) $eval2;
-             |if ($eval1.numElements() < Math.abs($index)) {
-             |  $indexOutOfBoundBranch
-             |} else {
-             |  if ($index == 0) {
-             |    throw new ArrayIndexOutOfBoundsException("SQL array indices start at 1");
-             |  } else if ($index > 0) {
-             |    $index--;
-             |  } else {
-             |    $index += $eval1.numElements();
-             |  }
-             |  $nullCheck
-             |  {
-             |    ${ev.value} = ${CodeGenerator.getValue(eval1, dataType, index)};
-             |  }
-             |}
-           """.stripMargin
+int $index = (int) $eval2;
+if ($eval1.numElements() < Math.abs($index)) {
+  $indexOutOfBoundBranch
+} else {
+  if ($index == 0) {
+    throw new ArrayIndexOutOfBoundsException("SQL array indices start at 1");
+  } else if ($index > 0) {
+    $index--;
+  } else {
+    $index += $eval1.numElements();
+  }
+  $nullCheck
+  {
+    ${ev.value} = ${CodeGenerator.getValue(eval1, dataType, index)};
+  }
+}
+"""
         })
       case _: MapType =>
         doGetValueGenCode(ctx, ev, left.dataType.asInstanceOf[MapType], failOnError)
@@ -2178,22 +2178,22 @@ case class Concat(children: Seq[Expression]) extends ComplexTypeMergingExpressio
     val inputs = evals.zip(children.map(_.nullable)).zipWithIndex.map {
       case ((eval, true), index) =>
         s"""
-           |if (!$hasNull) {
-           |  ${eval.code}
-           |  if (!${eval.isNull}) {
-           |    $args[$index] = ${eval.value};
-           |  } else {
-           |    $hasNull = true;
-           |  }
-           |}
-         """.stripMargin
+if (!$hasNull) {
+  ${eval.code}
+  if (!${eval.isNull}) {
+    $args[$index] = ${eval.value};
+  } else {
+    $hasNull = true;
+  }
+}
+"""
       case ((eval, false), index) =>
         s"""
-           |if (!$hasNull) {
-           |  ${eval.code}
-           |  $args[$index] = ${eval.value};
-           |}
-         """.stripMargin
+if (!$hasNull) {
+  ${eval.code}
+  $args[$index] = ${eval.value};
+}
+"""
     }
 
     val codes = ctx.splitExpressionsWithCurrentInputs(
@@ -2203,9 +2203,9 @@ case class Concat(children: Seq[Expression]) extends ComplexTypeMergingExpressio
       returnType = "boolean",
       makeSplitFunction = body =>
         s"""
-           |$body
-           |return $hasNull;
-         """.stripMargin,
+$body
+return $hasNull;
+""",
       foldFunctions = _.map(funcCall => s"$hasNull = $funcCall;").mkString("\n")
     )
 
@@ -2221,26 +2221,26 @@ case class Concat(children: Seq[Expression]) extends ComplexTypeMergingExpressio
 
     ev.copy(code =
       code"""
-         |boolean $hasNull = false;
-         |$initCode
-         |$codes
-         |$javaType ${ev.value} = null;
-         |if (!$hasNull) {
-         |  ${ev.value} = $concat($args);
-         |}
-         |boolean ${ev.isNull} = ${ev.value} == null;
-       """.stripMargin)
+boolean $hasNull = false;
+$initCode
+$codes
+$javaType ${ev.value} = null;
+if (!$hasNull) {
+  ${ev.value} = $concat($args);
+}
+boolean ${ev.isNull} = ${ev.value} == null;
+""")
   }
 
   private def genCodeForNumberOfElements(ctx: CodegenContext) : (String, String) = {
     val numElements = ctx.freshName("numElements")
     val z = ctx.freshName("z")
     val code = s"""
-        |long $numElements = 0L;
-        |for (int $z = 0; $z < ${children.length}; $z++) {
-        |  $numElements += args[$z].numElements();
-        |}
-      """.stripMargin
+long $numElements = 0L;
+for (int $z = 0; $z < ${children.length}; $z++) {
+  $numElements += args[$z].numElements();
+}
+"""
 
     (code, numElements)
   }
@@ -2265,19 +2265,19 @@ case class Concat(children: Seq[Expression]) extends ComplexTypeMergingExpressio
     val concat = ctx.freshName("concat")
     val concatDef =
       s"""
-         |private ArrayData $concat(ArrayData[] args) {
-         |  $numElemCode
-         |  $initialization
-         |  int $counter = 0;
-         |  for (int $y = 0; $y < ${children.length}; $y++) {
-         |    for (int $z = 0; $z < args[$y].numElements(); $z++) {
-         |      $assignment
-         |      $counter++;
-         |    }
-         |  }
-         |  return $arrayData;
-         |}
-       """.stripMargin
+private ArrayData $concat(ArrayData[] args) {
+  $numElemCode
+  $initialization
+  int $counter = 0;
+  for (int $y = 0; $y < ${children.length}; $y++) {
+    for (int $z = 0; $z < args[$y].numElements(); $z++) {
+      $assignment
+      $counter++;
+    }
+  }
+  return $arrayData;
+}
+"""
 
     ctx.addNewFunction(concat, concatDef)
   }
@@ -2355,11 +2355,11 @@ case class Flatten(child: Expression) extends UnaryExpression with NullIntoleran
       childVariableName: String) : (String, String) = {
     val variableName = ctx.freshName("numElements")
     val code = s"""
-      |long $variableName = 0;
-      |for (int z = 0; z < $childVariableName.numElements(); z++) {
-      |  $variableName += $childVariableName.getArray(z).numElements();
-      |}
-      """.stripMargin
+long $variableName = 0;
+for (int z = 0; z < $childVariableName.numElements(); z++) {
+  $variableName += $childVariableName.getArray(z).numElements();
+}
+"""
     (code, variableName)
   }
 
@@ -2382,18 +2382,18 @@ case class Flatten(child: Expression) extends UnaryExpression with NullIntoleran
       dataType.asInstanceOf[ArrayType].containsNull)
 
     s"""
-    |$numElemCode
-    |$allocation
-    |int $counter = 0;
-    |for (int $k = 0; $k < $childVariableName.numElements(); $k++) {
-    |  ArrayData $arr = $childVariableName.getArray($k);
-    |  for (int $l = 0; $l < $arr.numElements(); $l++) {
-    |   $assignment
-    |   $counter++;
-    | }
-    |}
-    |$arrayDataName = $tempArrayDataName;
-    """.stripMargin
+$numElemCode
+$allocation
+int $counter = 0;
+for (int $k = 0; $k < $childVariableName.numElements(); $k++) {
+  ArrayData $arr = $childVariableName.getArray($k);
+  for (int $l = 0; $l < $arr.numElements(); $l++) {
+   $assignment
+   $counter++;
+ }
+}
+$arrayDataName = $tempArrayDataName;
+"""
   }
 
   override def prettyName: String = "flatten"
@@ -2536,28 +2536,28 @@ case class Sequence(
           stopGen.code + ctx.nullSafeExec(stop.nullable, stopGen.isNull) {
             stepGen.code + ctx.nullSafeExec(stepOpt.exists(_.nullable), stepGen.isNull) {
               s"""
-                 |${ev.isNull} = false;
-                 |$resultCode
-               """.stripMargin
+${ev.isNull} = false;
+$resultCode
+"""
             }
           }
         }
       ev.copy(code =
         code"""
-           |boolean ${ev.isNull} = true;
-           |$resultType ${ev.value} = null;
-           |$nullSafeEval
-         """.stripMargin)
+boolean ${ev.isNull} = true;
+$resultType ${ev.value} = null;
+$nullSafeEval
+""")
 
     } else {
       ev.copy(code =
         code"""
-           |${startGen.code}
-           |${stopGen.code}
-           |${stepGen.code}
-           |$resultType ${ev.value} = null;
-           |$resultCode
-         """.stripMargin,
+${startGen.code}
+${stopGen.code}
+${stepGen.code}
+$resultType ${ev.value} = null;
+$resultCode
+""",
         isNull = FalseLiteral)
     }
   }
@@ -2629,13 +2629,13 @@ object Sequence {
         elemType: String): String = {
       val i = ctx.freshName("i")
       s"""
-         |${genSequenceLengthCode(ctx, start, stop, step, i)}
-         |$arr = new $elemType[$i];
-         |while ($i > 0) {
-         |  $i--;
-         |  $arr[$i] = ($elemType) ($start + $step * $i);
-         |}
-         """.stripMargin
+${genSequenceLengthCode(ctx, start, stop, step, i)}
+$arr = new $elemType[$i];
+while ($i > 0) {
+  $i--;
+  $arr[$i] = ($elemType) ($start + $step * $i);
+}
+"""
     }
   }
 
@@ -2726,59 +2726,59 @@ object Sequence {
 
       val sequenceLengthCode =
         s"""
-           |final long $intervalInMicros =
-           |  $stepMicros + $stepMonths * ${microsPerMonth}L + $stepDays * ${microsPerDay}L;
-           |${genSequenceLengthCode(ctx, startMicros, stopMicros, intervalInMicros, arrLength)}
-          """.stripMargin
+final long $intervalInMicros =
+  $stepMicros + $stepMonths * ${microsPerMonth}L + $stepDays * ${microsPerDay}L;
+${genSequenceLengthCode(ctx, startMicros, stopMicros, intervalInMicros, arrLength)}
+"""
 
       val check = if (scale == MICROS_PER_DAY) {
         s"""
-           |if ($stepMonths == 0 && $stepDays == 0) {
-           |  throw new IllegalArgumentException(
-           |    "sequence step must be a day interval if start and end values are dates");
-           |}
-          """.stripMargin
+if ($stepMonths == 0 && $stepDays == 0) {
+  throw new IllegalArgumentException(
+    "sequence step must be a day interval if start and end values are dates");
+}
+"""
         } else {
           ""
         }
 
       s"""
-         |final int $stepMonths = $step.months;
-         |final int $stepDays = $step.days;
-         |final long $stepMicros = $step.microseconds;
-         |
-         |$check
-         |
-         |if ($stepMonths == 0 && $stepMicros == 0 && ${scale}L == ${MICROS_PER_DAY}L) {
-         |  ${backedSequenceImpl.genCode(ctx, start, stop, stepDays, arr, elemType)};
-         |
-         |} else if ($stepMonths == 0 && $stepDays == 0 && ${scale}L == 1) {
-         |  ${backedSequenceImpl.genCode(ctx, start, stop, stepMicros, arr, elemType)};
-         |} else {
-         |  final long $startMicros = $start * ${scale}L;
-         |  final long $stopMicros = $stop * ${scale}L;
-         |
-         |  $sequenceLengthCode
-         |
-         |  final int $stepSign = $stopMicros >= $startMicros ? +1 : -1;
-         |  final long $exclusiveItem = $stopMicros + $stepSign;
-         |
-         |  $arr = new $elemType[$arrLength];
-         |  long $t = $startMicros;
-         |  int $i = 0;
-         |
-         |  while ($t < $exclusiveItem ^ $stepSign < 0) {
-         |    $arr[$i] = ($elemType) ($t / ${scale}L);
-         |    $i += 1;
-         |    $t = org.apache.spark.sql.catalyst.util.DateTimeUtils.timestampAddInterval(
-         |       $startMicros, $i * $stepMonths, $i * $stepDays, $i * $stepMicros, $zid);
-         |  }
-         |
-         |  if ($arr.length > $i) {
-         |    $arr = java.util.Arrays.copyOf($arr, $i);
-         |  }
-         |}
-         """.stripMargin
+final int $stepMonths = $step.months;
+final int $stepDays = $step.days;
+final long $stepMicros = $step.microseconds;
+
+$check
+
+if ($stepMonths == 0 && $stepMicros == 0 && ${scale}L == ${MICROS_PER_DAY}L) {
+  ${backedSequenceImpl.genCode(ctx, start, stop, stepDays, arr, elemType)};
+
+} else if ($stepMonths == 0 && $stepDays == 0 && ${scale}L == 1) {
+  ${backedSequenceImpl.genCode(ctx, start, stop, stepMicros, arr, elemType)};
+} else {
+  final long $startMicros = $start * ${scale}L;
+  final long $stopMicros = $stop * ${scale}L;
+
+  $sequenceLengthCode
+
+  final int $stepSign = $stopMicros >= $startMicros ? +1 : -1;
+  final long $exclusiveItem = $stopMicros + $stepSign;
+
+  $arr = new $elemType[$arrLength];
+  long $t = $startMicros;
+  int $i = 0;
+
+  while ($t < $exclusiveItem ^ $stepSign < 0) {
+    $arr[$i] = ($elemType) ($t / ${scale}L);
+    $i += 1;
+    $t = org.apache.spark.sql.catalyst.util.DateTimeUtils.timestampAddInterval(
+       $startMicros, $i * $stepMonths, $i * $stepDays, $i * $stepMicros, $zid);
+  }
+
+  if ($arr.length > $i) {
+    $arr = java.util.Arrays.copyOf($arr, $i);
+  }
+}
+"""
     }
   }
 
@@ -2807,19 +2807,19 @@ object Sequence {
       len: String): String = {
     val longLen = ctx.freshName("longLen")
     s"""
-       |if (!(($step > 0 && $start <= $stop) ||
-       |  ($step < 0 && $start >= $stop) ||
-       |  ($step == 0 && $start == $stop))) {
-       |  throw new IllegalArgumentException(
-       |    "Illegal sequence boundaries: " + $start + " to " + $stop + " by " + $step);
-       |}
-       |long $longLen = $stop == $start ? 1L : 1L + ((long) $stop - $start) / $step;
-       |if ($longLen > $MAX_ROUNDED_ARRAY_LENGTH) {
-       |  throw new IllegalArgumentException(
-       |    "Too long sequence: " + $longLen + ". Should be <= $MAX_ROUNDED_ARRAY_LENGTH");
-       |}
-       |int $len = (int) $longLen;
-       """.stripMargin
+if (!(($step > 0 && $start <= $stop) ||
+  ($step < 0 && $start >= $stop) ||
+  ($step == 0 && $start == $stop))) {
+  throw new IllegalArgumentException(
+    "Illegal sequence boundaries: " + $start + " to " + $stop + " by " + $step);
+}
+long $longLen = $stop == $start ? 1L : 1L + ((long) $stop - $start) / $step;
+if ($longLen > $MAX_ROUNDED_ARRAY_LENGTH) {
+  throw new IllegalArgumentException(
+    "Too long sequence: " + $longLen + ". Should be <= $MAX_ROUNDED_ARRAY_LENGTH");
+}
+int $len = (int) $longLen;
+"""
   }
 }
 
@@ -2872,13 +2872,13 @@ case class ArrayRepeat(left: Expression, right: Expression)
 
     ev.copy(code =
       code"""
-         |boolean ${ev.isNull} = false;
-         |${leftGen.code}
-         |${rightGen.code}
-         |${CodeGenerator.javaType(dataType)} ${ev.value} =
-         |  ${CodeGenerator.defaultValue(dataType)};
-         |$resultCode
-       """.stripMargin)
+boolean ${ev.isNull} = false;
+${leftGen.code}
+${rightGen.code}
+${CodeGenerator.javaType(dataType)} ${ev.value} =
+  ${CodeGenerator.defaultValue(dataType)};
+$resultCode
+""")
   }
 
   private def nullElementsProtection(
@@ -2887,12 +2887,12 @@ case class ArrayRepeat(left: Expression, right: Expression)
       coreLogic: String): String = {
     if (nullable) {
       s"""
-         |if ($rightIsNull) {
-         |  ${ev.isNull} = true;
-         |} else {
-         |  ${coreLogic}
-         |}
-       """.stripMargin
+if ($rightIsNull) {
+  ${ev.isNull} = true;
+} else {
+  $coreLogic
+}
+"""
     } else {
       coreLogic
     }
@@ -2902,11 +2902,11 @@ case class ArrayRepeat(left: Expression, right: Expression)
     val numElements = ctx.freshName("numElements")
     val numElementsCode =
       s"""
-         |int $numElements = 0;
-         |if ($count > 0) {
-         |  $numElements = $count;
-         |}
-       """.stripMargin
+int $numElements = 0;
+if ($count > 0) {
+  $numElements = $count;
+}
+"""
 
     (numElements, numElementsCode)
   }
@@ -2928,19 +2928,19 @@ case class ArrayRepeat(left: Expression, right: Expression)
       CodeGenerator.setArrayElement(tempArrayDataName, elementType, k, element)
 
     s"""
-       |$numElemCode
-       |$allocation
-       |if (!$leftIsNull) {
-       |  for (int $k = 0; $k < $tempArrayDataName.numElements(); $k++) {
-       |    $assignment
-       |  }
-       |} else {
-       |  for (int $k = 0; $k < $tempArrayDataName.numElements(); $k++) {
-       |    $tempArrayDataName.setNullAt($k);
-       |  }
-       |}
-       |$arrayDataName = $tempArrayDataName;
-     """.stripMargin
+$numElemCode
+$allocation
+if (!$leftIsNull) {
+  for (int $k = 0; $k < $tempArrayDataName.numElements(); $k++) {
+    $assignment
+  }
+} else {
+  for (int $k = 0; $k < $tempArrayDataName.numElements(); $k++) {
+    $tempArrayDataName.setNullAt($k);
+  }
+}
+$arrayDataName = $tempArrayDataName;
+"""
   }
 
 }
@@ -3008,15 +3008,15 @@ case class ArrayRemove(left: Expression, right: Expression)
       val getValue = CodeGenerator.getValue(arr, elementType, i)
       val isEqual = ctx.genEqual(elementType, value, getValue)
       s"""
-         |int $numsToRemove = 0;
-         |for (int $i = 0; $i < $arr.numElements(); $i ++) {
-         |  if (!$arr.isNullAt($i) && $isEqual) {
-         |    $numsToRemove = $numsToRemove + 1;
-         |  }
-         |}
-         |int $newArraySize = $arr.numElements() - $numsToRemove;
-         |${genCodeForResult(ctx, ev, arr, value, newArraySize)}
-       """.stripMargin
+int $numsToRemove = 0;
+for (int $i = 0; $i < $arr.numElements(); $i ++) {
+  if (!$arr.isNullAt($i) && $isEqual) {
+    $numsToRemove = $numsToRemove + 1;
+  }
+}
+int $newArraySize = $arr.numElements() - $numsToRemove;
+${genCodeForResult(ctx, ev, arr, value, newArraySize)}
+"""
     })
   }
 
@@ -3038,22 +3038,22 @@ case class ArrayRemove(left: Expression, right: Expression)
       values, elementType, inputArray, pos, i, false)
 
     s"""
-       |$allocation
-       |int $pos = 0;
-       |for (int $i = 0; $i < $inputArray.numElements(); $i ++) {
-       |  if ($inputArray.isNullAt($i)) {
-       |    $values.setNullAt($pos);
-       |    $pos = $pos + 1;
-       |  }
-       |  else {
-       |    if (!($isEqual)) {
-       |      $assignment
-       |      $pos = $pos + 1;
-       |    }
-       |  }
-       |}
-       |${ev.value} = $values;
-     """.stripMargin
+$allocation
+int $pos = 0;
+for (int $i = 0; $i < $inputArray.numElements(); $i ++) {
+  if ($inputArray.isNullAt($i)) {
+    $values.setNullAt($pos);
+    $pos = $pos + 1;
+  }
+  else {
+    if (!($isEqual)) {
+      $assignment
+      $pos = $pos + 1;
+    }
+  }
+}
+${ev.value} = $values;
+"""
   }
 
   override def prettyName: String = "array_remove"
@@ -3110,12 +3110,12 @@ trait ArraySetLike {
       nullElementIndex: String): String = {
     if (dt.asInstanceOf[ArrayType].containsNull) {
       s"""
-         |$body
-         |if ($nullElementIndex >= 0) {
-         |  // result has null element
-         |  $value.setNullAt($nullElementIndex);
-         |}
-       """.stripMargin
+$body
+if ($nullElementIndex >= 0) {
+  // result has null element
+  $value.setNullAt($nullElementIndex);
+}
+"""
     } else {
       body
     }
@@ -3127,18 +3127,18 @@ trait ArraySetLike {
       size : String,
       nullElementIndex : String): String = withResultArrayNullCheck(
     s"""
-       |if ($size > ${ByteArrayMethods.MAX_ROUNDED_ARRAY_LENGTH}) {
-       |  throw new RuntimeException("Cannot create array with " + $size +
-       |  " elements of data due to exceeding the limit " +
-       |  "${ByteArrayMethods.MAX_ROUNDED_ARRAY_LENGTH} elements for ArrayData.");
-       |}
-       |
-       |if (!UnsafeArrayData.shouldUseGenericArrayData(${et.defaultSize}, $size)) {
-       |  $value = UnsafeArrayData.fromPrimitiveArray($builder.result());
-       |} else {
-       |  $value = new ${classOf[GenericArrayData].getName}($builder.result());
-       |}
-     """.stripMargin, value, nullElementIndex)
+if ($size > ${ByteArrayMethods.MAX_ROUNDED_ARRAY_LENGTH}) {
+  throw new RuntimeException("Cannot create array with " + $size +
+  " elements of data due to exceeding the limit " +
+  "${ByteArrayMethods.MAX_ROUNDED_ARRAY_LENGTH} elements for ArrayData.");
+}
+
+if (!UnsafeArrayData.shouldUseGenericArrayData(${et.defaultSize}, $size)) {
+  $value = UnsafeArrayData.fromPrimitiveArray($builder.result());
+} else {
+  $value = new ${classOf[GenericArrayData].getName}($builder.result());
+}
+""", value, nullElementIndex)
 
 }
 
@@ -3232,9 +3232,9 @@ case class ArrayDistinct(child: Expression)
         // Only need to track null element index when array's element is nullable.
         val declareNullTrackVariables = if (dataType.asInstanceOf[ArrayType].containsNull) {
           s"""
-             |boolean $foundNullElement = false;
-             |int $nullElementIndex = -1;
-           """.stripMargin
+boolean $foundNullElement = false;
+int $nullElementIndex = -1;
+"""
         } else {
           ""
         }
@@ -3242,43 +3242,43 @@ case class ArrayDistinct(child: Expression)
         def withArrayNullAssignment(body: String) =
           if (dataType.asInstanceOf[ArrayType].containsNull) {
             s"""
-               |if ($array.isNullAt($i)) {
-               |  if (!$foundNullElement) {
-               |    $nullElementIndex = $size;
-               |    $foundNullElement = true;
-               |    $size++;
-               |    $builder.$$plus$$eq($nullValueHolder);
-               |  }
-               |} else {
-               |  $body
-               |}
-             """.stripMargin
+if ($array.isNullAt($i)) {
+  if (!$foundNullElement) {
+    $nullElementIndex = $size;
+    $foundNullElement = true;
+    $size++;
+    $builder.$$plus$$eq($nullValueHolder);
+  }
+} else {
+  $body
+}
+"""
           } else {
             body
           }
 
         val processArray = withArrayNullAssignment(
           s"""
-             |$jt $value = ${genGetValue(array, i)};
-             |if (!$hashSet.contains($hsValueCast$value)) {
-             |  if (++$size > ${ByteArrayMethods.MAX_ROUNDED_ARRAY_LENGTH}) {
-             |    break;
-             |  }
-             |  $hashSet.add$hsPostFix($hsValueCast$value);
-             |  $builder.$$plus$$eq($value);
-             |}
-           """.stripMargin)
+$jt $value = ${genGetValue(array, i)};
+if (!$hashSet.contains($hsValueCast$value)) {
+  if (++$size > ${ByteArrayMethods.MAX_ROUNDED_ARRAY_LENGTH}) {
+    break;
+  }
+  $hashSet.add$hsPostFix($hsValueCast$value);
+  $builder.$$plus$$eq($value);
+}
+""")
 
         s"""
-           |$openHashSet $hashSet = new $openHashSet$hsPostFix($classTag);
-           |$declareNullTrackVariables
-           |$arrayBuilderClass $builder = new $arrayBuilderClass();
-           |int $size = 0;
-           |for (int $i = 0; $i < $array.numElements(); $i++) {
-           |  $processArray
-           |}
-           |${buildResultArray(builder, ev.value, size, nullElementIndex)}
-         """.stripMargin
+$openHashSet $hashSet = new $openHashSet$hsPostFix($classTag);
+$declareNullTrackVariables
+$arrayBuilderClass $builder = new $arrayBuilderClass();
+int $size = 0;
+for (int $i = 0; $i < $array.numElements(); $i++) {
+  $processArray
+}
+${buildResultArray(builder, ev.value, size, nullElementIndex)}
+"""
       })
     } else {
       nullSafeCodeGen(ctx, ev, (array) => {
@@ -3430,57 +3430,57 @@ case class ArrayUnion(left: Expression, right: Expression) extends ArrayBinaryLi
         def withArrayNullAssignment(body: String) =
           if (dataType.asInstanceOf[ArrayType].containsNull) {
             s"""
-               |if ($array.isNullAt($i)) {
-               |  if (!$foundNullElement) {
-               |    $nullElementIndex = $size;
-               |    $foundNullElement = true;
-               |    $size++;
-               |    $builder.$$plus$$eq($nullValueHolder);
-               |  }
-               |} else {
-               |  $body
-               |}
-             """.stripMargin
+if ($array.isNullAt($i)) {
+  if (!$foundNullElement) {
+    $nullElementIndex = $size;
+    $foundNullElement = true;
+    $size++;
+    $builder.$$plus$$eq($nullValueHolder);
+  }
+} else {
+  $body
+}
+"""
           } else {
             body
           }
 
         val processArray = withArrayNullAssignment(
           s"""
-             |$jt $value = ${genGetValue(array, i)};
-             |if (!$hashSet.contains($hsValueCast$value)) {
-             |  if (++$size > ${ByteArrayMethods.MAX_ROUNDED_ARRAY_LENGTH}) {
-             |    break;
-             |  }
-             |  $hashSet.add$hsPostFix($hsValueCast$value);
-             |  $builder.$$plus$$eq($value);
-             |}
-           """.stripMargin)
+$jt $value = ${genGetValue(array, i)};
+if (!$hashSet.contains($hsValueCast$value)) {
+  if (++$size > ${ByteArrayMethods.MAX_ROUNDED_ARRAY_LENGTH}) {
+    break;
+  }
+  $hashSet.add$hsPostFix($hsValueCast$value);
+  $builder.$$plus$$eq($value);
+}
+""")
 
         // Only need to track null element index when result array's element is nullable.
         val declareNullTrackVariables = if (dataType.asInstanceOf[ArrayType].containsNull) {
           s"""
-             |boolean $foundNullElement = false;
-             |int $nullElementIndex = -1;
-           """.stripMargin
+boolean $foundNullElement = false;
+int $nullElementIndex = -1;
+"""
         } else {
           ""
         }
 
         s"""
-           |$openHashSet $hashSet = new $openHashSet$hsPostFix($classTag);
-           |$declareNullTrackVariables
-           |int $size = 0;
-           |$arrayBuilderClass $builder = new $arrayBuilderClass();
-           |ArrayData[] $arrays = new ArrayData[]{$array1, $array2};
-           |for (int $arrayDataIdx = 0; $arrayDataIdx < 2; $arrayDataIdx++) {
-           |  ArrayData $array = $arrays[$arrayDataIdx];
-           |  for (int $i = 0; $i < $array.numElements(); $i++) {
-           |    $processArray
-           |  }
-           |}
-           |${buildResultArray(builder, ev.value, size, nullElementIndex)}
-         """.stripMargin
+$openHashSet $hashSet = new $openHashSet$hsPostFix($classTag);
+$declareNullTrackVariables
+int $size = 0;
+$arrayBuilderClass $builder = new $arrayBuilderClass();
+ArrayData[] $arrays = new ArrayData[]{$array1, $array2};
+for (int $arrayDataIdx = 0; $arrayDataIdx < 2; $arrayDataIdx++) {
+  ArrayData $array = $arrays[$arrayDataIdx];
+  for (int $i = 0; $i < $array.numElements(); $i++) {
+    $processArray
+  }
+}
+${buildResultArray(builder, ev.value, size, nullElementIndex)}
+"""
       })
     } else {
       nullSafeCodeGen(ctx, ev, (array1, array2) => {
@@ -3677,19 +3677,19 @@ case class ArrayIntersect(left: Expression, right: Expression) extends ArrayBina
           if (right.dataType.asInstanceOf[ArrayType].containsNull) {
             if (left.dataType.asInstanceOf[ArrayType].containsNull) {
               s"""
-                 |if ($array2.isNullAt($i)) {
-                 |  $foundNullElement = true;
-                 |} else {
-                 |  $body
-                 |}
-               """.stripMargin
+if ($array2.isNullAt($i)) {
+  $foundNullElement = true;
+} else {
+  $body
+}
+"""
             } else {
               // if array1's element is not nullable, we don't need to track the null element index.
               s"""
-                 |if (!$array2.isNullAt($i)) {
-                 |  $body
-                 |}
-               """.stripMargin
+if (!$array2.isNullAt($i)) {
+  $body
+}
+"""
             }
           } else {
             body
@@ -3697,31 +3697,31 @@ case class ArrayIntersect(left: Expression, right: Expression) extends ArrayBina
 
         val writeArray2ToHashSet = withArray2NullCheck(
           s"""
-             |$jt $value = ${genGetValue(array2, i)};
-             |$hashSet.add$hsPostFix($hsValueCast$value);
-           """.stripMargin)
+$jt $value = ${genGetValue(array2, i)};
+$hashSet.add$hsPostFix($hsValueCast$value);
+""")
 
         def withArray1NullAssignment(body: String) =
           if (left.dataType.asInstanceOf[ArrayType].containsNull) {
             if (right.dataType.asInstanceOf[ArrayType].containsNull) {
               s"""
-                 |if ($array1.isNullAt($i)) {
-                 |  if ($foundNullElement) {
-                 |    $nullElementIndex = $size;
-                 |    $foundNullElement = false;
-                 |    $size++;
-                 |    $builder.$$plus$$eq($nullValueHolder);
-                 |  }
-                 |} else {
-                 |  $body
-                 |}
-               """.stripMargin
+if ($array1.isNullAt($i)) {
+  if ($foundNullElement) {
+    $nullElementIndex = $size;
+    $foundNullElement = false;
+    $size++;
+    $builder.$$plus$$eq($nullValueHolder);
+  }
+} else {
+  $body
+}
+"""
             } else {
               s"""
-                 |if (!$array1.isNullAt($i)) {
-                 |  $body
-                 |}
-               """.stripMargin
+if (!$array1.isNullAt($i)) {
+  $body
+}
+"""
             }
           } else {
             body
@@ -3729,41 +3729,41 @@ case class ArrayIntersect(left: Expression, right: Expression) extends ArrayBina
 
         val processArray1 = withArray1NullAssignment(
           s"""
-             |$jt $value = ${genGetValue(array1, i)};
-             |if ($hashSet.contains($hsValueCast$value) &&
-             |    !$hashSetResult.contains($hsValueCast$value)) {
-             |  if (++$size > ${ByteArrayMethods.MAX_ROUNDED_ARRAY_LENGTH}) {
-             |    break;
-             |  }
-             |  $hashSetResult.add$hsPostFix($hsValueCast$value);
-             |  $builder.$$plus$$eq($value);
-             |}
-           """.stripMargin)
+$jt $value = ${genGetValue(array1, i)};
+if ($hashSet.contains($hsValueCast$value) &&
+    !$hashSetResult.contains($hsValueCast$value)) {
+  if (++$size > ${ByteArrayMethods.MAX_ROUNDED_ARRAY_LENGTH}) {
+    break;
+  }
+  $hashSetResult.add$hsPostFix($hsValueCast$value);
+  $builder.$$plus$$eq($value);
+}
+""")
 
         // Only need to track null element index when result array's element is nullable.
         val declareNullTrackVariables = if (dataType.asInstanceOf[ArrayType].containsNull) {
           s"""
-             |boolean $foundNullElement = false;
-             |int $nullElementIndex = -1;
-           """.stripMargin
+boolean $foundNullElement = false;
+int $nullElementIndex = -1;
+"""
         } else {
           ""
         }
 
         s"""
-           |$openHashSet $hashSet = new $openHashSet$hsPostFix($classTag);
-           |$openHashSet $hashSetResult = new $openHashSet$hsPostFix($classTag);
-           |$declareNullTrackVariables
-           |for (int $i = 0; $i < $array2.numElements(); $i++) {
-           |  $writeArray2ToHashSet
-           |}
-           |$arrayBuilderClass $builder = new $arrayBuilderClass();
-           |int $size = 0;
-           |for (int $i = 0; $i < $array1.numElements(); $i++) {
-           |  $processArray1
-           |}
-           |${buildResultArray(builder, ev.value, size, nullElementIndex)}
-         """.stripMargin
+$openHashSet $hashSet = new $openHashSet$hsPostFix($classTag);
+$openHashSet $hashSetResult = new $openHashSet$hsPostFix($classTag);
+$declareNullTrackVariables
+for (int $i = 0; $i < $array2.numElements(); $i++) {
+  $writeArray2ToHashSet
+}
+$arrayBuilderClass $builder = new $arrayBuilderClass();
+int $size = 0;
+for (int $i = 0; $i < $array1.numElements(); $i++) {
+  $processArray1
+}
+${buildResultArray(builder, ev.value, size, nullElementIndex)}
+"""
       })
     } else {
       nullSafeCodeGen(ctx, ev, (array1, array2) => {
@@ -3911,19 +3911,19 @@ case class ArrayExcept(left: Expression, right: Expression) extends ArrayBinaryL
           if (right.dataType.asInstanceOf[ArrayType].containsNull) {
             if (left.dataType.asInstanceOf[ArrayType].containsNull) {
               s"""
-                 |if ($array2.isNullAt($i)) {
-                 |  $notFoundNullElement = false;
-                 |} else {
-                 |  $body
-                 |}
-             """.stripMargin
+if ($array2.isNullAt($i)) {
+  $notFoundNullElement = false;
+} else {
+  $body
+}
+"""
             } else {
               // if array1's element is not nullable, we don't need to track the null element index.
               s"""
-                 |if (!$array2.isNullAt($i)) {
-                 |  $body
-                 |}
-               """.stripMargin
+if (!$array2.isNullAt($i)) {
+  $body
+}
+"""
             }
           } else {
             body
@@ -3931,63 +3931,63 @@ case class ArrayExcept(left: Expression, right: Expression) extends ArrayBinaryL
 
         val writeArray2ToHashSet = withArray2NullCheck(
           s"""
-             |$jt $value = ${genGetValue(array2, i)};
-             |$hashSet.add$hsPostFix($hsValueCast$value);
-           """.stripMargin)
+$jt $value = ${genGetValue(array2, i)};
+$hashSet.add$hsPostFix($hsValueCast$value);
+""")
 
         def withArray1NullAssignment(body: String) =
           if (left.dataType.asInstanceOf[ArrayType].containsNull) {
             s"""
-               |if ($array1.isNullAt($i)) {
-               |  if ($notFoundNullElement) {
-               |    $nullElementIndex = $size;
-               |    $notFoundNullElement = false;
-               |    $size++;
-               |    $builder.$$plus$$eq($nullValueHolder);
-               |  }
-               |} else {
-               |  $body
-               |}
-             """.stripMargin
+ if ($array1.isNullAt($i)) {
+   if ($notFoundNullElement) {
+     $nullElementIndex = $size;
+     $notFoundNullElement = false;
+     $size++;
+     $builder.$$plus$$eq($nullValueHolder);
+   }
+ } else {
+   $body
+ }
+"""
           } else {
             body
           }
 
         val processArray1 = withArray1NullAssignment(
           s"""
-             |$jt $value = ${genGetValue(array1, i)};
-             |if (!$hashSet.contains($hsValueCast$value)) {
-             |  if (++$size > ${ByteArrayMethods.MAX_ROUNDED_ARRAY_LENGTH}) {
-             |    break;
-             |  }
-             |  $hashSet.add$hsPostFix($hsValueCast$value);
-             |  $builder.$$plus$$eq($value);
-             |}
-           """.stripMargin)
+$jt $value = ${genGetValue(array1, i)};
+if (!$hashSet.contains($hsValueCast$value)) {
+  if (++$size > ${ByteArrayMethods.MAX_ROUNDED_ARRAY_LENGTH}) {
+    break;
+  }
+  $hashSet.add$hsPostFix($hsValueCast$value);
+  $builder.$$plus$$eq($value);
+}
+""")
 
         // Only need to track null element index when array1's element is nullable.
         val declareNullTrackVariables = if (left.dataType.asInstanceOf[ArrayType].containsNull) {
           s"""
-             |boolean $notFoundNullElement = true;
-             |int $nullElementIndex = -1;
-           """.stripMargin
+boolean $notFoundNullElement = true;
+int $nullElementIndex = -1;
+"""
         } else {
           ""
         }
 
         s"""
-           |$openHashSet $hashSet = new $openHashSet$hsPostFix($classTag);
-           |$declareNullTrackVariables
-           |for (int $i = 0; $i < $array2.numElements(); $i++) {
-           |  $writeArray2ToHashSet
-           |}
-           |$arrayBuilderClass $builder = new $arrayBuilderClass();
-           |int $size = 0;
-           |for (int $i = 0; $i < $array1.numElements(); $i++) {
-           |  $processArray1
-           |}
-           |${buildResultArray(builder, ev.value, size, nullElementIndex)}
-         """.stripMargin
+$openHashSet $hashSet = new $openHashSet$hsPostFix($classTag);
+$declareNullTrackVariables
+for (int $i = 0; $i < $array2.numElements(); $i++) {
+  $writeArray2ToHashSet
+}
+$arrayBuilderClass $builder = new $arrayBuilderClass();
+int $size = 0;
+for (int $i = 0; $i < $array1.numElements(); $i++) {
+  $processArray1
+}
+${buildResultArray(builder, ev.value, size, nullElementIndex)}
+"""
       })
     } else {
       nullSafeCodeGen(ctx, ev, (array1, array2) => {

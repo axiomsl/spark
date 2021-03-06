@@ -177,17 +177,17 @@ case class CheckOverflowInSum(
          |""".stripMargin
     }
     val code = code"""
-       |${childGen.code}
-       |boolean ${ev.isNull} = ${childGen.isNull};
-       |Decimal ${ev.value} = null;
-       |if (${childGen.isNull}) {
-       |  $nullHandling
-       |} else {
-       |  ${ev.value} = ${childGen.value}.toPrecision(
-       |    ${dataType.precision}, ${dataType.scale}, Decimal.ROUND_HALF_UP(), $nullOnOverflow);
-       |  ${ev.isNull} = ${ev.value} == null;
-       |}
-       |""".stripMargin
+${childGen.code}
+boolean ${ev.isNull} = ${childGen.isNull};
+Decimal ${ev.value} = null;
+if (${childGen.isNull}) {
+  $nullHandling
+} else {
+  ${ev.value} = ${childGen.value}.toPrecision(
+    ${dataType.precision}, ${dataType.scale}, Decimal.ROUND_HALF_UP(), $nullOnOverflow);
+  ${ev.isNull} = ${ev.value} == null;
+}
+"""
 
     ev.copy(code = code)
   }

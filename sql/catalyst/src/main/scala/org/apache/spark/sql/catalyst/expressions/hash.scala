@@ -306,16 +306,16 @@ abstract class HashExpression[E] extends Expression {
       returnType = hashResultType,
       makeSplitFunction = body =>
         s"""
-           |$body
-           |return ${ev.value};
-         """.stripMargin,
+$body
+return ${ev.value};
+""",
       foldFunctions = _.map(funcCall => s"${ev.value} = $funcCall;").mkString("\n"))
 
     ev.copy(code =
       code"""
-         |$hashResultType ${ev.value} = $typedSeed;
-         |$codes
-       """.stripMargin)
+$hashResultType ${ev.value} = $typedSeed;
+$codes
+""")
   }
 
   protected def nullSafeElementHash(
@@ -366,9 +366,9 @@ abstract class HashExpression[E] extends Expression {
     } else {
       val bytes = ctx.freshName("bytes")
       s"""
-         |final byte[] $bytes = $input.toJavaBigDecimal().unscaledValue().toByteArray();
-         |${genHashBytes(bytes, result)}
-       """.stripMargin
+final byte[] $bytes = $input.toJavaBigDecimal().unscaledValue().toByteArray();
+${genHashBytes(bytes, result)}
+"""
     }
   }
 
@@ -437,14 +437,14 @@ abstract class HashExpression[E] extends Expression {
       returnType = hashResultType,
       makeSplitFunction = body =>
         s"""
-           |$body
-           |return $result;
-         """.stripMargin,
+$body
+return $result;
+""",
       foldFunctions = _.map(funcCall => s"$result = $funcCall;").mkString("\n"))
     s"""
-       |final InternalRow $tmpInput = $input;
-       |$code
-     """.stripMargin
+ final InternalRow $tmpInput = $input;
+ $code
+"""
   }
 
   @tailrec
@@ -677,11 +677,11 @@ case class HiveHash(children: Seq[Expression]) extends HashExpression[Int] {
         computeHash(childGen.value, child.dataType, childHash, ctx)
       }
       s"""
-         |${childGen.code}
-         |$childHash = 0;
-         |$codeToComputeHash
-         |${ev.value} = (31 * ${ev.value}) + $childHash;
-       """.stripMargin
+ ${childGen.code}
+ $childHash = 0;
+ $codeToComputeHash
+ ${ev.value} = (31 * ${ev.value}) + $childHash;
+ """
     }
 
     val codes = ctx.splitExpressionsWithCurrentInputs(
@@ -691,19 +691,19 @@ case class HiveHash(children: Seq[Expression]) extends HashExpression[Int] {
       returnType = CodeGenerator.JAVA_INT,
       makeSplitFunction = body =>
         s"""
-           |${CodeGenerator.JAVA_INT} $childHash = 0;
-           |$body
-           |return ${ev.value};
-         """.stripMargin,
+${CodeGenerator.JAVA_INT} $childHash = 0;
+$body
+return ${ev.value};
+""",
       foldFunctions = _.map(funcCall => s"${ev.value} = $funcCall;").mkString("\n"))
 
 
     ev.copy(code =
       code"""
-         |${CodeGenerator.JAVA_INT} ${ev.value} = $seed;
-         |${CodeGenerator.JAVA_INT} $childHash = 0;
-         |$codes
-       """.stripMargin)
+ ${CodeGenerator.JAVA_INT} ${ev.value} = $seed;
+ ${CodeGenerator.JAVA_INT} $childHash = 0;
+ $codes
+""")
   }
 
   override def eval(input: InternalRow = null): Int = {
@@ -811,10 +811,10 @@ case class HiveHash(children: Seq[Expression]) extends HashExpression[Int] {
       val computeFieldHash = nullSafeElementHash(
         tmpInput, index.toString, field.nullable, field.dataType, childResult, ctx)
       s"""
-         |$childResult = 0;
-         |$computeFieldHash
-         |$result = (31 * $result) + $childResult;
-       """.stripMargin
+$childResult = 0;
+$computeFieldHash
+$result = (31 * $result) + $childResult;
+"""
     }
 
     val code = ctx.splitExpressions(
@@ -824,16 +824,16 @@ case class HiveHash(children: Seq[Expression]) extends HashExpression[Int] {
       returnType = CodeGenerator.JAVA_INT,
       makeSplitFunction = body =>
         s"""
-           |${CodeGenerator.JAVA_INT} $childResult = 0;
-           |$body
-           |return $result;
-           """.stripMargin,
+ ${CodeGenerator.JAVA_INT} $childResult = 0;
+ $body
+ return $result;
+""",
       foldFunctions = _.map(funcCall => s"$result = $funcCall;").mkString("\n"))
     s"""
-       |final InternalRow $tmpInput = $input;
-       |${CodeGenerator.JAVA_INT} $childResult = 0;
-       |$code
-     """.stripMargin
+final InternalRow $tmpInput = $input;
+${CodeGenerator.JAVA_INT} $childResult = 0;
+$code
+"""
   }
 }
 

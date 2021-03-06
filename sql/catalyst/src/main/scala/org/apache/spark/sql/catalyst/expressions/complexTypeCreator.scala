@@ -464,11 +464,11 @@ case class CreateNamedStruct(children: Seq[Expression]) extends Expression with 
 
     ev.copy(code =
       code"""
-         |Object[] $values = new Object[${valExprs.size}];
-         |$valuesCode
-         |final InternalRow ${ev.value} = new $rowClass($values);
-         |$values = null;
-       """.stripMargin, isNull = FalseLiteral)
+Object[] $values = new Object[${valExprs.size}];
+$valuesCode
+final InternalRow ${ev.value} = new $rowClass($values);
+$values = null;
+""", isNull = FalseLiteral)
   }
 
   // There is an alias set at `CreateStruct.create`. If there is an alias,

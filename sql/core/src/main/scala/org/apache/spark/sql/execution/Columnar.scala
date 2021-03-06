@@ -156,15 +156,15 @@ case class ColumnarToRowExec(child: SparkPlan) extends ColumnarToRowTransition w
     val nextBatch = ctx.freshName("nextBatch")
     val nextBatchFuncName = ctx.addNewFunction(nextBatch,
       s"""
-         |private void $nextBatch() throws java.io.IOException {
-         |  if ($input.hasNext()) {
-         |    $batch = ($columnarBatchClz)$input.next();
-         |    $numInputBatches.add(1);
-         |    $numOutputRows.add($batch.numRows());
-         |    $idx = 0;
-         |    ${columnAssigns.mkString("", "\n", "\n")}
-         |  }
-         |}""".stripMargin)
+ private void $nextBatch() throws java.io.IOException {
+   if ($input.hasNext()) {
+     $batch = ($columnarBatchClz)$input.next();
+     $numInputBatches.add(1);
+     $numOutputRows.add($batch.numRows());
+     $idx = 0;
+     ${columnAssigns.mkString("", "\n", "\n")}
+   }
+ }""")
 
     ctx.currentVars = null
     val rowidx = ctx.freshName("rowIdx")

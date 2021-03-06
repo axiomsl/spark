@@ -112,12 +112,12 @@ case class Coalesce(children: Seq[Expression]) extends ComplexTypeMergingExpress
 
     ev.copy(code =
       code"""
-         |${ev.isNull} = true;
-         |$resultType ${ev.value} = ${CodeGenerator.defaultValue(dataType)};
-         |do {
-         |  $codes
-         |} while (false);
-       """.stripMargin)
+${ev.isNull} = true;
+$resultType ${ev.value} = ${CodeGenerator.defaultValue(dataType)};
+do {
+  $codes
+} while (false);
+""")
   }
 }
 
@@ -451,11 +451,11 @@ case class AtLeastNNonNulls(n: Int, children: Seq[Expression]) extends Predicate
 
     ev.copy(code =
       code"""
-         |${CodeGenerator.JAVA_INT} $nonnull = 0;
-         |do {
-         |  $codes
-         |} while (false);
-         |${CodeGenerator.JAVA_BOOLEAN} ${ev.value} = $nonnull >= $n;
-       """.stripMargin, isNull = FalseLiteral)
+${CodeGenerator.JAVA_INT} $nonnull = 0;
+do {
+  $codes
+} while (false);
+${CodeGenerator.JAVA_BOOLEAN} ${ev.value} = $nonnull >= $n;
+""", isNull = FalseLiteral)
   }
 }

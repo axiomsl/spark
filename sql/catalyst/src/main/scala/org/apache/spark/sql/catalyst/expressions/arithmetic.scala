@@ -58,12 +58,12 @@ case class UnaryMinus(
         val javaType = CodeGenerator.javaType(dataType)
         val originValue = ctx.freshName("origin")
         s"""
-           |$javaType $originValue = ($javaType)($eval);
-           |if ($originValue == $javaBoxedType.MIN_VALUE) {
-           |  throw new ArithmeticException("- " + $originValue + " caused overflow.");
-           |}
-           |${ev.value} = ($javaType)(-($originValue));
-           """.stripMargin
+$javaType $originValue = ($javaType)($eval);
+if ($originValue == $javaBoxedType.MIN_VALUE) {
+  throw new ArithmeticException("- " + $originValue + " caused overflow.");
+}
+${ev.value} = ($javaType)(-($originValue));
+"""
       })
     case IntegerType | LongType if failOnError =>
       nullSafeCodeGen(ctx, ev, eval => {
@@ -189,18 +189,18 @@ abstract class BinaryArithmetic extends BinaryOperator with NullIntolerant {
         val overflowCheck = if (failOnError) {
           val javaType = CodeGenerator.boxedType(dataType)
           s"""
-             |if ($tmpResult < $javaType.MIN_VALUE || $tmpResult > $javaType.MAX_VALUE) {
-             |  throw new ArithmeticException($eval1 + " $symbol " + $eval2 + " caused overflow.");
-             |}
-           """.stripMargin
+if ($tmpResult < $javaType.MIN_VALUE || $tmpResult > $javaType.MAX_VALUE) {
+  throw new ArithmeticException($eval1 + " $symbol " + $eval2 + " caused overflow.");
+}
+"""
         } else {
           ""
         }
         s"""
-           |${CodeGenerator.JAVA_INT} $tmpResult = $eval1 $symbol $eval2;
-           |$overflowCheck
-           |${ev.value} = (${CodeGenerator.javaType(dataType)})($tmpResult);
-         """.stripMargin
+${CodeGenerator.JAVA_INT} $tmpResult = $eval1 $symbol $eval2;
+$overflowCheck
+${ev.value} = (${CodeGenerator.javaType(dataType)})($tmpResult);
+"""
       })
     case IntegerType | LongType =>
       nullSafeCodeGen(ctx, ev, (eval1, eval2) => {
@@ -211,8 +211,8 @@ abstract class BinaryArithmetic extends BinaryOperator with NullIntolerant {
           s"$eval1 $symbol $eval2"
         }
         s"""
-           |${ev.value} = $operation;
-         """.stripMargin
+${ev.value} = $operation;
+"""
       })
     case DoubleType | FloatType =>
       // When Double/Float overflows, there can be 2 cases:
@@ -220,8 +220,8 @@ abstract class BinaryArithmetic extends BinaryOperator with NullIntolerant {
       // - returns (+/-)Infinite: same behavior also other DBs have (eg. Postgres)
       nullSafeCodeGen(ctx, ev, (eval1, eval2) => {
         s"""
-           |${ev.value} = $eval1 $symbol $eval2;
-         """.stripMargin
+${ev.value} = $eval1 $symbol $eval2;
+"""
       })
   }
 }
@@ -788,9 +788,9 @@ case class Least(children: Seq[Expression]) extends ComplexTypeMergingExpression
     ev.isNull = JavaCode.isNullGlobal(ctx.addMutableState(CodeGenerator.JAVA_BOOLEAN, ev.isNull))
     val evals = evalChildren.map(eval =>
       s"""
-         |${eval.code}
-         |${ctx.reassignIfSmaller(dataType, ev, eval)}
-      """.stripMargin
+${eval.code}
+${ctx.reassignIfSmaller(dataType, ev, eval)}
+"""
     )
 
     val resultType = CodeGenerator.javaType(dataType)
@@ -801,16 +801,16 @@ case class Least(children: Seq[Expression]) extends ComplexTypeMergingExpression
       returnType = resultType,
       makeSplitFunction = body =>
         s"""
-          |$body
-          |return ${ev.value};
-        """.stripMargin,
+$body
+return ${ev.value};
+""",
       foldFunctions = _.map(funcCall => s"${ev.value} = $funcCall;").mkString("\n"))
     ev.copy(code =
       code"""
-         |${ev.isNull} = true;
-         |$resultType ${ev.value} = ${CodeGenerator.defaultValue(dataType)};
-         |$codes
-      """.stripMargin)
+${ev.isNull} = true;
+$resultType ${ev.value} = ${CodeGenerator.defaultValue(dataType)};
+$codes
+""")
   }
 }
 
@@ -1049,9 +1049,9 @@ case class Greatest(children: Seq[Expression]) extends ComplexTypeMergingExpress
     ev.isNull = JavaCode.isNullGlobal(ctx.addMutableState(CodeGenerator.JAVA_BOOLEAN, ev.isNull))
     val evals = evalChildren.map(eval =>
       s"""
-         |${eval.code}
-         |${ctx.reassignIfGreater(dataType, ev, eval)}
-      """.stripMargin
+${eval.code}
+${ctx.reassignIfGreater(dataType, ev, eval)}
+"""
     )
 
     val resultType = CodeGenerator.javaType(dataType)
@@ -1062,16 +1062,16 @@ case class Greatest(children: Seq[Expression]) extends ComplexTypeMergingExpress
       returnType = resultType,
       makeSplitFunction = body =>
         s"""
-           |$body
-           |return ${ev.value};
-        """.stripMargin,
+$body
+return ${ev.value};
+""",
       foldFunctions = _.map(funcCall => s"${ev.value} = $funcCall;").mkString("\n"))
     ev.copy(code =
       code"""
-         |${ev.isNull} = true;
-         |$resultType ${ev.value} = ${CodeGenerator.defaultValue(dataType)};
-         |$codes
-      """.stripMargin)
+${ev.isNull} = true;
+$resultType ${ev.value} = ${CodeGenerator.defaultValue(dataType)};
+$codes
+""")
   }
 }
 

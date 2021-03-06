@@ -534,10 +534,10 @@ class CodegenContext extends Logging {
     val declareNestedClasses = classFunctions.filterKeys(_ != outerClassName).map {
       case (className, functions) =>
         s"""
-           |private class $className {
-           |  ${functions.values.mkString("\n")}
-           |}
-           """.stripMargin
+private class $className {
+  ${functions.values.mkString("\n")}
+}
+"""
     }
 
     (inlinedFunctions ++ initNestedClasses ++ declareNestedClasses).mkString("\n")
@@ -732,12 +732,12 @@ class CodegenContext extends Logging {
    */
   def reassignIfSmaller(dataType: DataType, partialResult: ExprCode, item: ExprCode): String = {
     s"""
-       |if (!${item.isNull} && (${partialResult.isNull} ||
-       |  ${genGreater(dataType, partialResult.value, item.value)})) {
-       |  ${partialResult.isNull} = false;
-       |  ${partialResult.value} = ${item.value};
-       |}
-      """.stripMargin
+if (!${item.isNull} && (${partialResult.isNull} ||
+  ${genGreater(dataType, partialResult.value, item.value)})) {
+  ${partialResult.isNull} = false;
+  ${partialResult.value} = ${item.value};
+}
+"""
   }
 
   /**
@@ -749,12 +749,12 @@ class CodegenContext extends Logging {
    */
   def reassignIfGreater(dataType: DataType, partialResult: ExprCode, item: ExprCode): String = {
     s"""
-       |if (!${item.isNull} && (${partialResult.isNull} ||
-       |  ${genGreater(dataType, item.value, partialResult.value)})) {
-       |  ${partialResult.isNull} = false;
-       |  ${partialResult.value} = ${item.value};
-       |}
-      """.stripMargin
+if (!${item.isNull} && (${partialResult.isNull} ||
+  ${genGreater(dataType, item.value, partialResult.value)})) {
+  ${partialResult.isNull} = false;
+  ${partialResult.value} = ${item.value};
+}
+"""
   }
 
   /**
@@ -795,13 +795,13 @@ class CodegenContext extends Logging {
     val i = freshName("idx")
     if (nullElements) {
       s"""
-         |for (int $i = 0; !$isNull && $i < $arrayData.numElements(); $i++) {
-         |  $isNull |= $arrayData.isNullAt($i);
-         |}
-         |if (!$isNull) {
-         |  $execute
-         |}
-       """.stripMargin
+for (int $i = 0; !$isNull && $i < $arrayData.numElements(); $i++) {
+  $isNull |= $arrayData.isNullAt($i);
+}
+if (!$isNull) {
+  $execute
+}
+"""
     } else {
       execute
     }
@@ -887,10 +887,10 @@ class CodegenContext extends Logging {
       val functions = blocks.zipWithIndex.map { case (body, i) =>
         val name = s"${func}_$i"
         val code = s"""
-           |private $returnType $name($argString) {
-           |  ${makeSplitFunction(body)}
-           |}
-         """.stripMargin
+private $returnType $name($argString) {
+  ${makeSplitFunction(body)}
+}
+"""
         addNewFunctionInternal(name, code, inlineToOuterClass = false)
       }
 
@@ -994,10 +994,10 @@ class CodegenContext extends Logging {
           //   }
           val body = foldFunctions(orderedFunctions.map(name => s"$name($argInvocationString)"))
           val code = s"""
-              |private $returnType $funcName($argDefinitionString) {
-              |  ${makeSplitFunction(body)}
-              |}
-            """.stripMargin
+private $returnType $funcName($argDefinitionString) {
+  ${makeSplitFunction(body)}
+}
+"""
           addNewFunctionToClass(funcName, code, innerClassName)
           Seq(s"$innerClassInstance.$funcName($argInvocationString)")
         } else {
@@ -1095,12 +1095,12 @@ class CodegenContext extends Logging {
           val returnType = javaType(expr.dataType)
           val fn =
             s"""
-               |private $returnType $fnName(${argList.mkString(", ")}) {
-               |  ${eval.code}
-               |  $isNullEvalCode
-               |  return ${eval.value};
-               |}
-               """.stripMargin
+private $returnType $fnName(${argList.mkString(", ")}) {
+  ${eval.code}
+  $isNullEvalCode
+  return ${eval.value};
+}
+"""
 
           val value = freshName("subExprValue")
           val state = SubExprEliminationState(isNull, JavaCode.variable(value, expr.dataType))
@@ -1147,12 +1147,12 @@ class CodegenContext extends Logging {
       val eval = expr.genCode(this)
       val fn =
         s"""
-           |private void $fnName(InternalRow $INPUT_ROW) {
-           |  ${eval.code}
-           |  $isNull = ${eval.isNull};
-           |  $value = ${eval.value};
-           |}
-           """.stripMargin
+private void $fnName(InternalRow $INPUT_ROW) {
+  ${eval.code}
+  $isNull = ${eval.isNull};
+  $value = ${eval.value};
+}
+"""
 
       // Add a state and a mapping of the common subexpressions that are associate with this
       // state. Adding this expression to subExprEliminationExprMap means it will call `fn`
@@ -1606,9 +1606,9 @@ object CodeGenerator extends Logging {
       -1
     }
     s"""
-       |ArrayData $arrayName = ArrayData.allocateArrayData(
-       |  $elementSize, $numElements, "$additionalErrorMessage");
-     """.stripMargin
+ArrayData $arrayName = ArrayData.allocateArrayData(
+  $elementSize, $numElements, "$additionalErrorMessage");
+"""
   }
 
   /**
@@ -1674,20 +1674,20 @@ object CodeGenerator extends Logging {
       if (!isVectorized && (dataType.isInstanceOf[DecimalType] ||
         dataType.isInstanceOf[CalendarIntervalType])) {
         s"""
-           |if (!${ev.isNull}) {
-           |  ${setColumn(row, dataType, ordinal, ev.value)};
-           |} else {
-           |  ${setColumn(row, dataType, ordinal, "null")};
-           |}
-         """.stripMargin
+if (!${ev.isNull}) {
+  ${setColumn(row, dataType, ordinal, ev.value)};
+} else {
+  ${setColumn(row, dataType, ordinal, "null")};
+}
+"""
       } else {
         s"""
-           |if (!${ev.isNull}) {
-           |  ${setColumn(row, dataType, ordinal, ev.value)};
-           |} else {
-           |  $row.setNullAt($ordinal);
-           |}
-         """.stripMargin
+if (!${ev.isNull}) {
+  ${setColumn(row, dataType, ordinal, ev.value)};
+} else {
+  $row.setNullAt($ordinal);
+}
+"""
       }
     } else {
       s"""${setColumn(row, dataType, ordinal, ev.value)};"""
@@ -1727,12 +1727,12 @@ object CodeGenerator extends Logging {
     }
     if (isNull.isDefined && isPrimitiveType) {
       s"""
-         |if (${isNull.get}) {
-         |  $array.setNullAt($i);
-         |} else {
-         |  $array.$setFunc($i, $value);
-         |}
-       """.stripMargin
+if (${isNull.get}) {
+  $array.setNullAt($i);
+} else {
+  $array.$setFunc($i, $value);
+}
+"""
     } else {
       s"$array.$setFunc($i, $value);"
     }
@@ -1750,12 +1750,12 @@ object CodeGenerator extends Logging {
       nullable: Boolean): String = {
     if (nullable) {
       s"""
-         |if (!${ev.isNull}) {
-         |  ${setValue(vector, rowId, dataType, ev.value)}
-         |} else {
-         |  $vector.putNull($rowId);
-         |}
-       """.stripMargin
+if (!${ev.isNull}) {
+  ${setValue(vector, rowId, dataType, ev.value)}
+} else {
+  $vector.putNull($rowId);
+}
+"""
     } else {
       s"""${setValue(vector, rowId, dataType, ev.value)};"""
     }

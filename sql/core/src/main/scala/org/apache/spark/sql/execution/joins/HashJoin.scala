@@ -394,14 +394,14 @@ trait HashJoin extends BaseJoinExec with CodegenSupport {
         val value = ctx.freshName("value")
         val javaType = CodeGenerator.javaType(a.dataType)
         val code = code"""
-          |boolean $isNull = true;
-          |$javaType $value = ${CodeGenerator.defaultValue(a.dataType)};
-          |if ($matched != null) {
-          |  ${ev.code}
-          |  $isNull = ${ev.isNull};
-          |  $value = ${ev.value};
-          |}
-         """.stripMargin
+boolean $isNull = true;
+$javaType $value = ${CodeGenerator.defaultValue(a.dataType)};
+if ($matched != null) {
+  ${ev.code}
+  $isNull = ${ev.isNull};
+  $value = ${ev.value};
+}
+"""
         ExprCode(code, JavaCode.isNullVariable(isNull), JavaCode.variable(value, a.dataType))
       }
     }

@@ -289,7 +289,7 @@ abstract class QueryPlan[PlanType <: QueryPlan[PlanType]]
    *
    * We use "!" to indicate an invalid plan, and "'" to indicate an unresolved plan.
    */
-  protected def statePrefix = if (missingInput.nonEmpty && children.nonEmpty) "!" else ""
+  protected def statePrefix: String = if (missingInput.nonEmpty && children.nonEmpty) "!" else ""
 
   override def simpleString(maxFields: Int): String = statePrefix + super.simpleString(maxFields)
 
@@ -432,7 +432,7 @@ abstract class QueryPlan[PlanType <: QueryPlan[PlanType]]
 }
 
 object QueryPlan extends PredicateHelper {
-  val OP_ID_TAG = TreeNodeTag[Int]("operatorId")
+  val OP_ID_TAG: TreeNodeTag[Int] = TreeNodeTag[Int]("operatorId")
   val CODEGEN_ID_TAG = new TreeNodeTag[Int]("wholeStageCodegenId")
 
   /**

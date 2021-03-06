@@ -455,18 +455,18 @@ case class In(value: Expression, list: Seq[Expression]) extends Predicate {
 
     ev.copy(code =
       code"""
-         |${valueGen.code}
-         |byte $tmpResult = $HAS_NULL;
-         |if (!${valueGen.isNull}) {
-         |  $tmpResult = $NOT_MATCHED;
-         |  $javaDataType $valueArg = ${valueGen.value};
-         |  do {
-         |    $codes
-         |  } while (false);
-         |}
-         |final boolean ${ev.isNull} = ($tmpResult == $HAS_NULL);
-         |final boolean ${ev.value} = ($tmpResult == $MATCHED);
-       """.stripMargin)
+${valueGen.code}
+byte $tmpResult = $HAS_NULL;
+if (!${valueGen.isNull}) {
+  $tmpResult = $NOT_MATCHED;
+  $javaDataType $valueArg = ${valueGen.value};
+  do {
+    $codes
+  } while (false);
+}
+final boolean ${ev.isNull} = ($tmpResult == $HAS_NULL);
+final boolean ${ev.value} = ($tmpResult == $MATCHED);
+""")
   }
 
   override def sql: String = {

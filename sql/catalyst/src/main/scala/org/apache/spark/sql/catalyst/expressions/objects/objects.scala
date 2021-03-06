@@ -1478,10 +1478,10 @@ case class CreateExternalRow(children: Seq[Expression], schema: StructType)
 
     val code =
       code"""
-         |Object[] $values = new Object[${children.size}];
-         |$childrenCode
-         |final ${classOf[Row].getName} ${ev.value} = new $rowClass($values, $schemaField);
-       """.stripMargin
+Object[] $values = new Object[${children.size}];
+$childrenCode
+final ${classOf[Row].getName} ${ev.value} = new $rowClass($values, $schemaField);
+"""
     ev.copy(code = code, isNull = FalseLiteral)
   }
 }
@@ -1620,11 +1620,11 @@ case class InitializeJavaBean(beanInstance: Expression, setters: Map[String, Exp
 
     val code = instanceGen.code +
       code"""
-         |$beanInstanceJavaType $javaBeanInstance = ${instanceGen.value};
-         |if (!${instanceGen.isNull}) {
-         |  $initializeCode
-         |}
-       """.stripMargin
+$beanInstanceJavaType $javaBeanInstance = ${instanceGen.value};
+if (!${instanceGen.isNull}) {
+  $initializeCode
+}
+"""
     ev.copy(code = code, isNull = instanceGen.isNull, value = instanceGen.value)
   }
 }

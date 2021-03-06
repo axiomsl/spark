@@ -245,22 +245,22 @@ sealed abstract class LikeAllBase extends MultiLikeBase {
 
     ev.copy(code =
       code"""
-            |${eval.code}
-            |boolean ${ev.isNull} = false;
-            |boolean ${ev.value} = true;
-            |if (${eval.isNull}) {
-            |  ${ev.isNull} = true;
-            |} else {
-            |  $javaDataType $valueArg = ${eval.value};
-            |  for ($patternClass $pattern: $patternCache) {
-            |    if ($checkNotMatchCode) {
-            |      ${ev.value} = false;
-            |      break;
-            |    }
-            |  }
-            |  if (${ev.value} && $hasNull) ${ev.isNull} = true;
-            |}
-      """.stripMargin)
+${eval.code}
+boolean ${ev.isNull} = false;
+boolean ${ev.value} = true;
+if (${eval.isNull}) {
+  ${ev.isNull} = true;
+} else {
+  $javaDataType $valueArg = ${eval.value};
+  for ($patternClass $pattern: $patternCache) {
+    if ($checkNotMatchCode) {
+      ${ev.value} = false;
+      break;
+    }
+  }
+  if (${ev.value} && $hasNull) ${ev.isNull} = true;
+}
+""")
   }
 }
 
@@ -301,22 +301,22 @@ sealed abstract class LikeAnyBase extends MultiLikeBase {
 
     ev.copy(code =
       code"""
-            |${eval.code}
-            |boolean ${ev.isNull} = false;
-            |boolean ${ev.value} = false;
-            |if (${eval.isNull}) {
-            |  ${ev.isNull} = true;
-            |} else {
-            |  $javaDataType $valueArg = ${eval.value};
-            |  for ($patternClass $pattern: $patternCache) {
-            |    if ($checkMatchCode) {
-            |      ${ev.value} = true;
-            |      break;
-            |    }
-            |  }
-            |  if (!${ev.value} && $hasNull) ${ev.isNull} = true;
-            |}
-      """.stripMargin)
+${eval.code}
+boolean ${ev.isNull} = false;
+boolean ${ev.value} = false;
+if (${eval.isNull}) {
+  ${ev.isNull} = true;
+} else {
+  $javaDataType $valueArg = ${eval.value};
+  for ($patternClass $pattern: $patternCache) {
+    if ($checkMatchCode) {
+      ${ev.value} = true;
+      break;
+    }
+  }
+  if (!${ev.value} && $hasNull) ${ev.isNull} = true;
+}
+""")
   }
 }
 
@@ -830,26 +830,26 @@ case class RegExpExtractAll(subject: Expression, regexp: Expression, idx: Expres
     }
     nullSafeCodeGen(ctx, ev, (subject, regexp, idx) => {
       s"""
-         | if (!$regexp.equals($termLastRegex)) {
-         |   // regex value changed
-         |   $termLastRegex = $regexp.clone();
-         |   $termPattern = $classNamePattern.compile($termLastRegex.toString());
-         | }
-         | java.util.regex.Matcher $matcher = $termPattern.matcher($subject.toString());
-         | java.util.ArrayList $matchResults = new java.util.ArrayList<UTF8String>();
-         | while ($matcher.find()) {
-         |   java.util.regex.MatchResult $matchResult = $matcher.toMatchResult();
-         |   $classNameRegExpExtractBase.checkGroupIndex($matchResult.groupCount(), $idx);
-         |   if ($matchResult.group($idx) == null) {
-         |     $matchResults.add(UTF8String.EMPTY_UTF8);
-         |   } else {
-         |     $matchResults.add(UTF8String.fromString($matchResult.group($idx)));
-         |   }
-         | }
-         | ${ev.value} =
-         |   new $arrayClass($matchResults.toArray(new UTF8String[$matchResults.size()]));
-         | $setEvNotNull
-         """
+ if (!$regexp.equals($termLastRegex)) {
+   // regex value changed
+   $termLastRegex = $regexp.clone();
+   $termPattern = $classNamePattern.compile($termLastRegex.toString());
+ }
+ java.util.regex.Matcher $matcher = $termPattern.matcher($subject.toString());
+ java.util.ArrayList $matchResults = new java.util.ArrayList<UTF8String>();
+ while ($matcher.find()) {
+   java.util.regex.MatchResult $matchResult = $matcher.toMatchResult();
+   $classNameRegExpExtractBase.checkGroupIndex($matchResult.groupCount(), $idx);
+   if ($matchResult.group($idx) == null) {
+     $matchResults.add(UTF8String.EMPTY_UTF8);
+   } else {
+     $matchResults.add(UTF8String.fromString($matchResult.group($idx)));
+   }
+ }
+ ${ev.value} =
+   new $arrayClass($matchResults.toArray(new UTF8String[$matchResults.size()]));
+ $setEvNotNull
+"""
     })
   }
 }

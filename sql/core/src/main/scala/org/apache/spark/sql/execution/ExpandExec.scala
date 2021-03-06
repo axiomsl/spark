@@ -156,9 +156,9 @@ case class ExpandExec(
         val isNull = ctx.freshName("isNull")
         val value = ctx.freshName("value")
         val code = code"""
-          |boolean $isNull = true;
-          |${CodeGenerator.javaType(firstExpr.dataType)} $value =
-          |  ${CodeGenerator.defaultValue(firstExpr.dataType)};
+boolean $isNull = true;
+${CodeGenerator.javaType(firstExpr.dataType)} $value =
+  ${CodeGenerator.defaultValue(firstExpr.dataType)};
          """.stripMargin
         ExprCode(
           code,
@@ -175,18 +175,18 @@ case class ExpandExec(
           val ev = BindReferences.bindReference(exprs(col), attributeSeq).genCode(ctx)
           updateCode +=
             s"""
-               |${ev.code}
-               |${outputColumns(col).isNull} = ${ev.isNull};
-               |${outputColumns(col).value} = ${ev.value};
+${ev.code}
+${outputColumns(col).isNull} = ${ev.isNull};
+${outputColumns(col).value} = ${ev.value};
             """.stripMargin
         }
       }
 
       s"""
-         |case $row:
-         |  ${updateCode.trim}
-         |  break;
-       """.stripMargin
+case $row:
+  ${updateCode.trim}
+  break;
+       """
     }
 
     val numOutput = metricTerm(ctx, "numOutputRows")
@@ -194,14 +194,14 @@ case class ExpandExec(
     // these column have to declared before the loop.
     val evaluate = evaluateVariables(outputColumns)
     s"""
-       |$evaluate
-       |for (int $i = 0; $i < ${projections.length}; $i ++) {
-       |  switch ($i) {
-       |    ${cases.mkString("\n").trim}
-       |  }
-       |  $numOutput.add(1);
-       |  ${consume(ctx, outputColumns)}
-       |}
-     """.stripMargin
+$evaluate
+for (int $i = 0; $i < ${projections.length}; $i ++) {
+  switch ($i) {
+    ${cases.mkString("\n").trim}
+  }
+  $numOutput.add(1);
+  ${consume(ctx, outputColumns)}
+}
+     """
   }
 }

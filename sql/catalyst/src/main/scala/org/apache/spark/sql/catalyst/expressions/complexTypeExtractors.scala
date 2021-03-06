@@ -283,9 +283,9 @@ case class GetArrayItem(
 
       val indexOutOfBoundBranch = if (failOnError) {
         s"""throw new ArrayIndexOutOfBoundsException(
-           |  "Invalid index: " + $index + ", numElements: " + $eval1.numElements()
-           |);
-         """.stripMargin
+  "Invalid index: " + $index + ", numElements: " + $eval1.numElements()
+);
+"""
       } else {
         s"${ev.isNull} = true;"
       }
