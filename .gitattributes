@@ -3,6 +3,8 @@
 *.win text eol=crlf
 *.csv text eol=lf
 *.sh text eol=lf
+*.sql text eol=lf
+*.out text eol=lf
 *.bash text eol=lf
 *.java text eol=lf
 *.scala text eol=lf
