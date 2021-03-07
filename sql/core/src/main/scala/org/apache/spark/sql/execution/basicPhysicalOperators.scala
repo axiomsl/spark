@@ -80,12 +80,12 @@ case class ProjectExec(projectList: Seq[NamedExpression], child: SparkPlan)
     // Evaluation of non-deterministic expressions can't be deferred.
     val nonDeterministicAttrs = projectList.filterNot(_.deterministic).map(_.toAttribute)
     s"""
-        // common sub-expressions
-        ${evaluateVariables(localValInputs)}
-        $subExprsCode
-        ${evaluateRequiredVariables(output, resultVars, AttributeSet(nonDeterministicAttrs))}
-        ${consume(ctx, resultVars)}
-     """
+// common sub-expressions
+${evaluateVariables(localValInputs)}
+$subExprsCode
+${evaluateRequiredVariables(output, resultVars, AttributeSet(nonDeterministicAttrs))}
+${consume(ctx, resultVars)}
+"""
   }
 
   protected override def doExecute(): RDD[InternalRow] = {
@@ -102,10 +102,10 @@ case class ProjectExec(projectList: Seq[NamedExpression], child: SparkPlan)
 
   override def verboseStringWithOperatorId(): String = {
     s"""
-        $formattedNodeName
-        ${ExplainUtils.generateFieldString("Output", projectList)}
-        ${ExplainUtils.generateFieldString("Input", child.output)}
-        """
+$formattedNodeName
+${ExplainUtils.generateFieldString("Output", projectList)}
+${ExplainUtils.generateFieldString("Input", child.output)}
+"""
   }
 }
 
@@ -172,10 +172,10 @@ case class FilterExec(condition: Expression, child: SparkPlan)
       }
 
       s"""
-          $evaluated
-          ${ev.code}
-          if (${nullCheck}!${ev.value}) continue;
-       """
+$evaluated
+${ev.code}
+if (${nullCheck}!${ev.value}) continue;
+"""
     }
 
     // To generate the predicates we will follow this algorithm.
@@ -207,9 +207,9 @@ case class FilterExec(condition: Expression, child: SparkPlan)
       // Here we use *this* operator's output with this output's nullability since we already
       // enforced them with the IsNotNull checks above.
       s"""
-          $nullChecks
-          ${genPredicate(c, input, output)}
-       """.trim
+$nullChecks
+${genPredicate(c, input, output)}
+"""
     }.mkString("\n")
 
     val nullChecks = notNullPreds.zipWithIndex.map { case (c, idx) =>
@@ -231,13 +231,13 @@ case class FilterExec(condition: Expression, child: SparkPlan)
 
     // Note: wrap in "do { } while(false);", so the generated checks can jump out with "continue;"
     s"""
-        do {
-          $generated
-          $nullChecks
-          $numOutput.add(1);
-          ${consume(ctx, resultVars)}
-        } while(false);
-     """
+do {
+  $generated
+  $nullChecks
+  $numOutput.add(1);
+  ${consume(ctx, resultVars)}
+} while(false);
+"""
   }
 
   protected override def doExecute(): RDD[InternalRow] = {
@@ -259,10 +259,10 @@ case class FilterExec(condition: Expression, child: SparkPlan)
 
   override def verboseStringWithOperatorId(): String = {
     s"""
-        $formattedNodeName
-        ${ExplainUtils.generateFieldString("Input", child.output)}
-        Condition : ${condition}
-        """
+$formattedNodeName
+${ExplainUtils.generateFieldString("Input", child.output)}
+Condition : ${condition}
+"""
   }
 }
 
