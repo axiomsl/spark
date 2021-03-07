@@ -138,17 +138,17 @@ private [sql] object GenArrayData {
         setArrayElement
       } else {
         s"""
-           |if (${eval.isNull}) {
-           |  $arrayDataName.setNullAt($i);
-           |} else {
-           |  $setArrayElement
-           |}
-         """.stripMargin
+if (${eval.isNull}) {
+  $arrayDataName.setNullAt($i);
+} else {
+  $setArrayElement
+}
+"""
       }
       s"""
-         |${eval.code}
-         |$assignment
-       """.stripMargin
+${eval.code}
+$assignment
+"""
     }
     val assignmentString = ctx.splitExpressionsWithCurrentInputs(
       expressions = assignments,
@@ -549,13 +549,13 @@ case class StringToMap(text: Expression, pairDelim: Expression, keyValueDelim: E
 
     nullSafeCodeGen(ctx, ev, (text, pd, kvd) =>
       s"""
-         |UTF8String[] $keyValues = $text.split($pd, -1);
-         |for(UTF8String kvEntry: $keyValues) {
-         |  UTF8String[] kv = kvEntry.split($kvd, 2);
-         |  $builderTerm.put(kv[0], kv.length == 2 ? kv[1] : null);
-         |}
-         |${ev.value} = $builderTerm.build();
-         |""".stripMargin
+UTF8String[] $keyValues = $text.split($pd, -1);
+for(UTF8String kvEntry: $keyValues) {
+  UTF8String[] kv = kvEntry.split($kvd, 2);
+  $builderTerm.put(kv[0], kv.length == 2 ? kv[1] : null);
+}
+${ev.value} = $builderTerm.build();
+"""
     )
   }
 

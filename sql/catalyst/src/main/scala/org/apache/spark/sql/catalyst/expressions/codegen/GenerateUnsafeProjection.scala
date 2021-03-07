@@ -270,7 +270,7 @@ if ($tmpInput instanceof UnsafeMapData) {
 final int $previousCursor = $writer.cursor();
 ${writeArrayToBuffer(ctx, input, et, en, writer)}
 $writer.setOffsetAndSizeFromPreviousCursor($index, $previousCursor);
-       """.stripMargin
+       """
 
     case MapType(kt, vt, vn) =>
       writeMapToBuffer(ctx, input, index, kt, vt, vn, writer)
@@ -339,37 +339,37 @@ $writeExpressions
 
     val codeBody =
       s"""
-         |public java.lang.Object generate(Object[] references) {
-         |  return new SpecificUnsafeProjection(references);
-         |}
-         |
-         |class SpecificUnsafeProjection extends ${classOf[UnsafeProjection].getName} {
-         |
-         |  private Object[] references;
-         |  ${ctx.declareMutableStates()}
-         |
-         |  public SpecificUnsafeProjection(Object[] references) {
-         |    this.references = references;
-         |    ${ctx.initMutableStates()}
-         |  }
-         |
-         |  public void initialize(int partitionIndex) {
-         |    ${ctx.initPartition()}
-         |  }
-         |
-         |  // Scala.Function1 need this
-         |  public java.lang.Object apply(java.lang.Object row) {
-         |    return apply((InternalRow) row);
-         |  }
-         |
-         |  public UnsafeRow apply(InternalRow ${ctx.INPUT_ROW}) {
-         |    ${eval.code}
-         |    return ${eval.value};
-         |  }
-         |
-         |  ${ctx.declareAddedFunctions()}
-         |}
-       """.stripMargin
+public java.lang.Object generate(Object[] references) {
+  return new SpecificUnsafeProjection(references);
+}
+
+class SpecificUnsafeProjection extends ${classOf[UnsafeProjection].getName} {
+
+  private Object[] references;
+  ${ctx.declareMutableStates()}
+
+  public SpecificUnsafeProjection(Object[] references) {
+    this.references = references;
+    ${ctx.initMutableStates()}
+  }
+
+  public void initialize(int partitionIndex) {
+    ${ctx.initPartition()}
+  }
+
+  // Scala.Function1 need this
+  public java.lang.Object apply(java.lang.Object row) {
+    return apply((InternalRow) row);
+  }
+
+  public UnsafeRow apply(InternalRow ${ctx.INPUT_ROW}) {
+    ${eval.code}
+    return ${eval.value};
+  }
+
+  ${ctx.declareAddedFunctions()}
+}
+"""
 
     val code = CodeFormatter.stripOverlappingComments(
       new CodeAndComment(codeBody, ctx.getPlaceHolderToComments()))

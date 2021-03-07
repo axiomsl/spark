@@ -139,7 +139,7 @@ trait Block extends TreeNode[Block] with JavaCode {
 
   // Returns java code string for this code block.
   override def toString: String = _marginChar match {
-    case Some(c) => code.stripMargin(c).trim
+    case Some(c) => code.trim
     case _ => code.trim
   }
 
@@ -230,7 +230,7 @@ object Block {
      */
     def code(args: Any*): Block = {
       sc.checkLengths(args)
-      if (sc.parts.length == 0) {
+      if (sc.parts.isEmpty) {
         EmptyBlock
       } else {
         args.foreach {

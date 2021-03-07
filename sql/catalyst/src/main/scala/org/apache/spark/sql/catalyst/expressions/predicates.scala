@@ -423,14 +423,14 @@ case class In(value: Expression, list: Seq[Expression]) extends Predicate {
     // The evaluation of variables can be stopped when we find a matching value.
     val listCode = listGen.map(x =>
       s"""
-         |${x.code}
-         |if (${x.isNull}) {
-         |  $tmpResult = $HAS_NULL; // ${ev.isNull} = true;
-         |} else if (${ctx.genEqual(value.dataType, valueArg, x.value)}) {
-         |  $tmpResult = $MATCHED; // ${ev.isNull} = false; ${ev.value} = true;
-         |  continue;
-         |}
-       """.stripMargin)
+${x.code}
+if (${x.isNull}) {
+  $tmpResult = $HAS_NULL; // ${ev.isNull} = true;
+} else if (${ctx.genEqual(value.dataType, valueArg, x.value)}) {
+  $tmpResult = $MATCHED; // ${ev.isNull} = false; ${ev.value} = true;
+  continue;
+}
+""")
 
     val codes = ctx.splitExpressionsWithCurrentInputs(
       expressions = listCode,
@@ -439,18 +439,18 @@ case class In(value: Expression, list: Seq[Expression]) extends Predicate {
       returnType = CodeGenerator.JAVA_BYTE,
       makeSplitFunction = body =>
         s"""
-           |do {
-           |  $body
-           |} while (false);
-           |return $tmpResult;
-         """.stripMargin,
+do {
+  $body
+} while (false);
+return $tmpResult;
+""",
       foldFunctions = _.map { funcCall =>
         s"""
-           |$tmpResult = $funcCall;
-           |if ($tmpResult == $MATCHED) {
-           |  continue;
-           |}
-         """.stripMargin
+$tmpResult = $funcCall;
+if ($tmpResult == $MATCHED) {
+  continue;
+}
+"""
       }.mkString("\n"))
 
     ev.copy(code =
@@ -530,9 +530,9 @@ case class InSet(child: Expression, hset: Set[Any]) extends UnaryExpression with
         ""
       }
       s"""
-         |${ev.value} = $setTerm.contains($c);
-         |$setIsNull
-       """.stripMargin
+ ${ev.value} = $setTerm.contains($c);
+ $setIsNull
+"""
     })
   }
 

@@ -455,7 +455,7 @@ case class StringSplit(str: Expression, regex: Expression, limit: Expression)
     val arrayClass = classOf[GenericArrayData].getName
     nullSafeCodeGen(ctx, ev, (str, regex, limit) => {
       // Array in java is covariant, so we don't need to cast UTF8String[] to Object[].
-      s"""${ev.value} = new $arrayClass($str.split($regex,$limit));""".stripMargin
+      s"""${ev.value} = new $arrayClass($str.split($regex,$limit));"""
     })
   }
 

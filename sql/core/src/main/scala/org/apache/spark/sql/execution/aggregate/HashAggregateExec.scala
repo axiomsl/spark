@@ -200,9 +200,9 @@ $value = ${ev.value};
       ctx.currentVars = aggResults
       val resultVars = bindReferences(resultExpressions, aggregateAttributes).map(_.genCode(ctx))
       (resultVars, s"""
-        |$evaluateAggResults
-        |${evaluateVariables(resultVars)}
-       """.stripMargin)
+$evaluateAggResults
+${evaluateVariables(resultVars)}
+""")
     } else if (modes.contains(Partial) || modes.contains(PartialMerge)) {
       // output the aggregate buffer directly
       (flatBufVars, "")
@@ -215,31 +215,31 @@ $value = ${ev.value};
     val doAgg = ctx.freshName("doAggregateWithoutKey")
     val doAggFuncName = ctx.addNewFunction(doAgg,
       s"""
-         |private void $doAgg() throws java.io.IOException {
-         |  // initialize aggregation buffer
-         |  $initBufVar
-         |
-         |  ${child.asInstanceOf[CodegenSupport].produce(ctx, this)}
-         |}
-       """.stripMargin)
+private void $doAgg() throws java.io.IOException {
+  // initialize aggregation buffer
+  $initBufVar
+
+  ${child.asInstanceOf[CodegenSupport].produce(ctx, this)}
+}
+""")
 
     val numOutput = metricTerm(ctx, "numOutputRows")
     val aggTime = metricTerm(ctx, "aggTime")
     val beforeAgg = ctx.freshName("beforeAgg")
     s"""
-       |while (!$initAgg) {
-       |  $initAgg = true;
-       |  long $beforeAgg = System.nanoTime();
-       |  $doAggFuncName();
-       |  $aggTime.add((System.nanoTime() - $beforeAgg) / $NANOS_PER_MILLIS);
-       |
-       |  // output the result
-       |  ${genResult.trim}
-       |
-       |  $numOutput.add(1);
-       |  ${consume(ctx, resultVars).trim}
-       |}
-     """.stripMargin
+while (!$initAgg) {
+  $initAgg = true;
+  long $beforeAgg = System.nanoTime();
+  $doAggFuncName();
+  $aggTime.add((System.nanoTime() - $beforeAgg) / $NANOS_PER_MILLIS);
+
+  // output the result
+  ${genResult.trim}
+
+  $numOutput.add(1);
+  ${consume(ctx, resultVars).trim}
+}
+"""
   }
 
   // Splits aggregate code into small functions because the most of JVM implementations
@@ -285,10 +285,10 @@ $value = ${ev.value};
           }.mkString(", ")
           val doAggFuncName = ctx.addNewFunction(doAggFunc,
             s"""
-               |private void $doAggFunc($argList) throws java.io.IOException {
-               |  ${aggCodeBlocks(i)}
-               |}
-             """.stripMargin)
+ private void $doAggFunc($argList) throws java.io.IOException {
+   ${aggCodeBlocks(i)}
+ }
+""")
 
           val inputVariables = args.map(_.variableName).mkString(", ")
           s"$doAggFuncName($inputVariables);"
@@ -341,9 +341,9 @@ $value = ${ev.value};
       // of each aggregation function code.
       val updates = bufferEvalsForOneFunc.zip(bufVarsForOneFunc).map { case (ev, bufVar) =>
         s"""
-           |${bufVar.isNull} = ${ev.isNull};
-           |${bufVar.value} = ${ev.value};
-         """.stripMargin
+${bufVar.isNull} = ${ev.isNull};
+${bufVar.value} = ${ev.value};
+"""
       }
       code"""
 ${ctx.registerComment(s"do aggregate for ${aggNames(i)}")}
@@ -367,12 +367,12 @@ ${updates.mkString("\n").trim}
     }
 
     s"""
-       |// do aggregate
-       |// common sub-expressions
-       |$effectiveCodes
-       |// evaluate aggregate functions and update aggregation buffers
-       |$codeToEvalAggFunc
-     """.stripMargin
+// do aggregate
+// common sub-expressions
+$effectiveCodes
+// evaluate aggregate functions and update aggregation buffers
+$codeToEvalAggFunc
+     """
   }
 
   private val groupingAttributes = groupingExpressions.map(_.toAttribute)
@@ -555,12 +555,12 @@ ${updates.mkString("\n").trim}
       val evaluateNondeterministicResults =
         evaluateNondeterministicVariables(output, resultVars, resultExpressions)
       s"""
-         |$evaluateKeyVars
-         |$evaluateBufferVars
-         |$evaluateAggResults
-         |$evaluateNondeterministicResults
-         |${consume(ctx, resultVars)}
-       """.stripMargin
+$evaluateKeyVars
+$evaluateBufferVars
+$evaluateAggResults
+$evaluateNondeterministicResults
+${consume(ctx, resultVars)}
+       """
     } else if (modes.contains(Partial) || modes.contains(PartialMerge)) {
       // resultExpressions are Attributes of groupingExpressions and aggregateBufferAttributes.
       assert(resultExpressions.forall(_.isInstanceOf[Attribute]))
@@ -587,10 +587,10 @@ ${updates.mkString("\n").trim}
         resultExpressions,
         inputAttrs).map(_.genCode(ctx))
       s"""
-         |$evaluateKeyVars
-         |$evaluateResultBufferVars
-         |${consume(ctx, resultVars)}
-       """.stripMargin
+$evaluateKeyVars
+$evaluateResultBufferVars
+${consume(ctx, resultVars)}
+"""
     } else {
       // generate result based on grouping key
       ctx.INPUT_ROW = keyTerm
@@ -601,18 +601,18 @@ ${updates.mkString("\n").trim}
       val evaluateNondeterministicResults =
         evaluateNondeterministicVariables(output, resultVars, resultExpressions)
       s"""
-         |$evaluateNondeterministicResults
-         |${consume(ctx, resultVars)}
-       """.stripMargin
+$evaluateNondeterministicResults
+${consume(ctx, resultVars)}
+       """
     }
     ctx.addNewFunction(funcName,
       s"""
-         |private void $funcName(UnsafeRow $keyTerm, UnsafeRow $bufferTerm)
-         |    throws java.io.IOException {
-         |  $numOutput.add(1);
-         |  $body
-         |}
-       """.stripMargin)
+private void $funcName(UnsafeRow $keyTerm, UnsafeRow $bufferTerm)
+    throws java.io.IOException {
+  $numOutput.add(1);
+  $body
+}
+       """)
   }
 
   /**
@@ -720,20 +720,20 @@ ${updates.mkString("\n").trim}
       s"$hashMapTerm, $sorterTerm, $peakMemory, $spillSize, $avgHashProbe);"
     val finishHashMap = if (isFastHashMapEnabled) {
       s"""
-         |$iterTermForFastHashMap = $fastHashMapTerm.rowIterator();
-         |$finishRegularHashMap
-       """.stripMargin
+$iterTermForFastHashMap = $fastHashMapTerm.rowIterator();
+$finishRegularHashMap
+       """
     } else {
       finishRegularHashMap
     }
 
     val doAggFuncName = ctx.addNewFunction(doAgg,
       s"""
-         |private void $doAgg() throws java.io.IOException {
-         |  ${child.asInstanceOf[CodegenSupport].produce(ctx, this)}
-         |  $finishHashMap
-         |}
-       """.stripMargin)
+private void $doAgg() throws java.io.IOException {
+  ${child.asInstanceOf[CodegenSupport].produce(ctx, this)}
+  $finishHashMap
+}
+""")
 
     // generate code for output
     val keyTerm = ctx.freshName("aggKey")
@@ -752,15 +752,15 @@ ${updates.mkString("\n").trim}
 
     def outputFromRowBasedMap: String = {
       s"""
-         |while ($iterTermForFastHashMap.next()) {
-         |  UnsafeRow $keyTerm = (UnsafeRow) $iterTermForFastHashMap.getKey();
-         |  UnsafeRow $bufferTerm = (UnsafeRow) $iterTermForFastHashMap.getValue();
-         |  $outputFunc($keyTerm, $bufferTerm);
-         |
-         |  if (shouldStop()) return;
-         |}
-         |$fastHashMapTerm.close();
-       """.stripMargin
+while ($iterTermForFastHashMap.next()) {
+  UnsafeRow $keyTerm = (UnsafeRow) $iterTermForFastHashMap.getKey();
+  UnsafeRow $bufferTerm = (UnsafeRow) $iterTermForFastHashMap.getValue();
+  $outputFunc($keyTerm, $bufferTerm);
+
+  if (shouldStop()) return;
+}
+$fastHashMapTerm.close();
+"""
     }
 
     // Iterate over the aggregate rows and convert them from InternalRow to UnsafeRow
@@ -777,49 +777,49 @@ ${updates.mkString("\n").trim}
           BoundReference(groupingKeySchema.length + i, attr.dataType, attr.nullable)
         })
       s"""
-         |while ($iterTermForFastHashMap.hasNext()) {
-         |  InternalRow $row = (InternalRow) $iterTermForFastHashMap.next();
-         |  ${generateKeyRow.code}
-         |  ${generateBufferRow.code}
-         |  $outputFunc(${generateKeyRow.value}, ${generateBufferRow.value});
-         |
-         |  if (shouldStop()) return;
-         |}
-         |
-         |$fastHashMapTerm.close();
-       """.stripMargin
+while ($iterTermForFastHashMap.hasNext()) {
+  InternalRow $row = (InternalRow) $iterTermForFastHashMap.next();
+  ${generateKeyRow.code}
+  ${generateBufferRow.code}
+  $outputFunc(${generateKeyRow.value}, ${generateBufferRow.value});
+
+  if (shouldStop()) return;
+}
+
+$fastHashMapTerm.close();
+"""
     }
 
     def outputFromRegularHashMap: String = {
       s"""
-         |while ($limitNotReachedCond $iterTerm.next()) {
-         |  UnsafeRow $keyTerm = (UnsafeRow) $iterTerm.getKey();
-         |  UnsafeRow $bufferTerm = (UnsafeRow) $iterTerm.getValue();
-         |  $outputFunc($keyTerm, $bufferTerm);
-         |  if (shouldStop()) return;
-         |}
-         |$iterTerm.close();
-         |if ($sorterTerm == null) {
-         |  $hashMapTerm.free();
-         |}
-       """.stripMargin
+while ($limitNotReachedCond $iterTerm.next()) {
+  UnsafeRow $keyTerm = (UnsafeRow) $iterTerm.getKey();
+  UnsafeRow $bufferTerm = (UnsafeRow) $iterTerm.getValue();
+  $outputFunc($keyTerm, $bufferTerm);
+  if (shouldStop()) return;
+}
+$iterTerm.close();
+if ($sorterTerm == null) {
+  $hashMapTerm.free();
+}
+"""
     }
 
     val aggTime = metricTerm(ctx, "aggTime")
     val beforeAgg = ctx.freshName("beforeAgg")
     s"""
-       |if (!$initAgg) {
-       |  $initAgg = true;
-       |  $createFastHashMap
-       |  $hashMapTerm = $thisPlan.createHashMap();
-       |  long $beforeAgg = System.nanoTime();
-       |  $doAggFuncName();
-       |  $aggTime.add((System.nanoTime() - $beforeAgg) / $NANOS_PER_MILLIS);
-       |}
-       |// output the result
-       |$outputFromFastHashMap
-       |$outputFromRegularHashMap
-     """.stripMargin
+if (!$initAgg) {
+  $initAgg = true;
+  $createFastHashMap
+  $hashMapTerm = $thisPlan.createHashMap();
+  long $beforeAgg = System.nanoTime();
+  $doAggFuncName();
+  $aggTime.add((System.nanoTime() - $beforeAgg) / $NANOS_PER_MILLIS);
+}
+// output the result
+$outputFromFastHashMap
+$outputFromRegularHashMap
+"""
   }
 
   private def doConsumeWithKeys(ctx: CodegenContext, input: Seq[ExprCode]): String = {
@@ -858,51 +858,51 @@ ${updates.mkString("\n").trim}
 
     val findOrInsertRegularHashMap: String =
       s"""
-         |// generate grouping key
-         |${unsafeRowKeyCode.code}
-         |int $unsafeRowKeyHash = ${unsafeRowKeyCode.value}.hashCode();
-         |if ($checkFallbackForBytesToBytesMap) {
-         |  // try to get the buffer from hash map
-         |  $unsafeRowBuffer =
-         |    $hashMapTerm.getAggregationBufferFromUnsafeRow($unsafeRowKeys, $unsafeRowKeyHash);
-         |}
-         |// Can't allocate buffer from the hash map. Spill the map and fallback to sort-based
-         |// aggregation after processing all input rows.
-         |if ($unsafeRowBuffer == null) {
-         |  if ($sorterTerm == null) {
-         |    $sorterTerm = $hashMapTerm.destructAndCreateExternalSorter();
-         |  } else {
-         |    $sorterTerm.merge($hashMapTerm.destructAndCreateExternalSorter());
-         |  }
-         |  $resetCounter
-         |  // the hash map had be spilled, it should have enough memory now,
-         |  // try to allocate buffer again.
-         |  $unsafeRowBuffer = $hashMapTerm.getAggregationBufferFromUnsafeRow(
-         |    $unsafeRowKeys, $unsafeRowKeyHash);
-         |  if ($unsafeRowBuffer == null) {
-         |    // failed to allocate the first page
-         |    throw new $oomeClassName("No enough memory for aggregation");
-         |  }
-         |}
-       """.stripMargin
+// generate grouping key
+${unsafeRowKeyCode.code}
+int $unsafeRowKeyHash = ${unsafeRowKeyCode.value}.hashCode();
+if ($checkFallbackForBytesToBytesMap) {
+  // try to get the buffer from hash map
+  $unsafeRowBuffer =
+    $hashMapTerm.getAggregationBufferFromUnsafeRow($unsafeRowKeys, $unsafeRowKeyHash);
+}
+// Can't allocate buffer from the hash map. Spill the map and fallback to sort-based
+// aggregation after processing all input rows.
+if ($unsafeRowBuffer == null) {
+  if ($sorterTerm == null) {
+    $sorterTerm = $hashMapTerm.destructAndCreateExternalSorter();
+  } else {
+    $sorterTerm.merge($hashMapTerm.destructAndCreateExternalSorter());
+  }
+  $resetCounter
+  // the hash map had be spilled, it should have enough memory now,
+  // try to allocate buffer again.
+  $unsafeRowBuffer = $hashMapTerm.getAggregationBufferFromUnsafeRow(
+    $unsafeRowKeys, $unsafeRowKeyHash);
+  if ($unsafeRowBuffer == null) {
+    // failed to allocate the first page
+    throw new $oomeClassName("No enough memory for aggregation");
+  }
+}
+       """
 
     val findOrInsertHashMap: String = {
       if (isFastHashMapEnabled) {
         // If fast hash map is on, we first generate code to probe and update the fast hash map.
         // If the probe is successful the corresponding fast row buffer will hold the mutable row.
         s"""
-           |if ($checkFallbackForGeneratedHashMap) {
-           |  ${fastRowKeys.map(_.code).mkString("\n")}
-           |  if (${fastRowKeys.map("!" + _.isNull).mkString(" && ")}) {
-           |    $fastRowBuffer = $fastHashMapTerm.findOrInsert(
-           |      ${fastRowKeys.map(_.value).mkString(", ")});
-           |  }
-           |}
-           |// Cannot find the key in fast hash map, try regular hash map.
-           |if ($fastRowBuffer == null) {
-           |  $findOrInsertRegularHashMap
-           |}
-         """.stripMargin
+if ($checkFallbackForGeneratedHashMap) {
+  ${fastRowKeys.map(_.code).mkString("\n")}
+  if (${fastRowKeys.map("!" + _.isNull).mkString(" && ")}) {
+    $fastRowBuffer = $fastHashMapTerm.findOrInsert(
+      ${fastRowKeys.map(_.value).mkString(", ")});
+  }
+}
+// Cannot find the key in fast hash map, try regular hash map.
+if ($fastRowBuffer == null) {
+  $findOrInsertRegularHashMap
+}
+"""
       } else {
         findOrInsertRegularHashMap
       }
@@ -974,11 +974,11 @@ ${updateRowBuffers.mkString("\n").trim}
       }
 
       s"""
-         |// common sub-expressions
-         |$effectiveCodes
-         |// evaluate aggregate functions and update aggregation buffers
-         |$codeToEvalAggFunc
-       """.stripMargin
+// common sub-expressions
+$effectiveCodes
+// evaluate aggregate functions and update aggregation buffers
+$codeToEvalAggFunc
+       """
     }
 
     val updateRowInHashMap: String = {
@@ -1033,26 +1033,26 @@ ${updateRowBuffer.mkString("\n").trim}
           // in vectorized fast hash map, if the previous loop up hit vectorized fast hash map.
           // Otherwise, update row in regular hash map.
           s"""
-             |if ($fastRowBuffer != null) {
-             |  // common sub-expressions
-             |  $effectiveCodes
-             |  // evaluate aggregate functions and update aggregation buffers
-             |  $codeToEvalAggFunc
-             |} else {
-             |  $updateRowInRegularHashMap
-             |}
-          """.stripMargin
+if ($fastRowBuffer != null) {
+  // common sub-expressions
+  $effectiveCodes
+  // evaluate aggregate functions and update aggregation buffers
+  $codeToEvalAggFunc
+} else {
+  $updateRowInRegularHashMap
+}
+          """
         } else {
           // If row-based hash map is on and the previous loop up hit fast hash map,
           // we reuse regular hash buffer to update row of fast hash map.
           // Otherwise, update row in regular hash map.
           s"""
-             |// Updates the proper row buffer
-             |if ($fastRowBuffer != null) {
-             |  $unsafeRowBuffer = $fastRowBuffer;
-             |}
-             |$updateRowInRegularHashMap
-          """.stripMargin
+// Updates the proper row buffer
+if ($fastRowBuffer != null) {
+  $unsafeRowBuffer = $fastRowBuffer;
+}
+$updateRowInRegularHashMap
+          """
         }
       } else {
         updateRowInRegularHashMap
@@ -1066,9 +1066,9 @@ ${updateRowBuffer.mkString("\n").trim}
         "UnsafeRow"
       }
       s"""
-         |UnsafeRow $unsafeRowBuffer = null;
-         |$fastRowType $fastRowBuffer = null;
-       """.stripMargin
+UnsafeRow $unsafeRowBuffer = null;
+$fastRowType $fastRowBuffer = null;
+       """
     } else {
       s"UnsafeRow $unsafeRowBuffer = null;"
     }
@@ -1078,11 +1078,11 @@ ${updateRowBuffer.mkString("\n").trim}
     // continue to do in-memory aggregation and spilling until all the rows had been processed.
     // Finally, sort the spilled aggregate buffers by key, and merge them together for same key.
     s"""
-       |$declareRowBuffer
-       |$findOrInsertHashMap
-       |$incCounter
-       |$updateRowInHashMap
-     """.stripMargin
+$declareRowBuffer
+$findOrInsertHashMap
+$incCounter
+$updateRowInHashMap
+     """
   }
 
   override def verboseString(maxFields: Int): String = toString(verbose = true, maxFields)

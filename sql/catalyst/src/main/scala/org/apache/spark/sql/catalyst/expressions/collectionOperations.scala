@@ -197,9 +197,9 @@ case class ArraysZip(children: Seq[Expression]) extends Expression with ExpectsI
 
   def emptyInputGenCode(ev: ExprCode): ExprCode = {
     ev.copy(code"""
-      |${CodeGenerator.javaType(dataType)} ${ev.value} = new $genericArrayData(new Object[0]);
-      |boolean ${ev.isNull} = false;
-    """.stripMargin)
+${CodeGenerator.javaType(dataType)} ${ev.value} = new $genericArrayData(new Object[0]);
+boolean ${ev.isNull} = false;
+""")
   }
 
   def nonEmptyInputGenCode(ctx: CodegenContext, ev: ExprCode): ExprCode = {
@@ -215,16 +215,16 @@ case class ArraysZip(children: Seq[Expression]) extends Expression with ExpectsI
     val evals = children.map(_.genCode(ctx))
     val getValuesAndCardinalities = evals.zipWithIndex.map { case (eval, index) =>
       s"""
-        |if ($biggestCardinality != -1) {
-        |  ${eval.code}
-        |  if (!${eval.isNull}) {
-        |    $arrVals[$index] = ${eval.value};
-        |    $biggestCardinality = Math.max($biggestCardinality, ${eval.value}.numElements());
-        |  } else {
-        |    $biggestCardinality = -1;
-        |  }
-        |}
-      """.stripMargin
+if ($biggestCardinality != -1) {
+  ${eval.code}
+  if (!${eval.isNull}) {
+    $arrVals[$index] = ${eval.value};
+    $biggestCardinality = Math.max($biggestCardinality, ${eval.value}.numElements());
+  } else {
+    $biggestCardinality = -1;
+  }
+}
+"""
     }
 
     val splittedGetValuesAndCardinalities = ctx.splitExpressionsWithCurrentInputs(
@@ -233,9 +233,9 @@ case class ArraysZip(children: Seq[Expression]) extends Expression with ExpectsI
       returnType = "int",
       makeSplitFunction = body =>
         s"""
-          |$body
-          |return $biggestCardinality;
-        """.stripMargin,
+$body
+return $biggestCardinality;
+""",
       foldFunctions = _.map(funcCall => s"$biggestCardinality = $funcCall;").mkString("\n"),
       extraArguments =
         ("ArrayData[]", arrVals) ::
@@ -244,12 +244,12 @@ case class ArraysZip(children: Seq[Expression]) extends Expression with ExpectsI
     val getValueForType = arrayElementTypes.zipWithIndex.map { case (eleType, idx) =>
       val g = CodeGenerator.getValue(s"$arrVals[$idx]", eleType, i)
       s"""
-        |if ($i < $arrVals[$idx].numElements() && !$arrVals[$idx].isNullAt($i)) {
-        |  $currentRow[$idx] = $g;
-        |} else {
-        |  $currentRow[$idx] = null;
-        |}
-      """.stripMargin
+if ($i < $arrVals[$idx].numElements() && !$arrVals[$idx].isNullAt($i)) {
+  $currentRow[$idx] = $g;
+} else {
+  $currentRow[$idx] = null;
+}
+"""
     }
 
     val getValueForTypeSplitted = ctx.splitExpressions(
@@ -261,25 +261,25 @@ case class ArraysZip(children: Seq[Expression]) extends Expression with ExpectsI
         ("ArrayData[]", arrVals) :: Nil)
 
     val initVariables = s"""
-      |ArrayData[] $arrVals = new ArrayData[${children.length}];
-      |int $biggestCardinality = 0;
-      |${CodeGenerator.javaType(dataType)} ${ev.value} = null;
-    """.stripMargin
+ArrayData[] $arrVals = new ArrayData[${children.length}];
+int $biggestCardinality = 0;
+${CodeGenerator.javaType(dataType)} ${ev.value} = null;
+"""
 
     ev.copy(code"""
-      |$initVariables
-      |$splittedGetValuesAndCardinalities
-      |boolean ${ev.isNull} = $biggestCardinality == -1;
-      |if (!${ev.isNull}) {
-      |  Object[] $args = new Object[$biggestCardinality];
-      |  for (int $i = 0; $i < $biggestCardinality; $i ++) {
-      |    Object[] $currentRow = new Object[${children.length}];
-      |    $getValueForTypeSplitted
-      |    $args[$i] = new $genericInternalRow($currentRow);
-      |  }
-      |  ${ev.value} = new $genericArrayData($args);
-      |}
-    """.stripMargin)
+$initVariables
+$splittedGetValuesAndCardinalities
+boolean ${ev.isNull} = $biggestCardinality == -1;
+if (!${ev.isNull}) {
+  Object[] $args = new Object[$biggestCardinality];
+  for (int $i = 0; $i < $biggestCardinality; $i ++) {
+    Object[] $currentRow = new Object[${children.length}];
+    $getValueForTypeSplitted
+    $args[$i] = new $genericInternalRow($currentRow);
+  }
+  ${ev.value} = new $genericArrayData($args);
+}
+""")
   }
 
   override def doGenCode(ctx: CodegenContext, ev: ExprCode): ExprCode = {
@@ -418,31 +418,31 @@ case class MapEntries(child: Expression)
 
       val allocation =
         s"""
-           |ArrayData $arrayData = ArrayData.allocateArrayData(
-           |  $elementSize, $numElements, " $prettyName failed.");
-         """.stripMargin
+ArrayData $arrayData = ArrayData.allocateArrayData(
+  $elementSize, $numElements, " $prettyName failed.");
+"""
 
       val code = if (isPrimitive) {
         val genCodeForPrimitive = genCodeForPrimitiveElements(
           ctx, arrayData, keys, values, ev.value, numElements, structSize)
         s"""
-           |if ($arrayData instanceof UnsafeArrayData) {
-           |  $genCodeForPrimitive
-           |} else {
-           |  ${genCodeForAnyElements(ctx, arrayData, keys, values, ev.value, numElements)}
-           |}
-         """.stripMargin
+if ($arrayData instanceof UnsafeArrayData) {
+  $genCodeForPrimitive
+} else {
+  ${genCodeForAnyElements(ctx, arrayData, keys, values, ev.value, numElements)}
+}
+"""
       } else {
         s"${genCodeForAnyElements(ctx, arrayData, keys, values, ev.value, numElements)}"
       }
 
       s"""
-         |final int $numElements = $c.numElements();
-         |final ArrayData $keys = $c.keyArray();
-         |final ArrayData $values = $c.valueArray();
-         |$allocation
-         |$code
-       """.stripMargin
+final int $numElements = $c.numElements();
+final ArrayData $keys = $c.keyArray();
+final ArrayData $values = $c.valueArray();
+$allocation
+$code
+"""
     })
   }
 
@@ -478,19 +478,19 @@ case class MapEntries(child: Expression)
       unsafeRow, childDataType.valueType, values, "1", z, childDataType.valueContainsNull)
 
     s"""
-       |UnsafeArrayData $unsafeArrayData = (UnsafeArrayData)$arrayData;
-       |Object $baseObject = $unsafeArrayData.getBaseObject();
-       |final int $structsOffset = $calculateHeader($numElements) + $numElements * $wordSize;
-       |UnsafeRow $unsafeRow = new UnsafeRow(2);
-       |for (int $z = 0; $z < $numElements; $z++) {
-       |  long $offset = $structsOffset + $z * $structSizeAsLong;
-       |  $unsafeArrayData.setLong($z, ($offset << 32) + $structSizeAsLong);
-       |  $unsafeRow.pointTo($baseObject, $baseOffset + $offset, $structSize);
-       |  $setKey;
-       |  $valueAssignmentChecked
-       |}
-       |$resultArrayData = $arrayData;
-     """.stripMargin
+UnsafeArrayData $unsafeArrayData = (UnsafeArrayData)$arrayData;
+Object $baseObject = $unsafeArrayData.getBaseObject();
+final int $structsOffset = $calculateHeader($numElements) + $numElements * $wordSize;
+UnsafeRow $unsafeRow = new UnsafeRow(2);
+for (int $z = 0; $z < $numElements; $z++) {
+  long $offset = $structsOffset + $z * $structSizeAsLong;
+  $unsafeArrayData.setLong($z, ($offset << 32) + $structSizeAsLong);
+  $unsafeRow.pointTo($baseObject, $baseOffset + $offset, $structSize);
+  $setKey;
+  $valueAssignmentChecked
+}
+$resultArrayData = $arrayData;
+"""
   }
 
   private def genCodeForAnyElements(
@@ -513,12 +513,12 @@ case class MapEntries(child: Expression)
     val genericArrayData = ctx.freshName("genericArrayData")
     val rowObject = s"new $rowClass(new Object[]{${getKey(keys, z)}, $getValueWithCheck})"
     s"""
-       |$genericArrayDataClass $genericArrayData = ($genericArrayDataClass)$arrayData;
-       |for (int $z = 0; $z < $numElements; $z++) {
-       |  $genericArrayData.update($z, $rowObject);
-       |}
-       |$resultArrayData = $arrayData;
-     """.stripMargin
+$genericArrayDataClass $genericArrayData = ($genericArrayDataClass)$arrayData;
+for (int $z = 0; $z < $numElements; $z++) {
+  $genericArrayData.update($z, $rowObject);
+}
+$resultArrayData = $arrayData;
+"""
   }
 
   override def prettyName: String = "map_entries"
@@ -587,22 +587,22 @@ case class MapConcat(children: Seq[Expression]) extends ComplexTypeMergingExpres
     val assignments = mapCodes.zip(children.map(_.nullable)).zipWithIndex.map {
       case ((m, true), i) =>
         s"""
-           |if (!$hasNullName) {
-           |  ${m.code}
-           |  if (!${m.isNull}) {
-           |    $argsName[$i] = ${m.value};
-           |  } else {
-           |    $hasNullName = true;
-           |  }
-           |}
-         """.stripMargin
+if (!$hasNullName) {
+  ${m.code}
+  if (!${m.isNull}) {
+    $argsName[$i] = ${m.value};
+  } else {
+    $hasNullName = true;
+  }
+}
+"""
       case ((m, false), i) =>
         s"""
-           |if (!$hasNullName) {
-           |  ${m.code}
-           |  $argsName[$i] = ${m.value};
-           |}
-         """.stripMargin
+if (!$hasNullName) {
+  ${m.code}
+  $argsName[$i] = ${m.value};
+}
+"""
     }
 
     val prepareMaps = ctx.splitExpressionsWithCurrentInputs(
@@ -612,20 +612,20 @@ case class MapConcat(children: Seq[Expression]) extends ComplexTypeMergingExpres
       returnType = "boolean",
       makeSplitFunction = body =>
         s"""
-           |$body
-           |return $hasNullName;
-        """.stripMargin,
+$body
+return $hasNullName;
+""",
       foldFunctions = _.map(funcCall => s"$hasNullName = $funcCall;").mkString("\n")
     )
 
     val idxName = ctx.freshName("idx")
     val mapMerge =
       s"""
-        |for (int $idxName = 0; $idxName < $argsName.length; $idxName++) {
-        |  $builderTerm.putAll($argsName[$idxName].keyArray(), $argsName[$idxName].valueArray());
-        |}
-        |${ev.value} = $builderTerm.build();
-      """.stripMargin
+for (int $idxName = 0; $idxName < $argsName.length; $idxName++) {
+  $builderTerm.putAll($argsName[$idxName].keyArray(), $argsName[$idxName].valueArray());
+}
+${ev.value} = $builderTerm.build();
+"""
 
     ev.copy(
       code = code"""
@@ -708,12 +708,12 @@ case class MapFromEntries(child: Expression) extends UnaryExpression with NullIn
       val i = ctx.freshName("idx")
       ctx.nullArrayElementsSaveExec(nullEntries, ev.isNull, c) {
         s"""
-           |final int $numEntries = $c.numElements();
-           |for (int $i = 0; $i < $numEntries; $i++) {
-           |  $builderTerm.put($c.getStruct($i, 2));
-           |}
-           |${ev.value} = $builderTerm.build();
-         """.stripMargin
+final int $numEntries = $c.numElements();
+for (int $i = 0; $i < $numEntries; $i++) {
+  $builderTerm.put($c.getStruct($i, 2));
+}
+${ev.value} = $builderTerm.build();
+"""
       }
     })
   }
@@ -801,10 +801,10 @@ trait ArraySortLike extends ExpectsInputTypes {
         val v1 = ctx.freshName("v1")
         val v2 = ctx.freshName("v2")
         s"""
-           |$jt $v1 = (($bt) $o1).${jt}Value();
-           |$jt $v2 = (($bt) $o2).${jt}Value();
-           |int $c = ${ctx.genComp(elementType, v1, v2)};
-         """.stripMargin
+$jt $v1 = (($bt) $o1).${jt}Value();
+$jt $v2 = (($bt) $o2).${jt}Value();
+int $c = ${ctx.genComp(elementType, v1, v2)};
+"""
       } else {
         s"int $c = ${ctx.genComp(elementType, s"(($jt) $o1)", s"(($jt) $o2)")};"
       }
@@ -814,36 +814,36 @@ trait ArraySortLike extends ExpectsInputTypes {
           val javaType = CodeGenerator.javaType(elementType)
           val primitiveTypeName = CodeGenerator.primitiveTypeName(elementType)
           s"""
-             |if ($order) {
-             |  $javaType[] $array = $base.to${primitiveTypeName}Array();
-             |  java.util.Arrays.sort($array);
-             |  ${ev.value} = $unsafeArrayData.fromPrimitiveArray($array);
-             |} else
-           """.stripMargin
+if ($order) {
+  $javaType[] $array = $base.to${primitiveTypeName}Array();
+  java.util.Arrays.sort($array);
+  ${ev.value} = $unsafeArrayData.fromPrimitiveArray($array);
+} else
+"""
         } else {
           ""
         }
       s"""
-         |$nonNullPrimitiveAscendingSort
-         |{
-         |  Object[] $array = $base.toObjectArray($elementTypeTerm);
-         |  final int $sortOrder = $order ? 1 : -1;
-         |  java.util.Arrays.sort($array, new java.util.Comparator() {
-         |    @Override public int compare(Object $o1, Object $o2) {
-         |      if ($o1 == null && $o2 == null) {
-         |        return 0;
-         |      } else if ($o1 == null) {
-         |        return $sortOrder * $nullOrder;
-         |      } else if ($o2 == null) {
-         |        return -$sortOrder * $nullOrder;
-         |      }
-         |      $comp
-         |      return $sortOrder * $c;
-         |    }
-         |  });
-         |  ${ev.value} = new $genericArrayData($array);
-         |}
-       """.stripMargin
+$nonNullPrimitiveAscendingSort
+{
+  Object[] $array = $base.toObjectArray($elementTypeTerm);
+  final int $sortOrder = $order ? 1 : -1;
+  java.util.Arrays.sort($array, new java.util.Comparator() {
+    @Override public int compare(Object $o1, Object $o2) {
+      if ($o1 == null && $o2 == null) {
+        return 0;
+      } else if ($o1 == null) {
+        return $sortOrder * $nullOrder;
+      } else if ($o2 == null) {
+        return -$sortOrder * $nullOrder;
+      }
+      $comp
+      return $sortOrder * $c;
+    }
+  });
+  ${ev.value} = new $genericArrayData($array);
+}
+"""
     }
   }
 
@@ -993,14 +993,14 @@ case class Shuffle(child: Expression, randomSeed: Option[Long] = None)
       i, s"$indices[$i]", dataType.asInstanceOf[ArrayType].containsNull)
 
     s"""
-       |int $numElements = $childName.numElements();
-       |int[] $indices = $rand.getNextIndices($numElements);
-       |$initialization
-       |for (int $i = 0; $i < $numElements; $i++) {
-       |  $assignment
-       |}
-       |${ev.value} = $arrayData;
-     """.stripMargin
+int $numElements = $childName.numElements();
+int[] $indices = $rand.getNextIndices($numElements);
+$initialization
+for (int $i = 0; $i < $numElements; $i++) {
+  $assignment
+}
+${ev.value} = $arrayData;
+"""
   }
 
   override def freshCopy(): Shuffle = Shuffle(child, randomSeed)
@@ -1069,14 +1069,14 @@ case class Reverse(child: Expression)
       arrayData, elementType, childName, i, j, dataType.asInstanceOf[ArrayType].containsNull)
 
     s"""
-       |final int $numElements = $childName.numElements();
-       |$initialization
-       |for (int $i = 0; $i < $numElements; $i++) {
-       |  int $j = $numElements - $i - 1;
-       |  $assignment
-       |}
-       |${ev.value} = $arrayData;
-     """.stripMargin
+final int $numElements = $childName.numElements();
+$initialization
+for (int $i = 0; $i < $numElements; $i++) {
+  int $j = $numElements - $i - 1;
+  $assignment
+}
+${ev.value} = $arrayData;
+"""
   }
 
   override def prettyName: String = "reverse"
@@ -1152,27 +1152,27 @@ case class ArrayContains(left: Expression, right: Expression)
       val getValue = CodeGenerator.getValue(arr, right.dataType, i)
       val loopBodyCode = if (nullable) {
         s"""
-           |if ($arr.isNullAt($i)) {
-           |   ${ev.isNull} = true;
-           |} else if (${ctx.genEqual(right.dataType, value, getValue)}) {
-           |   ${ev.isNull} = false;
-           |   ${ev.value} = true;
-           |   break;
-           |}
-         """.stripMargin
+if ($arr.isNullAt($i)) {
+   ${ev.isNull} = true;
+} else if (${ctx.genEqual(right.dataType, value, getValue)}) {
+   ${ev.isNull} = false;
+   ${ev.value} = true;
+   break;
+}
+"""
       } else {
         s"""
-           |if (${ctx.genEqual(right.dataType, value, getValue)}) {
-           |  ${ev.value} = true;
-           |  break;
-           |}
-         """.stripMargin
+if (${ctx.genEqual(right.dataType, value, getValue)}) {
+  ${ev.value} = true;
+  break;
+}
+"""
       }
       s"""
-         |for (int $i = 0; $i < $arr.numElements(); $i ++) {
-         |  $loopBodyCode
-         |}
-       """.stripMargin
+for (int $i = 0; $i < $arr.numElements(); $i ++) {
+  $loopBodyCode
+}
+"""
     })
   }
 
@@ -1293,19 +1293,19 @@ case class ArraysOverlap(left: Expression, right: Expression)
         bruteForceCodegen(ctx, ev, smaller, bigger)
       }
       s"""
-         |ArrayData $smaller;
-         |ArrayData $bigger;
-         |if ($a1.numElements() > $a2.numElements()) {
-         |  $bigger = $a1;
-         |  $smaller = $a2;
-         |} else {
-         |  $smaller = $a1;
-         |  $bigger = $a2;
-         |}
-         |if ($smaller.numElements() > 0) {
-         |  $comparisonCode
-         |}
-       """.stripMargin
+ArrayData $smaller;
+ArrayData $bigger;
+if ($a1.numElements() > $a2.numElements()) {
+  $bigger = $a1;
+  $smaller = $a2;
+} else {
+  $smaller = $a1;
+  $bigger = $a2;
+}
+if ($smaller.numElements() > 0) {
+  $comparisonCode
+}
+"""
     })
   }
 
@@ -1328,22 +1328,22 @@ case class ArraysOverlap(left: Expression, right: Expression)
       bigger,
       i,
       s"""
-         |if ($set.contains($getFromBigger)) {
-         |  $setIsNullCode
-         |  ${ev.value} = true;
-         |  break;
-         |}
-       """.stripMargin,
+if ($set.contains($getFromBigger)) {
+  $setIsNullCode
+  ${ev.value} = true;
+  break;
+}
+""",
       s"${ev.isNull} = true;")
     s"""
-       |$javaSet<$javaElementClass> $set = new $javaSet<$javaElementClass>();
-       |for (int $i = 0; $i < $smaller.numElements(); $i ++) {
-       |  $addToSetFromSmallerCode
-       |}
-       |for (int $i = 0; $i < $bigger.numElements(); $i ++) {
-       |  $elementIsInSetCode
-       |}
-     """.stripMargin
+$javaSet<$javaElementClass> $set = new $javaSet<$javaElementClass>();
+for (int $i = 0; $i < $smaller.numElements(); $i ++) {
+  $addToSetFromSmallerCode
+}
+for (int $i = 0; $i < $bigger.numElements(); $i ++) {
+  $elementIsInSetCode
+}
+"""
   }
 
   /**
@@ -1359,26 +1359,26 @@ case class ArraysOverlap(left: Expression, right: Expression)
       smaller,
       j,
       s"""
-         |if (${ctx.genEqual(elementType, getFromSmaller, getFromBigger)}) {
-         |  $setIsNullCode
-         |  ${ev.value} = true;
-         |}
-       """.stripMargin,
+if (${ctx.genEqual(elementType, getFromSmaller, getFromBigger)}) {
+  $setIsNullCode
+  ${ev.value} = true;
+}
+""",
       s"${ev.isNull} = true;")
     val isInSmaller = nullSafeElementCodegen(
       bigger,
       i,
       s"""
-         |for (int $j = 0; $j < $smaller.numElements() && !${ev.value}; $j ++) {
-         |  $compareValues
-         |}
-       """.stripMargin,
+for (int $j = 0; $j < $smaller.numElements() && !${ev.value}; $j ++) {
+  $compareValues
+}
+""",
       s"${ev.isNull} = true;")
     s"""
-       |for (int $i = 0; $i < $bigger.numElements() && !${ev.value}; $i ++) {
-       |  $isInSmaller
-       |}
-     """.stripMargin
+for (int $i = 0; $i < $bigger.numElements() && !${ev.value}; $i ++) {
+  $isInSmaller
+}
+"""
   }
 
   def nullSafeElementCodegen(
@@ -1388,12 +1388,12 @@ case class ArraysOverlap(left: Expression, right: Expression)
       isNullCode: String): String = {
     if (inputTypes.exists(_.asInstanceOf[ArrayType].containsNull)) {
       s"""
-         |if ($arrayVar.isNullAt($index)) {
-         |  $isNullCode
-         |} else {
-         |  $code
-         |}
-       """.stripMargin
+if ($arrayVar.isNullAt($index)) {
+  $isNullCode
+} else {
+  $code
+}
+"""
     } else {
       code
     }
@@ -1460,27 +1460,27 @@ case class Slice(x: Expression, start: Expression, length: Expression)
       val resLength = ctx.freshName("resLength")
       val defaultIntValue = CodeGenerator.defaultValue(CodeGenerator.JAVA_INT, false)
       s"""
-         |${CodeGenerator.JAVA_INT} $startIdx = $defaultIntValue;
-         |${CodeGenerator.JAVA_INT} $resLength = $defaultIntValue;
-         |if ($start == 0) {
-         |  throw new RuntimeException("Unexpected value for start in function $prettyName: "
-         |    + "SQL array indices start at 1.");
-         |} else if ($start < 0) {
-         |  $startIdx = $start + $x.numElements();
-         |} else {
-         |  // arrays in SQL are 1-based instead of 0-based
-         |  $startIdx = $start - 1;
-         |}
-         |if ($length < 0) {
-         |  throw new RuntimeException("Unexpected value for length in function $prettyName: "
-         |    + "length must be greater than or equal to 0.");
-         |} else if ($length > $x.numElements() - $startIdx) {
-         |  $resLength = $x.numElements() - $startIdx;
-         |} else {
-         |  $resLength = $length;
-         |}
-         |${genCodeForResult(ctx, ev, x, startIdx, resLength)}
-       """.stripMargin
+${CodeGenerator.JAVA_INT} $startIdx = $defaultIntValue;
+${CodeGenerator.JAVA_INT} $resLength = $defaultIntValue;
+if ($start == 0) {
+  throw new RuntimeException("Unexpected value for start in function $prettyName: "
+    + "SQL array indices start at 1.");
+} else if ($start < 0) {
+  $startIdx = $start + $x.numElements();
+} else {
+  // arrays in SQL are 1-based instead of 0-based
+  $startIdx = $start - 1;
+}
+if ($length < 0) {
+  throw new RuntimeException("Unexpected value for length in function $prettyName: "
+    + "length must be greater than or equal to 0.");
+} else if ($length > $x.numElements() - $startIdx) {
+  $resLength = $x.numElements() - $startIdx;
+} else {
+  $resLength = $length;
+}
+${genCodeForResult(ctx, ev, x, startIdx, resLength)}
+"""
     })
   }
 
@@ -1500,16 +1500,16 @@ case class Slice(x: Expression, start: Expression, length: Expression)
       i, s"$i + $startIdx", dataType.asInstanceOf[ArrayType].containsNull)
 
     s"""
-       |if ($startIdx < 0 || $startIdx >= $inputArray.numElements()) {
-       |  ${ev.value} = new $genericArrayData(new Object[0]);
-       |} else {
-       |  $allocation
-       |  for (int $i = 0; $i < $resLength; $i ++) {
-       |    $assignment
-       |  }
-       |  ${ev.value} = $values;
-       |}
-     """.stripMargin
+if ($startIdx < 0 || $startIdx >= $inputArray.numElements()) {
+  ${ev.value} = new $genericArrayData(new Object[0]);
+} else {
+  $allocation
+  for (int $i = 0; $i < $resLength; $i ++) {
+    $assignment
+  }
+  ${ev.value} = $values;
+}
+"""
   }
 }
 
@@ -1600,12 +1600,12 @@ case class ArrayJoin(
         val replacementGen = replacement.genCode(ctx)
         val nullHandling = (buffer: String, delimiter: String, firstItem: String) => {
           s"""
-             |if (!$firstItem) {
-             |  $buffer.append($delimiter);
-             |}
-             |$buffer.append(${replacementGen.value});
-             |$firstItem = false;
-           """.stripMargin
+if (!$firstItem) {
+  $buffer.append($delimiter);
+}
+$buffer.append(${replacementGen.value});
+$firstItem = false;
+"""
         }
         val execCode = if (replacement.nullable) {
           ctx.nullSafeExec(replacement.nullable, replacementGen.isNull) {
@@ -1649,34 +1649,34 @@ $code
     val firstItem = ctx.freshName("firstItem")
     val resultCode =
       s"""
-         |$bufferClass $buffer = new $bufferClass();
-         |boolean $firstItem = true;
-         |for (int $i = 0; $i < ${arrayGen.value}.numElements(); $i ++) {
-         |  if (${arrayGen.value}.isNullAt($i)) {
-         |    ${nullEval(buffer, delimiterGen.value, firstItem)}
-         |  } else {
-         |    if (!$firstItem) {
-         |      $buffer.append(${delimiterGen.value});
-         |    }
-         |    $buffer.append(${CodeGenerator.getValue(arrayGen.value, StringType, i)});
-         |    $firstItem = false;
-         |  }
-         |}
-         |${ev.value} = $buffer.build();""".stripMargin
+$bufferClass $buffer = new $bufferClass();
+boolean $firstItem = true;
+for (int $i = 0; $i < ${arrayGen.value}.numElements(); $i ++) {
+  if (${arrayGen.value}.isNullAt($i)) {
+    ${nullEval(buffer, delimiterGen.value, firstItem)}
+  } else {
+    if (!$firstItem) {
+      $buffer.append(${delimiterGen.value});
+    }
+    $buffer.append(${CodeGenerator.getValue(arrayGen.value, StringType, i)});
+    $firstItem = false;
+  }
+}
+${ev.value} = $buffer.build();"""
 
     if (array.nullable || delimiter.nullable) {
       arrayGen.code + ctx.nullSafeExec(array.nullable, arrayGen.isNull) {
         delimiterGen.code + ctx.nullSafeExec(delimiter.nullable, delimiterGen.isNull) {
           s"""
-             |${ev.isNull} = false;
-             |$resultCode""".stripMargin
+${ev.isNull} = false;
+$resultCode"""
         }
       }
     } else {
       s"""
-         |${arrayGen.code}
-         |${delimiterGen.code}
-         |$resultCode""".stripMargin
+${arrayGen.code}
+${delimiterGen.code}
+$resultCode"""
     }
   }
 
@@ -2047,9 +2047,9 @@ if ($eval1.isNullAt($index)) {
 
           val indexOutOfBoundBranch = if (failOnError) {
             s"""throw new ArrayIndexOutOfBoundsException(
-               |  "Invalid index: " + $index + ", numElements: " + $eval1.numElements()
-               |);
-             """.stripMargin
+  "Invalid index: " + $index + ", numElements: " + $eval1.numElements()
+);
+"""
           } else {
             s"${ev.isNull} = true;"
           }

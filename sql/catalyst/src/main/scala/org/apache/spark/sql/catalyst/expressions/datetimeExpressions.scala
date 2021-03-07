@@ -520,12 +520,12 @@ case class SecondsToTimestamp(child: Expression) extends UnaryExpression
       nullSafeCodeGen(ctx, ev, c => {
         val typeStr = CodeGenerator.boxedType(other)
         s"""
-           |if ($typeStr.isNaN($c) || $typeStr.isInfinite($c)) {
-           |  ${ev.isNull} = true;
-           |} else {
-           |  ${ev.value} = (long)($c * $MICROS_PER_SECOND);
-           |}
-           |""".stripMargin
+if ($typeStr.isNaN($c) || $typeStr.isInfinite($c)) {
+  ${ev.isNull} = true;
+} else {
+  ${ev.value} = (long)($c * $MICROS_PER_SECOND);
+}
+"""
       })
   }
 
@@ -797,12 +797,12 @@ case class DateFormatClass(left: Expression, right: Expression, timeZoneId: Opti
       val ldf = LegacyDateFormats.getClass.getName.stripSuffix("$")
       val zid = ctx.addReferenceObj("zoneId", zoneId, classOf[ZoneId].getName)
       defineCodeGen(ctx, ev, (timestamp, format) => {
-        s"""|UTF8String.fromString($tf$$.MODULE$$.apply(
-            |  $format.toString(),
-            |  $zid,
-            |  $ldf$$.MODULE$$.SIMPLE_DATE_FORMAT(),
-            |  false)
-            |.format($timestamp))""".stripMargin
+        s"""UTF8String.fromString($tf$$.MODULE$$.apply(
+              $format.toString(),
+              $zid,
+              $ldf$$.MODULE$$.SIMPLE_DATE_FORMAT(),
+              false)
+            .format($timestamp))"""
       })
     }
   }
@@ -980,16 +980,16 @@ abstract class ToTimestamp
         val formatterName = ctx.addReferenceObj("formatter", fmt, df)
         nullSafeCodeGen(ctx, ev, (datetimeStr, _) =>
           s"""
-             |try {
-             |  ${ev.value} = $formatterName.parse($datetimeStr.toString()) / $downScaleFactor;
-             |} catch (java.time.DateTimeException e) {
-             |  $parseErrorBranch
-             |} catch (java.time.format.DateTimeParseException e) {
-             |  $parseErrorBranch
-             |} catch (java.text.ParseException e) {
-             |  $parseErrorBranch
-             |}
-             |""".stripMargin)
+try {
+  ${ev.value} = $formatterName.parse($datetimeStr.toString()) / $downScaleFactor;
+} catch (java.time.DateTimeException e) {
+  $parseErrorBranch
+} catch (java.time.format.DateTimeParseException e) {
+  $parseErrorBranch
+} catch (java.text.ParseException e) {
+  $parseErrorBranch
+}
+""")
       }.getOrElse {
         val zid = ctx.addReferenceObj("zoneId", zoneId, classOf[ZoneId].getName)
         val tf = TimestampFormatter.getClass.getName.stripSuffix("$")
@@ -997,21 +997,21 @@ abstract class ToTimestamp
         val timestampFormatter = ctx.freshName("timestampFormatter")
         nullSafeCodeGen(ctx, ev, (string, format) =>
           s"""
-             |$tf $timestampFormatter = $tf$$.MODULE$$.apply(
-             |  $format.toString(),
-             |  $zid,
-             |  $ldf$$.MODULE$$.SIMPLE_DATE_FORMAT(),
-             |  true);
-             |try {
-             |  ${ev.value} = $timestampFormatter.parse($string.toString()) / $downScaleFactor;
-             |} catch (java.time.format.DateTimeParseException e) {
-             |    $parseErrorBranch
-             |} catch (java.time.DateTimeException e) {
-             |    $parseErrorBranch
-             |} catch (java.text.ParseException e) {
-             |    $parseErrorBranch
-             |}
-             |""".stripMargin)
+$tf $timestampFormatter = $tf$$.MODULE$$.apply(
+  $format.toString(),
+  $zid,
+  $ldf$$.MODULE$$.SIMPLE_DATE_FORMAT(),
+  true);
+try {
+  ${ev.value} = $timestampFormatter.parse($string.toString()) / $downScaleFactor;
+} catch (java.time.format.DateTimeParseException e) {
+    $parseErrorBranch
+} catch (java.time.DateTimeException e) {
+    $parseErrorBranch
+} catch (java.text.ParseException e) {
+    $parseErrorBranch
+}
+""")
       }
       case TimestampType =>
         val eval1 = left.genCode(ctx)
@@ -1106,12 +1106,12 @@ case class FromUnixTime(sec: Expression, format: Expression, timeZoneId: Option[
       val zid = ctx.addReferenceObj("zoneId", zoneId, classOf[ZoneId].getName)
       defineCodeGen(ctx, ev, (seconds, format) =>
         s"""
-           |UTF8String.fromString(
-           |  $tf$$.MODULE$$.apply($format.toString(),
-           |  $zid,
-           |  $ldf$$.MODULE$$.SIMPLE_DATE_FORMAT(),
-           |  false).format($seconds * 1000000L))
-           |""".stripMargin)
+UTF8String.fromString(
+  $tf$$.MODULE$$.apply($format.toString(),
+  $zid,
+  $ldf$$.MODULE$$.SIMPLE_DATE_FORMAT(),
+  false).format($seconds * 1000000L))
+""")
     }
   }
 
@@ -1199,23 +1199,23 @@ case class NextDay(startDate: Expression, dayOfWeek: Expression)
         val input = dayOfWeek.eval().asInstanceOf[UTF8String]
         if ((input eq null) || DateTimeUtils.getDayOfWeekFromString(input) == -1) {
           s"""
-             |${ev.isNull} = true;
-           """.stripMargin
+${ev.isNull} = true;
+"""
         } else {
           val dayOfWeekValue = DateTimeUtils.getDayOfWeekFromString(input)
           s"""
-             |${ev.value} = $dateTimeUtilClass.getNextDateForDayOfWeek($sd, $dayOfWeekValue);
-           """.stripMargin
+${ev.value} = $dateTimeUtilClass.getNextDateForDayOfWeek($sd, $dayOfWeekValue);
+"""
         }
       } else {
         s"""
-           |int $dayOfWeekTerm = $dateTimeUtilClass.getDayOfWeekFromString($dowS);
-           |if ($dayOfWeekTerm == -1) {
-           |  ${ev.isNull} = true;
-           |} else {
-           |  ${ev.value} = $dateTimeUtilClass.getNextDateForDayOfWeek($sd, $dayOfWeekTerm);
-           |}
-         """.stripMargin
+int $dayOfWeekTerm = $dateTimeUtilClass.getDayOfWeekFromString($dowS);
+if ($dayOfWeekTerm == -1) {
+  ${ev.isNull} = true;
+} else {
+  ${ev.value} = $dateTimeUtilClass.getNextDateForDayOfWeek($sd, $dayOfWeekTerm);
+}
+"""
       }
     })
   }
@@ -1317,15 +1317,15 @@ case class DateAddInterval(
       val startTs = ctx.freshName("startTs")
       val resultTs = ctx.freshName("resultTs")
       s"""
-         |if ($i.microseconds == 0) {
-         |  ${ev.value} = $dtu.dateAddInterval($sd, $i);
-         |} else {
-         |  long $startTs = $dtu.daysToMicros($sd, $zid);
-         |  long $resultTs =
-         |    $dtu.timestampAddInterval($startTs, $i.months, $i.days, $i.microseconds, $zid);
-         |  ${ev.value} = $dtu.microsToDays($resultTs, $zid);
-         |}
-         |""".stripMargin
+if ($i.microseconds == 0) {
+  ${ev.value} = $dtu.dateAddInterval($sd, $i);
+} else {
+  long $startTs = $dtu.daysToMicros($sd, $zid);
+  long $resultTs =
+    $dtu.timestampAddInterval($startTs, $i.months, $i.days, $i.microseconds, $zid);
+  ${ev.value} = $dtu.microsToDays($resultTs, $zid);
+}
+"""
     })
   }
 

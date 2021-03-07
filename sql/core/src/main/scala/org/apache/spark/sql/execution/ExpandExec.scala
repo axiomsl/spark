@@ -159,7 +159,7 @@ case class ExpandExec(
 boolean $isNull = true;
 ${CodeGenerator.javaType(firstExpr.dataType)} $value =
   ${CodeGenerator.defaultValue(firstExpr.dataType)};
-         """.stripMargin
+         """
         ExprCode(
           code,
           JavaCode.isNullVariable(isNull),
@@ -178,7 +178,7 @@ ${CodeGenerator.javaType(firstExpr.dataType)} $value =
 ${ev.code}
 ${outputColumns(col).isNull} = ${ev.isNull};
 ${outputColumns(col).value} = ${ev.value};
-            """.stripMargin
+"""
         }
       }
 

@@ -180,22 +180,22 @@ case class ColumnarToRowExec(child: SparkPlan) extends ColumnarToRowTransition w
       "// shouldStop check is eliminated"
     }
     s"""
-       |if ($batch == null) {
-       |  $nextBatchFuncName();
-       |}
-       |while ($limitNotReachedCond $batch != null) {
-       |  int $numRows = $batch.numRows();
-       |  int $localEnd = $numRows - $idx;
-       |  for (int $localIdx = 0; $localIdx < $localEnd; $localIdx++) {
-       |    int $rowidx = $idx + $localIdx;
-       |    ${consume(ctx, columnsBatchInput).trim}
-       |    $shouldStop
-       |  }
-       |  $idx = $numRows;
-       |  $batch = null;
-       |  $nextBatchFuncName();
-       |}
-     """.stripMargin
+        if ($batch == null) {
+          $nextBatchFuncName();
+        }
+        while ($limitNotReachedCond $batch != null) {
+          int $numRows = $batch.numRows();
+          int $localEnd = $numRows - $idx;
+          for (int $localIdx = 0; $localIdx < $localEnd; $localIdx++) {
+            int $rowidx = $idx + $localIdx;
+            ${consume(ctx, columnsBatchInput).trim}
+            $shouldStop
+          }
+          $idx = $numRows;
+          $batch = null;
+          $nextBatchFuncName();
+        }
+     """
   }
 
   override def inputRDDs(): Seq[RDD[InternalRow]] = {

@@ -83,9 +83,9 @@ case class MakeDecimal(
         ""
       }
       s"""
-         |${ev.value} = (new Decimal()).$setMethod($eval, $precision, $scale);
-         |$setNull
-         |""".stripMargin
+${ev.value} = (new Decimal()).$setMethod($eval, $precision, $scale);
+$setNull
+"""
     })
   }
 }
@@ -134,10 +134,10 @@ case class CheckOverflow(
   override protected def doGenCode(ctx: CodegenContext, ev: ExprCode): ExprCode = {
     nullSafeCodeGen(ctx, ev, eval => {
       s"""
-         |${ev.value} = $eval.toPrecision(
-         |  ${dataType.precision}, ${dataType.scale}, Decimal.ROUND_HALF_UP(), $nullOnOverflow);
-         |${ev.isNull} = ${ev.value} == null;
-       """.stripMargin
+${ev.value} = $eval.toPrecision(
+  ${dataType.precision}, ${dataType.scale}, Decimal.ROUND_HALF_UP(), $nullOnOverflow);
+${ev.isNull} = ${ev.value} == null;
+"""
     })
   }
 
@@ -173,8 +173,8 @@ case class CheckOverflowInSum(
       ""
     } else {
       s"""
-         |throw new ArithmeticException("Overflow in sum of decimals.");
-         |""".stripMargin
+throw new ArithmeticException("Overflow in sum of decimals.");
+"""
     }
     val code = code"""
 ${childGen.code}

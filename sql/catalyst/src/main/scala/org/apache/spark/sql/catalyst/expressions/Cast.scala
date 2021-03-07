@@ -1166,9 +1166,9 @@ $evPrim = $d;
         s"$evNull = true;"
       } else {
         s"""
-           |throw new ArithmeticException($d.toDebugString() + " cannot be represented as " +
-           | "Decimal(${decimalType.precision}, ${decimalType.scale}).");
-         """.stripMargin
+throw new ArithmeticException($d.toDebugString() + " cannot be represented as " +
+ "Decimal(${decimalType.precision}, ${decimalType.scale}).");
+"""
       }
       code"""
 if ($d.changePrecision(${decimalType.precision}, ${decimalType.scale})) {

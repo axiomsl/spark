@@ -285,14 +285,14 @@ while ($iterator.hasNext() || $outerVal) {
 """
     } else {
       s"""
-         |${data.code}
-         |scala.collection.Iterator<InternalRow> $iterator = ${data.value}.toIterator();
-         |while ($iterator.hasNext()) {
-         |  $numOutput.add(1);
-         |  InternalRow $current = (InternalRow)($iterator.next());
-         |  ${consume(ctx, input ++ values)}
-         |}
-      """.stripMargin
+ ${data.code}
+ scala.collection.Iterator<InternalRow> $iterator = ${data.value}.toIterator();
+ while ($iterator.hasNext()) {
+   $numOutput.add(1);
+   InternalRow $current = (InternalRow)($iterator.next());
+   ${consume(ctx, input ++ values)}
+ }
+ """
     }
   }
 

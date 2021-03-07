@@ -577,11 +577,11 @@ case class HugeCodeIntExpression(value: Int) extends Expression {
     val hugeCode = (0 until (HugeMethodLimit / 2)).map(i => s"int dummy$i = 0;").mkString("\n")
     val code =
       code"""{
-         |  $hugeCode
-         |}
-         |boolean ${ev.isNull} = false;
-         |int ${ev.value} = $value;
-       """.stripMargin
+  $hugeCode
+}
+boolean ${ev.isNull} = false;
+int ${ev.value} = $value;
+       """
     ev.copy(code = code)
   }
 }

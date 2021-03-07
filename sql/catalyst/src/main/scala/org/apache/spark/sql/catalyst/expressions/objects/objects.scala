@@ -170,8 +170,8 @@ trait SerializerSupport {
     // Code to initialize the serializer
     ctx.addImmutableStateIfNotExists(serializerInstanceClass, serializerInstance, v =>
       s"""
-         |$v = ($serializerInstanceClass) $newSerializerMethod($kryo);
-       """.stripMargin)
+$v = ($serializerInstanceClass) $newSerializerMethod($kryo);
+""")
     serializerInstance
   }
 }
@@ -1461,13 +1461,13 @@ case class CreateExternalRow(children: Seq[Expression], schema: StructType)
     val childrenCodes = children.zipWithIndex.map { case (e, i) =>
       val eval = e.genCode(ctx)
       s"""
-         |${eval.code}
-         |if (${eval.isNull}) {
-         |  $values[$i] = null;
-         |} else {
-         |  $values[$i] = ${eval.value};
-         |}
-       """.stripMargin
+${eval.code}
+if (${eval.isNull}) {
+  $values[$i] = null;
+} else {
+  $values[$i] = ${eval.value};
+}
+"""
     }
 
     val childrenCode = ctx.splitExpressionsWithCurrentInputs(
@@ -1607,11 +1607,11 @@ case class InitializeJavaBean(beanInstance: Expression, setters: Map[String, Exp
       case (setterMethod, fieldValue) =>
         val fieldGen = fieldValue.genCode(ctx)
         s"""
-           |${fieldGen.code}
-           |if (!${fieldGen.isNull}) {
-           |  $javaBeanInstance.$setterMethod(${fieldGen.value});
-           |}
-         """.stripMargin
+${fieldGen.code}
+if (!${fieldGen.isNull}) {
+  $javaBeanInstance.$setterMethod(${fieldGen.value});
+}
+"""
     }
     val initializeCode = ctx.splitExpressionsWithCurrentInputs(
       expressions = initialize.toSeq,

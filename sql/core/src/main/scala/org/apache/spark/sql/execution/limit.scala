@@ -131,11 +131,11 @@ trait BaseLimitExec extends LimitExec with CodegenSupport {
     // operators in one query.
     ctx.addMutableState(CodeGenerator.JAVA_INT, countTerm, forceInline = true, useFreshName = false)
     s"""
-       | if ($countTerm < $limit) {
-       |   $countTerm += 1;
-       |   ${consume(ctx, input)}
-       | }
-     """.stripMargin
+ if ($countTerm < $limit) {
+   $countTerm += 1;
+   ${consume(ctx, input)}
+ }
+"""
   }
 }
 
