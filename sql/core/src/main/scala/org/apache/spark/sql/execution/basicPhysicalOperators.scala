@@ -571,7 +571,7 @@ case class RangeExec(range: org.apache.spark.sql.catalyst.plans.logical.Range)
           $inputMetrics.incRecordsRead($localEnd);
           $taskContext.killTaskIfInterrupted();
         }
-     """
+"""
   }
 
   protected override def doExecute(): RDD[InternalRow] = {

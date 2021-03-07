@@ -1615,9 +1615,9 @@ $firstItem = false;
           genCodeForArrayAndDelimiter(ctx, ev, nullHandling)
         }
         s"""
-           |${replacementGen.code}
-           |$execCode
-         """.stripMargin
+${replacementGen.code}
+$execCode
+"""
       case None => genCodeForArrayAndDelimiter(ctx, ev,
         (_: String, _: String, _: String) => "// nulls are ignored")
     }
