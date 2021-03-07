@@ -892,16 +892,35 @@ case class LeastNullIntolerant(children: Seq[Expression]) extends NullIntolerant
 
     val inputs = evalChildren.zip(children.map(_.nullable)).zipWithIndex.map {
       case ((eval, true), index) =>
-        s"""
+
+        eval.isNull.toString match {
+          case "true" =>
+            s"""
 if (!$hasNull) {
   ${eval.code}
-  if (!${eval.isNull}) {
+  $hasNull = true;
+}
+"""
+          case "false" =>
+            s"""
+if (!$hasNull) {
+  ${eval.code}
+  $args[$index] = ${eval.value};
+}
+"""
+          case isNull =>
+            s"""
+if (!$hasNull) {
+  ${eval.code}
+  if (!$isNull) {
     $args[$index] = ${eval.value};
   } else {
     $hasNull = true;
   }
 }
 """
+        }
+
       case ((eval, false), index) =>
         s"""
 if (!$hasNull) {
@@ -932,7 +951,6 @@ return $hasNull;
 boolean $hasNull = false;
 $resultType[] $args = new $resultType[${evalChildren.length}];
 $codes
-${ev.isNull} = true;
 $resultType ${ev.value} = $defaultValueString;
 if (!$hasNull) {
    ${ev.value} = ($resultType) java.util.Collections.min(java.util.Arrays.asList($args));
@@ -1158,16 +1176,34 @@ case class GreatestNullIntolerant(children: Seq[Expression]) extends NullIntoler
 
     val inputs = evalChildren.zip(children.map(_.nullable)).zipWithIndex.map {
       case ((eval, true), index) =>
-        s"""
+        eval.isNull.toString match {
+          case "true" =>
+            s"""
 if (!$hasNull) {
   ${eval.code}
-  if (!${eval.isNull}) {
+  $hasNull = true;
+}
+"""
+          case "false" =>
+            s"""
+if (!$hasNull) {
+  ${eval.code}
+  $args[$index] = ${eval.value};
+}
+"""
+          case isNull =>
+            s"""
+if (!$hasNull) {
+  ${eval.code}
+  if (!$isNull) {
     $args[$index] = ${eval.value};
   } else {
     $hasNull = true;
   }
 }
 """
+        }
+
       case ((eval, false), index) =>
         s"""
 if (!$hasNull) {
@@ -1198,7 +1234,6 @@ return $hasNull;
 boolean $hasNull = false;
 $resultType[] $args = new $resultType[${evalChildren.length}];
 $codes
-${ev.isNull} = true;
 $resultType ${ev.value} = $defaultValueString;
 if (!$hasNull) {
    ${ev.value} = ($resultType) java.util.Collections.max(java.util.Arrays.asList($args));
