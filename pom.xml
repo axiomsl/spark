@@ -688,6 +688,12 @@
         <scope>${hadoop.deps.scope}</scope>
       </dependency>
       <dependency>
+        <groupId>log4j</groupId>
+        <artifactId>apache-log4j-extras</artifactId>
+        <version>${log4j.version}</version>
+        <type>${hadoop.deps.scope}</type>
+      </dependency>
+      <dependency>
         <groupId>com.ning</groupId>
         <artifactId>compress-lzf</artifactId>
         <version>1.0.3</version>
