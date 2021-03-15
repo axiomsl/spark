@@ -151,7 +151,7 @@ object StringUtils extends Logging {
   class PlanStringConcat extends StringConcat(Math.max(0, SQLConf.get.maxPlanStringLength - 30)) {
     override def toString: String = {
       if (atLimit) {
-        logWarning(
+        logTrace(
           "Truncated the string representation of a plan since it was too long. The " +
             s"plan had length $length and the maximum is $maxLength. This behavior " +
             s"can be adjusted by setting '${SQLConf.MAX_PLAN_STRING_LENGTH.key}'.")
