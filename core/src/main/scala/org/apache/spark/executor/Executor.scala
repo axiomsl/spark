@@ -738,7 +738,7 @@ private[spark] class Executor(
   private def setMDCForTask(taskName: String, mdc: Seq[(String, String)]): Unit = {
     // make sure we run the task with the user-specified mdc properties only
     MDC.clear()
-    mdc.foreach { case (key, value) => MDC.put(key, value) }
+    mdc.foreach { case (key, value) => MDC.put(key.stripPrefix("mdc."), value) }
     // avoid overriding the takName by the user
     MDC.put("mdc.taskName", taskName)
   }
