@@ -21,12 +21,16 @@ import java.io.NotSerializableException
 import java.util.Properties
 import java.util.concurrent.{ConcurrentHashMap, TimeUnit}
 import java.util.concurrent.atomic.AtomicInteger
+
 import scala.annotation.tailrec
 import scala.collection.Map
 import scala.collection.mutable
 import scala.collection.mutable.{HashMap, HashSet, ListBuffer}
 import scala.concurrent.duration._
 import scala.util.control.NonFatal
+
+import org.slf4j.MDC
+
 import org.apache.spark._
 import org.apache.spark.broadcast.Broadcast
 import org.apache.spark.executor.{ExecutorMetrics, TaskMetrics}
@@ -42,7 +46,7 @@ import org.apache.spark.rpc.RpcTimeout
 import org.apache.spark.storage._
 import org.apache.spark.storage.BlockManagerMessages.BlockManagerHeartbeat
 import org.apache.spark.util._
-import org.slf4j.MDC
+
 
 /**
  * The high-level scheduling layer that implements stage-oriented scheduling. It computes a DAG of
