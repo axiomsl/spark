@@ -1550,15 +1550,17 @@ private[spark] class DAGScheduler(
    */
   private[scheduler] def handleTaskCompletion(event: CompletionEvent): Unit = {
     val task = event.task
-    import scala.collection.JavaConverters._
-    task.localProperties.entrySet
-      .asScala
-      .filter(_.getKey.toString.startsWith("mdc."))
-      .foreach { entry =>
-        val key = entry.getKey.toString.stripPrefix("mdc.")
-        val value = entry.getValue.toString
-        MDC.put(key, value)
-      }
+    if (task.localProperties != null) {
+      import scala.collection.JavaConverters._
+      task.localProperties.entrySet
+        .asScala
+        .filter(_.getKey.toString.startsWith("mdc."))
+        .foreach { entry =>
+          val key = entry.getKey.toString.stripPrefix("mdc.")
+          val value = entry.getValue.toString
+          MDC.put(key, value)
+        }
+    }
     val stageId = task.stageId
 
     outputCommitCoordinator.taskCompleted(
