@@ -1328,7 +1328,7 @@ private[spark] class DAGScheduler(
       stage match {
         case _: ShuffleMapStage =>
           partitionsToCompute
-            .map { id => (id, getPreferredLocs(stage.rdd, id))}(scala.collection.breakOut)
+            .map { id => (id, getPreferredLocs(stage.rdd, id))}.toMap
         case s: ResultStage =>
           partitionsToCompute.map { id =>
             val p = s.partitions(id)
