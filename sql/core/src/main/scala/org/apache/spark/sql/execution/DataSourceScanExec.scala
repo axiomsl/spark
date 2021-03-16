@@ -54,7 +54,7 @@ trait DataSourceScanExec extends LeafExecNode {
   // Metadata that describes more details of this scan.
   protected def metadata: Map[String, String]
 
-  protected val maxMetadataValueLength = sqlContext.sessionState.conf.maxMetadataStringLength
+  protected val maxMetadataValueLength: Int = sqlContext.sessionState.conf.maxMetadataStringLength
 
   override def simpleString(maxFields: Int): String = {
     val metadataEntries = metadata.toSeq.sorted.map {
@@ -68,8 +68,8 @@ trait DataSourceScanExec extends LeafExecNode {
 
   override def verboseStringWithOperatorId(): String = {
     val metadataStr = metadata.toSeq.sorted.filterNot {
-      case (_, value) if (value.isEmpty || value.equals("[]")) => true
-      case (key, _) if (key.equals("DataFilters") || key.equals("Format")) => true
+      case (_, value) if value.isEmpty || value.equals("[]") => true
+      case (key, _) if key.equals("DataFilters") || key.equals("Format") => true
       case (_, _) => false
     }.map {
       case (key, value) => s"$key: ${redact(value)}"
@@ -213,7 +213,7 @@ case class FileSourceScanExec(
     val ret =
       relation.location.listFiles(
         partitionFilters.filterNot(isDynamicPruningFilter), dataFilters)
-    setFilesNumAndSizeMetric(ret, true)
+    setFilesNumAndSizeMetric(ret, static = true)
     val timeTakenMs = NANOSECONDS.toMillis(
       (System.nanoTime() - startTime) + optimizerMetadataTimeNs)
     driverMetrics("metadataTime") = timeTakenMs
@@ -237,7 +237,7 @@ case class FileSourceScanExec(
           BoundReference(index, partitionColumns(index).dataType, nullable = true)
       }, Nil)
       val ret = selectedPartitions.filter(p => boundPredicate.eval(p.values))
-      setFilesNumAndSizeMetric(ret, false)
+      setFilesNumAndSizeMetric(ret, static = false)
       val timeTakenMs = (System.nanoTime() - startTime) / 1000 / 1000
       driverMetrics("pruningTime") = timeTakenMs
       ret
@@ -372,11 +372,11 @@ case class FileSourceScanExec(
 
   override def verboseStringWithOperatorId(): String = {
     val metadataStr = metadata.toSeq.sorted.filterNot {
-      case (_, value) if (value.isEmpty || value.equals("[]")) => true
-      case (key, _) if (key.equals("DataFilters") || key.equals("Format")) => true
+      case (_, value) if value.isEmpty || value.equals("[]") => true
+      case (key, _) if key.equals("DataFilters") || key.equals("Format") => true
       case (_, _) => false
     }.map {
-      case (key, _) if (key.equals("Location")) =>
+      case (key, _) if key.equals("Location") =>
         val location = relation.location
         val numPaths = location.rootPaths.length
         val abbreviatedLocation = if (numPaths <= 1) {
@@ -396,7 +396,7 @@ ${metadataStr.mkString("\n")}
   }
 
   lazy val inputRDD: RDD[InternalRow] = {
-    val readFile: (PartitionedFile) => Iterator[InternalRow] =
+    val readFile: PartitionedFile => Iterator[InternalRow] =
       relation.fileFormat.buildReaderWithPartitionValues(
         sparkSession = relation.sparkSession,
         dataSchema = relation.dataSchema,
@@ -446,7 +446,7 @@ ${metadataStr.mkString("\n")}
     }
   }
 
-  override lazy val metrics = Map(
+  override lazy val metrics: Map[String, SQLMetric] = Map(
     "numOutputRows" -> SQLMetrics.createMetric(sparkContext, "number of output rows"),
     "numFiles" -> SQLMetrics.createMetric(sparkContext, "number of files read"),
     "metadataTime" -> SQLMetrics.createTimingMetric(sparkContext, "metadata time"),
@@ -530,7 +530,7 @@ ${metadataStr.mkString("\n")}
    */
   private def createBucketedReadRDD(
       bucketSpec: BucketSpec,
-      readFile: (PartitionedFile) => Iterator[InternalRow],
+      readFile: PartitionedFile => Iterator[InternalRow],
       selectedPartitions: Array[PartitionDirectory],
       fsRelation: HadoopFsRelation): RDD[InternalRow] = {
     logInfo(s"Planning with ${bucketSpec.numBuckets} buckets")
@@ -556,7 +556,7 @@ ${metadataStr.mkString("\n")}
     }
 
     val filePartitions = optionalNumCoalescedBuckets.map { numCoalescedBuckets =>
-      logInfo(s"Coalescing to ${numCoalescedBuckets} buckets")
+      logInfo(s"Coalescing to $numCoalescedBuckets buckets")
       val coalescedBuckets = prunedFilesGroupedToBuckets.groupBy(_._1 % numCoalescedBuckets)
       Seq.tabulate(numCoalescedBuckets) { bucketId =>
         val partitionedFiles = coalescedBuckets.get(bucketId).map {
@@ -582,7 +582,7 @@ ${metadataStr.mkString("\n")}
    * @param fsRelation [[HadoopFsRelation]] associated with the read.
    */
   private def createNonBucketedReadRDD(
-      readFile: (PartitionedFile) => Iterator[InternalRow],
+      readFile: PartitionedFile => Iterator[InternalRow],
       selectedPartitions: Array[PartitionDirectory],
       fsRelation: HadoopFsRelation): RDD[InternalRow] = {
     val openCostInBytes = fsRelation.sparkSession.sessionState.conf.filesOpenCostInBytes

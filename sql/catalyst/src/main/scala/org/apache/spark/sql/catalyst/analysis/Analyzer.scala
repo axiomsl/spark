@@ -21,6 +21,7 @@ import java.util
 import java.util.Locale
 import java.util.concurrent.atomic.AtomicBoolean
 
+import scala.annotation.tailrec
 import scala.collection.mutable
 import scala.collection.mutable.ArrayBuffer
 import scala.util.Random
@@ -52,6 +53,7 @@ import org.apache.spark.sql.types._
 import org.apache.spark.sql.util.{CaseInsensitiveStringMap, SchemaUtils}
 import org.apache.spark.unsafe.types.UTF8String
 import org.apache.spark.util.Utils
+
 
 /**
  * A trivial [[Analyzer]] with a dummy [[SessionCatalog]] and [[EmptyFunctionRegistry]].
@@ -201,7 +203,7 @@ class Analyzer(override val catalogManager: CatalogManager)
    * If the plan cannot be resolved within maxIterations, analyzer will throw exception to inform
    * user to increase the value of SQLConf.ANALYZER_MAX_ITERATIONS.
    */
-  protected def fixedPoint =
+  protected def fixedPoint: FixedPoint =
     FixedPoint(
       conf.analyzerMaxIterations,
       errorOnExceed = true,
@@ -577,7 +579,7 @@ class Analyzer(override val catalogManager: CatalogManager)
           // Only unique expressions are included in the group by expressions and is determined
           // based on their semantic equality. Example. grouping sets ((a * b), (b * a)) results
           // in grouping expression (a * b)
-          if (result.find(_.semanticEquals(currentExpr)).isDefined) {
+          if (result.exists(_.semanticEquals(currentExpr))) {
             result
           } else {
             result :+ currentExpr
@@ -608,7 +610,8 @@ class Analyzer(override val catalogManager: CatalogManager)
       // that will only be used for the intended purpose.
       val groupByAliases = constructGroupByAlias(finalGroupByExpressions)
 
-      val gid = AttributeReference(VirtualColumn.groupingIdName, GroupingID.dataType, false)()
+      val gid = AttributeReference(VirtualColumn.groupingIdName, GroupingID.dataType,
+        nullable = false)()
       val expand = constructExpand(selectedGroupByExprs, child, groupByAliases, gid)
       val groupingAttrs = expand.output.drop(child.output.length)
 
@@ -816,9 +819,9 @@ class Analyzer(override val catalogManager: CatalogManager)
                 // AggregateFunction's with the exception of First and Last in their default mode
                 // (which we handle) and possibly some Hive UDAF's.
                 case First(expr, _) =>
-                  First(ifExpr(expr), true)
+                  First(ifExpr(expr), ignoreNulls = true)
                 case Last(expr, _) =>
-                  Last(ifExpr(expr), true)
+                  Last(ifExpr(expr), ignoreNulls = true)
                 case a: AggregateFunction =>
                   a.withNewChildren(a.children.map(ifExpr))
               }.transform {
@@ -1018,7 +1021,7 @@ class Analyzer(override val catalogManager: CatalogManager)
 
       case i @ InsertIntoStatement(u @ UnresolvedRelation(_, _, false), _, _, _, _, _)
           if i.query.resolved =>
-        lookupV2Relation(u.multipartIdentifier, u.options, false)
+        lookupV2Relation(u.multipartIdentifier, u.options, isStreaming = false)
           .map(v2Relation => i.copy(table = v2Relation))
           .getOrElse(i)
 
@@ -1026,7 +1029,7 @@ class Analyzer(override val catalogManager: CatalogManager)
       case write: V2WriteCommand =>
         write.table match {
           case u: UnresolvedRelation if !u.isStreaming =>
-            lookupV2Relation(u.multipartIdentifier, u.options, false).map {
+            lookupV2Relation(u.multipartIdentifier, u.options, isStreaming = false).map {
               case r: DataSourceV2Relation => write.withNewTable(r)
               case other => throw new IllegalStateException(
                 "[BUG] unexpected plan returned by `lookupV2Relation`: " + other)
@@ -1114,7 +1117,7 @@ class Analyzer(override val catalogManager: CatalogManager)
       case i @ InsertIntoStatement(table, _, _, _, _, _) if i.query.resolved =>
         val relation = table match {
           case u @ UnresolvedRelation(_, _, false) =>
-            lookupRelation(u.multipartIdentifier, u.options, false).getOrElse(u)
+            lookupRelation(u.multipartIdentifier, u.options, isStreaming = false).getOrElse(u)
           case other => other
         }
 
@@ -1128,7 +1131,7 @@ class Analyzer(override val catalogManager: CatalogManager)
       case write: V2WriteCommand =>
         write.table match {
           case u: UnresolvedRelation if !u.isStreaming =>
-            lookupRelation(u.multipartIdentifier, u.options, false)
+            lookupRelation(u.multipartIdentifier, u.options, isStreaming = false)
               .map(EliminateSubqueryAliases(_))
               .map {
                 case v: View => write.failAnalysis(
@@ -2152,7 +2155,7 @@ class Analyzer(override val catalogManager: CatalogManager)
                   }
                   AggregateExpression(agg, Complete, isDistinct, filter)
                 // This function is not an aggregate function, just return the resolved one.
-                case other if (isDistinct || filter.isDefined) =>
+                case other if isDistinct || filter.isDefined =>
                   failAnalysis("DISTINCT or FILTER specified, " +
                     s"but ${other.prettyName} is not an aggregate function")
                 case e: String2TrimExpression if arguments.size == 2 =>
@@ -2519,6 +2522,8 @@ class Analyzer(override val catalogManager: CatalogManager)
     }
 
     private def hasNestedGenerator(expr: NamedExpression): Boolean = {
+
+      @tailrec
       def hasInnerGenerator(g: Generator): Boolean = g match {
         // Since `GeneratorOuter` is just a wrapper of generators, we skip it here
         case go: GeneratorOuter =>
@@ -2605,7 +2610,7 @@ class Analyzer(override val catalogManager: CatalogManager)
               generatorVisited = true
 
               val newGenChildren: Seq[Expression] = generator.children.zipWithIndex.map {
-                case (e, idx) => if (e.foldable) e else Alias(e, s"_gen_input_${idx}")()
+                case (e, idx) => if (e.foldable) e else Alias(e, s"_gen_input_$idx")()
               }
               val newGenerator = {
                 val g = generator.withNewChildren(newGenChildren.map { e =>
@@ -2968,7 +2973,7 @@ class Analyzer(override val catalogManager: CatalogManager)
       // We only extract Window Expressions after all expressions of the Project
       // have been resolved.
       case p @ Project(projectList, child)
-        if hasWindowFunction(projectList) && !p.expressions.exists(!_.resolved) =>
+        if hasWindowFunction(projectList) && p.expressions.forall(_.resolved) =>
         val (windowExpressions, regularExpressions) = extract(projectList)
         // We add a project to get all needed expressions for window expressions from the child
         // of the original Project operator.
