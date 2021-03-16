@@ -1538,7 +1538,7 @@ package object config {
       .version("2.1.0")
       .bytesConf(ByteUnit.BYTE)
       .checkValue(v => 1024 * 1024 <= v && v <= MAX_BUFFER_SIZE_BYTES,
-        s"The value must be in allowed range [1,048,576, ${MAX_BUFFER_SIZE_BYTES}].")
+        s"The value must be in allowed range [1,048,576, $MAX_BUFFER_SIZE_BYTES].")
       .createWithDefault(1024 * 1024)
 
   private[spark] val DEFAULT_PLUGINS_LIST = "spark.plugins.defaultList"
