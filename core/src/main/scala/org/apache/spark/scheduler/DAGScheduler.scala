@@ -21,14 +21,12 @@ import java.io.NotSerializableException
 import java.util.Properties
 import java.util.concurrent.{ConcurrentHashMap, TimeUnit}
 import java.util.concurrent.atomic.AtomicInteger
-
 import scala.annotation.tailrec
 import scala.collection.Map
 import scala.collection.mutable
 import scala.collection.mutable.{HashMap, HashSet, ListBuffer}
 import scala.concurrent.duration._
 import scala.util.control.NonFatal
-
 import org.apache.spark._
 import org.apache.spark.broadcast.Broadcast
 import org.apache.spark.executor.{ExecutorMetrics, TaskMetrics}
@@ -44,6 +42,7 @@ import org.apache.spark.rpc.RpcTimeout
 import org.apache.spark.storage._
 import org.apache.spark.storage.BlockManagerMessages.BlockManagerHeartbeat
 import org.apache.spark.util._
+import org.slf4j.MDC
 
 /**
  * The high-level scheduling layer that implements stage-oriented scheduling. It computes a DAG of
@@ -1475,7 +1474,9 @@ private[spark] class DAGScheduler(
         val acc: AccumulatorV2[Any, Any] = AccumulatorContext.get(id) match {
           case Some(accum) => accum.asInstanceOf[AccumulatorV2[Any, Any]]
           case None =>
-            throw new SparkException(s"attempted to access non-existent accumulator $id")
+            throw new SparkException(s"attempted to access non-existent accumulator $id" +
+              s", jobId: ${task.jobId}, stageId: ${task.stageId}, " +
+              s"taskId: ${event.taskInfo.taskId}")
         }
         acc.merge(updates.asInstanceOf[AccumulatorV2[Any, Any]])
         // To avoid UI cruft, ignore cases where value wasn't updated
@@ -1545,6 +1546,15 @@ private[spark] class DAGScheduler(
    */
   private[scheduler] def handleTaskCompletion(event: CompletionEvent): Unit = {
     val task = event.task
+    import scala.collection.JavaConverters._
+    task.localProperties.entrySet
+      .asScala
+      .filter(_.getKey.toString.startsWith("mdc."))
+      .foreach { entry =>
+        val key = entry.getKey.toString.stripPrefix("mdc.")
+        val value = entry.getValue.toString
+        MDC.put(key, value)
+      }
     val stageId = task.stageId
 
     outputCommitCoordinator.taskCompleted(
