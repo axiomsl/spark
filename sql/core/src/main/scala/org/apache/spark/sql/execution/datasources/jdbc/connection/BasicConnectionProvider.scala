@@ -45,7 +45,15 @@ private[jdbc] class BasicConnectionProvider extends JdbcConnectionProvider with 
     jdbcOptions.asProperties.asScala.foreach { case(k, v) =>
       properties.put(k, v)
     }
-    logDebug(s"JDBC connection initiated with URL: ${jdbcOptions.url} and properties: $properties")
+    logDebug(
+      {
+        val propertiesString = properties.stringPropertyNames().asScala.map {
+          case "password" => "password" -> "****"
+          case name => name -> properties.getProperty(name)
+        }.mkString("[", ", ", "]")
+        s"JDBC connection initiated with URL: ${jdbcOptions.url} and properties: $propertiesString"
+      }
+    )
     driver.connect(jdbcOptions.url, properties)
   }
 }
