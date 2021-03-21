@@ -422,15 +422,34 @@ case class In(value: Expression, list: Seq[Expression]) extends Predicate {
     // All the blocks are meant to be inside a do { ... } while (false); loop.
     // The evaluation of variables can be stopped when we find a matching value.
     val listCode = listGen.map(x =>
-      s"""
+      x.isNull.toString match {
+        case "false" =>
+          s"""
+${x.code}
+if (${ctx.genEqual(value.dataType, valueArg, x.value)}) {
+  $tmpResult = $MATCHED; // ${ev.isNull} = false; ${ev.value} = true;
+  continue;
+}
+"""
+        case "true" =>
+          s"""
 ${x.code}
 if (${x.isNull}) {
+  $tmpResult = $HAS_NULL; // ${ev.isNull} = true;
+}
+"""
+        case other =>
+          s"""
+${x.code}
+if ($other) {
   $tmpResult = $HAS_NULL; // ${ev.isNull} = true;
 } else if (${ctx.genEqual(value.dataType, valueArg, x.value)}) {
   $tmpResult = $MATCHED; // ${ev.isNull} = false; ${ev.value} = true;
   continue;
 }
-""")
+"""
+      }
+      )
 
     val codes = ctx.splitExpressionsWithCurrentInputs(
       expressions = listCode,

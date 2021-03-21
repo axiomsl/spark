@@ -155,8 +155,19 @@ final InternalRow $output = new $rowClass($values);
       case (e, i) =>
         val evaluationCode = e.genCode(ctx)
         val converter = convertToSafe(ctx, evaluationCode.value, e.dataType)
-        evaluationCode.code +
-          s"""
+
+        val otherCode = evaluationCode.isNull.toString match {
+          case "false" =>
+            s"""
+            mutableRow.setNullAt($i);
+          """
+          case "true" =>
+            s"""
+            ${converter.code}
+            ${CodeGenerator.setColumn("mutableRow", e.dataType, i, converter.value)};
+          """
+          case other =>
+            s"""
             if (${evaluationCode.isNull}) {
               mutableRow.setNullAt($i);
             } else {
@@ -164,6 +175,9 @@ final InternalRow $output = new $rowClass($values);
               ${CodeGenerator.setColumn("mutableRow", e.dataType, i, converter.value)};
             }
           """
+        }
+
+        evaluationCode.code + otherCode
     }
     val allExpressions = ctx.splitExpressionsWithCurrentInputs(expressionCodes)
 
