@@ -102,7 +102,7 @@ object GenerateOrdering extends CodeGenerator[Seq[SortOrder], BaseOrdering] with
 s"""
 int $cmp = ${ctx.genComp(dt, l.value, r.value)};
 if ($cmp != 0) {
-  return ${if (asc) cmp else "-$cmp"};
+  return ${if (asc) cmp else s"-$cmp"};
 }
 """
         case ("true", "true") =>
