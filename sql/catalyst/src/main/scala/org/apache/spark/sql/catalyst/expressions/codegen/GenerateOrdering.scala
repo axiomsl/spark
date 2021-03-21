@@ -107,21 +107,14 @@ if ($cmp != 0) {
 """
         case ("true", "true") =>
 s"""
-if (${l.isNull} && ${r.isNull}) {
-  // Nothing
-}
 """
         case ("true", _) =>
           s"""
-if (${l.isNull}) {
-  return $lRetValue;
-}
+return $lRetValue;
 """
         case (_, "true") =>
           s"""
-if (${r.isNull}) {
-  return $rRetValue;
-}
+return $rRetValue;
 """
         case (l_other, r_other) =>
 s"""

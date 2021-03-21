@@ -159,12 +159,12 @@ final InternalRow $output = new $rowClass($values);
         val otherCode = evaluationCode.isNull.toString match {
           case "false" =>
             s"""
-            mutableRow.setNullAt($i);
+            ${converter.code}
+            ${CodeGenerator.setColumn("mutableRow", e.dataType, i, converter.value)};
           """
           case "true" =>
             s"""
-            ${converter.code}
-            ${CodeGenerator.setColumn("mutableRow", e.dataType, i, converter.value)};
+            mutableRow.setNullAt($i);
           """
           case other =>
             s"""
