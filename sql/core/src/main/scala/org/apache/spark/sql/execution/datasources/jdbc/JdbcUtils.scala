@@ -947,7 +947,7 @@ object JdbcUtils extends Logging {
       comment: String): Unit = {
     val dialect = JdbcDialects.get(options.url)
     executeStatement(conn, options, s"CREATE SCHEMA ${dialect.quoteIdentifier(namespace)}")
-    if (!comment.isEmpty) createNamespaceComment(conn, options, namespace, comment)
+    if (comment.nonEmpty) createNamespaceComment(conn, options, namespace, comment)
   }
 
   def createNamespaceComment(

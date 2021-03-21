@@ -105,13 +105,13 @@ object JDBCRDD extends Logging {
       case GreaterThanOrEqual(attr, value) => s"${quote(attr)} >= ${dialect.compileValue(value)}"
       case IsNull(attr) => s"${quote(attr)} IS NULL"
       case IsNotNull(attr) => s"${quote(attr)} IS NOT NULL"
-      case StringStartsWith(attr, value) => s"${quote(attr)} LIKE '${value}%'"
-      case StringEndsWith(attr, value) => s"${quote(attr)} LIKE '%${value}'"
-      case StringContains(attr, value) => s"${quote(attr)} LIKE '%${value}%'"
+      case StringStartsWith(attr, value) => s"${quote(attr)} LIKE '$value%'"
+      case StringEndsWith(attr, value) => s"${quote(attr)} LIKE '%$value'"
+      case StringContains(attr, value) => s"${quote(attr)} LIKE '%$value%'"
       case In(attr, value) if value.isEmpty =>
         s"CASE WHEN ${quote(attr)} IS NULL THEN NULL ELSE FALSE END"
       case In(attr, value) => s"${quote(attr)} IN (${dialect.compileValue(value)})"
-      case Not(f) => compileFilter(f, dialect).map(p => s"(NOT ($p))").getOrElse(null)
+      case Not(f) => compileFilter(f, dialect).map(p => s"(NOT ($p))").orNull
       case Or(f1, f2) =>
         // We can't compile Or filter unless both sub-filters are compiled successfully.
         // It applies too for the following And filter.
@@ -210,11 +210,11 @@ private[jdbc] class JDBCRDD(
    * A WHERE clause representing both `filters`, if any, and the current partition.
    */
   private def getWhereClause(part: JDBCPartition): String = {
-    if (part.whereClause != null && filterWhereClause.length > 0) {
+    if (part.whereClause != null && filterWhereClause.nonEmpty) {
       "WHERE " + s"($filterWhereClause)" + " AND " + s"(${part.whereClause})"
     } else if (part.whereClause != null) {
       "WHERE " + part.whereClause
-    } else if (filterWhereClause.length > 0) {
+    } else if (filterWhereClause.nonEmpty) {
       "WHERE " + filterWhereClause
     } else {
       ""
@@ -238,7 +238,7 @@ private[jdbc] class JDBCRDD(
           rs.close()
         }
       } catch {
-        case e: Exception => logWarning("Exception closing resultset", e)
+        case e: Exception => logWarning("Exception closing resultSet", e)
       }
       try {
         if (null != stmt) {
@@ -265,7 +265,7 @@ private[jdbc] class JDBCRDD(
       closed = true
     }
 
-    context.addTaskCompletionListener[Unit]{ context => close() }
+    context.addTaskCompletionListener[Unit]{ _ => close() }
 
     val inputMetrics = context.taskMetrics().inputMetrics
     val part = thePart.asInstanceOf[JDBCPartition]
@@ -297,6 +297,7 @@ private[jdbc] class JDBCRDD(
     val myWhereClause = getWhereClause(part)
 
     val sqlText = s"SELECT $columnList FROM ${options.tableOrQuery} $myWhereClause"
+    logDebug(s"Going to run SQL: $sqlText")
     stmt = conn.prepareStatement(sqlText,
         ResultSet.TYPE_FORWARD_ONLY, ResultSet.CONCUR_READ_ONLY)
     stmt.setFetchSize(options.fetchSize)
