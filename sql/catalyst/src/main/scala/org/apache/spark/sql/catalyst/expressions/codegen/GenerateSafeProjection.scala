@@ -168,7 +168,7 @@ final InternalRow $output = new $rowClass($values);
           """
           case other =>
             s"""
-            if (${evaluationCode.isNull}) {
+            if ($other) {
               mutableRow.setNullAt($i);
             } else {
               ${converter.code}

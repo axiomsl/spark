@@ -19,7 +19,7 @@ package org.apache.spark.sql.catalyst.expressions
 
 import org.apache.spark.sql.catalyst.InternalRow
 import org.apache.spark.sql.catalyst.analysis.TypeCheckResult
-import org.apache.spark.sql.catalyst.expressions.codegen._
+import org.apache.spark.sql.catalyst.expressions.codegen.{FalseLiteral, _}
 import org.apache.spark.sql.catalyst.expressions.codegen.Block._
 import org.apache.spark.sql.catalyst.util.TypeUtils
 import org.apache.spark.sql.types._
@@ -75,16 +75,32 @@ case class Coalesce(children: Seq[Expression]) extends ComplexTypeMergingExpress
     ev.isNull = JavaCode.isNullGlobal(ctx.addMutableState(CodeGenerator.JAVA_BOOLEAN, ev.isNull))
 
     // all the evals are meant to be in a do { ... } while (false); loop
-    val evals = children.map { e =>
-      val eval = e.genCode(ctx)
+    var foundNotNull = false
+    val evals = children
+      .map(_.genCode(ctx))
+      .map {
+        case ExprCode(code, FalseLiteral, value) if !foundNotNull =>
+          foundNotNull = true
+          s"""
+$code
+${ev.isNull} = false;
+${ev.value} = $value;
+continue;
+"""
+        case ExprCode(code, TrueLiteral, _)  if !foundNotNull =>
+          s"""
+$code
+"""
+        case ExprCode(code, isNull, value) if !foundNotNull =>
       s"""
-${eval.code}
-if (!${eval.isNull}) {
+$code
+if (!$isNull) {
   ${ev.isNull} = false;
-  ${ev.value} = ${eval.value};
+  ${ev.value} = $value;
   continue;
 }
 """
+        case _ => ""
     }
 
     val resultType = CodeGenerator.javaType(dataType)

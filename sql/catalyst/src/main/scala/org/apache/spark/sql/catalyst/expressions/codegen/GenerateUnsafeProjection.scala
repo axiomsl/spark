@@ -122,14 +122,27 @@ ${input.code}
 ${writeField.trim}
 """
         } else {
-          s"""
+          input.isNull.toString match {
+            case "false" =>
+              s"""
 ${input.code}
-if (${input.isNull}) {
+${writeField.trim}
+"""
+            case "true" =>
+              s"""
+${input.code}
+${setNull.trim}
+"""
+            case other =>
+              s"""
+${input.code}
+if ($other) {
   ${setNull.trim}
 } else {
   ${writeField.trim}
 }
 """
+          }
         }
     }
 
