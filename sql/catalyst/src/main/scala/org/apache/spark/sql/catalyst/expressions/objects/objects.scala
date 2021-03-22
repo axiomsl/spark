@@ -383,16 +383,32 @@ case class Invoke(
       """
     }
 
+    val ifBlock = obj.isNull.toString match {
+      case "false" =>
+        s"""
+          $argCode
+          ${ev.isNull} = $resultIsNull;
+          if (!${ev.isNull}) {
+            $evaluate
+          }
+        """
+      case "true" =>
+        ""
+      case other =>
+        s"""
+          if (!$other) {
+          $argCode
+          ${ev.isNull} = $resultIsNull;
+          if (!${ev.isNull}) {
+            $evaluate
+          }
+        }"""
+    }
+
     val code = obj.code + code"""
       boolean ${ev.isNull} = true;
       $javaType ${ev.value} = ${CodeGenerator.defaultValue(dataType)};
-      if (!${obj.isNull}) {
-        $argCode
-        ${ev.isNull} = $resultIsNull;
-        if (!${ev.isNull}) {
-          $evaluate
-        }
-      }
+      $ifBlock
      """
     ev.copy(code = code)
   }
@@ -1460,14 +1476,27 @@ case class CreateExternalRow(children: Seq[Expression], schema: StructType)
 
     val childrenCodes = children.zipWithIndex.map { case (e, i) =>
       val eval = e.genCode(ctx)
-      s"""
+      eval.isNull.toString match {
+        case "false" =>
+          s"""
 ${eval.code}
-if (${eval.isNull}) {
+$values[$i] = ${eval.value};
+"""
+        case "true" =>
+          s"""
+${eval.code}
+$values[$i] = null;
+"""
+        case other =>
+          s"""
+${eval.code}
+if ($other) {
   $values[$i] = null;
 } else {
   $values[$i] = ${eval.value};
 }
 """
+      }
     }
 
     val childrenCode = ctx.splitExpressionsWithCurrentInputs(
