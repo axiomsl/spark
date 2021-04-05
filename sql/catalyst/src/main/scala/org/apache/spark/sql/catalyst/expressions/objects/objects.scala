@@ -383,26 +383,58 @@ case class Invoke(
       """
     }
 
-    val ifBlock = obj.isNull.toString match {
-      case "false" =>
-        s"""
+    val ifBlock = (obj.isNull.toString, resultIsNull.toString) match {
+      case ("false", rin) =>
+        rin match {
+          case "true" =>
+            s"""
           $argCode
-          ${ev.isNull} = $resultIsNull;
+          ${ev.isNull} = true;
+        """
+          case "false" =>
+            s"""
+          $argCode
+          ${ev.isNull} = false;
+          $evaluate
+        """
+          case other =>
+            s"""
+          $argCode
+          ${ev.isNull} = $other;
           if (!${ev.isNull}) {
             $evaluate
           }
         """
-      case "true" =>
+        }
+
+      case ("true", _) =>
         ""
-      case other =>
-        s"""
+      case (other, rin) =>
+        rin match {
+          case "false" =>
+            s"""
           if (!$other) {
           $argCode
-          ${ev.isNull} = $resultIsNull;
+          ${ev.isNull} = false;
+          $evaluate
+        }"""
+          case "true" =>
+            s"""
+          if (!$other) {
+          $argCode
+          ${ev.isNull} = true;
+        }"""
+          case o =>
+            s"""
+          if (!$other) {
+          $argCode
+          ${ev.isNull} = $o;
           if (!${ev.isNull}) {
             $evaluate
           }
         }"""
+        }
+
     }
 
     val code = obj.code + code"""
@@ -499,7 +531,7 @@ case class NewInstance(
 
     ev.isNull = resultIsNull
 
-    val constructorCall = cls.getConstructors.size match {
+    val constructorCall = cls.getConstructors.length match {
       // If there are no constructors, the `new` method will fail. In
       // this case we can try to call the apply method constructor
       // that might be defined on the companion object.
@@ -802,10 +834,10 @@ case class MapObjects private(
         }
 
         // Specifying concrete implementations of `java.util.List`
-        (inputs) => {
+        inputs => {
           val results = executeFuncOnCollection(inputs)
           val builder = constructor(inputs.length).asInstanceOf[java.util.List[Any]]
-          results.foreach(builder.add(_))
+          results.foreach(builder.add)
           builder
         }
       }

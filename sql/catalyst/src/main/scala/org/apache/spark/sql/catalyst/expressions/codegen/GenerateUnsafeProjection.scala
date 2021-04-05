@@ -352,8 +352,8 @@ $writeExpressions
 
     val codeBody =
       s"""
-public java.lang.Object generate(Object[] references) {
-  return new SpecificUnsafeProjection(references);
+public java.lang.Object generate(Object[] refs) {
+  return new SpecificUnsafeProjection(refs);
 }
 
 class SpecificUnsafeProjection extends ${classOf[UnsafeProjection].getName} {
@@ -361,8 +361,8 @@ class SpecificUnsafeProjection extends ${classOf[UnsafeProjection].getName} {
   private Object[] references;
   ${ctx.declareMutableStates()}
 
-  public SpecificUnsafeProjection(Object[] references) {
-    this.references = references;
+  public SpecificUnsafeProjection(Object[] refs) {
+    this.references = refs;
     ${ctx.initMutableStates()}
   }
 
