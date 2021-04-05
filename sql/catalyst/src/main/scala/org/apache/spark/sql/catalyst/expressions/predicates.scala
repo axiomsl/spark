@@ -422,8 +422,8 @@ case class In(value: Expression, list: Seq[Expression]) extends Predicate {
     // All the blocks are meant to be inside a do { ... } while (false); loop.
     // The evaluation of variables can be stopped when we find a matching value.
     val listCode = listGen.map(x =>
-      x.isNull.toString match {
-        case "false" =>
+      x.isNull match {
+        case FalseLiteral =>
           s"""
 ${x.code}
 if (${ctx.genEqual(value.dataType, valueArg, x.value)}) {
@@ -431,7 +431,7 @@ if (${ctx.genEqual(value.dataType, valueArg, x.value)}) {
   continue;
 }
 """
-        case "true" =>
+        case TrueLiteral =>
           s"""
 ${x.code}
 if (${x.isNull}) {
@@ -568,7 +568,7 @@ case class InSet(child: Expression, hset: Set[Any]) extends UnaryExpression with
           break;
        """)
 
-    val switchCode = if (caseBranches.size > 0) {
+    val switchCode = if (caseBranches.nonEmpty) {
       code"""
         switch (${valueGen.value}) {
           ${caseBranches.mkString("\n")}
@@ -662,21 +662,62 @@ case class And(left: Expression, right: Expression) extends BinaryOperator with 
           ${ev.value} = ${eval2.value};
         }""", isNull = FalseLiteral)
     } else {
-      ev.copy(code = code"""
-        ${eval1.code}
-        boolean ${ev.isNull} = false;
-        boolean ${ev.value} = false;
-
-        if (!${eval1.isNull} && !${eval1.value}) {
+      val ifSection = (eval1.isNull, eval2.isNull) match {
+        case (TrueLiteral, TrueLiteral) =>
+          code"""
+          ${eval2.code}
+          ${ev.isNull} = true;
+"""
+        case (TrueLiteral, FalseLiteral) =>
+          code"""
+          ${eval2.code}
+          if (!${eval2.value}) {
+          } else if (!${eval1.isNull}) {
+            ${ev.value} = true;
+          } else {
+            ${ev.isNull} = true;
+          }
+"""
+        case (FalseLiteral, FalseLiteral) =>
+          code"""
+        if (!${eval1.value}) {
         } else {
           ${eval2.code}
-          if (!${eval2.isNull} && !${eval2.value}) {
-          } else if (!${eval1.isNull} && !${eval2.isNull}) {
+          if (!${eval2.value}) {
+          } else {
+            ${ev.value} = true;
+          }
+        }
+"""
+         case (FalseLiteral, TrueLiteral) =>
+          code"""
+        if (!${eval1.value}) {
+        } else {
+          ${eval2.code}
+          ${ev.isNull} = true;
+        }
+"""
+        case (other1, other2) =>
+          code"""
+        if (!$other1 && !${eval1.value}) {
+        } else {
+          ${eval2.code}
+          if (!$other2 && !${eval2.value}) {
+          } else if (!$other1 && !$other2) {
             ${ev.value} = true;
           } else {
             ${ev.isNull} = true;
           }
         }
+"""
+      }
+
+      ev.copy(code = code"""
+        ${eval1.code}
+        boolean ${ev.isNull} = false;
+        boolean ${ev.value} = false;
+
+        $ifSection
       """)
     }
   }
@@ -745,21 +786,82 @@ case class Or(left: Expression, right: Expression) extends BinaryOperator with P
           ${ev.value} = ${eval2.value};
         }""", isNull = FalseLiteral)
     } else {
-      ev.copy(code = code"""
-        ${eval1.code}
-        boolean ${ev.isNull} = false;
-        boolean ${ev.value} = true;
-
-        if (!${eval1.isNull} && ${eval1.value}) {
+      val ifSection = (eval1.isNull, eval2.isNull) match {
+        case (TrueLiteral, TrueLiteral) =>
+          code"""
+          ${eval2.code}
+           ${ev.isNull} = true;
+"""
+        case (TrueLiteral, FalseLiteral) =>
+          code"""
+          ${eval2.code}
+          if (${eval2.value}) {
+          } else {
+            ${ev.isNull} = true;
+          }
+"""
+        case (TrueLiteral, other2) =>
+          code"""
+          ${eval2.code}
+          if (!$other2 && ${eval2.value}) {
+          } else {
+            ${ev.isNull} = true;
+          }
+"""
+        case (FalseLiteral, FalseLiteral) =>
+          code"""
+        if (${eval1.value}) {
         } else {
           ${eval2.code}
-          if (!${eval2.isNull} && ${eval2.value}) {
-          } else if (!${eval1.isNull} && !${eval2.isNull}) {
+          if (${eval2.value}) {
+          } else {
+            ${ev.value} = false;
+          }
+        }
+"""
+        case (FalseLiteral, TrueLiteral) =>
+          code"""
+        if (${eval1.value}) {
+        } else {
+          ${eval2.code}
+          ${ev.isNull} = true;
+        }
+"""
+        case (FalseLiteral, other2) =>
+          code"""
+        if (${eval1.value}) {
+        } else {
+          ${eval2.code}
+          if (!$other2 && ${eval2.value}) {
+          } else if (!$other2) {
             ${ev.value} = false;
           } else {
             ${ev.isNull} = true;
           }
         }
+"""
+        case (other1, other2) =>
+          code"""
+        if (!$other1 && ${eval1.value}) {
+        } else {
+          ${eval2.code}
+          if (!$other2 && ${eval2.value}) {
+          } else if (!$other1 && !$other2) {
+            ${ev.value} = false;
+          } else {
+            ${ev.isNull} = true;
+          }
+        }
+"""
+      }
+
+
+      ev.copy(code = code"""
+        ${eval1.code}
+        boolean ${ev.isNull} = false;
+        boolean ${ev.value} = true;
+
+        $ifSection
       """)
     }
   }

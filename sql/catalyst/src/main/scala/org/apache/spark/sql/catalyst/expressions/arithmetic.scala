@@ -893,15 +893,15 @@ case class LeastNullIntolerant(children: Seq[Expression]) extends NullIntolerant
     val inputs = evalChildren.zip(children.map(_.nullable)).zipWithIndex.map {
       case ((eval, true), index) =>
 
-        eval.isNull.toString match {
-          case "true" =>
+        eval.isNull match {
+          case TrueLiteral =>
             s"""
 if (!$hasNull) {
   ${eval.code}
   $hasNull = true;
 }
 """
-          case "false" =>
+          case FalseLiteral =>
             s"""
 if (!$hasNull) {
   ${eval.code}
@@ -1176,15 +1176,15 @@ case class GreatestNullIntolerant(children: Seq[Expression]) extends NullIntoler
 
     val inputs = evalChildren.zip(children.map(_.nullable)).zipWithIndex.map {
       case ((eval, true), index) =>
-        eval.isNull.toString match {
-          case "true" =>
+        eval.isNull match {
+          case TrueLiteral =>
             s"""
 if (!$hasNull) {
   ${eval.code}
   $hasNull = true;
 }
 """
-          case "false" =>
+          case FalseLiteral =>
             s"""
 if (!$hasNull) {
   ${eval.code}

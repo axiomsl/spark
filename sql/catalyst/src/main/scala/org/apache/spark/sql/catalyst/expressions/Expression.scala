@@ -696,7 +696,7 @@ abstract class TernaryExpression extends Expression {
    */
   override def eval(input: InternalRow): Any = {
     val exprs = children
-    val value1 = exprs(0).eval(input)
+    val value1 = exprs.head.eval(input)
     if (value1 != null) {
       val value2 = exprs(1).eval(input)
       if (value2 != null) {
@@ -745,14 +745,14 @@ abstract class TernaryExpression extends Expression {
     ctx: CodegenContext,
     ev: ExprCode,
     f: (String, String, String) => String): ExprCode = {
-    val leftGen = children(0).genCode(ctx)
+    val leftGen = children.head.genCode(ctx)
     val midGen = children(1).genCode(ctx)
     val rightGen = children(2).genCode(ctx)
     val resultCode = f(leftGen.value, midGen.value, rightGen.value)
 
     if (nullable) {
       val nullSafeEval =
-        leftGen.code + ctx.nullSafeExec(children(0).nullable, leftGen.isNull) {
+        leftGen.code + ctx.nullSafeExec(children.head.nullable, leftGen.isNull) {
           midGen.code + ctx.nullSafeExec(children(1).nullable, midGen.isNull) {
             rightGen.code + ctx.nullSafeExec(children(2).nullable, rightGen.isNull) {
               s"""
@@ -794,7 +794,7 @@ abstract class QuaternaryExpression extends Expression {
    */
   override def eval(input: InternalRow): Any = {
     val exprs = children
-    val value1 = exprs(0).eval(input)
+    val value1 = exprs.head.eval(input)
     if (value1 != null) {
       val value2 = exprs(1).eval(input)
       if (value2 != null) {
@@ -846,7 +846,7 @@ abstract class QuaternaryExpression extends Expression {
     ctx: CodegenContext,
     ev: ExprCode,
     f: (String, String, String, String) => String): ExprCode = {
-    val firstGen = children(0).genCode(ctx)
+    val firstGen = children.head.genCode(ctx)
     val secondGen = children(1).genCode(ctx)
     val thridGen = children(2).genCode(ctx)
     val fourthGen = children(3).genCode(ctx)
@@ -854,7 +854,7 @@ abstract class QuaternaryExpression extends Expression {
 
     if (nullable) {
       val nullSafeEval =
-        firstGen.code + ctx.nullSafeExec(children(0).nullable, firstGen.isNull) {
+        firstGen.code + ctx.nullSafeExec(children.head.nullable, firstGen.isNull) {
           secondGen.code + ctx.nullSafeExec(children(1).nullable, secondGen.isNull) {
             thridGen.code + ctx.nullSafeExec(children(2).nullable, thridGen.isNull) {
               fourthGen.code + ctx.nullSafeExec(children(3).nullable, fourthGen.isNull) {
@@ -899,7 +899,7 @@ abstract class SeptenaryExpression extends Expression {
    */
   override def eval(input: InternalRow): Any = {
     val exprs = children
-    val v1 = exprs(0).eval(input)
+    val v1 = exprs.head.eval(input)
     if (v1 != null) {
       val v2 = exprs(1).eval(input)
       if (v2 != null) {
@@ -974,7 +974,7 @@ abstract class SeptenaryExpression extends Expression {
       ev: ExprCode,
       f: (String, String, String, String, String, String, Option[String]) => String
     ): ExprCode = {
-    val firstGen = children(0).genCode(ctx)
+    val firstGen = children.head.genCode(ctx)
     val secondGen = children(1).genCode(ctx)
     val thirdGen = children(2).genCode(ctx)
     val fourthGen = children(3).genCode(ctx)
@@ -992,7 +992,7 @@ abstract class SeptenaryExpression extends Expression {
 
     if (nullable) {
       val nullSafeEval =
-        firstGen.code + ctx.nullSafeExec(children(0).nullable, firstGen.isNull) {
+        firstGen.code + ctx.nullSafeExec(children.head.nullable, firstGen.isNull) {
           secondGen.code + ctx.nullSafeExec(children(1).nullable, secondGen.isNull) {
             thirdGen.code + ctx.nullSafeExec(children(2).nullable, thirdGen.isNull) {
               fourthGen.code + ctx.nullSafeExec(children(3).nullable, fourthGen.isNull) {
