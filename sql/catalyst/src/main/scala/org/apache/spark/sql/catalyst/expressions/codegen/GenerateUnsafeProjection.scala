@@ -122,13 +122,13 @@ ${input.code}
 ${writeField.trim}
 """
         } else {
-          input.isNull.toString match {
-            case "false" =>
+          input.isNull match {
+            case FalseLiteral =>
               s"""
 ${input.code}
 ${writeField.trim}
 """
-            case "true" =>
+            case TrueLiteral =>
               s"""
 ${input.code}
 ${setNull.trim}

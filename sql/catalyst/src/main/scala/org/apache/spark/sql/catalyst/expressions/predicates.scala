@@ -434,9 +434,7 @@ if (${ctx.genEqual(value.dataType, valueArg, x.value)}) {
         case TrueLiteral =>
           s"""
 ${x.code}
-if (${x.isNull}) {
-  $tmpResult = $HAS_NULL; // ${ev.isNull} = true;
-}
+$tmpResult = $HAS_NULL; // ${ev.isNull} = true;
 """
         case other =>
           s"""
@@ -672,8 +670,6 @@ case class And(left: Expression, right: Expression) extends BinaryOperator with 
           code"""
           ${eval2.code}
           if (!${eval2.value}) {
-          } else if (!${eval1.isNull}) {
-            ${ev.value} = true;
           } else {
             ${ev.isNull} = true;
           }

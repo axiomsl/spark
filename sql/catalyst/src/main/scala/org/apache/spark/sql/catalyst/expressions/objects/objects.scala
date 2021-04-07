@@ -383,15 +383,15 @@ case class Invoke(
       """
     }
 
-    val ifBlock = (obj.isNull.toString, resultIsNull.toString) match {
-      case ("false", rin) =>
+    val ifBlock = (obj.isNull, resultIsNull) match {
+      case (FalseLiteral, rin) =>
         rin match {
-          case "true" =>
+          case TrueLiteral =>
             s"""
           $argCode
           ${ev.isNull} = true;
         """
-          case "false" =>
+          case FalseLiteral =>
             s"""
           $argCode
           ${ev.isNull} = false;
@@ -407,18 +407,18 @@ case class Invoke(
         """
         }
 
-      case ("true", _) =>
+      case (TrueLiteral, _) =>
         ""
       case (other, rin) =>
         rin match {
-          case "false" =>
+          case FalseLiteral =>
             s"""
           if (!$other) {
           $argCode
           ${ev.isNull} = false;
           $evaluate
         }"""
-          case "true" =>
+          case TrueLiteral =>
             s"""
           if (!$other) {
           $argCode
@@ -1508,13 +1508,13 @@ case class CreateExternalRow(children: Seq[Expression], schema: StructType)
 
     val childrenCodes = children.zipWithIndex.map { case (e, i) =>
       val eval = e.genCode(ctx)
-      eval.isNull.toString match {
-        case "false" =>
+      eval.isNull match {
+        case FalseLiteral =>
           s"""
 ${eval.code}
 $values[$i] = ${eval.value};
 """
-        case "true" =>
+        case TrueLiteral =>
           s"""
 ${eval.code}
 $values[$i] = null;

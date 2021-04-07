@@ -156,13 +156,13 @@ final InternalRow $output = new $rowClass($values);
         val evaluationCode = e.genCode(ctx)
         val converter = convertToSafe(ctx, evaluationCode.value, e.dataType)
 
-        val otherCode = evaluationCode.isNull.toString match {
-          case "false" =>
+        val otherCode = evaluationCode.isNull match {
+          case FalseLiteral =>
             s"""
             ${converter.code}
             ${CodeGenerator.setColumn("mutableRow", e.dataType, i, converter.value)};
           """
-          case "true" =>
+          case TrueLiteral =>
             s"""
             mutableRow.setNullAt($i);
           """

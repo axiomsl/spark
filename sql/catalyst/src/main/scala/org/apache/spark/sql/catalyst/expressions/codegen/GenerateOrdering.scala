@@ -96,8 +96,8 @@ object GenerateOrdering extends CodeGenerator[Seq[SortOrder], BaseOrdering] with
         case NullsFirst => "1"
         case NullsLast => "-1"
       }
-     val ifBlock = (l.isNull.toString, r.isNull.toString) match {
-        case ("false", "false") =>
+     val ifBlock = (l.isNull, r.isNull) match {
+        case (FalseLiteral, FalseLiteral) =>
           val cmp = ctx.freshName("cmp")
 s"""
 int $cmp = ${ctx.genComp(dt, l.value, r.value)};
@@ -105,14 +105,14 @@ if ($cmp != 0) {
   return ${if (asc) cmp else s"-$cmp"};
 }
 """
-        case ("true", "true") =>
+        case (TrueLiteral, FalseLiteral) =>
 s"""
 """
-        case ("true", _) =>
+        case (FalseLiteral, _) =>
           s"""
 return $lRetValue;
 """
-        case (_, "true") =>
+        case (_, FalseLiteral) =>
           s"""
 return $rRetValue;
 """

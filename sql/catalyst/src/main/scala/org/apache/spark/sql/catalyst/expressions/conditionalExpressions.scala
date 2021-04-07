@@ -70,12 +70,16 @@ case class If(predicate: Expression, trueValue: Expression, falseValue: Expressi
     val trueEval = trueValue.genCode(ctx)
     val falseEval = falseValue.genCode(ctx)
 
-    val code =
-      code"""
-${condEval.code}
-boolean ${ev.isNull} = false;
-${CodeGenerator.javaType(dataType)} ${ev.value} = ${CodeGenerator.defaultValue(dataType)};
-if (!${condEval.isNull} && ${condEval.value}) {
+    val ifBlock = condEval.isNull match {
+      case TrueLiteral =>
+        code"""
+${falseEval.code}
+${ev.isNull} = ${falseEval.isNull};
+${ev.value} = ${falseEval.value};
+"""
+      case FalseLiteral =>
+        code"""
+if (${condEval.value}) {
   ${trueEval.code}
   ${ev.isNull} = ${trueEval.isNull};
   ${ev.value} = ${trueEval.value};
@@ -84,6 +88,28 @@ if (!${condEval.isNull} && ${condEval.value}) {
   ${ev.isNull} = ${falseEval.isNull};
   ${ev.value} = ${falseEval.value};
 }
+"""
+      case other =>
+        code"""
+if (!$other && ${condEval.value}) {
+  ${trueEval.code}
+  ${ev.isNull} = ${trueEval.isNull};
+  ${ev.value} = ${trueEval.value};
+} else {
+  ${falseEval.code}
+  ${ev.isNull} = ${falseEval.isNull};
+  ${ev.value} = ${falseEval.value};
+}
+"""
+    }
+
+
+    val code =
+      code"""
+${condEval.code}
+boolean ${ev.isNull} = false;
+${CodeGenerator.javaType(dataType)} ${ev.value} = ${CodeGenerator.defaultValue(dataType)};
+$ifBlock
 """
     ev.copy(code = code)
   }
