@@ -98,15 +98,21 @@ case class ConcatWs(children: Seq[Expression])
       val args = ctx.freshName("args")
 
       val inputs = strings.zipWithIndex.map { case (eval, index) =>
-        if (eval.isNull != TrueLiteral) {
-          s"""
+
+        eval.isNull match {
+          case TrueLiteral => ""
+          case FalseLiteral =>
+            s"""
              ${eval.code}
-             if (!${eval.isNull}) {
+             $args[$index] = ${eval.value};
+           """
+          case other =>
+            s"""
+             ${eval.code}
+             if (!$other) {
                $args[$index] = ${eval.value};
              }
            """
-        } else {
-          ""
         }
       }
       val codes = ctx.splitExpressionsWithCurrentInputs(
