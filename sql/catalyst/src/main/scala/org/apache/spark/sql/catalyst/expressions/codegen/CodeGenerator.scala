@@ -768,7 +768,7 @@ if (!${item.isNull} && (${partialResult.isNull} ||
   def nullSafeExec(nullable: Boolean, isNull: String)(execute: String): String = {
     if (nullable) {
       isNull match {
-        case "false" => "\n$execute"
+        case "false" => s"\n$execute"
         case "true" => ""
         case other =>
           s"""
