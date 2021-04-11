@@ -767,11 +767,16 @@ if (!${item.isNull} && (${partialResult.isNull} ||
    */
   def nullSafeExec(nullable: Boolean, isNull: String)(execute: String): String = {
     if (nullable) {
-      s"""
-        if (!$isNull) {
+      isNull match {
+        case "false" => "\n$execute"
+        case "true" => ""
+        case other =>
+          s"""
+        if (!$other) {
           $execute
         }
       """
+      }
     } else {
       "\n" + execute
     }

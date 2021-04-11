@@ -2420,7 +2420,7 @@ class Dataset[T] private[sql](
       }
     }
 
-    val newColumns = columnMap.filter { case (colName, col) =>
+    val newColumns = columnMap.filter { case (colName, _) =>
       !output.exists(f => resolver(f.name, colName))
     }.map { case (colName, col) => col.as(colName) }
 

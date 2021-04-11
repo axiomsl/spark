@@ -848,15 +848,15 @@ abstract class QuaternaryExpression extends Expression {
     f: (String, String, String, String) => String): ExprCode = {
     val firstGen = children.head.genCode(ctx)
     val secondGen = children(1).genCode(ctx)
-    val thridGen = children(2).genCode(ctx)
+    val thirdGen = children(2).genCode(ctx)
     val fourthGen = children(3).genCode(ctx)
-    val resultCode = f(firstGen.value, secondGen.value, thridGen.value, fourthGen.value)
+    val resultCode = f(firstGen.value, secondGen.value, thirdGen.value, fourthGen.value)
 
     if (nullable) {
       val nullSafeEval =
         firstGen.code + ctx.nullSafeExec(children.head.nullable, firstGen.isNull) {
           secondGen.code + ctx.nullSafeExec(children(1).nullable, secondGen.isNull) {
-            thridGen.code + ctx.nullSafeExec(children(2).nullable, thridGen.isNull) {
+            thirdGen.code + ctx.nullSafeExec(children(2).nullable, thirdGen.isNull) {
               fourthGen.code + ctx.nullSafeExec(children(3).nullable, fourthGen.isNull) {
                 s"""
                   ${ev.isNull} = false; // resultCode could change nullability.
@@ -875,7 +875,7 @@ abstract class QuaternaryExpression extends Expression {
       ev.copy(code = code"""
         ${firstGen.code}
         ${secondGen.code}
-        ${thridGen.code}
+        ${thirdGen.code}
         ${fourthGen.code}
         ${CodeGenerator.javaType(dataType)} ${ev.value} = ${CodeGenerator.defaultValue(dataType)};
         $resultCode""", isNull = FalseLiteral)

@@ -65,7 +65,7 @@ abstract class LogicalPlan
    */
   lazy val resolved: Boolean = expressions.forall(_.resolved) && childrenResolved
 
-  override protected def statePrefix = if (!resolved) "'" else super.statePrefix
+  override protected def statePrefix: String = if (!resolved) "'" else super.statePrefix
 
   /**
    * Returns true if all its children of this query plan have been resolved.
@@ -247,7 +247,7 @@ object LogicalPlanIntegrity {
       ignoredExprIds.contains(exprId)
     }.groupBy(_._1).values.map(_.distinct)
 
-    groupedDataTypesByExprId.forall(_.length == 1)
+    groupedDataTypesByExprId.forall(_.lengthCompare(1) == 0)
   }
 
   /**
@@ -263,7 +263,8 @@ object LogicalPlanIntegrity {
           // e.g., in `Grouping`/`GroupingID`, so we need to filter out them and
           // check if the same `exprId` in `Alias` does not exist
           // among reference `exprId`s.
-          !a.references.filter(_.resolved).map(_.exprId).exists(_ == a.exprId)
+          // .filter(_.resolved).exists(_.exprId == )
+          !a.references.exists(r => r.exprId == a.exprId && r.resolved)
         case _ =>
           true
       }

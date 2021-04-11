@@ -69,7 +69,7 @@ case class Project(projectList: Seq[NamedExpression], child: LogicalPlan)
       }.nonEmpty
     )
 
-    !expressions.exists(!_.resolved) && childrenResolved && !hasSpecialExpressions
+    !hasSpecialExpressions && expressions.forall(_.resolved) && childrenResolved
   }
 
   override lazy val validConstraints: ExpressionSet =
@@ -112,8 +112,8 @@ case class Generate(
 
   override lazy val resolved: Boolean = {
     generator.resolved &&
-      childrenResolved &&
       generator.elementSchema.length == generatorOutput.length &&
+      childrenResolved &&
       generatorOutput.forall(_.resolved)
   }
 
@@ -162,11 +162,11 @@ abstract class SetOperation(left: LogicalPlan, right: LogicalPlan) extends Binar
   }
 
   override lazy val resolved: Boolean =
-    childrenResolved &&
-      left.output.length == right.output.length &&
+    left.output.length == right.output.length &&
+      duplicateResolved &&
       left.output.zip(right.output).forall { case (l, r) =>
         l.dataType.sameType(r.dataType)
-      } && duplicateResolved
+      } && childrenResolved
 }
 
 object SetOperation {
@@ -612,7 +612,7 @@ case class Aggregate(
       }.nonEmpty
     )
 
-    !expressions.exists(!_.resolved) && childrenResolved && !hasWindowExpressions
+    !hasWindowExpressions && expressions.forall(_.resolved) && childrenResolved
   }
 
   override def output: Seq[Attribute] = aggregateExpressions.map(_.toAttribute)

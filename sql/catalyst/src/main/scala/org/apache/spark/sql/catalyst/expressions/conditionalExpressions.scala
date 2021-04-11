@@ -161,7 +161,7 @@ case class CaseWhen(
 
   override def nullable: Boolean = {
     // Result is nullable if any of the branch is nullable, or if the else value is nullable
-    branches.exists(_._2.nullable) || elseValue.map(_.nullable).getOrElse(true)
+    branches.exists(_._2.nullable) || elseValue.forall(_.nullable)
   }
 
   override def checkInputDataTypes(): TypeCheckResult = {
@@ -236,15 +236,43 @@ case class CaseWhen(
     val cases = branches.map { case (condExpr, valueExpr) =>
       val cond = condExpr.genCode(ctx)
       val res = valueExpr.genCode(ctx)
-      s"""
+
+      (cond.isNull, res.isNull) match {
+        case (TrueLiteral, _) =>
+          s"""
 ${cond.code}
-if (!${cond.isNull} && ${cond.value}) {
+"""
+        case (FalseLiteral, TrueLiteral) =>
+          s"""
+${cond.code}
+if (${cond.value}) {
   ${res.code}
-  $resultState = (byte)(${res.isNull} ? $HAS_NULL : $HAS_NONNULL);
+  $resultState = (byte)($HAS_NULL);
   ${ev.value} = ${res.value};
   continue;
 }
 """
+        case (FalseLiteral, FalseLiteral) =>
+          s"""
+${cond.code}
+if (${cond.value}) {
+  ${res.code}
+  $resultState = (byte)($HAS_NONNULL);
+  ${ev.value} = ${res.value};
+  continue;
+}
+"""
+        case (cond_isNull, res_isNull) =>
+          s"""
+${cond.code}
+if (!$cond_isNull && ${cond.value}) {
+  ${res.code}
+  $resultState = (byte)($res_isNull ? $HAS_NULL : $HAS_NONNULL);
+  ${ev.value} = ${res.value};
+  continue;
+}
+"""
+      }
     }
 
     val elseCode = elseValue.map { elseExpr =>
