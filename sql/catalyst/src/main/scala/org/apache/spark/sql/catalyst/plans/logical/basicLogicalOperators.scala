@@ -69,7 +69,7 @@ case class Project(projectList: Seq[NamedExpression], child: LogicalPlan)
       }.nonEmpty
     )
 
-    !hasSpecialExpressions && expressions.forall(_.resolved) && childrenResolved
+    expressions.forall(_.resolved) && childrenResolved && !hasSpecialExpressions
   }
 
   override lazy val validConstraints: ExpressionSet =
@@ -112,8 +112,8 @@ case class Generate(
 
   override lazy val resolved: Boolean = {
     generator.resolved &&
-      generator.elementSchema.length == generatorOutput.length &&
       childrenResolved &&
+      generator.elementSchema.length == generatorOutput.length &&
       generatorOutput.forall(_.resolved)
   }
 
@@ -162,11 +162,11 @@ abstract class SetOperation(left: LogicalPlan, right: LogicalPlan) extends Binar
   }
 
   override lazy val resolved: Boolean =
-    left.output.length == right.output.length &&
-      duplicateResolved &&
+    childrenResolved &&
+      left.output.length == right.output.length &&
       left.output.zip(right.output).forall { case (l, r) =>
         l.dataType.sameType(r.dataType)
-      } && childrenResolved
+      } && duplicateResolved
 }
 
 object SetOperation {
@@ -352,7 +352,7 @@ case class Join(
       case LeftSemi if condition.isDefined =>
         left.constraints
           .union(ExpressionSet(splitConjunctivePredicates(condition.get)))
-      case j: ExistenceJoin =>
+      case _: ExistenceJoin =>
         left.constraints
       case _: InnerLike =>
         left.constraints.union(right.constraints)
@@ -612,7 +612,7 @@ case class Aggregate(
       }.nonEmpty
     )
 
-    !hasWindowExpressions && expressions.forall(_.resolved) && childrenResolved
+    expressions.forall(_.resolved) && childrenResolved && !hasWindowExpressions
   }
 
   override def output: Seq[Attribute] = aggregateExpressions.map(_.toAttribute)
@@ -724,7 +724,7 @@ object Expand {
     // the `groupByAttrs` has different meaning in `Expand.output`, it could be the original
     // grouping expression or null, so here we create new instance of it.
     val output = if (hasDuplicateGroupingSets) {
-      val gpos = AttributeReference("_gen_grouping_pos", IntegerType, false)()
+      val gpos = AttributeReference("_gen_grouping_pos", IntegerType, nullable = false)()
       child.output ++ groupByAttrs.map(_.newInstance) :+ gid :+ gpos
     } else {
       child.output ++ groupByAttrs.map(_.newInstance) :+ gid
@@ -962,8 +962,8 @@ case class Sample(
     seed: Long,
     child: LogicalPlan) extends UnaryNode {
 
-  val eps = RandomSampler.roundingEpsilon
-  val fraction = upperBound - lowerBound
+  val eps: Double = RandomSampler.roundingEpsilon
+  val fraction: Double = upperBound - lowerBound
   if (withReplacement) {
     require(
       fraction >= 0.0 - eps,
@@ -1017,7 +1017,7 @@ case class RepartitionByExpression(
     child: LogicalPlan,
     optNumPartitions: Option[Int]) extends RepartitionOperation {
 
-  val numPartitions = optNumPartitions.getOrElse(SQLConf.get.numShufflePartitions)
+  val numPartitions: Int = optNumPartitions.getOrElse(SQLConf.get.numShufflePartitions)
   require(numPartitions > 0, s"Number of partitions ($numPartitions) must be positive.")
 
   val partitioning: Partitioning = {
