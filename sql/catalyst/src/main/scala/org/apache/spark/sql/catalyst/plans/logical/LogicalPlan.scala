@@ -264,7 +264,7 @@ object LogicalPlanIntegrity {
           // check if the same `exprId` in `Alias` does not exist
           // among reference `exprId`s.
           // .filter(_.resolved).exists(_.exprId == )
-          !a.references.exists(r => r.exprId == a.exprId && r.resolved)
+          !a.references.exists(r => r.resolved && r.exprId == a.exprId)
         case _ =>
           true
       }

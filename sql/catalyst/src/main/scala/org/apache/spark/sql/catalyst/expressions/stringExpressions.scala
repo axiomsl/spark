@@ -1414,7 +1414,7 @@ case class ParseUrl(children: Seq[Expression], failOnError: Boolean = SQLConf.ge
       new URI(url.toString)
     } catch {
       case e: URISyntaxException if failOnError =>
-        throw new IllegalArgumentException(s"Find an invaild url string ${url.toString}", e)
+        throw new IllegalArgumentException(s"Find an invalid url string ${url.toString}", e)
       case _: URISyntaxException => null
     }
   }
