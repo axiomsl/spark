@@ -18,9 +18,12 @@
 package org.apache.spark
 
 import java.util.{Properties, Timer, TimerTask}
+import java.util.concurrent.TimeUnit
+
 import scala.collection.JavaConverters._
 import scala.concurrent.duration._
-import scala.util.{Failure, Try, Success => ScalaSuccess}
+import scala.util.{Failure, Success => ScalaSuccess, Try}
+
 import org.apache.spark.annotation.{Experimental, Since}
 import org.apache.spark.executor.TaskMetrics
 import org.apache.spark.internal.Logging
@@ -30,8 +33,6 @@ import org.apache.spark.resource.ResourceInformation
 import org.apache.spark.rpc.{RpcEndpointRef, RpcTimeout}
 import org.apache.spark.shuffle.FetchFailedException
 import org.apache.spark.util._
-
-import java.util.concurrent.TimeUnit
 
 /**
  * :: Experimental ::
