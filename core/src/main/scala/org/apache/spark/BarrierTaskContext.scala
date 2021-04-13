@@ -18,11 +18,9 @@
 package org.apache.spark
 
 import java.util.{Properties, Timer, TimerTask}
-
 import scala.collection.JavaConverters._
 import scala.concurrent.duration._
-import scala.util.{Failure, Success => ScalaSuccess, Try}
-
+import scala.util.{Failure, Try, Success => ScalaSuccess}
 import org.apache.spark.annotation.{Experimental, Since}
 import org.apache.spark.executor.TaskMetrics
 import org.apache.spark.internal.Logging
@@ -32,6 +30,8 @@ import org.apache.spark.resource.ResourceInformation
 import org.apache.spark.rpc.{RpcEndpointRef, RpcTimeout}
 import org.apache.spark.shuffle.FetchFailedException
 import org.apache.spark.util._
+
+import java.util.concurrent.TimeUnit
 
 /**
  * :: Experimental ::
@@ -57,7 +57,7 @@ class BarrierTaskContext private[spark] (
 
   // Number of tasks of the current barrier stage, a barrier() call must collect enough requests
   // from different tasks within the same barrier stage attempt to succeed.
-  private lazy val numTasks = getTaskInfos().size
+  private lazy val numTasks = getTaskInfos().length
 
   private def runBarrier(message: String, requestMethod: RequestMethod.Value): Array[String] = {
     logInfo(s"Task $taskAttemptId from Stage $stageId(Attempt $stageAttemptNumber) has entered " +
@@ -91,7 +91,7 @@ class BarrierTaskContext private[spark] (
       while (!abortableRpcFuture.future.isCompleted) {
         try {
           // wait RPC future for at most 1 second
-          Thread.sleep(1000)
+          TimeUnit.SECONDS.sleep(1)
         } catch {
           case _: InterruptedException => // task is killed by driver
         } finally {

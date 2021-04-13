@@ -255,8 +255,8 @@ abstract class RuleExecutor[TreeType <: TreeNode[_]] extends Logging {
             }
           }
           // Check idempotence for Once batches.
-          if (batch.strategy == Once &&
-            Utils.isTesting && !excludedOnceBatches.contains(batch.name)) {
+          if (Utils.isTesting && batch.strategy == Once &&
+             !excludedOnceBatches.contains(batch.name)) {
             checkBatchIdempotence(batch, curPlan)
           }
           continue = false

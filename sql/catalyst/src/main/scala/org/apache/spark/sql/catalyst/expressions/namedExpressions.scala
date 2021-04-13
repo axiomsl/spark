@@ -155,7 +155,7 @@ case class Alias(child: Expression, name: String)(
 
   // Alias(Generator, xx) need to be transformed into Generate(generator, ...)
   override lazy val resolved =
-    childrenResolved && checkInputDataTypes().isSuccess && !child.isInstanceOf[Generator]
+    !child.isInstanceOf[Generator] && childrenResolved && checkInputDataTypes().isSuccess
 
   override def eval(input: InternalRow): Any = child.eval(input)
 
@@ -255,7 +255,7 @@ case class AttributeReference(
 
   override def equals(other: Any): Boolean = other match {
     case ar: AttributeReference =>
-      name == ar.name && dataType == ar.dataType && nullable == ar.nullable &&
+      name == ar.name && nullable == ar.nullable && dataType == ar.dataType &&
         metadata == ar.metadata && exprId == ar.exprId && qualifier == ar.qualifier
     case _ => false
   }

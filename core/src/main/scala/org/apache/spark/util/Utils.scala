@@ -78,7 +78,7 @@ private[spark] case class CallSite(shortForm: String, longForm: String)
 private[spark] object CallSite {
   val SHORT_FORM = "callSite.short"
   val LONG_FORM = "callSite.long"
-  val empty = CallSite("", "")
+  val empty: CallSite = CallSite("", "")
 }
 
 /**
@@ -94,10 +94,10 @@ private[spark] object Utils extends Logging {
    * Define a default value for driver memory here since this value is referenced across the code
    * base and nearly all files already use Utils.scala
    */
-  val DEFAULT_DRIVER_MEM_MB = JavaUtils.DEFAULT_DRIVER_MEM_MB.toInt
+  val DEFAULT_DRIVER_MEM_MB: Int = JavaUtils.DEFAULT_DRIVER_MEM_MB.toInt
 
   private val MAX_DIR_CREATION_ATTEMPTS: Int = 10
-  @volatile private var localRootDirs: Array[String] = null
+  @volatile private var localRootDirs: Array[String] = _
 
   /** Scheme used for files that are locally available on worker nodes in the cluster. */
   val LOCAL_SCHEME = "local"
@@ -309,7 +309,7 @@ private[spark] object Utils extends Logging {
         if (dir.exists() || !dir.mkdirs()) {
           dir = null
         }
-      } catch { case e: SecurityException => dir = null; }
+      } catch { case _: SecurityException => dir = null; }
     }
 
     dir.getCanonicalFile
@@ -1628,7 +1628,7 @@ private[spark] object Utils extends Logging {
       fileSize
     } catch {
       case e: Throwable =>
-        logError(s"Cannot get file length of ${file}", e)
+        logError(s"Cannot get file length of $file", e)
         throw e
     } finally {
       if (gzInputStream != null) {
@@ -1925,17 +1925,17 @@ private[spark] object Utils extends Logging {
   /**
    * Whether the underlying operating system is Windows.
    */
-  val isWindows = SystemUtils.IS_OS_WINDOWS
+  val isWindows: Boolean = SystemUtils.IS_OS_WINDOWS
 
   /**
    * Whether the underlying operating system is Mac OS X.
    */
-  val isMac = SystemUtils.IS_OS_MAC_OSX
+  val isMac: Boolean = SystemUtils.IS_OS_MAC_OSX
 
   /**
    * Pattern for matching a Windows drive, which contains only a single alphabet character.
    */
-  val windowsDrive = "([a-zA-Z])".r
+  val windowsDrive: Regex = "([a-zA-Z])".r
 
   /**
    * Indicates whether Spark is currently running unit tests.
@@ -2405,7 +2405,7 @@ private[spark] object Utils extends Logging {
    */
   def libraryPathEnvPrefix(libraryPaths: Seq[String]): String = {
     val libraryPathScriptVar = if (isWindows) {
-      s"%${libraryPathEnvName}%"
+      s"%$libraryPathEnvName%"
     } else {
       "$" + libraryPathEnvName
     }
@@ -2454,7 +2454,7 @@ private[spark] object Utils extends Logging {
       if (uri.getScheme != "spark" ||
         host == null ||
         port < 0 ||
-        (uri.getPath != null && !uri.getPath.isEmpty) || // uri.getPath returns "" instead of null
+        (uri.getPath != null && uri.getPath.nonEmpty) || // uri.getPath returns "" instead of null
         uri.getFragment != null ||
         uri.getQuery != null ||
         uri.getUserInfo != null) {
