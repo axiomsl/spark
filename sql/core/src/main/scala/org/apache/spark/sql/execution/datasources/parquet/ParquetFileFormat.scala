@@ -357,7 +357,7 @@ class ParquetFileFormat
         val fullSchema = requiredSchema.toAttributes ++ partitionSchema.toAttributes
         val unsafeProjection = GenerateUnsafeProjection.generate(fullSchema, fullSchema)
 
-        if (partitionSchema.length == 0) {
+        if (partitionSchema.lengthCompare(0) == 0) {
           // There is no partition columns
           iter.map(unsafeProjection)
         } else {

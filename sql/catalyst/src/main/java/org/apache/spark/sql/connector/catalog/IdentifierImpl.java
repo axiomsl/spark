@@ -70,7 +70,7 @@ class IdentifierImpl implements Identifier {
     }
 
     IdentifierImpl that = (IdentifierImpl) o;
-    return Arrays.equals(namespace, that.namespace) && name.equals(that.name);
+    return name.equals(that.name) && Arrays.equals(namespace, that.namespace);
   }
 
   @Override

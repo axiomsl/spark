@@ -34,7 +34,7 @@ public final class UnsafeArrayWriter extends UnsafeWriter {
   private int numElements;
 
   // The element size in this array
-  private int elementSize;
+  private final int elementSize;
 
   private int headerInBytes;
 

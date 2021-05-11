@@ -39,7 +39,7 @@ object FunctionResourceType {
       case "jar" => JarResource
       case "file" => FileResource
       case "archive" => ArchiveResource
-      case other =>
+      case _ =>
         throw new AnalysisException(s"Resource Type '$resourceType' is not supported.")
     }
   }

@@ -54,7 +54,16 @@ object SizeInBytesOnlyStatsPlanVisitor extends LogicalPlanVisitor[Statistics] {
   override def default(p: LogicalPlan): Statistics = p match {
     case p: LeafNode => p.computeStats()
     case _: LogicalPlan =>
-      Statistics(sizeInBytes = p.children.map(_.stats.sizeInBytes).filter(_ > 0L).product)
+      val list = p.children.map(_.stats.attributeStats).filter(_.baseMap.nonEmpty).map(_.baseMap)
+
+      val attributeStats = new AttributeMap[ColumnStat](
+        if (list.nonEmpty)list.reduce(_ ++ _)
+        else Map.empty
+      )
+      Statistics(
+        sizeInBytes = p.children.map(_.stats.sizeInBytes).filter(_ > 0L).product,
+        attributeStats = attributeStats
+      )
   }
 
   override def visitAggregate(p: Aggregate): Statistics = {

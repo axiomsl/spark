@@ -291,7 +291,7 @@ class StatisticsSuite extends StatisticsCollectionTestBase with TestHiveSingleto
         .getPartition(TableIdentifier(tableName), Map("ds" -> "2017-01-01"))
 
       assert(partition.stats.get.sizeInBytes == 5812)
-      assert(partition.stats.get.rowCount == Some(500))
+      assert(partition.stats.get.rowCount.contains(500))
     }
   }
 

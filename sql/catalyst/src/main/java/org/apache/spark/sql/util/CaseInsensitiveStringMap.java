@@ -43,7 +43,7 @@ import java.util.Set;
 public class CaseInsensitiveStringMap implements Map<String, String> {
   private final Logger logger = LoggerFactory.getLogger(CaseInsensitiveStringMap.class);
 
-  private String unsupportedOperationMsg = "CaseInsensitiveStringMap is read-only.";
+  private final String unsupportedOperationMsg = "CaseInsensitiveStringMap is read-only.";
 
   public static CaseInsensitiveStringMap empty() {
     return new CaseInsensitiveStringMap(new HashMap<>(0));
