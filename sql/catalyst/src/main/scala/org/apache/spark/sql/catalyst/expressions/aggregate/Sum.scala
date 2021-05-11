@@ -41,7 +41,10 @@ case class Sum(child: Expression) extends DeclarativeAggregate with ImplicitCast
 
   override def children: Seq[Expression] = child :: Nil
 
-  override def nullable: Boolean = true
+  override def nullable: Boolean = child.nullable || (resultType match {
+    case _: DecimalType => true
+    case _ => child.nullable
+  })
 
   // Return data type.
   override def dataType: DataType = resultType

@@ -36,7 +36,7 @@ case class Min(child: Expression) extends DeclarativeAggregate {
 
   override def children: Seq[Expression] = child :: Nil
 
-  override def nullable: Boolean = true
+  override def nullable: Boolean = child.nullable
 
   // Return data type.
   override def dataType: DataType = child.dataType
