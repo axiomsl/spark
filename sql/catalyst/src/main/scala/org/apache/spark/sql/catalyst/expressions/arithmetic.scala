@@ -1065,31 +1065,95 @@ case class Greatest(children: Seq[Expression]) extends ComplexTypeMergingExpress
   override def doGenCode(ctx: CodegenContext, ev: ExprCode): ExprCode = {
     val evalChildren = children.map(_.genCode(ctx))
     ev.isNull = JavaCode.isNullGlobal(ctx.addMutableState(CodeGenerator.JAVA_BOOLEAN, ev.isNull))
-    val evals = evalChildren.map(eval =>
-      s"""
-${eval.code}
-${ctx.reassignIfGreater(dataType, ev, eval)}
-"""
-    )
-
     val resultType = CodeGenerator.javaType(dataType)
-    val codes = ctx.splitExpressionsWithCurrentInputs(
-      expressions = evals,
-      funcName = "greatest",
-      extraArguments = Seq(resultType -> ev.value),
-      returnType = resultType,
-      makeSplitFunction = body =>
-        s"""
-$body
-return ${ev.value};
-""",
-      foldFunctions = _.map(funcCall => s"${ev.value} = $funcCall;").mkString("\n"))
-    ev.copy(code =
-      code"""
+    if (evalChildren.size == 2) {
+      val nullableList = children.map(_.nullable)
+      val eval1 = evalChildren.head
+      val eval2 = evalChildren(1)
+
+      val codes = (nullableList.head, nullableList(1)) match {
+        case (true, true) =>
+          s"""
+${eval1.code}
+${eval2.code}
+if (${eval1.isNull} && ${eval2.isNull}) {
+} else {
+  ${ev.isNull} = false;
+  if (${eval1.isNull}) {
+    ${ev.value} = ${eval2.value};
+  } else if (${eval2.isNull}) {
+    ${ev.value} = ${eval1.value};
+  } else {
+    ${ev.value} = ${ctx.genGreater(dataType, eval1.value, eval2.value)} ? ${eval1.value} :
+                  ${eval2.value};
+  }
+}
+"""
+        case (true, false) =>
+          s"""
+${eval1.code}
+${eval2.code}
+${ev.isNull} = false;
+if (${eval1.isNull}) {
+  ${ev.value} = ${eval2.value};
+} else {
+  ${ev.value} = ${ctx.genGreater(dataType, eval1.value, eval2.value)} ? ${eval1.value} :
+                ${eval2.value};
+}
+"""
+        case (false, true) =>
+          s"""
+${eval1.code}
+${eval2.code}
+${ev.isNull} = false;
+if (${eval2.isNull}) {
+  ${ev.value} = ${eval1.value};
+} else {
+  ${ev.value} = ${ctx.genGreater(dataType, eval1.value, eval2.value)} ? ${eval1.value} :
+                ${eval2.value};
+}
+"""
+        case (false, false) =>
+          s"""
+${eval1.code}
+${eval2.code}
+${ev.isNull} = false;
+${ev.value} = ${ctx.genGreater(dataType, eval1.value, eval2.value)} ? ${eval1.value} :
+                ${eval2.value};
+"""
+      }
+      ev.copy(code =
+        code"""
 ${ev.isNull} = true;
 $resultType ${ev.value} = ${CodeGenerator.defaultValue(dataType)};
 $codes
 """)
+    } else {
+      val evals = evalChildren.map(eval =>
+        s"""
+${eval.code}
+${ctx.reassignIfGreater(dataType, ev, eval)}
+"""
+      )
+
+      val codes = ctx.splitExpressionsWithCurrentInputs(
+        expressions = evals,
+        funcName = "greatest",
+        extraArguments = Seq(resultType -> ev.value),
+        returnType = resultType,
+        makeSplitFunction = body =>
+          s"""
+$body
+return ${ev.value};
+""",
+        foldFunctions = _.map(funcCall => s"${ev.value} = $funcCall;").mkString("\n"))
+      ev.copy(code =
+        code"""
+${ev.isNull} = true;
+$resultType ${ev.value} = ${CodeGenerator.defaultValue(dataType)};
+$codes
+""")
+    }
   }
 }
 

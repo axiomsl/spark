@@ -432,6 +432,7 @@ class ArithmeticExpressionSuite extends SparkFunSuite with ExpressionEvalHelper 
     val nullLiteral = Literal.create(null, IntegerType)
     checkEvaluation(Greatest(Seq(nullLiteral, nullLiteral)), null)
     checkEvaluation(Greatest(Seq(Literal(null), Literal(null))), null, InternalRow.empty)
+    checkEvaluation(Greatest(Seq(nullLiteral, Literal(5))), 5, InternalRow.empty)
     checkEvaluation(Greatest(Seq(Literal(-1.0), Literal(2.5))), 2.5, InternalRow.empty)
     checkEvaluation(Greatest(Seq(Literal(-1), Literal(2))), 2, InternalRow.empty)
     checkEvaluation(
