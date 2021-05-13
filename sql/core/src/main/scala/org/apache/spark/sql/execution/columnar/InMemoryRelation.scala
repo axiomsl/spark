@@ -204,15 +204,20 @@ case class CachedRDDBuilder(
     serializer: CachedBatchSerializer,
     storageLevel: StorageLevel,
     @transient cachedPlan: SparkPlan,
-    tableName: Option[String]) {
+    tableName: Option[String],
+    prefix: String = "") {
 
   @transient @volatile private var _cachedColumnBuffers: RDD[CachedBatch] = null
 
   val sizeInBytesStats: LongAccumulator = cachedPlan.sqlContext.sparkContext.longAccumulator
   val rowCountStats: LongAccumulator = cachedPlan.sqlContext.sparkContext.longAccumulator
 
-  val cachedName = tableName.map(n => s"In-memory table $n")
-    .getOrElse(StringUtils.abbreviate(cachedPlan.toString, 1024))
+  private val prefix_str =
+    if (prefix.nonEmpty) s"$prefix "
+    else ""
+
+  val cachedName = tableName.map(n => s"${prefix_str}In-memory table $n")
+    .getOrElse(prefix_str + StringUtils.abbreviate(cachedPlan.toString, 1024))
 
   def cachedColumnBuffers: RDD[CachedBatch] = {
     if (_cachedColumnBuffers == null) {
@@ -266,6 +271,14 @@ case class CachedRDDBuilder(
 
 object InMemoryRelation {
 
+  private def getPrefix(qe: QueryExecution): String = {
+    val prefix = qe.sparkSession.sparkContext.getLocalProperty("mdc.oId") match {
+      case null => ""
+      case v => v
+    }
+    prefix
+  }
+
   private[this] var ser: Option[CachedBatchSerializer] = None
   private[this] def getSerializer(sqlConf: SQLConf): CachedBatchSerializer = synchronized {
     if (ser.isEmpty) {
@@ -304,7 +317,8 @@ object InMemoryRelation {
     } else {
       qe.executedPlan
     }
-    val cacheBuilder = CachedRDDBuilder(serializer, storageLevel, child, tableName)
+    val prefix = getPrefix(qe)
+    val cacheBuilder = CachedRDDBuilder(serializer, storageLevel, child, tableName, prefix)
     val relation = new InMemoryRelation(child.output, cacheBuilder, optimizedPlan.outputOrdering)
     relation.statsOfPlanToCache = optimizedPlan.stats
     relation
