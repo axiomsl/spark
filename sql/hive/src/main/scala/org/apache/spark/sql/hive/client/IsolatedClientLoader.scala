@@ -88,7 +88,7 @@ private[hive] object IsolatedClientLoader extends Logging {
       barrierPrefixes = barrierPrefixes)
   }
 
-  def hiveVersion(version: String): HiveVersion = version match {
+  def hiveVersion(version: String): HiveVersion = version.replaceAll("-.*$", "") match {
     case "12" | "0.12" | "0.12.0" => hive.v12
     case "13" | "0.13" | "0.13.0" | "0.13.1" => hive.v13
     case "14" | "0.14" | "0.14.0" => hive.v14
