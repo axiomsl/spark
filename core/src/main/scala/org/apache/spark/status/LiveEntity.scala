@@ -676,7 +676,7 @@ private[spark] object LiveEntityHelpers {
       .filter { acc =>
         // We don't need to store internal or SQL accumulables as their values will be shown in
         // other places, so drop them to reduce the memory usage.
-        !acc.internal && acc.metadata != Some(AccumulatorContext.SQL_ACCUM_IDENTIFIER)
+        !acc.internal && !acc.metadata.contains(AccumulatorContext.SQL_ACCUM_IDENTIFIER)
       }
       .map { acc =>
         new v1.AccumulableInfo(
@@ -688,9 +688,12 @@ private[spark] object LiveEntityHelpers {
       .toSeq
   }
 
-  /** String interning to reduce the memory usage. */
+  /** String interning to reduce the memory usage.
+   * https://issues.apache.org/jira/browse/SPARK-30586
+   */
   def weakIntern(s: String): String = {
-    stringInterner.intern(s)
+    if (s != null) stringInterner.intern(s)
+    else s
   }
 
   // scalastyle:off argcount
