@@ -3257,12 +3257,11 @@ class Dataset[T] private[sql](
 
   private[sql] def collectToPython(): Array[Any] = {
     EvaluatePython.registerPicklers()
-    withAction("collectToPython", queryExecution) { plan =>
+    val iter = withAction("collectToPython", queryExecution) { plan =>
       val toJava: (Any) => Any = EvaluatePython.toJava(_, schema)
-      val iter: Iterator[Array[Byte]] = new SerDeUtil.AutoBatchedPickler(
-        plan.executeCollect().iterator.map(toJava))
-      PythonRDD.serveIterator(iter, "serve-DataFrame")
+      new SerDeUtil.AutoBatchedPickler(plan.executeCollect().iterator.map(toJava))
     }
+    PythonRDD.serveIterator(iter, "serve-DataFrame")
   }
 
   private[sql] def getRowsToPython(
@@ -3290,7 +3289,7 @@ class Dataset[T] private[sql](
         val numPartitions = arrowBatchRdd.partitions.length
 
         // Store collection results for worst case of 1 to N-1 partitions
-        val results = new Array[Array[Array[Byte]]](numPartitions - 1)
+        val results = new Array[Array[Array[Byte]]](Math.max(0, numPartitions - 1))
         var lastIndex = -1  // index of last partition written
 
         // Handler to eagerly write partitions to Python in order

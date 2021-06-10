@@ -264,6 +264,10 @@ private[spark] class KubernetesSuite extends SparkFunSuite
       === baseMemory)
   }
 
+  protected def doExecutorServiceAccountCheck(executorPod: Pod, account: String): Unit = {
+    doBasicExecutorPodCheck(executorPod)
+    assert(executorPod.getSpec.getServiceAccount == kubernetesTestComponents.serviceAccountName)
+  }
 
   protected def doBasicDriverPyPodCheck(driverPod: Pod): Unit = {
     assert(driverPod.getMetadata.getName === driverPodName)
@@ -347,6 +351,6 @@ private[spark] object KubernetesSuite {
   val SPARK_PI_MAIN_CLASS: String = "org.apache.spark.examples.SparkPi"
   val SPARK_REMOTE_MAIN_CLASS: String = "org.apache.spark.examples.SparkRemoteFileTest"
   val SPARK_DRIVER_MAIN_CLASS: String = "org.apache.spark.examples.DriverSubmissionTest"
-  val TIMEOUT = PatienceConfiguration.Timeout(Span(2, Minutes))
+  val TIMEOUT = PatienceConfiguration.Timeout(Span(3, Minutes))
   val INTERVAL = PatienceConfiguration.Interval(Span(2, Seconds))
 }

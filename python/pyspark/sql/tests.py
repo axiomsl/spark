@@ -88,7 +88,7 @@ from pyspark.sql.types import _array_signed_int_typecode_ctype_mappings, _array_
 from pyspark.sql.types import _array_unsigned_int_typecode_ctype_mappings
 from pyspark.sql.types import _merge_type
 from pyspark.tests import QuietTest, ReusedPySparkTestCase, PySparkTestCase, SparkSubmitTests
-from pyspark.sql.functions import UserDefinedFunction, sha2, lit, input_file_name, udf
+from pyspark.sql.functions import UserDefinedFunction, sha2, lit, input_file_name, udf, col
 from pyspark.sql.window import Window
 from pyspark.sql.utils import AnalysisException, ParseException, IllegalArgumentException
 
@@ -1134,6 +1134,12 @@ class SQLTests(ReusedSQLTestCase):
         df = self.spark.createDataFrame([{'a': 1}], ["b"])
         self.assertEqual(df.columns, ['b'])
 
+    def test_negative_decimal(self):
+        df = self.spark.createDataFrame([(1, ), (11, )], ["value"])
+        ret = df.select(col("value").cast(DecimalType(1, -1))).collect()
+        actual = list(map(lambda r: int(r.value), ret))
+        self.assertEqual(actual, [0, 10])
+
     def test_create_dataframe_from_objects(self):
         data = [MyObject(1, "1"), MyObject(2, "2")]
         df = self.spark.createDataFrame(data)
@@ -1376,6 +1382,14 @@ class SQLTests(ReusedSQLTestCase):
 
         result = df.select(col('point').cast('string'), col('pypoint').cast('string')).head()
         self.assertEqual(result, Row(point=u'(1.0, 2.0)', pypoint=u'[3.0, 4.0]'))
+
+    def test_cast_to_udt_with_udt(self):
+        from pyspark.sql.functions import col
+        row = Row(point=ExamplePoint(1.0, 2.0), python_only_point=PythonOnlyPoint(1.0, 2.0))
+        df = self.spark.createDataFrame([row])
+        self.assertRaises(AnalysisException, lambda: df.select(col("point").cast(PythonOnlyUDT())))
+        self.assertRaises(AnalysisException,
+                          lambda: df.select(col("python_only_point").cast(ExamplePointUDT())))
 
     def test_column_operators(self):
         ci = self.df.key
@@ -3214,7 +3228,8 @@ class SQLTests(ReusedSQLTestCase):
         if sys.version_info[0] < 3:
             all_types = set(['c', 'b', 'B', 'u', 'h', 'H', 'i', 'I', 'l', 'L', 'f', 'd'])
         else:
-            all_types = set(array.typecodes)
+            # PyPy seems not having array.typecodes.
+            all_types = set(['b', 'B', 'u', 'h', 'H', 'i', 'I', 'l', 'L', 'q', 'Q', 'f', 'd'])
         unsupported_types = all_types - set(supported_types)
         # test unsupported types
         for t in unsupported_types:
@@ -4572,6 +4587,19 @@ class ArrowTests(ReusedSQLTestCase):
         self.assertPandasEqual(pdf, df_from_python.toPandas())
         self.assertPandasEqual(pdf, df_from_pandas.toPandas())
 
+    def test_createDataFrame_with_float_index(self):
+        import pandas as pd
+        # SPARK-32098: float index should not produce duplicated or truncated Spark DataFrame
+        self.assertEqual(
+            self.spark.createDataFrame(
+                pd.DataFrame({'a': [1, 2, 3]}, index=[2., 3., 4.])).distinct().count(), 3)
+
+    def test_no_partition_toPandas(self):
+        # SPARK-32300: toPandas should work from a Spark DataFrame with no partitions
+        pdf = self.spark.sparkContext.emptyRDD().toDF("col1 int").toPandas()
+        self.assertEqual(len(pdf), 0)
+        self.assertEqual(list(pdf.columns), ["col1"])
+
 
 @unittest.skipIf(
     not _have_pandas or not _have_pyarrow,
@@ -5733,7 +5761,7 @@ class GroupedMapPandasUDFTests(ReusedSQLTestCase):
 
         result = df.groupby(col('id') % 2 == 0).apply(normalize).sort('id', 'v').toPandas()
         pdf = df.toPandas()
-        expected = pdf.groupby(pdf['id'] % 2 == 0).apply(normalize.func)
+        expected = pdf.groupby(pdf['id'] % 2 == 0, as_index=False).apply(normalize.func)
         expected = expected.sort_values(['id', 'v']).reset_index(drop=True)
         expected = expected.assign(norm=expected.norm.astype('float64'))
         self.assertPandasEqual(expected, result)
@@ -5889,21 +5917,21 @@ class GroupedMapPandasUDFTests(ReusedSQLTestCase):
 
         # Test groupby column
         result1 = df.groupby('id').apply(udf1).sort('id', 'v').toPandas()
-        expected1 = pdf.groupby('id')\
+        expected1 = pdf.groupby('id', as_index=False)\
             .apply(lambda x: udf1.func((x.id.iloc[0],), x))\
             .sort_values(['id', 'v']).reset_index(drop=True)
         self.assertPandasEqual(expected1, result1)
 
         # Test groupby expression
         result2 = df.groupby(df.id % 2).apply(udf1).sort('id', 'v').toPandas()
-        expected2 = pdf.groupby(pdf.id % 2)\
+        expected2 = pdf.groupby(pdf.id % 2, as_index=False)\
             .apply(lambda x: udf1.func((x.id.iloc[0] % 2,), x))\
             .sort_values(['id', 'v']).reset_index(drop=True)
         self.assertPandasEqual(expected2, result2)
 
         # Test complex groupby
         result3 = df.groupby(df.id, df.v % 2).apply(udf2).sort('id', 'v').toPandas()
-        expected3 = pdf.groupby([pdf.id, pdf.v % 2])\
+        expected3 = pdf.groupby([pdf.id, pdf.v % 2], as_index=False)\
             .apply(lambda x: udf2.func((x.id.iloc[0], (x.v % 2).iloc[0],), x))\
             .sort_values(['id', 'v']).reset_index(drop=True)
         self.assertPandasEqual(expected3, result3)
@@ -5925,7 +5953,7 @@ class GroupedMapPandasUDFTests(ReusedSQLTestCase):
 
         df = self.data
         grouped_df = df.groupby('id')
-        grouped_pdf = df.toPandas().groupby('id')
+        grouped_pdf = df.toPandas().groupby('id', as_index=False)
 
         # Function returns a pdf with required column names, but order could be arbitrary using dict
         def change_col_order(pdf):

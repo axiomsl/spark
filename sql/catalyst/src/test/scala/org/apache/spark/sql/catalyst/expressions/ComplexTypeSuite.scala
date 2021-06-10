@@ -18,9 +18,12 @@
 package org.apache.spark.sql.catalyst.expressions
 
 import org.apache.spark.SparkFunSuite
+import org.apache.spark.sql.Row
 import org.apache.spark.sql.catalyst.analysis.UnresolvedExtractValue
 import org.apache.spark.sql.catalyst.dsl.expressions._
 import org.apache.spark.sql.catalyst.expressions.codegen.CodegenContext
+import org.apache.spark.sql.catalyst.util._
+import org.apache.spark.sql.internal.SQLConf
 import org.apache.spark.sql.types._
 import org.apache.spark.unsafe.types.UTF8String
 
@@ -123,6 +126,31 @@ class ComplexTypeSuite extends SparkFunSuite with ExpressionEvalHelper {
 
     checkEvaluation(getArrayStructFields(arrayStruct, "a"), Seq(1))
     checkEvaluation(getArrayStructFields(nullArrayStruct, "a"), null)
+  }
+
+  test("SPARK-32167: nullability of GetArrayStructFields") {
+    val resolver = SQLConf.get.resolver
+
+    val array1 = ArrayType(
+      new StructType().add("a", "int", nullable = true),
+      containsNull = false)
+    val data1 = Literal.create(Seq(Row(null)), array1)
+    val get1 = ExtractValue(data1, Literal("a"), resolver).asInstanceOf[GetArrayStructFields]
+    assert(get1.containsNull)
+
+    val array2 = ArrayType(
+      new StructType().add("a", "int", nullable = false),
+      containsNull = true)
+    val data2 = Literal.create(Seq(null), array2)
+    val get2 = ExtractValue(data2, Literal("a"), resolver).asInstanceOf[GetArrayStructFields]
+    assert(get2.containsNull)
+
+    val array3 = ArrayType(
+      new StructType().add("a", "int", nullable = false),
+      containsNull = false)
+    val data3 = Literal.create(Seq(Row(1)), array3)
+    val get3 = ExtractValue(data3, Literal("a"), resolver).asInstanceOf[GetArrayStructFields]
+    assert(!get3.containsNull)
   }
 
   test("CreateArray") {
@@ -368,5 +396,19 @@ class ComplexTypeSuite extends SparkFunSuite with ExpressionEvalHelper {
     val ctx = new CodegenContext
     CreateNamedStruct(Seq("a", "x", "b", 2.0)).genCode(ctx)
     assert(ctx.inlinedMutableStates.isEmpty)
+  }
+
+  test("SPARK-33338: semanticEquals should handle static GetMapValue correctly") {
+    val keys = new Array[UTF8String](1)
+    val values = new Array[UTF8String](1)
+    keys(0) = UTF8String.fromString("key")
+    values(0) = UTF8String.fromString("value")
+
+    val d1 = new ArrayBasedMapData(new GenericArrayData(keys), new GenericArrayData(values))
+    val d2 = new ArrayBasedMapData(new GenericArrayData(keys), new GenericArrayData(values))
+    val m1 = GetMapValue(Literal.create(d1, MapType(StringType, StringType)), Literal("a"))
+    val m2 = GetMapValue(Literal.create(d2, MapType(StringType, StringType)), Literal("a"))
+
+    assert(m1.semanticEquals(m2))
   }
 }

@@ -48,7 +48,7 @@ import com.amazonaws.services.kinesis.clientlibrary.lib.worker.InitialPositionIn
  *
  * Usage: JavaKinesisWordCountASL [app-name] [stream-name] [endpoint-url] [region-name]
  *   [app-name] is the name of the consumer app, used to track the read data in DynamoDB
- *   [stream-name] name of the Kinesis stream (ie. mySparkStream)
+ *   [stream-name] name of the Kinesis stream (i.e. mySparkStream)
  *   [endpoint-url] endpoint of the Kinesis service
  *     (e.g. https://kinesis.us-east-1.amazonaws.com)
  *
@@ -56,7 +56,7 @@ import com.amazonaws.services.kinesis.clientlibrary.lib.worker.InitialPositionIn
  * Example:
  *      # export AWS keys if necessary
  *      $ export AWS_ACCESS_KEY_ID=[your-access-key]
- *      $ export AWS_SECRET_KEY=<your-secret-key>
+ *      $ export AWS_SECRET_ACCESS_KEY=<your-secret-key>
  *
  *      # run the example
  *      $ SPARK_HOME/bin/run-example   streaming.JavaKinesisWordCountASL myAppName  mySparkStream \
@@ -67,7 +67,7 @@ import com.amazonaws.services.kinesis.clientlibrary.lib.worker.InitialPositionIn
  *
  * This code uses the DefaultAWSCredentialsProviderChain to find credentials
  * in the following order:
- *    Environment Variables - AWS_ACCESS_KEY_ID and AWS_SECRET_KEY
+ *    Environment Variables - AWS_ACCESS_KEY_ID and AWS_SECRET_ACCESS_KEY
  *    Java System Properties - aws.accessKeyId and aws.secretKey
  *    Credential profiles file - default location (~/.aws/credentials) shared by all AWS SDKs
  *    Instance profile credentials - delivered through the Amazon EC2 metadata service

@@ -53,7 +53,7 @@ def print_red(text):
     print('\033[31m' + text + '\033[0m')
 
 
-SKIPPED_TESTS = Manager().dict()
+SKIPPED_TESTS = None
 LOG_FILE = os.path.join(SPARK_HOME, "python/unit-tests.log")
 FAILURE_REPORTING_LOCK = Lock()
 LOGGER = logging.getLogger()
@@ -85,11 +85,16 @@ def run_individual_python_test(target_dir, test_name, pyspark_python):
         tmp_dir = os.path.join(target_dir, str(uuid.uuid4()))
     os.mkdir(tmp_dir)
     env["TMPDIR"] = tmp_dir
+    metastore_dir = os.path.join(tmp_dir, str(uuid.uuid4()))
+    while os.path.isdir(metastore_dir):
+        metastore_dir = os.path.join(metastore_dir, str(uuid.uuid4()))
+    os.mkdir(metastore_dir)
 
     # Also override the JVM's temp directory by setting driver and executor options.
     spark_args = [
         "--conf", "spark.driver.extraJavaOptions=-Djava.io.tmpdir={0}".format(tmp_dir),
         "--conf", "spark.executor.extraJavaOptions=-Djava.io.tmpdir={0}".format(tmp_dir),
+        "--conf", "spark.sql.warehouse.dir='{0}'".format(metastore_dir),
         "pyspark-shell"
     ]
     env["PYSPARK_SUBMIT_ARGS"] = " ".join(spark_args)
@@ -141,6 +146,7 @@ def run_individual_python_test(target_dir, test_name, pyspark_python):
             skipped_counts = len(skipped_tests)
             if skipped_counts > 0:
                 key = (pyspark_python, test_name)
+                assert SKIPPED_TESTS is not None
                 SKIPPED_TESTS[key] = skipped_tests
             per_test_output.close()
         except:
@@ -293,4 +299,5 @@ def main():
 
 
 if __name__ == "__main__":
+    SKIPPED_TESTS = Manager().dict()
     main()
