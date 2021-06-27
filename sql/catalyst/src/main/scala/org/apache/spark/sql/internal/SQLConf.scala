@@ -718,6 +718,27 @@ object SQLConf {
       .intConf
       .createWithDefault(10000)
 
+  val IGNORE_DATA_LOCALITY =
+    buildConf("spark.sql.sources.ignoreDataLocality")
+      .doc("If true, Spark will not fetch the block locations for each file on " +
+        "listing files. This speeds up file listing, but the scheduler cannot " +
+        "schedule tasks to take advantage of data locality. It can be particularly " +
+        "useful if data is read from a remote cluster so the scheduler could never " +
+        "take advantage of locality anyway.")
+      .internal()
+      .booleanConf
+      .createWithDefault(false)
+
+  val ADD_PARTITION_BATCH_SIZE =
+    buildConf("spark.sql.addPartitionInBatch.size")
+      .internal()
+      .doc("The number of partitions to be handled in one turn when use " +
+        "`AlterTableAddPartitionCommand` to add partitions into table. The smaller " +
+        "batch size is, the less memory is required for the real handler, e.g. Hive Metastore.")
+      .intConf
+      .checkValue(_ > 0, "The value of spark.sql.addPartitionInBatch.size must be positive")
+      .createWithDefault(100)
+
   // Whether to automatically resolve ambiguity in join conditions for self-joins.
   // See SPARK-6231.
   val DATAFRAME_SELF_JOIN_AUTO_RESOLVE_AMBIGUITY =
@@ -1695,6 +1716,8 @@ class SQLConf extends Serializable with Logging {
     getConf(SHUFFLE_TARGET_POSTSHUFFLE_INPUT_SIZE)
 
   def adaptiveExecutionEnabled: Boolean = getConf(ADAPTIVE_EXECUTION_ENABLED)
+
+  def ignoreDataLocality: Boolean = getConf(SQLConf.IGNORE_DATA_LOCALITY)
 
   def minNumPostShufflePartitions: Int =
     getConf(SHUFFLE_MIN_NUM_POSTSHUFFLE_PARTITIONS)

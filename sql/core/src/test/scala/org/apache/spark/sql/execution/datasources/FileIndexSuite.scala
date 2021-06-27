@@ -19,19 +19,16 @@ package org.apache.spark.sql.execution.datasources
 
 import java.io.File
 import java.net.URI
-
 import scala.collection.mutable
 import scala.language.reflectiveCalls
-
 import org.apache.hadoop.fs.{FileStatus, Path, RawLocalFileSystem}
-
 import org.apache.spark.metrics.source.HiveCatalogMetrics
 import org.apache.spark.sql.catalyst.util._
 import org.apache.spark.sql.functions.col
 import org.apache.spark.sql.internal.SQLConf
 import org.apache.spark.sql.test.SharedSQLContext
 import org.apache.spark.sql.types.{StringType, StructField, StructType}
-import org.apache.spark.util.{KnownSizeEstimation, SizeEstimator}
+import org.apache.spark.util.{HadoopFSUtils, KnownSizeEstimation, SizeEstimator}
 
 class FileIndexSuite extends SharedSQLContext {
 
@@ -169,14 +166,14 @@ class FileIndexSuite extends SharedSQLContext {
   }
 
   test("InMemoryFileIndex - file filtering") {
-    assert(!InMemoryFileIndex.shouldFilterOut("abcd"))
-    assert(InMemoryFileIndex.shouldFilterOut(".ab"))
-    assert(InMemoryFileIndex.shouldFilterOut("_cd"))
-    assert(!InMemoryFileIndex.shouldFilterOut("_metadata"))
-    assert(!InMemoryFileIndex.shouldFilterOut("_common_metadata"))
-    assert(InMemoryFileIndex.shouldFilterOut("_ab_metadata"))
-    assert(InMemoryFileIndex.shouldFilterOut("_cd_common_metadata"))
-    assert(InMemoryFileIndex.shouldFilterOut("a._COPYING_"))
+    assert(!HadoopFSUtils.shouldFilterOutPathName("abcd"))
+    assert(HadoopFSUtils.shouldFilterOutPathName(".ab"))
+    assert(HadoopFSUtils.shouldFilterOutPathName("_cd"))
+    assert(!HadoopFSUtils.shouldFilterOutPathName("_metadata"))
+    assert(!HadoopFSUtils.shouldFilterOutPathName("_common_metadata"))
+    assert(HadoopFSUtils.shouldFilterOutPathName("_ab_metadata"))
+    assert(HadoopFSUtils.shouldFilterOutPathName("_cd_common_metadata"))
+    assert(HadoopFSUtils.shouldFilterOutPathName("a._COPYING_"))
   }
 
   test("SPARK-17613 - PartitioningAwareFileIndex: base path w/o '/' at end") {
