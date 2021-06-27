@@ -20,6 +20,7 @@ package org.apache.spark.sql.catalyst.trees
 import java.util.UUID
 
 import scala.collection.{mutable, Map}
+import scala.collection.JavaConverters._
 import scala.reflect.ClassTag
 
 import org.apache.commons.lang3.ClassUtils
@@ -536,6 +537,16 @@ abstract class TreeNode[BaseType <: TreeNode[BaseType]] extends Product {
 
   private lazy val allChildren: Set[TreeNode[_]] = (children ++ innerChildren).toSet[TreeNode[_]]
 
+  private def redactMapString[K, V](map: Map[K, V], maxFields: Int): List[String] = {
+    // For security reason, redact the map value if the key is in centain patterns
+    val redactedMap = SQLConf.get.redactOptions(map.toMap)
+    // construct the redacted map as strings of the format "key=value"
+    val keyValuePairs = redactedMap.toSeq.map { item =>
+      item._1 + "=" + item._2
+    }
+    truncatedString(keyValuePairs, "[", ", ", "]", maxFields) :: Nil
+  }
+
   /** Returns a string representing the arguments to this node, minus any children */
   def argString(maxFields: Int): String = stringArgs.flatMap {
     case tn: TreeNode[_] if allChildren.contains(tn) => Nil
@@ -552,8 +563,10 @@ abstract class TreeNode[BaseType <: TreeNode[BaseType]] extends Product {
     case None => Nil
     case Some(null) => Nil
     case Some(any) => any :: Nil
-    case map: CaseInsensitiveStringMap => truncatedString(
-      map.asCaseSensitiveMap().entrySet().toArray(), "[", ", ", "]", maxFields) :: Nil
+    case map: CaseInsensitiveStringMap =>
+      redactMapString(map.asCaseSensitiveMap().asScala, maxFields)
+    case map: Map[_, _] =>
+      redactMapString(map, maxFields)
     case table: CatalogTable =>
       table.storage.serde match {
         case Some(serde) => table.identifier :: serde :: Nil
@@ -800,9 +813,10 @@ abstract class TreeNode[BaseType <: TreeNode[BaseType]] extends Product {
         ("deserialized" -> s.deserialized) ~ ("replication" -> s.replication)
     case n: TreeNode[_] => n.jsonValue
     case o: Option[_] => o.map(parseToJson)
-    // Recursive scan Seq[TreeNode], Seq[Partitioning], Seq[DataType]
-    case t: Seq[_] if t.forall(_.isInstanceOf[TreeNode[_]]) ||
-      t.forall(_.isInstanceOf[Partitioning]) || t.forall(_.isInstanceOf[DataType]) =>
+    // Recursive scan Seq[Partitioning], Seq[DataType], Seq[Product]
+    case t: Seq[_] if t.forall(_.isInstanceOf[Partitioning]) ||
+      t.forall(_.isInstanceOf[DataType]) ||
+      t.forall(_.isInstanceOf[Product]) =>
       JArray(t.map(parseToJson).toList)
     case t: Seq[_] if t.length > 0 && t.head.isInstanceOf[String] =>
       JString(truncatedString(t, "[", ", ", "]", SQLConf.get.maxToStringFields))
@@ -815,7 +829,20 @@ abstract class TreeNode[BaseType <: TreeNode[BaseType]] extends Product {
     case p: Product if shouldConvertToJson(p) =>
       try {
         val fieldNames = getConstructorParameterNames(p.getClass)
-        val fieldValues = p.productIterator.toSeq
+        val fieldValues = {
+          if (p.productArity == fieldNames.length) {
+            p.productIterator.toSeq
+          } else {
+            val clazz = p.getClass
+            // Fallback to use reflection if length of product elements do not match
+            // constructor params.
+            fieldNames.map { fieldName =>
+              val field = clazz.getDeclaredField(fieldName)
+              field.setAccessible(true)
+              field.get(p)
+            }
+          }
+        }
         assert(fieldNames.length == fieldValues.length, s"$simpleClassName fields: " +
           fieldNames.mkString(", ") + s", values: " + fieldValues.mkString(", "))
         ("product-class" -> JString(p.getClass.getName)) :: fieldNames.zip(fieldValues).map {
@@ -823,6 +850,7 @@ abstract class TreeNode[BaseType <: TreeNode[BaseType]] extends Product {
         }.toList
       } catch {
         case _: RuntimeException => null
+        case _: ReflectiveOperationException => null
       }
     case _ => JNull
   }
@@ -840,6 +868,9 @@ abstract class TreeNode[BaseType <: TreeNode[BaseType]] extends Product {
     case broadcast: BroadcastMode => true
     case table: CatalogTableType => true
     case storage: CatalogStorageFormat => true
+    // Write out product that contains TreeNode, since there are some Tuples such as cteRelations
+    // in With, branches in CaseWhen which are essential to understand the plan.
+    case p if p.productIterator.exists(_.isInstanceOf[TreeNode[_]]) => true
     case _ => false
   }
 }

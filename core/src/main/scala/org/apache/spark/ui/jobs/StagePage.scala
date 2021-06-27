@@ -349,16 +349,16 @@ width="$gettingResultTimeProportion%"></rect></svg>"""
           }
         val timelineObject =
           s"""
-             {
-             'className': 'task task-assignment-timeline-object',
-             'group': '$executorId',
-             'content': '<div class="task-assignment-timeline-content"
-             data-toggle="tooltip" data-placement="top"
-             data-html="true" data-container="body"
-             data-title="${s"Task " + index + " (attempt " + attempt + ")"}<br>
-             Status: ${taskInfo.status}<br>
-             Launch Time: ${UIUtils.formatDate(new Date(launchTime))}
-             ${
+             |{
+               |'className': 'task task-assignment-timeline-object',
+               |'group': '$executorId',
+               |'content': '<div class="task-assignment-timeline-content"
+                 |data-toggle="tooltip" data-placement="top"
+                 |data-html="true" data-container="body"
+                 |data-title="${s"Task " + taskInfo.taskId + " (attempt " + attempt + ")"}<br>
+                 |Status: ${taskInfo.status}<br>
+                 |Launch Time: ${UIUtils.formatDate(new Date(launchTime))}
+                 |${
                   if (!taskInfo.duration.isDefined) {
                     s"""<br>Finish Time: ${UIUtils.formatDate(new Date(finishTime))}"""
                   } else {

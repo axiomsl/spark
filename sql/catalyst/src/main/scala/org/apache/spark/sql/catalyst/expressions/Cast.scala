@@ -1301,7 +1301,7 @@ if ($d.changePrecision(${decimalType.precision}, ${decimalType.scale})) {
           if (Float.isNaN($c) || Float.isInfinite($c)) {
             $evNull = true;
           } else {
-            $evPrim = (long)($c * $MICROS_PER_SECOND);
+            $evPrim = (long)((double)$c * $MICROS_PER_SECOND);
           }
         """
   }

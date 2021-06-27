@@ -102,16 +102,17 @@ def lit(col):
 def col(col):
     """
     Returns a :class:`~pyspark.sql.Column` based on the given column name.'
+    Examples
+    --------
+    >>> col('x')
+    Column<'x'>
+    >>> column('x')
+    Column<'x'>
     """
     return _invoke_function("col", col)
 
 
-@since(1.3)
-def column(col):
-    """
-    Returns a :class:`~pyspark.sql.Column` based on the given column name.'
-    """
-    return col(col)
+column = col
 
 
 @since(1.3)
@@ -4153,7 +4154,10 @@ def _create_lambda(f):
 
     argnames = ["x", "y", "z"]
     args = [
-        _unresolved_named_lambda_variable(arg) for arg in argnames[: len(parameters)]
+        _unresolved_named_lambda_variable(
+            expressions.UnresolvedNamedLambdaVariable.freshVarName(arg)
+        )
+        for arg in argnames[: len(parameters)]
     ]
 
     result = f(*args)
