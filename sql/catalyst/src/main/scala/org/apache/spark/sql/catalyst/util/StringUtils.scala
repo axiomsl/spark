@@ -105,8 +105,17 @@ object StringUtils extends Logging {
    * the string.
    */
   class StringConcat(val maxLength: Int = ByteArrayMethods.MAX_ROUNDED_ARRAY_LENGTH) {
-    protected val strings = new ArrayBuffer[String]
+    protected lazy val strings =
+      if (maxLength == 0) new ArrayBuffer[String](0)
+      else new ArrayBuffer[String]
+
     protected var length: Int = 0
+
+    def appendStrings(sb: java.lang.StringBuilder): Unit = {
+      if (maxLength > 0) {
+        strings.foreach(sb.append)
+      }
+    }
 
     def atLimit: Boolean = length >= maxLength
 
@@ -116,7 +125,7 @@ object StringUtils extends Logging {
      * has room for further appends before it hits its max limit.
      */
     def append(s: String): Boolean = {
-      if (s != null && s.nonEmpty) {
+      if (maxLength > 0 && s != null && s.nonEmpty) {
         val sLen = s.length
         if (!atLimit) {
           val available = maxLength - length
@@ -139,7 +148,7 @@ object StringUtils extends Logging {
     override def toString: String = {
       val finalLength = if (atLimit) maxLength else length
       val result = new java.lang.StringBuilder(finalLength)
-      strings.foreach(result.append)
+      appendStrings(result)
       result.toString
     }
   }
@@ -161,7 +170,7 @@ object StringUtils extends Logging {
           s"... ${length - maxLength} more characters"
         }
         val result = new java.lang.StringBuilder(maxLength + truncateMsg.length)
-        strings.foreach(result.append)
+        appendStrings(result)
         result.append(truncateMsg)
         result.toString
       } else {
