@@ -321,7 +321,7 @@ class DataFrameAggregateSuite extends QueryTest with SharedSQLContext {
 
     checkAnswer(
       emptyTableData.agg(avg('a), sumDistinct('b)), // non-partial
-      Row(null, null))
+      Row(null, 0))
   }
 
   test("count") {
@@ -383,7 +383,7 @@ class DataFrameAggregateSuite extends QueryTest with SharedSQLContext {
     val emptyTableData = Seq.empty[(Int, Int)].toDF("a", "b")
     checkAnswer(
       emptyTableData.agg(count('a), sumDistinct('a)), // non-partial
-      Row(0, null))
+      Row(0, 0))
   }
 
   test("stddev") {
@@ -407,14 +407,14 @@ class DataFrameAggregateSuite extends QueryTest with SharedSQLContext {
     val emptyTableData = Seq.empty[(Int, Int)].toDF("a", "b")
     checkAnswer(
       emptyTableData.agg(sum('a)),
-      Row(null))
+      Row(0))
   }
 
   test("zero sum distinct") {
     val emptyTableData = Seq.empty[(Int, Int)].toDF("a", "b")
     checkAnswer(
       emptyTableData.agg(sumDistinct('a)),
-      Row(null))
+      Row(0))
   }
 
   test("moments") {

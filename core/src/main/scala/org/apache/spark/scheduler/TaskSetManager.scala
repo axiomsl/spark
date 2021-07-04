@@ -464,7 +464,7 @@ private[spark] class TaskSetManager(
         }
       }
 
-      dequeueTask(execId, host, allowedLocality).map { case ((index, taskLocality, speculative)) =>
+      dequeueTask(execId, host, allowedLocality).map { case (index, taskLocality, speculative) =>
         // Found a task; do some bookkeeping and return a task description
         val task = tasks(index)
         val taskId = sched.newTaskId()
@@ -493,8 +493,8 @@ private[spark] class TaskSetManager(
             abort(s"$msg Exception during serialization: $e")
             throw new TaskNotSerializableException(e)
         }
-        if (serializedTask.limit() > TaskSetManager.TASK_SIZE_TO_WARN_KB * 1024 &&
-          !emittedTaskSizeWarning) {
+        if (!emittedTaskSizeWarning &&
+          serializedTask.limit() > TaskSetManager.TASK_SIZE_TO_WARN_KB * 1024) {
           emittedTaskSizeWarning = true
           logWarning(s"Stage ${task.stageId} contains a task of very large size " +
             s"(${serializedTask.limit() / 1024} KB). The maximum recommended task size is " +
@@ -739,7 +739,7 @@ private[spark] class TaskSetManager(
       // checking if can fetch more results
       calculatedTasks -= 1
       val resultSizeAcc = result.accumUpdates.find(a =>
-        a.name == Some(InternalAccumulator.RESULT_SIZE))
+        a.name.contains(InternalAccumulator.RESULT_SIZE))
       if (resultSizeAcc.isDefined) {
         totalResultSize -= resultSizeAcc.get.asInstanceOf[LongAccumulator].value
       }
@@ -1069,18 +1069,18 @@ private[spark] class TaskSetManager(
   private def computeValidLocalityLevels(): Array[TaskLocality.TaskLocality] = {
     import TaskLocality.{PROCESS_LOCAL, NODE_LOCAL, NO_PREF, RACK_LOCAL, ANY}
     val levels = new ArrayBuffer[TaskLocality.TaskLocality]
-    if (!pendingTasksForExecutor.isEmpty &&
+    if (pendingTasksForExecutor.nonEmpty &&
         pendingTasksForExecutor.keySet.exists(sched.isExecutorAlive(_))) {
       levels += PROCESS_LOCAL
     }
-    if (!pendingTasksForHost.isEmpty &&
+    if (pendingTasksForHost.nonEmpty &&
         pendingTasksForHost.keySet.exists(sched.hasExecutorsAliveOnHost(_))) {
       levels += NODE_LOCAL
     }
-    if (!pendingTasksWithNoPrefs.isEmpty) {
+    if (pendingTasksWithNoPrefs.nonEmpty) {
       levels += NO_PREF
     }
-    if (!pendingTasksForRack.isEmpty &&
+    if (pendingTasksForRack.nonEmpty &&
         pendingTasksForRack.keySet.exists(sched.hasHostAliveOnRack(_))) {
       levels += RACK_LOCAL
     }

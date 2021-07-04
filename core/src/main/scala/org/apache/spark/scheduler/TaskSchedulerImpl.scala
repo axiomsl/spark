@@ -324,12 +324,14 @@ private[spark] class TaskSchedulerImpl(
     // nodes and executors that are blacklisted for the entire application have already been
     // filtered out by this point
     for (i <- 0 until shuffledOffers.size) {
-      val execId = shuffledOffers(i).executorId
-      val host = shuffledOffers(i).host
+      val offer = shuffledOffers(i)
+      val execId = offer.executorId
+      val host = offer.host
       if (availableCpus(i) >= CPUS_PER_TASK) {
         try {
+          val taskDescriptions = tasks(i)
           for (task <- taskSet.resourceOffer(execId, host, maxLocality)) {
-            tasks(i) += task
+            taskDescriptions += task
             val tid = task.taskId
             taskIdToTaskSetManager.put(tid, taskSet)
             taskIdToExecutorId(tid) = execId
@@ -339,7 +341,7 @@ private[spark] class TaskSchedulerImpl(
             // Only update hosts for a barrier task.
             if (taskSet.isBarrier) {
               // The executor address is expected to be non empty.
-              addressesWithDescs += (shuffledOffers(i).address.get -> task)
+              addressesWithDescs += (offer.address.get -> task)
             }
             launchedTask = true
           }
@@ -352,7 +354,7 @@ private[spark] class TaskSchedulerImpl(
         }
       }
     }
-    return launchedTask
+    launchedTask
   }
 
   /**

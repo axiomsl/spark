@@ -710,12 +710,12 @@ private[spark] class DAGScheduler(
     }
 
     val jobId = nextJobId.getAndIncrement()
-    if (partitions.size == 0) {
+    if (partitions.isEmpty) {
       // Return immediately if the job is running 0 tasks
       return new JobWaiter[U](this, jobId, 0, resultHandler)
     }
 
-    assert(partitions.size > 0)
+    assert(partitions.nonEmpty)
     val func2 = func.asInstanceOf[(TaskContext, Iterator[_]) => _]
     val waiter = new JobWaiter(this, jobId, partitions.size, resultHandler)
     eventProcessLoop.post(JobSubmitted(
@@ -876,7 +876,7 @@ private[spark] class DAGScheduler(
    * the last fetch failure.
    */
   private[scheduler] def resubmitFailedStages() {
-    if (failedStages.size > 0) {
+    if (failedStages.nonEmpty) {
       // Failed stages may be removed by job cancellation, so failed might be empty even if
       // the ResubmitFailedStages event has been scheduled.
       logInfo("Resubmitting failed stages")
@@ -1230,7 +1230,7 @@ private[spark] class DAGScheduler(
         return
     }
 
-    if (tasks.size > 0) {
+    if (tasks.nonEmpty) {
       logInfo(s"Submitting ${tasks.size} missing tasks from $stage (${stage.rdd}) (first 15 " +
         s"tasks are for partitions ${tasks.take(15).map(_.partitionId)})")
       taskScheduler.submitTasks(new TaskSet(
@@ -1922,7 +1922,7 @@ private[spark] class DAGScheduler(
       job: ActiveJob,
       failureReason: String,
       exception: Option[Throwable] = None): Unit = {
-    val error = new SparkException(failureReason, exception.getOrElse(null))
+    val error = new SparkException(failureReason, exception.orNull)
     var ableToCancelStages = true
 
     val shouldInterruptThread =
