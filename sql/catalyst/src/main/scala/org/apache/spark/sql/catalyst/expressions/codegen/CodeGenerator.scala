@@ -19,18 +19,23 @@ package org.apache.spark.sql.catalyst.expressions.codegen
 
 import java.io.ByteArrayInputStream
 import java.util.{Map => JavaMap}
+import java.util.concurrent.TimeUnit
+
+import scala.annotation.tailrec
 import scala.collection.JavaConverters._
 import scala.collection.mutable
 import scala.collection.mutable.{ArrayBuffer, ListBuffer}
 import scala.language.existentials
 import scala.util.control.NonFatal
+
 import com.google.common.cache.{CacheBuilder, CacheLoader}
 import com.google.common.util.concurrent.{ExecutionError, UncheckedExecutionException}
 import org.codehaus.commons.compiler.CompileException
-import org.codehaus.janino.{ClassBodyEvaluator, SimpleCompiler}
-import org.codehaus.janino.util.ClassFile
 import org.codehaus.commons.compiler.InternalCompilerException
 import org.codehaus.commons.compiler.util.reflect.ByteArrayClassLoader
+import org.codehaus.janino.{ClassBodyEvaluator, SimpleCompiler}
+import org.codehaus.janino.util.ClassFile
+
 import org.apache.spark.{SparkEnv, TaskContext, TaskKilledException}
 import org.apache.spark.executor.InputMetrics
 import org.apache.spark.internal.Logging
@@ -46,8 +51,6 @@ import org.apache.spark.unsafe.array.ByteArrayMethods
 import org.apache.spark.unsafe.types._
 import org.apache.spark.util.{ParentClassLoader, ThreadUtils, Utils}
 
-import java.util.concurrent.TimeUnit
-import scala.annotation.tailrec
 
 /**
  * Java source for evaluating an [[Expression]] given a [[InternalRow]] of input.
@@ -758,9 +761,9 @@ if (!${item.isNull} && (${partialResult.isNull} ||
    */
   def nullSafeExec(nullable: Boolean, isNull: String)(execute: String): String = {
     if (nullable) {
-      if (isNull == "false"){
+      if (isNull == "false") {
         execute
-      } else if (isNull == "true"){
+      } else if (isNull == "true") {
         ""
       } else {
         s"""
@@ -1211,7 +1214,10 @@ abstract class CodeGenerator[InType <: AnyRef, OutType <: AnyRef] extends Loggin
 
 object CodeGenerator extends Logging {
 
-  final val JANINO_DEBUG_ENABLED = sys.props.getOrElse("org.codehaus.janino.source_debugging.enable", "false").toBoolean
+  final val JANINO_DEBUG_ENABLED = sys.props.getOrElse(
+    "org.codehaus.janino.source_debugging.enable",
+    "false"
+  ).toBoolean
 
   // This is the default value of HugeMethodLimit in the OpenJDK HotSpot JVM,
   // beyond which methods will be rejected from JIT compilation
@@ -1324,12 +1330,12 @@ object CodeGenerator extends Logging {
         val msg = s"failed to compile: ${e.toString}. \n\tYou may need to add -Xss to jvm option."
         logError(msg, e)
         logGeneratedCode(code)
-        throw new CompileException(msg, null ,e)
+        throw new CompileException(msg, null, e)
       case e: RuntimeException if e.toString.contains("SNO: StringReader throws IOException") =>
         val msg = s"failed to compile: ${e.toString}"
         logError(msg, e)
         logGeneratedCode(code)
-        throw new CompileException(msg, null ,e)
+        throw new CompileException(msg, null, e)
       case e: RuntimeException =>
         val msg = s"failed to compile: ${e.toString}"
         logError(msg, e)
@@ -1492,7 +1498,8 @@ object CodeGenerator extends Logging {
       -1
     }
     s"""
-ArrayData $arrayName = ArrayData.allocateArrayData($elementSize, $numElements, "$additionalErrorMessage");
+ArrayData $arrayName =
+  ArrayData.allocateArrayData($elementSize, $numElements, "$additionalErrorMessage");
 """
   }
 
@@ -1555,9 +1562,9 @@ ArrayData $arrayName = ArrayData.allocateArrayData($elementSize, $numElements, "
     if (nullable) {
       // Can't call setNullAt on DecimalType, because we need to keep the offset
       if (!isVectorized && dataType.isInstanceOf[DecimalType]) {
-        if (ev.isNull.toString == "false"){
+        if (ev.isNull.toString == "false") {
           s"""${setColumn(row, dataType, ordinal, ev.value)};"""
-        } else if (ev.isNull.toString == "true"){
+        } else if (ev.isNull.toString == "true") {
           s"""${setColumn(row, dataType, ordinal, "null")};"""
         } else {
           s"""
@@ -1569,9 +1576,9 @@ if (!${ev.isNull}) {
 """
         }
       } else {
-        if (ev.isNull.toString == "false"){
+        if (ev.isNull.toString == "false") {
           s"""$row.setNullAt($ordinal);"""
-        } else if (ev.isNull.toString == "true"){
+        } else if (ev.isNull.toString == "true") {
           s"""$row.setNullAt($ordinal);"""
         } else {
           s"""
@@ -1619,9 +1626,9 @@ if (!${ev.isNull}) {
       "update"
     }
     if (isNull.isDefined && isPrimitiveType) {
-      if (isNull.get == "false"){
+      if (isNull.get == "false") {
         s"""$array.$setFunc($i, $value);"""
-      } else if (isNull.get == "true"){
+      } else if (isNull.get == "true") {
         s"""$array.setNullAt($i);"""
       } else {
         s"""
@@ -1648,7 +1655,7 @@ if (${isNull.get}) {
       ev: ExprCode,
       nullable: Boolean): String = {
     if (nullable) {
-      if (ev.isNull.toString == "false"){
+      if (ev.isNull.toString == "false") {
         s"""${setValue(vector, rowId, dataType, ev.value)}"""
       } else if (ev.isNull.toString == "true") {
         s"""$vector.putNull($rowId);"""

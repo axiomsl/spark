@@ -83,7 +83,8 @@ abstract class RuleExecutor[TreeType <: TreeNode[_]] extends Logging {
   def execute(plan: TreeType): TreeType = {
     var curPlan = plan
 
-    val groupId = SparkContext.getActive.map(s => Option(s.getLocalProperty("jobGroupId")).getOrElse("")).getOrElse("")
+    val groupId = SparkContext.getActive.map(s => Option(s.getLocalProperty("jobGroupId"))
+      .getOrElse("")).getOrElse("")
 
     val queryExecutionMetrics = RuleExecutor.queryExecutionMeter
 

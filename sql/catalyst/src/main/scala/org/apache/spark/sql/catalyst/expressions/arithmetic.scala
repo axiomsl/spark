@@ -616,7 +616,9 @@ case class LeastNullIntolerant(children: Seq[Expression]) extends NullIntolerant
 
   override def checkInputDataTypes(): TypeCheckResult = {
     if (children.length <= 1) {
-      TypeCheckResult.TypeCheckFailure(s"input to function $prettyName requires at least two arguments")
+      TypeCheckResult.TypeCheckFailure(
+        s"input to function $prettyName requires at least two arguments"
+      )
     } else if (!TypeCoercion.haveSameType(inputTypesForMerging)) {
       TypeCheckResult.TypeCheckFailure(
         "The expressions should all have the same type," +
@@ -812,7 +814,7 @@ case class Greatest(children: Seq[Expression]) extends ComplexTypeMergingExpress
   }
 
   override def eval(input: InternalRow): Any = {
-    if (nullable){
+    if (nullable) {
       children.foldLeft[Any](null)((r, c) => {
         val evalc = c.eval(input)
         if (evalc != null) {

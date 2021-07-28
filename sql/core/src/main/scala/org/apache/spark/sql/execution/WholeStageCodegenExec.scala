@@ -19,9 +19,12 @@ package org.apache.spark.sql.execution
 
 import java.util.Locale
 import java.util.function.Supplier
+
 import scala.collection.mutable
+import scala.util.{Failure, Success, Try}
 import scala.util.control.NonFatal
-import org.apache.spark.{SparkContext, broadcast}
+
+import org.apache.spark.{broadcast, SparkContext}
 import org.apache.spark.rdd.RDD
 import org.apache.spark.sql.catalyst.InternalRow
 import org.apache.spark.sql.catalyst.expressions._
@@ -36,7 +39,6 @@ import org.apache.spark.sql.internal.SQLConf
 import org.apache.spark.sql.types._
 import org.apache.spark.util.Utils
 
-import scala.util.{Failure, Success, Try}
 
 /**
  * An interface for those physical operators that support codegen.
@@ -707,7 +709,8 @@ append(${row.value}$doCopy);
 /**
  * Find the chained plans that support codegen, collapse them together as WholeStageCodegen.
  */
-case class CollapseCodegenStages(conf: SQLConf, sparkContext: SparkContext) extends Rule[SparkPlan] {
+case class CollapseCodegenStages(conf: SQLConf, sparkContext: SparkContext)
+  extends Rule[SparkPlan] {
 
   private def supportCodegen(e: Expression): Boolean = e match {
     case e: LeafExpression => true
@@ -763,7 +766,11 @@ case class CollapseCodegenStages(conf: SQLConf, sparkContext: SparkContext) exte
         case value => Try(value.toBoolean) match {
           case Success(b) => b
           case Failure(_) =>
-            log.warn("Failed to convert `spark.sql.local.codegen.wholeStage` into Boolean got [{}], using [true]", value)
+            log.warn(
+              "Failed to convert `spark.sql.local.codegen.wholeStage` " +
+                "into Boolean got [{}], using [true]",
+              value
+            )
             true
         }
       }

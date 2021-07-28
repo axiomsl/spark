@@ -22,15 +22,16 @@ import java.util.concurrent._
 
 import scala.collection.TraversableLike
 import scala.collection.generic.CanBuildFrom
-import scala.language.higherKinds
-import com.google.common.util.concurrent.{MoreExecutors, ThreadFactoryBuilder}
-
 import scala.concurrent.{Awaitable, ExecutionContext, ExecutionContextExecutor, Future}
 import scala.concurrent.duration.{Duration, FiniteDuration}
 import scala.concurrent.forkjoin.{ForkJoinPool => SForkJoinPool, ForkJoinWorkerThread => SForkJoinWorkerThread}
+import scala.language.higherKinds
 import scala.util.control.NonFatal
-import org.apache.spark.SparkException
+
+import com.google.common.util.concurrent.{MoreExecutors, ThreadFactoryBuilder}
 import org.slf4j.MDC
+
+import org.apache.spark.SparkException
 
 private[spark] object ThreadUtils {
 
@@ -58,7 +59,8 @@ private[spark] object ThreadUtils {
   def newDaemonCachedThreadPool(prefix: String): ThreadPoolExecutor = {
     val threadFactory = namedThreadFactory(prefix)
 
-    new ThreadPoolExecutor(0, Integer.MAX_VALUE, 60L, TimeUnit.SECONDS, new SynchronousQueue[Runnable], threadFactory) {
+    new ThreadPoolExecutor(0, Integer.MAX_VALUE, 60L, TimeUnit.SECONDS,
+      new SynchronousQueue[Runnable], threadFactory) {
       override def execute(runnable: Runnable) {
         super.execute(new Runnable {
           val callerThreadMDC: util.Map[String, String] = getMDCMap
@@ -78,7 +80,7 @@ private[spark] object ThreadUtils {
       private def getMDCMap: util.Map[String, String] = {
         MDC.getCopyOfContextMap match {
           case null => new util.HashMap[String, String]()
-          case m    => m
+          case m => m
         }
       }
     }
@@ -117,7 +119,7 @@ private[spark] object ThreadUtils {
       private def getMDCMap: util.Map[String, String] = {
         MDC.getCopyOfContextMap match {
           case null => new util.HashMap[String, String]()
-          case m    => m
+          case m => m
         }
       }
     }
@@ -131,7 +133,8 @@ private[spark] object ThreadUtils {
    */
   def newDaemonFixedThreadPool(nThreads: Int, prefix: String): ThreadPoolExecutor = {
     val threadFactory = namedThreadFactory(prefix)
-    new ThreadPoolExecutor(nThreads, nThreads, 0L, TimeUnit.MILLISECONDS, new LinkedBlockingQueue[Runnable], threadFactory) {
+    new ThreadPoolExecutor(nThreads, nThreads, 0L,
+      TimeUnit.MILLISECONDS, new LinkedBlockingQueue[Runnable], threadFactory) {
       override def execute(runnable: Runnable) {
         super.execute(new Runnable {
           val callerThreadMDC: util.Map[String, String] = getMDCMap
@@ -151,7 +154,7 @@ private[spark] object ThreadUtils {
       private def getMDCMap: util.Map[String, String] = {
         MDC.getCopyOfContextMap match {
           case null => new util.HashMap[String, String]()
-          case m    => m
+          case m => m
         }
       }
     }
@@ -163,7 +166,8 @@ private[spark] object ThreadUtils {
   def newDaemonSingleThreadExecutor(threadName: String): ExecutorService = {
     val threadFactory = new ThreadFactoryBuilder().setDaemon(true).setNameFormat(threadName).build()
 //    Executors.newSingleThreadExecutor(threadFactory)
-    new ThreadPoolExecutor(1, 1, 0L, TimeUnit.MILLISECONDS, new LinkedBlockingQueue[Runnable], threadFactory) {
+    new ThreadPoolExecutor(1, 1, 0L,
+      TimeUnit.MILLISECONDS, new LinkedBlockingQueue[Runnable], threadFactory) {
       override def execute(runnable: Runnable) {
         super.execute(new Runnable {
           val callerThreadMDC: util.Map[String, String] = getMDCMap
@@ -187,7 +191,7 @@ private[spark] object ThreadUtils {
       private def getMDCMap: util.Map[String, String] = {
         MDC.getCopyOfContextMap match {
           case null => new util.HashMap[String, String]()
-          case m    => m
+          case m => m
         }
       }
     }
@@ -198,7 +202,7 @@ private[spark] object ThreadUtils {
    */
   def newDaemonSingleThreadScheduledExecutor(threadName: String): ScheduledExecutorService = {
     val threadFactory = new ThreadFactoryBuilder().setDaemon(true).setNameFormat(threadName).build()
-    val executor:ScheduledThreadPoolExecutor = new ScheduledThreadPoolExecutor(1, threadFactory) {
+    val executor: ScheduledThreadPoolExecutor = new ScheduledThreadPoolExecutor(1, threadFactory) {
       override def execute(runnable: Runnable) {
         super.execute(new Runnable {
           val callerThreadMDC: util.Map[String, String] = getMDCMap
@@ -218,7 +222,7 @@ private[spark] object ThreadUtils {
       private def getMDCMap: util.Map[String, String] = {
         MDC.getCopyOfContextMap match {
           case null => new util.HashMap[String, String]()
-          case m    => m
+          case m => m
         }
       }
     }
@@ -237,29 +241,30 @@ private[spark] object ThreadUtils {
       .setDaemon(true)
       .setNameFormat(s"$threadNamePrefix-%d")
       .build()
-    val executor: ScheduledThreadPoolExecutor = new ScheduledThreadPoolExecutor(numThreads, threadFactory) {
-      override def execute(runnable: Runnable) {
-        super.execute(new Runnable {
-          val callerThreadMDC: util.Map[String, String] = getMDCMap
+    val executor: ScheduledThreadPoolExecutor =
+      new ScheduledThreadPoolExecutor(numThreads, threadFactory) {
+        override def execute(runnable: Runnable) {
+          super.execute(new Runnable {
+            val callerThreadMDC: util.Map[String, String] = getMDCMap
 
-          override def run() {
-            val threadMDC = getMDCMap
-            MDC.setContextMap(callerThreadMDC)
-            try {
-              runnable.run()
-            } finally {
-              MDC.setContextMap(threadMDC)
+            override def run() {
+              val threadMDC = getMDCMap
+              MDC.setContextMap(callerThreadMDC)
+              try {
+                runnable.run()
+              } finally {
+                MDC.setContextMap(threadMDC)
+              }
             }
-          }
-        })
-      }
-
-      private def getMDCMap: util.Map[String, String] = {
-        MDC.getCopyOfContextMap match {
-          case null => new util.HashMap[String, String]()
-          case m    => m
+          })
         }
-      }
+
+        private def getMDCMap: util.Map[String, String] = {
+          MDC.getCopyOfContextMap match {
+            case null => new util.HashMap[String, String]()
+            case m => m
+          }
+        }
     }
     // By default, a cancelled task is not automatically removed from the work queue until its delay
     // elapses. We have to enable it manually.
@@ -359,7 +364,7 @@ private[spark] object ThreadUtils {
       private def getMDCMap: util.Map[String, String] = {
         MDC.getCopyOfContextMap match {
           case null => new util.HashMap[String, String]()
-          case m    => m
+          case m => m
         }
       }
     }

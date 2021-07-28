@@ -880,16 +880,17 @@ case class FromUnixTime(sec: Expression, format: Expression, timeZoneId: Option[
         val formatterName = ctx.addReferenceObj("formatter", formatter, df)
         val t = left.genCode(ctx)
         ev.copy(code = code"""
-          ${t.code}
-          boolean ${ev.isNull} = ${t.isNull};
-          ${CodeGenerator.javaType(dataType)} ${ev.value} = ${CodeGenerator.defaultValue(dataType)};
-          if (!${ev.isNull}) {
-            try {
-              ${ev.value} = UTF8String.fromString($formatterName.format(new java.util.Date(${t.value} * 1000L)));
-            } catch (java.lang.IllegalArgumentException e) {
-              ${ev.isNull} = true;
-            }
-          }""")
+${t.code}
+boolean ${ev.isNull} = ${t.isNull};
+${CodeGenerator.javaType(dataType)} ${ev.value} = ${CodeGenerator.defaultValue(dataType)};
+if (!${ev.isNull}) {
+  try {
+    ${ev.value} =
+      UTF8String.fromString($formatterName.format(new java.util.Date(${t.value} * 1000L)));
+  } catch (java.lang.IllegalArgumentException e) {
+    ${ev.isNull} = true;
+  }
+}""")
       }
     } else {
       val tz = ctx.addReferenceObj("timeZone", timeZone)

@@ -399,8 +399,10 @@ case class PreprocessTableInsertion(conf: SQLConf) extends Rule[LogicalPlan] {
   private def mapQueryToTableOutput(
                                      insert: InsertIntoTable,
                                      tblName: String,
-                                     explicitTableOutput: Seq[Attribute]): Map[String, NamedExpression] = {
-    val mappedQueryOutput = DDLPreprocessingUtils.expectedTypeMapping(insert.query.output, explicitTableOutput, conf)
+                                     explicitTableOutput: Seq[Attribute]
+                                   ): Map[String, NamedExpression] = {
+    val mappedQueryOutput =
+      DDLPreprocessingUtils.expectedTypeMapping(insert.query.output, explicitTableOutput, conf)
     val queryOutputMapping = mappedQueryOutput.map(v => (v.name, v)).toMap
     queryOutputMapping
   }
@@ -421,7 +423,8 @@ case class PreprocessTableInsertion(conf: SQLConf) extends Rule[LogicalPlan] {
       b.result()
     } else {
       insert.table.output
-    }	    }
+    }
+  }
 
   def apply(plan: LogicalPlan): LogicalPlan = plan resolveOperators {
     case i @ InsertIntoTable(table, _, _, query, _, _) if table.resolved && query.resolved =>
