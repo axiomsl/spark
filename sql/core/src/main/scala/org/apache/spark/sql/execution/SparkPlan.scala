@@ -22,8 +22,7 @@ import java.io.{ByteArrayInputStream, ByteArrayOutputStream, DataInputStream, Da
 import scala.collection.mutable.ArrayBuffer
 import scala.concurrent.ExecutionContext
 
-import org.codehaus.commons.compiler.CompileException
-import org.codehaus.janino.InternalCompilerException
+import org.codehaus.commons.compiler.{CompileException, InternalCompilerException}
 
 import org.apache.spark.{broadcast, SparkEnv}
 import org.apache.spark.internal.Logging

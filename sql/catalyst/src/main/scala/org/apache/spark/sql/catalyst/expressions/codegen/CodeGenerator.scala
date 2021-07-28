@@ -31,9 +31,9 @@ import scala.util.control.NonFatal
 import com.google.common.cache.{CacheBuilder, CacheLoader}
 import com.google.common.util.concurrent.{ExecutionError, UncheckedExecutionException}
 import org.codehaus.commons.compiler.CompileException
+import org.codehaus.janino.{ClassBodyEvaluator, SimpleCompiler}
 import org.codehaus.commons.compiler.InternalCompilerException
 import org.codehaus.commons.compiler.util.reflect.ByteArrayClassLoader
-import org.codehaus.janino.{ClassBodyEvaluator, SimpleCompiler}
 import org.codehaus.janino.util.ClassFile
 
 import org.apache.spark.{SparkEnv, TaskContext, TaskKilledException}
@@ -1362,9 +1362,12 @@ object CodeGenerator extends Logging {
   private def updateAndGetCompilationStats(evaluator: ClassBodyEvaluator): Int = {
     // First retrieve the generated classes.
     val classes = {
-      val resultField = classOf[SimpleCompiler].getDeclaredField("result")
-      resultField.setAccessible(true)
-      val loader = resultField.get(evaluator).asInstanceOf[ByteArrayClassLoader]
+      val scField = classOf[ClassBodyEvaluator].getDeclaredField("sc")
+      scField.setAccessible(true)
+      val loader = scField.get(evaluator).asInstanceOf[SimpleCompiler].getClassLoader
+//      val resultField = classOf[SimpleCompiler].getDeclaredField("result")
+//      resultField.setAccessible(true)
+//      val loader = resultField.get(evaluator).asInstanceOf[ByteArrayClassLoader]
       val classesField = loader.getClass.getDeclaredField("classes")
       classesField.setAccessible(true)
       classesField.get(loader).asInstanceOf[JavaMap[String, Array[Byte]]].asScala
