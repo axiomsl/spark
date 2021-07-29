@@ -29,7 +29,7 @@ case class Min(child: Expression) extends DeclarativeAggregate {
 
   override def children: Seq[Expression] = child :: Nil
 
-  override def nullable: Boolean = child.nullable
+  override def nullable: Boolean = true
 
   // Return data type.
   override def dataType: DataType = child.dataType
@@ -37,43 +37,13 @@ case class Min(child: Expression) extends DeclarativeAggregate {
   override def checkInputDataTypes(): TypeCheckResult =
     TypeUtils.checkForOrderingExpr(child.dataType, "function min")
 
-  private lazy val min = {
-    if (child.nullable) {
-      AttributeReference("min", child.dataType)()
-    } else {
-      val nullable = child.dataType match {
-        case _: IntegerType => false
-        case _: LongType => false
-        case _: ShortType => false
-        case _: FloatType => false
-        case _: DoubleType => false
-        case _ => true
-      }
-      AttributeReference("min", child.dataType, nullable)()
-    }
-  }
+  private lazy val min = AttributeReference("min", child.dataType)()
 
   override lazy val aggBufferAttributes: Seq[AttributeReference] = min :: Nil
 
-  override lazy val initialValues: Seq[Expression] = {
-    if (child.nullable) {
-      Seq(
-        /* max = */ Literal.create(null, child.dataType)
-      )
-    } else {
-      Seq(
-        /* max = */
-        child.dataType match {
-          case _: IntegerType => Literal.create(Int.MaxValue, child.dataType)
-          case _: LongType => Literal.create(Long.MaxValue, child.dataType)
-          case _: ShortType => Literal.create(Short.MaxValue, child.dataType)
-          case _: FloatType => Literal.create(Float.MaxValue, child.dataType)
-          case _: DoubleType => Literal.create(Double.MaxValue, child.dataType)
-          case _ => Literal.create(null, child.dataType)
-        }
-      )
-    }
-  }
+  override lazy val initialValues: Seq[Expression] = Seq(
+    /* min = */ Literal.create(null, child.dataType)
+  )
 
   override lazy val updateExpressions: Seq[Expression] = Seq(
     /* min = */ least(min, child)
