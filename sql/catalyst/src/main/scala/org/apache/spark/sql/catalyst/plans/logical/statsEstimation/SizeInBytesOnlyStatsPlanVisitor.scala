@@ -157,4 +157,6 @@ object SizeInBytesOnlyStatsPlanVisitor extends LogicalPlanVisitor[Statistics] {
   }
 
   override def visitWindow(p: Window): Statistics = visitUnaryNode(p)
+
+  override def visitSubqueryAlias(p: SubqueryAlias): Statistics = visitUnaryNode(p)
 }
