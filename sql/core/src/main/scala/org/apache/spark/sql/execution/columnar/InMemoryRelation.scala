@@ -184,7 +184,7 @@ case class InMemoryRelation(
       // care of it and retain the hint info in the lookup input plan.
       statsOfPlanToCache.copy(hints = HintInfo())
     } else {
-      Statistics(sizeInBytes = cacheBuilder.sizeInBytesStats.value.longValue, rowCount = statsOfPlanToCache.rowCount, attributeStats = statsOfPlanToCache.attributeStats)
+      Statistics(sizeInBytes = cacheBuilder.sizeInBytesStats.value.longValue)
     }
   }
 

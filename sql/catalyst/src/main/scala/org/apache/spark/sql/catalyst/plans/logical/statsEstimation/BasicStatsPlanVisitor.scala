@@ -74,6 +74,4 @@ object BasicStatsPlanVisitor extends LogicalPlanVisitor[Statistics] {
   override def visitUnion(p: Union): Statistics = fallback(p)
 
   override def visitWindow(p: Window): Statistics = fallback(p)
-
-  override def visitSubqueryAlias(p: SubqueryAlias): Statistics = visit(p.child)
 }

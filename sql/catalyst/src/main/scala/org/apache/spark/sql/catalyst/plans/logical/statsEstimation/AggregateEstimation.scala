@@ -17,8 +17,7 @@
 
 package org.apache.spark.sql.catalyst.plans.logical.statsEstimation
 
-import org.apache.spark.sql.catalyst.expressions.{Alias, Attribute, AttributeMap, AttributeReference, Expression}
-import org.apache.spark.sql.catalyst.expressions.aggregate.{AggregateExpression, Average, Max, Min}
+import org.apache.spark.sql.catalyst.expressions.Attribute
 import org.apache.spark.sql.catalyst.plans.logical.{Aggregate, Statistics}
 
 
@@ -61,40 +60,7 @@ object AggregateEstimation {
         outputRows.min(childStats.rowCount.get)
       }
 
-      def findAttributeReference(child: Expression): Option[(Attribute,Attribute)] = {
-        child match {
-          case ar: AttributeReference =>
-            Some((ar, ar))
-          case ae: AggregateExpression =>
-            ae.aggregateFunction match {
-              case m: Max => findAttributeReference(m.child)
-              case m: Min => findAttributeReference(m.child)
-              case m: Average => findAttributeReference(m.child)
-              case _ => None
-            }
-          case a: Alias =>
-            findAttributeReference(a.child) match {
-              case None => None
-              case Some(value) =>
-
-                Some((a.toAttribute, value._2))
-            }
-          case _ => None
-        }
-      }
-
-      val tuples = agg.aggregateExpressions.flatMap(findAttributeReference)
-        .flatMap {
-          case (orig, input) =>
-            childStats.attributeStats.get(input).map(orig -> _)
-        } ++ agg.groupingExpressions.flatMap(findAttributeReference)
-        .flatMap {
-          case (orig, input) =>
-            childStats.attributeStats.get(input).map(orig -> _)
-        }
-      val outputAttrStats =AttributeMap(tuples)
-
-//      val outputAttrStats = getOutputMap(childStats.attributeStats, agg.output)
+      val outputAttrStats = getOutputMap(childStats.attributeStats, agg.output)
       Some(Statistics(
         sizeInBytes = getOutputSize(agg.output, outputRows, outputAttrStats),
         rowCount = Some(outputRows),

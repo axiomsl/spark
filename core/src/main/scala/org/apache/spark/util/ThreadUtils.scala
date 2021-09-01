@@ -333,10 +333,10 @@ private[spark] object ThreadUtils {
   /**
    * Construct a new Scala ForkJoinPool with a specified max parallelism and name prefix.
    */
-  def newForkJoinPool(prefix: String, maxThreadNumber: Int): java.util.concurrent.ForkJoinPool = {
+  def newForkJoinPool(prefix: String, maxThreadNumber: Int): SForkJoinPool = {
     // Custom factory to set thread names
-    val factory = new java.util.concurrent.ForkJoinPool.ForkJoinWorkerThreadFactory {
-      override def newThread(pool: java.util.concurrent.ForkJoinPool) =
+    val factory = new SForkJoinPool.ForkJoinWorkerThreadFactory {
+      override def newThread(pool: SForkJoinPool) =
         new SForkJoinWorkerThread(pool) {
           setName(prefix + "-" + super.getName)
         }

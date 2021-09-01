@@ -42,7 +42,6 @@ trait LogicalPlanVisitor[T] {
     case p: ScriptTransformation => visitScriptTransform(p)
     case p: Union => visitUnion(p)
     case p: Window => visitWindow(p)
-    case p: SubqueryAlias => visitSubqueryAlias(p)
     case p: LogicalPlan => default(p)
   }
 
@@ -85,6 +84,4 @@ trait LogicalPlanVisitor[T] {
   def visitUnion(p: Union): T
 
   def visitWindow(p: Window): T
-
-  def visitSubqueryAlias(p: SubqueryAlias): T
 }

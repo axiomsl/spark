@@ -49,13 +49,7 @@ case class FilterEstimation(plan: Filter) extends Logging {
     // For not-supported condition, set filter selectivity to a conservative estimate 100%
     val filterSelectivity = calculateFilterSelectivity(plan.condition).getOrElse(1.0)
 
-    val filteredRowCount: BigInt =
-      if (filterSelectivity.isInfinity) {
-        ceil(BigDecimal(childStats.rowCount.get) * 1.0)
-      } else {
-        ceil(BigDecimal(childStats.rowCount.get) * filterSelectivity)
-      }
-
+    val filteredRowCount: BigInt = ceil(BigDecimal(childStats.rowCount.get) * filterSelectivity)
     val newColStats = if (filteredRowCount == 0) {
       // The output is empty, we don't need to keep column stats.
       AttributeMap[ColumnStat](Nil)
@@ -337,7 +331,7 @@ case class FilterEstimation(plan: Filter) extends Logging {
       }
 
       if (colStat.histogram.isEmpty) {
-        if (colStat.distinctCount.isDefined && colStat.distinctCount.get.toDouble > 0) {
+        if (!colStat.distinctCount.isEmpty) {
           // returns 1/ndv if there is no histogram
           Some(1.0 / colStat.distinctCount.get.toDouble)
         } else {
