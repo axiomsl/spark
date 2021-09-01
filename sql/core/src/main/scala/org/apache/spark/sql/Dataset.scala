@@ -641,7 +641,6 @@ class Dataset[T] private[sql](
       LogicalRDD(
         logicalPlan.output,
         internalRdd,
-        Some(logicalPlan.stats),
         outputPartitioning,
         physicalPlan.outputOrdering,
         isStreaming
