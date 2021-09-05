@@ -21,17 +21,14 @@ import java.io._
 import java.net.URI
 import java.nio.charset.StandardCharsets
 import java.util.Locale
-import java.util.concurrent.ConcurrentHashMap
+import java.util.concurrent.{ConcurrentHashMap, TimeUnit}
 import java.util.function.Function
-
 import scala.collection.mutable.ArrayBuffer
-
 import org.apache.hadoop.conf.Configuration
-import org.apache.hadoop.fs.{FileSystem, FSDataOutputStream, Path}
+import org.apache.hadoop.fs.{FSDataOutputStream, FileSystem, Path}
 import org.apache.hadoop.fs.permission.FsPermission
 import org.json4s.JsonAST.JValue
 import org.json4s.jackson.JsonMethods._
-
 import org.apache.spark.{SPARK_VERSION, SparkConf}
 import org.apache.spark.deploy.SparkHadoopUtil
 import org.apache.spark.internal.Logging
@@ -91,6 +88,22 @@ private[spark] class EventLoggingListener(
   // Visible for tests only.
   private[scheduler] val logPath = getLogPath(logBaseDir, appId, appAttemptId, compressionCodecName)
 
+  private var stopped = false
+
+  private val syncThread = new Thread("event-log-sync") {
+    override def run(): Unit = {
+      while (!isInterrupted && !stopped) {
+        TimeUnit.MINUTES.sleep(5)
+        if (!stopped) {
+          logInfo("Flushing events to disk.")
+          writer.foreach(_.flush())
+          hadoopDataStream.foreach(_.hflush())
+        }
+      }
+    }
+  }
+  syncThread.setDaemon(true)
+
   /**
    * Creates the log file in the configured log directory.
    */
@@ -126,6 +139,7 @@ private[spark] class EventLoggingListener(
       EventLoggingListener.initEventLog(bstream, testing, loggedEvents)
       fileSystem.setPermission(path, LOG_FILE_PERMISSIONS)
       writer = Some(new PrintWriter(bstream))
+      syncThread.start()
       logInfo("Logging events to %s".format(logPath))
     } catch {
       case e: Exception =>
@@ -135,7 +149,7 @@ private[spark] class EventLoggingListener(
   }
 
   /** Log the event as JSON. */
-  private def logEvent(event: SparkListenerEvent, flushLogger: Boolean = false) {
+  private def logEvent(event: SparkListenerEvent, flushLogger: Boolean = false): Unit = {
     val eventJson = JsonProtocol.sparkEventToJson(event)
     // scalastyle:off println
     writer.foreach(_.println(compact(render(eventJson))))
@@ -243,6 +257,10 @@ private[spark] class EventLoggingListener(
    * ".inprogress" suffix.
    */
   def stop(): Unit = {
+    stopped = true
+    writer.foreach(_.flush())
+    hadoopDataStream.foreach(_.hflush())
+
     writer.foreach(_.close())
 
     val target = new Path(logPath)
