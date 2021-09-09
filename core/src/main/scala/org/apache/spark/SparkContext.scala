@@ -515,6 +515,9 @@ class SparkContext(config: SparkConf) extends Logging {
     // Attach the driver metrics servlet handler to the web ui after the metrics system is started.
     _env.metricsSystem.getServletHandlers.foreach(handler => ui.foreach(_.attachHandler(handler)))
 
+
+    def flushEventLog(): Unit = _eventLogger.foreach(_.flush())
+
     _eventLogger =
       if (isEventLogEnabled) {
         val logger =

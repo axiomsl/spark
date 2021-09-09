@@ -55,6 +55,11 @@ private[spark] class EventLoggingListener(
     hadoopConf: Configuration)
   extends SparkListener with Logging {
 
+  def flush(): Unit = {
+    writer.foreach(_.flush())
+    hadoopDataStream.foreach(_.hflush())
+  }
+
   import EventLoggingListener._
 
   def this(appId: String, appAttemptId : Option[String], logBaseDir: URI, sparkConf: SparkConf) =
