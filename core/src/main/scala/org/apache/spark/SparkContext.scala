@@ -360,6 +360,8 @@ class SparkContext(config: SparkConf) extends Logging {
     Utils.setLogLevel(org.apache.log4j.Level.toLevel(upperCased))
   }
 
+  def flushEventLog(): Unit = try { _eventLogger.foreach(_.flush()) }
+
   try {
     _conf = config.clone()
     _conf.validateSettings()
@@ -515,8 +517,6 @@ class SparkContext(config: SparkConf) extends Logging {
     // Attach the driver metrics servlet handler to the web ui after the metrics system is started.
     _env.metricsSystem.getServletHandlers.foreach(handler => ui.foreach(_.attachHandler(handler)))
 
-
-    def flushEventLog(): Unit = _eventLogger.foreach(_.flush())
 
     _eventLogger =
       if (isEventLogEnabled) {
