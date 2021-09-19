@@ -1032,7 +1032,7 @@ private[spark] class DAGScheduler(
     finalStage.setActiveJob(job)
     val stageIds = jobIdToStageIds(jobId).toArray
     val stageInfos = stageIds.flatMap(id => stageIdToStage.get(id).map(_.latestInfo))
-    val propertiesForEvent = buildPropertiesForStartJobEvent(properties)
+    val propertiesForEvent = buildPropertiesForStartEvent(properties)
 
     listenerBus.post(
       SparkListenerJobStart(job.jobId, jobSubmissionTime, stageInfos, propertiesForEvent))
@@ -1072,7 +1072,7 @@ private[spark] class DAGScheduler(
     finalStage.addActiveJob(job)
     val stageIds = jobIdToStageIds(jobId).toArray
     val stageInfos = stageIds.flatMap(id => stageIdToStage.get(id).map(_.latestInfo))
-    val propertiesForEvent: Properties = buildPropertiesForStartJobEvent(properties)
+    val propertiesForEvent: Properties = buildPropertiesForStartEvent(properties)
 
     listenerBus.post(
       SparkListenerJobStart(job.jobId, jobSubmissionTime, stageInfos, propertiesForEvent))
@@ -1084,7 +1084,7 @@ private[spark] class DAGScheduler(
     }
   }
 
-  private def buildPropertiesForStartJobEvent(properties: Properties): Properties = {
+  private def buildPropertiesForStartEvent(properties: Properties): Properties = {
     val propertiesForEvent = new Properties()
     properties.propertyNames()
       .asScala
@@ -1153,7 +1153,8 @@ private[spark] class DAGScheduler(
     } catch {
       case NonFatal(e) =>
         stage.makeNewStageAttempt(partitionsToCompute.size)
-        listenerBus.post(SparkListenerStageSubmitted(stage.latestInfo, properties))
+        val propertiesForEvent = buildPropertiesForStartEvent(properties)
+        listenerBus.post(SparkListenerStageSubmitted(stage.latestInfo, propertiesForEvent))
         abortStage(stage, s"Task creation failed: $e\n${Utils.exceptionString(e)}", Some(e))
         runningStages -= stage
         return
@@ -1167,7 +1168,8 @@ private[spark] class DAGScheduler(
     if (partitionsToCompute.nonEmpty) {
       stage.latestInfo.submissionTime = Some(clock.getTimeMillis())
     }
-    listenerBus.post(SparkListenerStageSubmitted(stage.latestInfo, properties))
+    val propertiesForEvent = buildPropertiesForStartEvent(properties)
+    listenerBus.post(SparkListenerStageSubmitted(stage.latestInfo, propertiesForEvent))
 
     // TODO: Maybe we can keep the taskBinary in Stage to avoid serializing it multiple times.
     // Broadcasted binary for the task, used to dispatch tasks to executors. Note that we broadcast
