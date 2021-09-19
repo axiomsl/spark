@@ -1088,7 +1088,12 @@ private[spark] class DAGScheduler(
     val propertiesForEvent = new Properties()
     properties.propertyNames()
       .asScala
-      .filterNot(n => n.toString.startsWith("spark"))
+      .filter {
+        n =>
+          n.toString == "spark.job.description" ||
+          n.toString == "spark.jobGroup.id" ||
+            !n.toString.startsWith("spark")
+      }
       .foreach(n => propertiesForEvent.setProperty(n.toString, properties.getProperty(n.toString)))
     propertiesForEvent
   }
