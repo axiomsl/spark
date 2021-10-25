@@ -33,6 +33,7 @@ import org.apache.spark.sql.catalyst.plans.logical.{LogicalPlan, Range}
 import org.apache.spark.sql.catalyst.trees.TreeNodeTag
 import org.apache.spark.sql.errors.QueryCompilationErrors
 import org.apache.spark.sql.types._
+import org.apache.spark.util.Utils
 
 
 /**
@@ -106,7 +107,9 @@ object FunctionRegistryBase {
    * Return an expression info and a function builder for the function as defined by
    * T using the given name.
    */
-  def build[T : ClassTag](name: String): (ExpressionInfo, Seq[Expression] => T) = {
+  def build[T : ClassTag](
+      name: String,
+      since: Option[String]): (ExpressionInfo, Seq[Expression] => T) = {
     val runtimeClass = scala.reflect.classTag[T].runtimeClass
     // For `RuntimeReplaceable`, skip the constructor with most arguments, which is the main
     // constructor and contains non-parameter `child` and should not be used as function builder.
@@ -149,13 +152,13 @@ object FunctionRegistryBase {
       }
     }
 
-    (expressionInfo(name), builder)
+    (expressionInfo(name, since), builder)
   }
 
   /**
    * Creates an [[ExpressionInfo]] for the function as defined by T using the given name.
    */
-  def expressionInfo[T : ClassTag](name: String): ExpressionInfo = {
+  def expressionInfo[T : ClassTag](name: String, since: Option[String]): ExpressionInfo = {
     val clazz = scala.reflect.classTag[T].runtimeClass
     val df = clazz.getAnnotation(classOf[ExpressionDescription])
     if (df != null) {
@@ -169,7 +172,7 @@ object FunctionRegistryBase {
           df.examples(),
           df.note(),
           df.group(),
-          df.since(),
+          since.getOrElse(df.since()),
           df.deprecated(),
           df.source())
       } else {
@@ -316,6 +319,20 @@ object FunctionRegistry {
   type FunctionBuilder = Seq[Expression] => Expression
 
   val FUNC_ALIAS = TreeNodeTag[String]("functionAliasName")
+
+  val expressionsForTimestampNTZSupport: Map[String, (ExpressionInfo, FunctionBuilder)] =
+    // SPARK-36227: Remove TimestampNTZ type support in Spark 3.2 with minimal code changes.
+    if (Utils.isTesting) {
+      Map(
+        expression[ParseToTimestampNTZ]("to_timestamp_ntz"),
+        expression[ParseToTimestampLTZ]("to_timestamp_ltz"),
+        expression[MakeTimestampNTZ]("make_timestamp_ntz"),
+        expression[MakeTimestampLTZ]("make_timestamp_ltz"),
+        expression[LocalTimestamp]("localtimestamp")
+      )
+    } else {
+      Map.empty
+    }
 
   // Note: Whenever we add a new entry here, make sure we also update ExpressionToSQLSuite
   val expressions: Map[String, (ExpressionInfo, FunctionBuilder)] = Map(
@@ -480,12 +497,12 @@ object FunctionRegistry {
     expression[RegExpExtract]("regexp_extract"),
     expression[RegExpExtractAll]("regexp_extract_all"),
     expression[RegExpReplace]("regexp_replace"),
-    expression[RLike]("regexp_like", true),
-    expression[RLike]("regexp", true),
     expression[StringRepeat]("repeat"),
     expression[StringReplace]("replace"),
     expression[Overlay]("overlay"),
     expression[RLike]("rlike"),
+    expression[RLike]("regexp_like", true, Some("3.2.0")),
+    expression[RLike]("regexp", true, Some("3.2.0")),
     expression[StringRPad]("rpad"),
     expression[StringTrimRight]("rtrim"),
     expression[Sentences]("sentences"),
@@ -541,7 +558,6 @@ object FunctionRegistry {
     expression[ParseToDate]("to_date"),
     expression[ToUnixTimestamp]("to_unix_timestamp"),
     expression[ToUTCTimestamp]("to_utc_timestamp"),
-    expression[ParseToTimestampNTZ]("to_timestamp_ntz"),
     expression[TruncDate]("trunc"),
     expression[TruncTimestamp]("date_trunc"),
     expression[UnixTimestamp]("unix_timestamp"),
@@ -550,6 +566,7 @@ object FunctionRegistry {
     expression[WeekOfYear]("weekofyear"),
     expression[Year]("year"),
     expression[TimeWindow]("window"),
+    expression[SessionWindow]("session_window"),
     expression[MakeDate]("make_date"),
     expression[MakeTimestamp]("make_timestamp"),
     expression[MakeInterval]("make_interval"),
@@ -707,7 +724,7 @@ object FunctionRegistry {
     expression[CsvToStructs]("from_csv"),
     expression[SchemaOfCsv]("schema_of_csv"),
     expression[StructsToCsv]("to_csv")
-  )
+  ) ++ expressionsForTimestampNTZSupport
 
   val builtin: SimpleFunctionRegistry = {
     val fr = new SimpleFunctionRegistry
@@ -720,10 +737,19 @@ object FunctionRegistry {
 
   val functionSet: Set[FunctionIdentifier] = builtin.listFunction().toSet
 
-  /** See usage above. */
-  private def expression[T <: Expression : ClassTag](name: String, setAlias: Boolean = false)
-      : (String, (ExpressionInfo, FunctionBuilder)) = {
-    val (expressionInfo, builder) = FunctionRegistryBase.build[T](name)
+  /**
+   * Create a SQL function builder and corresponding `ExpressionInfo`.
+   * @param name The function name.
+   * @param setAlias The alias name used in SQL representation string.
+   * @param since The Spark version since the function is added.
+   * @tparam T The actual expression class.
+   * @return (function name, (expression information, function builder))
+   */
+  private def expression[T <: Expression : ClassTag](
+      name: String,
+      setAlias: Boolean = false,
+      since: Option[String] = None): (String, (ExpressionInfo, FunctionBuilder)) = {
+    val (expressionInfo, builder) = FunctionRegistryBase.build[T](name, since)
     val newBuilder = (expressions: Seq[Expression]) => {
       val expr = builder(expressions)
       if (setAlias) expr.setTagValue(FUNC_ALIAS, name)
@@ -798,7 +824,7 @@ object TableFunctionRegistry {
 
   private def logicalPlan[T <: LogicalPlan : ClassTag](name: String)
       : (String, (ExpressionInfo, TableFunctionBuilder)) = {
-    val (info, builder) = FunctionRegistryBase.build[T](name)
+    val (info, builder) = FunctionRegistryBase.build[T](name, since = None)
     val newBuilder = (expressions: Seq[Expression]) => {
       try {
         builder(expressions)

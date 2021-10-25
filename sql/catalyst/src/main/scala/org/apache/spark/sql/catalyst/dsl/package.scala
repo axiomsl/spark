@@ -297,10 +297,6 @@ package object dsl {
       /** Creates a new AttributeReference of type timestamp */
       def timestamp: AttributeReference = AttributeReference(s, TimestampType, nullable = true)()
 
-      /** Creates a new AttributeReference of type timestamp without time zone */
-      def timestampNTZ: AttributeReference =
-        AttributeReference(s, TimestampNTZType, nullable = true)()
-
       /** Creates a new AttributeReference of the day-time interval type */
       def dayTimeInterval(startField: Byte, endField: Byte): AttributeReference = {
         AttributeReference(s, DayTimeIntervalType(startField, endField), nullable = true)()
@@ -389,6 +385,13 @@ package object dsl {
         joinType: JoinType = Inner,
         condition: Option[Expression] = None): LogicalPlan =
         Join(logicalPlan, otherPlan, joinType, condition, JoinHint.NONE)
+
+      def lateralJoin(
+          otherPlan: LogicalPlan,
+          joinType: JoinType = Inner,
+          condition: Option[Expression] = None): LogicalPlan = {
+        LateralJoin(logicalPlan, LateralSubquery(otherPlan), joinType, condition)
+      }
 
       def cogroup[Key: Encoder, Left: Encoder, Right: Encoder, Result: Encoder](
           otherPlan: LogicalPlan,

@@ -57,11 +57,11 @@ import org.apache.spark.sql.catalyst.util.CharVarcharUtils
 import org.apache.spark.sql.connector.catalog.SupportsNamespaces._
 import org.apache.spark.sql.errors.{QueryCompilationErrors, QueryExecutionErrors}
 import org.apache.spark.sql.execution.QueryExecutionException
-import org.apache.spark.sql.hive.{HiveExternalCatalog, HiveUtils}
+import org.apache.spark.sql.hive.HiveExternalCatalog
 import org.apache.spark.sql.hive.HiveExternalCatalog.DATASOURCE_SCHEMA
 import org.apache.spark.sql.internal.SQLConf
 import org.apache.spark.sql.types._
-import org.apache.spark.util.{CircularBuffer, Utils, VersionUtils}
+import org.apache.spark.util.{CircularBuffer, Utils}
 
 /**
  * A class that wraps the HiveClient and converts its responses to externally visible classes.
@@ -201,12 +201,13 @@ private[hive] class HiveClientImpl(
   }
 
   private def getHive(conf: HiveConf): Hive = {
-    VersionUtils.majorMinorPatchVersion(version.fullVersion).map {
-      case (2, 3, v) if v >= 9 => Hive.getWithoutRegisterFns(conf)
-      case _ => Hive.get(conf)
-    }.getOrElse {
-      throw QueryExecutionErrors.unsupportedHiveMetastoreVersionError(
-        version.fullVersion, HiveUtils.HIVE_METASTORE_VERSION.key)
+    try {
+      Hive.getWithoutRegisterFns(conf)
+    } catch {
+      // SPARK-37069: not all Hive versions have the above method (e.g., Hive 2.3.9 has it but
+      // 2.3.8 don't), therefore here we fallback when encountering the exception.
+      case _: NoSuchMethodError =>
+        Hive.get(conf)
     }
   }
 
@@ -999,8 +1000,11 @@ private[hive] object HiveClientImpl extends Logging {
     // For Hive Serde, we still need to to restore the raw type for char and varchar type.
     // When reading data in parquet, orc, or avro file format with string type for char,
     // the tailing spaces may lost if we are not going to pad it.
-    val typeString = CharVarcharUtils.getRawTypeString(c.metadata)
-      .getOrElse(HiveVoidType.replaceVoidType(c.dataType).catalogString)
+    val typeString = if (SQLConf.get.charVarcharAsString) {
+      c.dataType.catalogString
+    } else {
+      CharVarcharUtils.getRawTypeString(c.metadata).getOrElse(c.dataType.catalogString)
+    }
     new FieldSchema(c.name, typeString, c.getComment().orNull)
   }
 
@@ -1276,24 +1280,5 @@ private[hive] object HiveClientImpl extends Logging {
       hiveConf.set("hive.execution.engine", "mr")
     }
     hiveConf
-  }
-}
-
-private[hive] case object HiveVoidType extends DataType {
-  override def defaultSize: Int = 1
-  override def asNullable: DataType = HiveVoidType
-  override def simpleString: String = "void"
-
-  def replaceVoidType(dt: DataType): DataType = dt match {
-    case ArrayType(et, nullable) =>
-      ArrayType(replaceVoidType(et), nullable)
-    case MapType(kt, vt, nullable) =>
-      MapType(replaceVoidType(kt), replaceVoidType(vt), nullable)
-    case StructType(fields) =>
-      StructType(fields.map { field =>
-        field.copy(dataType = replaceVoidType(field.dataType))
-      })
-    case _: NullType => HiveVoidType
-    case _ => dt
   }
 }

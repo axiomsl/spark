@@ -30,7 +30,7 @@ from pyspark.pandas.missing.groupby import (
     MissingPandasLikeDataFrameGroupBy,
     MissingPandasLikeSeriesGroupBy,
 )
-from pyspark.pandas.groupby import is_multi_agg_with_relabel
+from pyspark.pandas.groupby import is_multi_agg_with_relabel, SeriesGroupBy
 from pyspark.testing.pandasutils import PandasOnSparkTestCase, TestUtils
 
 
@@ -2085,6 +2085,58 @@ class GroupByTest(PandasOnSparkTestCase, TestUtils):
         )
         self.assert_eq(acc.value, 4)
 
+    def test_apply_return_series(self):
+        # SPARK-36907: Fix DataFrameGroupBy.apply without shortcut.
+        pdf = pd.DataFrame(
+            {"a": [1, 2, 3, 4, 5, 6], "b": [1, 1, 2, 3, 5, 8], "c": [1, 4, 9, 16, 25, 36]},
+            columns=["a", "b", "c"],
+        )
+        psdf = ps.from_pandas(pdf)
+
+        self.assert_eq(
+            psdf.groupby("b").apply(lambda x: x.iloc[0]).sort_index(),
+            pdf.groupby("b").apply(lambda x: x.iloc[0]).sort_index(),
+        )
+        self.assert_eq(
+            psdf.groupby("b").apply(lambda x: x["a"]).sort_index(),
+            pdf.groupby("b").apply(lambda x: x["a"]).sort_index(),
+        )
+        self.assert_eq(
+            psdf.groupby(["b", "c"]).apply(lambda x: x.iloc[0]).sort_index(),
+            pdf.groupby(["b", "c"]).apply(lambda x: x.iloc[0]).sort_index(),
+        )
+        self.assert_eq(
+            psdf.groupby(["b", "c"]).apply(lambda x: x["a"]).sort_index(),
+            pdf.groupby(["b", "c"]).apply(lambda x: x["a"]).sort_index(),
+        )
+
+        # multi-index columns
+        columns = pd.MultiIndex.from_tuples([("x", "a"), ("x", "b"), ("y", "c")])
+        pdf.columns = columns
+        psdf.columns = columns
+
+        self.assert_eq(
+            psdf.groupby(("x", "b")).apply(lambda x: x.iloc[0]).sort_index(),
+            pdf.groupby(("x", "b")).apply(lambda x: x.iloc[0]).sort_index(),
+        )
+        self.assert_eq(
+            psdf.groupby(("x", "b")).apply(lambda x: x[("x", "a")]).sort_index(),
+            pdf.groupby(("x", "b")).apply(lambda x: x[("x", "a")]).sort_index(),
+        )
+        self.assert_eq(
+            psdf.groupby([("x", "b"), ("y", "c")]).apply(lambda x: x.iloc[0]).sort_index(),
+            pdf.groupby([("x", "b"), ("y", "c")]).apply(lambda x: x.iloc[0]).sort_index(),
+        )
+        self.assert_eq(
+            psdf.groupby([("x", "b"), ("y", "c")]).apply(lambda x: x[("x", "a")]).sort_index(),
+            pdf.groupby([("x", "b"), ("y", "c")]).apply(lambda x: x[("x", "a")]).sort_index(),
+        )
+
+    def test_apply_return_series_without_shortcut(self):
+        # SPARK-36907: Fix DataFrameGroupBy.apply without shortcut.
+        with ps.option_context("compute.shortcut_limit", 2):
+            self.test_apply_return_series()
+
     def test_transform(self):
         pdf = pd.DataFrame(
             {"a": [1, 2, 3, 4, 5, 6], "b": [1, 1, 2, 3, 5, 8], "c": [1, 4, 9, 16, 25, 36]},
@@ -2135,6 +2187,18 @@ class GroupByTest(PandasOnSparkTestCase, TestUtils):
             psdf.a.rename().groupby(psdf.b.rename()).transform(lambda x: x + x.min()).sort_index(),
             pdf.a.rename().groupby(pdf.b.rename()).transform(lambda x: x + x.min()).sort_index(),
         )
+        with self.assertRaisesRegex(TypeError, "str object is not callable"):
+            psdf.groupby("a").transform("sum")
+
+        def udf(col) -> int:
+            return col + 10
+
+        with self.assertRaisesRegex(
+            TypeError,
+            "Expected the return type of this function to be of Series type, "
+            "but found type ScalarType\\[LongType\\]",
+        ):
+            psdf.groupby("a").transform(udf)
 
         # multi-index columns
         columns = pd.MultiIndex.from_tuples([("x", "a"), ("x", "b"), ("y", "c")])
@@ -2853,6 +2917,18 @@ class GroupByTest(PandasOnSparkTestCase, TestUtils):
                 psdf.groupby("a")["b"].var(ddof=ddof).sort_index(),
                 check_exact=False,
             )
+
+    def test_getitem(self):
+        psdf = ps.DataFrame(
+            {
+                "a": [1, 1, 1, 1, 2, 2, 2, 3, 3, 3] * 3,
+                "b": [2, 3, 1, 4, 6, 9, 8, 10, 7, 5] * 3,
+                "c": [3, 5, 2, 5, 1, 2, 6, 4, 3, 6] * 3,
+            },
+            index=np.random.rand(10 * 3),
+        )
+
+        self.assertTrue(isinstance(psdf.groupby("a")["b"], SeriesGroupBy))
 
 
 if __name__ == "__main__":

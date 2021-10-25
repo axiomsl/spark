@@ -1838,7 +1838,8 @@ class SubquerySuite extends QueryTest with SharedSparkSession with AdaptiveSpark
   }
 
   test("Subquery reuse across the whole plan") {
-    withSQLConf(SQLConf.ADAPTIVE_EXECUTION_ENABLED.key -> "false") {
+    withSQLConf(SQLConf.ADAPTIVE_EXECUTION_ENABLED.key -> "false",
+      SQLConf.OPTIMIZE_ONE_ROW_RELATION_SUBQUERY.key -> "false") {
       val df = sql(
         """
           |SELECT (SELECT avg(key) FROM testData), (SELECT (SELECT avg(key) FROM testData))
@@ -1874,6 +1875,24 @@ class SubquerySuite extends QueryTest with SharedSparkSession with AdaptiveSpark
       assert(reusedSubqueryIds.size == 1, "Whole plan subquery reusing not working correctly")
       assert(reusedSubqueryIds.forall(subqueryIds.contains(_)),
         "ReusedSubqueryExec should reuse an existing subquery")
+    }
+  }
+
+  test("SPARK-36747: should not combine Project with Aggregate") {
+    withTempView("t") {
+      Seq((0, 1), (1, 2)).toDF("c1", "c2").createOrReplaceTempView("t")
+      checkAnswer(
+        sql("""
+              |SELECT m, (SELECT SUM(c2) FROM t WHERE c1 = m)
+              |FROM (SELECT MIN(c2) AS m FROM t)
+              |""".stripMargin),
+        Row(1, 2) :: Nil)
+      checkAnswer(
+        sql("""
+              |SELECT c, (SELECT SUM(c2) FROM t WHERE c1 = c)
+              |FROM (SELECT c1 AS c FROM t GROUP BY c1)
+              |""".stripMargin),
+        Row(0, 1) :: Row(1, 2) :: Nil)
     }
   }
 }

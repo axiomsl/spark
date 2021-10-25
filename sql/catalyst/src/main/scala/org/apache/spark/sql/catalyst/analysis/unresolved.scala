@@ -41,7 +41,7 @@ class UnresolvedException(function: String)
  * Holds the name of a relation that has yet to be looked up in a catalog.
  *
  * @param multipartIdentifier table name
- * @param options options to scan this relation. Only applicable to v2 table scan.
+ * @param options options to scan this relation.
  */
 case class UnresolvedRelation(
     multipartIdentifier: Seq[String],
@@ -168,6 +168,7 @@ case class UnresolvedAttribute(nameParts: Seq[String]) extends Attribute with Un
   override def withName(newName: String): UnresolvedAttribute = UnresolvedAttribute.quoted(newName)
   override def withMetadata(newMetadata: Metadata): Attribute = this
   override def withExprId(newExprId: ExprId): UnresolvedAttribute = this
+  override def withDataType(newType: DataType): Attribute = this
   final override val nodePatterns: Seq[TreePattern] = Seq(UNRESOLVED_ATTRIBUTE)
 
   override def toString: String = s"'$name"

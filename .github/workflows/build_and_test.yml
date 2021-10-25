@@ -1,10 +1,28 @@
+#
+# Licensed to the Apache Software Foundation (ASF) under one
+# or more contributor license agreements.  See the NOTICE file
+# distributed with this work for additional information
+# regarding copyright ownership.  The ASF licenses this file
+# to you under the Apache License, Version 2.0 (the
+# "License"); you may not use this file except in compliance
+# with the License.  You may obtain a copy of the License at
+#
+#   http://www.apache.org/licenses/LICENSE-2.0
+#
+# Unless required by applicable law or agreed to in writing,
+# software distributed under the License is distributed on an
+# "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY
+# KIND, either express or implied.  See the License for the
+# specific language governing permissions and limitations
+# under the License.
+#
+
 name: Build and test
 
 on:
   push:
     branches:
-    - '**'
-    - '!branch-*.*'
+      - '**'
 
 jobs:
   # Build: build Spark and run the tests for specified modules.
@@ -81,16 +99,14 @@ jobs:
       with:
         fetch-depth: 0
         repository: apache/spark
-        ref: master
+        ref: branch-3.2
     - name: Sync the current branch with the latest in Apache Spark
       if: github.repository != 'apache/spark'
-      id: sync-branch
       run: |
-        apache_spark_ref=`git rev-parse HEAD`
+        echo "APACHE_SPARK_REF=$(git rev-parse HEAD)" >> $GITHUB_ENV
         git fetch https://github.com/$GITHUB_REPOSITORY.git ${GITHUB_REF#refs/heads/}
         git -c user.name='Apache Spark Test Account' -c user.email='sparktestacc@gmail.com' merge --no-commit --progress --squash FETCH_HEAD
         git -c user.name='Apache Spark Test Account' -c user.email='sparktestacc@gmail.com' commit -m "Merged commit"
-        echo "::set-output name=APACHE_SPARK_REF::$apache_spark_ref"
     # Cache local repositories. Note that GitHub Actions cache has a 2G limit.
     - name: Cache Scala, SBT and Maven
       uses: actions/cache@v2
@@ -131,10 +147,10 @@ jobs:
     # Run the tests.
     - name: Run tests
       run: |
-        export APACHE_SPARK_REF=${{ steps.sync-branch.outputs.APACHE_SPARK_REF }}
-        # Hive and SQL tests become flaky when running in parallel as it's too intensive.
-        if [[ "$MODULES_TO_TEST" == "hive" ]] || [[ "$MODULES_TO_TEST" == "sql" ]]; then export SERIAL_SBT_TESTS=1; fi
-        ./dev/run-tests --parallelism 2 --modules "$MODULES_TO_TEST" --included-tags "$INCLUDED_TAGS" --excluded-tags "$EXCLUDED_TAGS"
+        # Hive "other tests" test needs larger metaspace size based on experiment.
+        if [[ "$MODULES_TO_TEST" == "hive" ]] && [[ "$EXCLUDED_TAGS" == "org.apache.spark.tags.SlowHiveTest" ]]; then export METASPACE_SIZE=2g; fi
+        export SERIAL_SBT_TESTS=1
+        ./dev/run-tests --parallelism 1 --modules "$MODULES_TO_TEST" --included-tags "$INCLUDED_TAGS" --excluded-tags "$EXCLUDED_TAGS"
     - name: Upload test results to report
       if: always()
       uses: actions/upload-artifact@v2
@@ -152,7 +168,7 @@ jobs:
     name: "Build modules: ${{ matrix.modules }}"
     runs-on: ubuntu-20.04
     container:
-      image: dongjoon/apache-spark-github-action-image:20210602
+      image: dongjoon/apache-spark-github-action-image:20210730
     strategy:
       fail-fast: false
       matrix:
@@ -171,6 +187,9 @@ jobs:
       HIVE_PROFILE: hive2.3
       GITHUB_PREV_SHA: ${{ github.event.before }}
       SPARK_LOCAL_IP: localhost
+      SKIP_UNIDOC: true
+      SKIP_MIMA: true
+      METASPACE_SIZE: 1g
     steps:
     - name: Checkout Spark repository
       uses: actions/checkout@v2
@@ -178,16 +197,14 @@ jobs:
       with:
         fetch-depth: 0
         repository: apache/spark
-        ref: master
+        ref: branch-3.2
     - name: Sync the current branch with the latest in Apache Spark
       if: github.repository != 'apache/spark'
-      id: sync-branch
       run: |
-        apache_spark_ref=`git rev-parse HEAD`
+        echo "APACHE_SPARK_REF=$(git rev-parse HEAD)" >> $GITHUB_ENV
         git fetch https://github.com/$GITHUB_REPOSITORY.git ${GITHUB_REF#refs/heads/}
         git -c user.name='Apache Spark Test Account' -c user.email='sparktestacc@gmail.com' merge --no-commit --progress --squash FETCH_HEAD
         git -c user.name='Apache Spark Test Account' -c user.email='sparktestacc@gmail.com' commit -m "Merged commit"
-        echo "::set-output name=APACHE_SPARK_REF::$apache_spark_ref"
     # Cache local repositories. Note that GitHub Actions cache has a 2G limit.
     - name: Cache Scala, SBT and Maven
       uses: actions/cache@v2
@@ -229,9 +246,8 @@ jobs:
     # Run the tests.
     - name: Run tests
       run: |
-        export APACHE_SPARK_REF=${{ steps.sync-branch.outputs.APACHE_SPARK_REF }}
         export PATH=$PATH:$HOME/miniconda/bin
-        ./dev/run-tests --parallelism 2 --modules "$MODULES_TO_TEST"
+        ./dev/run-tests --parallelism 1 --modules "$MODULES_TO_TEST"
     - name: Upload test results to report
       if: always()
       uses: actions/upload-artifact@v2
@@ -255,6 +271,7 @@ jobs:
       HIVE_PROFILE: hive2.3
       GITHUB_PREV_SHA: ${{ github.event.before }}
       SPARK_LOCAL_IP: localhost
+      SKIP_MIMA: true
     steps:
     - name: Checkout Spark repository
       uses: actions/checkout@v2
@@ -262,16 +279,14 @@ jobs:
       with:
         fetch-depth: 0
         repository: apache/spark
-        ref: master
+        ref: branch-3.2
     - name: Sync the current branch with the latest in Apache Spark
       if: github.repository != 'apache/spark'
-      id: sync-branch
       run: |
-        apache_spark_ref=`git rev-parse HEAD`
+        echo "APACHE_SPARK_REF=$(git rev-parse HEAD)" >> $GITHUB_ENV
         git fetch https://github.com/$GITHUB_REPOSITORY.git ${GITHUB_REF#refs/heads/}
         git -c user.name='Apache Spark Test Account' -c user.email='sparktestacc@gmail.com' merge --no-commit --progress --squash FETCH_HEAD
         git -c user.name='Apache Spark Test Account' -c user.email='sparktestacc@gmail.com' commit -m "Merged commit"
-        echo "::set-output name=APACHE_SPARK_REF::$apache_spark_ref"
     # Cache local repositories. Note that GitHub Actions cache has a 2G limit.
     - name: Cache Scala, SBT and Maven
       uses: actions/cache@v2
@@ -297,8 +312,7 @@ jobs:
         # R issues at docker environment
         export TZ=UTC
         export _R_CHECK_SYSTEM_CLOCK_=FALSE
-        export APACHE_SPARK_REF=${{ steps.sync-branch.outputs.APACHE_SPARK_REF }}
-        ./dev/run-tests --parallelism 2 --modules sparkr
+        ./dev/run-tests --parallelism 1 --modules sparkr
     - name: Upload test results to report
       if: always()
       uses: actions/upload-artifact@v2
@@ -313,6 +327,7 @@ jobs:
     env:
       LC_ALL: C.UTF-8
       LANG: C.UTF-8
+      PYSPARK_DRIVER_PYTHON: python3.9
     container:
       image: dongjoon/apache-spark-github-action-image:20210602
     steps:
@@ -321,10 +336,9 @@ jobs:
       with:
         fetch-depth: 0
         repository: apache/spark
-        ref: master
+        ref: branch-3.2
     - name: Sync the current branch with the latest in Apache Spark
       if: github.repository != 'apache/spark'
-      id: sync-branch
       run: |
         git fetch https://github.com/$GITHUB_REPOSITORY.git ${GITHUB_REF#refs/heads/}
         git -c user.name='Apache Spark Test Account' -c user.email='sparktestacc@gmail.com' merge --no-commit --progress --squash FETCH_HEAD
@@ -355,25 +369,18 @@ jobs:
         key: docs-maven-${{ hashFiles('**/pom.xml') }}
         restore-keys: |
           docs-maven-
-    - name: Install Python 3.6
-      uses: actions/setup-python@v2
-      with:
-        python-version: 3.6
-        architecture: x64
     - name: Install Python linter dependencies
       run: |
         # TODO(SPARK-32407): Sphinx 3.1+ does not correctly index nested classes.
         #   See also https://github.com/sphinx-doc/sphinx/issues/7551.
         # Jinja2 3.0.0+ causes error when building with Sphinx.
         #   See also https://issues.apache.org/jira/browse/SPARK-35375.
-        # TODO(SPARK-35684, SPARK-35683): Bump up the mypy version. This is blocked by
-        #   Index.difference logic issue.
-        python3.6 -m pip install flake8 pydata_sphinx_theme 'mypy==0.812' numpydoc 'jinja2<3.0.0' 'black==21.5b2'
+        python3.9 -m pip install flake8 pydata_sphinx_theme 'mypy==0.910' numpydoc 'jinja2<3.0.0' 'black==21.5b2'
     - name: Install R linter dependencies and SparkR
       run: |
         apt-get install -y libcurl4-openssl-dev libgit2-dev libssl-dev libxml2-dev
         Rscript -e "install.packages(c('devtools'), repos='https://cloud.r-project.org/')"
-        Rscript -e "devtools::install_github('jimhester/lintr@v2.0.1')"
+        Rscript -e "devtools::install_version('lintr', version='2.0.1', repos='https://cloud.r-project.org')"
         ./R/install-dev.sh
     - name: Instll JavaScript linter dependencies
       run: |
@@ -387,8 +394,8 @@ jobs:
         #   See also https://github.com/sphinx-doc/sphinx/issues/7551.
         # Jinja2 3.0.0+ causes error when building with Sphinx.
         #   See also https://issues.apache.org/jira/browse/SPARK-35375.
-        python3.6 -m pip install 'sphinx<3.1.0' mkdocs numpy pydata_sphinx_theme ipython nbsphinx numpydoc 'jinja2<3.0.0'
-        python3.6 -m pip install sphinx_plotly_directive 'pyarrow<5.0.0' pandas 'plotly>=4.8'
+        python3.9 -m pip install 'sphinx<3.1.0' mkdocs numpy pydata_sphinx_theme ipython nbsphinx numpydoc 'jinja2<3.0.0'
+        python3.9 -m pip install sphinx_plotly_directive 'pyarrow<5.0.0' pandas 'plotly>=4.8'
         apt-get update -y
         apt-get install -y ruby ruby-dev
         Rscript -e "install.packages(c('devtools', 'testthat', 'knitr', 'rmarkdown', 'roxygen2'), repos='https://cloud.r-project.org/')"
@@ -400,7 +407,7 @@ jobs:
     - name: Java linter
       run: ./dev/lint-java
     - name: Python linter
-      run: ./dev/lint-python
+      run: PYTHON_EXECUTABLE=python3.9 ./dev/lint-python
     - name: R linter
       run: ./dev/lint-r
     - name: JS linter
@@ -421,7 +428,7 @@ jobs:
       matrix:
         java:
           - 11
-          - 17-ea
+          - 17
     runs-on: ubuntu-20.04
     steps:
     - name: Checkout Spark repository
@@ -429,10 +436,9 @@ jobs:
       with:
         fetch-depth: 0
         repository: apache/spark
-        ref: master
+        ref: branch-3.2
     - name: Sync the current branch with the latest in Apache Spark
       if: github.repository != 'apache/spark'
-      id: sync-branch
       run: |
         git fetch https://github.com/$GITHUB_REPOSITORY.git ${GITHUB_REF#refs/heads/}
         git -c user.name='Apache Spark Test Account' -c user.email='sparktestacc@gmail.com' merge --no-commit --progress --squash FETCH_HEAD
@@ -477,10 +483,9 @@ jobs:
       with:
         fetch-depth: 0
         repository: apache/spark
-        ref: master
+        ref: branch-3.2
     - name: Sync the current branch with the latest in Apache Spark
       if: github.repository != 'apache/spark'
-      id: sync-branch
       run: |
         git fetch https://github.com/$GITHUB_REPOSITORY.git ${GITHUB_REF#refs/heads/}
         git -c user.name='Apache Spark Test Account' -c user.email='sparktestacc@gmail.com' merge --no-commit --progress --squash FETCH_HEAD
@@ -521,10 +526,9 @@ jobs:
       with:
         fetch-depth: 0
         repository: apache/spark
-        ref: master
+        ref: branch-3.2
     - name: Sync the current branch with the latest in Apache Spark
       if: github.repository != 'apache/spark'
-      id: sync-branch
       run: |
         git fetch https://github.com/$GITHUB_REPOSITORY.git ${GITHUB_REF#refs/heads/}
         git -c user.name='Apache Spark Test Account' -c user.email='sparktestacc@gmail.com' merge --no-commit --progress --squash FETCH_HEAD
@@ -566,10 +570,9 @@ jobs:
       with:
         fetch-depth: 0
         repository: apache/spark
-        ref: master
+        ref: branch-3.2
     - name: Sync the current branch with the latest in Apache Spark
       if: github.repository != 'apache/spark'
-      id: sync-branch
       run: |
         git fetch https://github.com/$GITHUB_REPOSITORY.git ${GITHUB_REF#refs/heads/}
         git -c user.name='Apache Spark Test Account' -c user.email='sparktestacc@gmail.com' merge --no-commit --progress --squash FETCH_HEAD
@@ -640,22 +643,21 @@ jobs:
       GITHUB_PREV_SHA: ${{ github.event.before }}
       SPARK_LOCAL_IP: localhost
       ORACLE_DOCKER_IMAGE_NAME: oracle/database:18.4.0-xe
+      SKIP_MIMA: true
     steps:
     - name: Checkout Spark repository
       uses: actions/checkout@v2
       with:
         fetch-depth: 0
         repository: apache/spark
-        ref: master
+        ref: branch-3.2
     - name: Sync the current branch with the latest in Apache Spark
       if: github.repository != 'apache/spark'
-      id: sync-branch
       run: |
-        apache_spark_ref=`git rev-parse HEAD`
+        echo "APACHE_SPARK_REF=$(git rev-parse HEAD)" >> $GITHUB_ENV
         git fetch https://github.com/$GITHUB_REPOSITORY.git ${GITHUB_REF#refs/heads/}
         git -c user.name='Apache Spark Test Account' -c user.email='sparktestacc@gmail.com' merge --no-commit --progress --squash FETCH_HEAD
         git -c user.name='Apache Spark Test Account' -c user.email='sparktestacc@gmail.com' commit -m "Merged commit"
-        echo "::set-output name=APACHE_SPARK_REF::$apache_spark_ref"
     - name: Cache Scala, SBT and Maven
       uses: actions/cache@v2
       with:
@@ -698,8 +700,7 @@ jobs:
         ./buildContainerImage.sh -v 18.4.0 -x
     - name: Run tests
       run: |
-        export APACHE_SPARK_REF=${{ steps.sync-branch.outputs.APACHE_SPARK_REF }}
-        ./dev/run-tests --parallelism 2 --modules docker-integration-tests --included-tags org.apache.spark.tags.DockerTest
+        ./dev/run-tests --parallelism 1 --modules docker-integration-tests --included-tags org.apache.spark.tags.DockerTest
     - name: Upload test results to report
       if: always()
       uses: actions/upload-artifact@v2

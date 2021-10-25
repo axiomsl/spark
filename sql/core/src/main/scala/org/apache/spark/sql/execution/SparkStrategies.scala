@@ -27,6 +27,7 @@ import org.apache.spark.sql.catalyst.optimizer.{BuildLeft, BuildRight, JoinSelec
 import org.apache.spark.sql.catalyst.planning._
 import org.apache.spark.sql.catalyst.plans._
 import org.apache.spark.sql.catalyst.plans.logical._
+import org.apache.spark.sql.catalyst.plans.physical.RoundRobinPartitioning
 import org.apache.spark.sql.catalyst.streaming.{InternalOutputModes, StreamingRelationV2}
 import org.apache.spark.sql.errors.{QueryCompilationErrors, QueryExecutionErrors}
 import org.apache.spark.sql.execution.aggregate.AggUtils
@@ -324,7 +325,9 @@ abstract class SparkStrategies extends QueryPlanner[SparkPlan] {
           throw QueryCompilationErrors.groupAggPandasUDFUnsupportedByStreamingAggError()
         }
 
-        val stateVersion = conf.getConf(SQLConf.STREAMING_AGGREGATION_STATE_FORMAT_VERSION)
+        val sessionWindowOption = namedGroupingExpressions.find { p =>
+          p.metadata.contains(SessionWindow.marker)
+        }
 
         // Ideally this should be done in `NormalizeFloatingNumbers`, but we do it here because
         // `groupingExpressions` is not extracted during logical phase.
@@ -335,12 +338,29 @@ abstract class SparkStrategies extends QueryPlanner[SparkPlan] {
           }
         }
 
-        AggUtils.planStreamingAggregation(
-          normalizedGroupingExpressions,
-          aggregateExpressions.map(expr => expr.asInstanceOf[AggregateExpression]),
-          rewrittenResultExpressions,
-          stateVersion,
-          planLater(child))
+        sessionWindowOption match {
+          case Some(sessionWindow) =>
+            val stateVersion = conf.getConf(SQLConf.STREAMING_SESSION_WINDOW_STATE_FORMAT_VERSION)
+
+            AggUtils.planStreamingAggregationForSession(
+              normalizedGroupingExpressions,
+              sessionWindow,
+              aggregateExpressions.map(expr => expr.asInstanceOf[AggregateExpression]),
+              rewrittenResultExpressions,
+              stateVersion,
+              conf.streamingSessionWindowMergeSessionInLocalPartition,
+              planLater(child))
+
+          case None =>
+            val stateVersion = conf.getConf(SQLConf.STREAMING_AGGREGATION_STATE_FORMAT_VERSION)
+
+            AggUtils.planStreamingAggregation(
+              normalizedGroupingExpressions,
+              aggregateExpressions.map(expr => expr.asInstanceOf[AggregateExpression]),
+              rewrittenResultExpressions,
+              stateVersion,
+              planLater(child))
+        }
 
       case _ => Nil
     }
@@ -601,6 +621,36 @@ abstract class SparkStrategies extends QueryPlanner[SparkPlan] {
     }
   }
 
+  /**
+   * Strategy to plan CTE relations left not inlined.
+   */
+  object WithCTEStrategy extends Strategy {
+    override def apply(plan: LogicalPlan): Seq[SparkPlan] = plan match {
+      case WithCTE(plan, cteDefs) =>
+        val cteMap = QueryExecution.cteMap
+        cteDefs.foreach { cteDef =>
+          cteMap.put(cteDef.id, cteDef)
+        }
+        planLater(plan) :: Nil
+
+      case r: CTERelationRef =>
+        val ctePlan = QueryExecution.cteMap(r.cteId).child
+        val projectList = r.output.zip(ctePlan.output).map { case (tgtAttr, srcAttr) =>
+          Alias(srcAttr, tgtAttr.name)(exprId = tgtAttr.exprId)
+        }
+        val newPlan = Project(projectList, ctePlan)
+        // Plan CTE ref as a repartition shuffle so that all refs of the same CTE def will share
+        // an Exchange reuse at runtime.
+        // TODO create a new identity partitioning instead of using RoundRobinPartitioning.
+        exchange.ShuffleExchangeExec(
+          RoundRobinPartitioning(conf.numShufflePartitions),
+          planLater(newPlan),
+          REPARTITION_BY_COL) :: Nil
+
+      case _ => Nil
+    }
+  }
+
   object BasicOperators extends Strategy {
     def apply(plan: LogicalPlan): Seq[SparkPlan] = plan match {
       case d: DataWritingCommand => DataWritingCommandExec(d, planLater(d.query)) :: Nil
@@ -662,6 +712,8 @@ abstract class SparkStrategies extends QueryPlanner[SparkPlan] {
           func, output, planLater(left), planLater(right)) :: Nil
       case logical.MapInPandas(func, output, child) =>
         execution.python.MapInPandasExec(func, output, planLater(child)) :: Nil
+      case logical.AttachDistributedSequence(attr, child) =>
+        execution.python.AttachDistributedSequenceExec(attr, planLater(child)) :: Nil
       case logical.MapElements(f, _, _, objAttr, child) =>
         execution.MapElementsExec(f, objAttr, planLater(child)) :: Nil
       case logical.AppendColumns(f, _, _, in, out, child) =>
@@ -671,9 +723,14 @@ abstract class SparkStrategies extends QueryPlanner[SparkPlan] {
       case logical.MapGroups(f, key, value, grouping, data, objAttr, child) =>
         execution.MapGroupsExec(f, key, value, grouping, data, objAttr, planLater(child)) :: Nil
       case logical.FlatMapGroupsWithState(
-          f, key, value, grouping, data, output, _, _, _, timeout, _, _, _, _, _, child) =>
-        execution.MapGroupsExec(
-          f, key, value, grouping, data, output, timeout, planLater(child)) :: Nil
+          f, keyDeserializer, valueDeserializer, grouping, data, output, stateEncoder, outputMode,
+          isFlatMapGroupsWithState, timeout, hasInitialState, initialStateGroupAttrs,
+          initialStateDataAttrs, initialStateDeserializer, initialState, child) =>
+        FlatMapGroupsWithStateExec.generateSparkPlanForBatchQueries(
+          f, keyDeserializer, valueDeserializer, initialStateDeserializer, grouping,
+          initialStateGroupAttrs, data, initialStateDataAttrs, output, timeout,
+          hasInitialState, planLater(initialState), planLater(child)
+        ) :: Nil
       case logical.CoGroup(f, key, lObj, rObj, lGroup, rGroup, lAttr, rAttr, oAttr, left, right) =>
         execution.CoGroupExec(
           f, key, lObj, rObj, lGroup, rGroup, lAttr, rAttr, oAttr,

@@ -33,6 +33,7 @@ import numpy as np
 from pyspark import pandas as ps  # noqa: F401
 from pyspark.pandas._typing import Label, Name, Scalar
 from pyspark.pandas.internal import (
+    DEFAULT_SERIES_NAME,
     InternalField,
     InternalFrame,
     NATURAL_ORDER_COLUMN_NAME,
@@ -435,11 +436,12 @@ class LocIndexerLike(IndexerLike, metaclass=ABCMeta):
 
         if self._is_series:
             if isinstance(key, Series) and not same_anchor(key, self._psdf_or_psser):
-                psdf = self._psdf_or_psser.to_frame()
+                name = self._psdf_or_psser.name or DEFAULT_SERIES_NAME
+                psdf = self._psdf_or_psser.to_frame(name)
                 temp_col = verify_temp_column_name(psdf, "__temp_col__")
 
                 psdf[temp_col] = key
-                return type(self)(psdf[self._psdf_or_psser.name])[psdf[temp_col]]
+                return type(self)(psdf[name].rename(self._psdf_or_psser.name))[psdf[temp_col]]
 
             cond, limit, remaining_index = self._select_rows(key)
             if cond is None and limit is None:
@@ -1536,22 +1538,10 @@ class iLocIndexer(LocIndexerLike):
     def _internal(self) -> "InternalFrame":
         # Use resolved_copy to fix the natural order.
         internal = super()._internal.resolved_copy
-        sdf, force_nullable = InternalFrame.attach_distributed_sequence_column(
+        sdf = InternalFrame.attach_distributed_sequence_column(
             internal.spark_frame, column_name=self._sequence_col
         )
-        return internal.with_new_sdf(
-            spark_frame=sdf.orderBy(NATURAL_ORDER_COLUMN_NAME),
-            index_fields=(
-                [field.copy(nullable=True) for field in internal.index_fields]
-                if force_nullable
-                else internal.index_fields
-            ),
-            data_fields=(
-                [field.copy(nullable=True) for field in internal.data_fields]
-                if force_nullable
-                else internal.data_fields
-            ),
-        )
+        return internal.with_new_sdf(spark_frame=sdf.orderBy(NATURAL_ORDER_COLUMN_NAME))
 
     @lazy_property
     def _sequence_col(self) -> str:
@@ -1646,14 +1636,14 @@ class iLocIndexer(LocIndexerLike):
     ) -> Tuple[Optional[Column], Optional[int], Optional[int]]:
         sdf = self._internal.spark_frame
 
-        if any(isinstance(key, (int, np.int, np.int64, np.int32)) and key < 0 for key in rows_sel):
+        if any(isinstance(key, (int, np.int64, np.int32)) and key < 0 for key in rows_sel):
             offset = sdf.count()
         else:
             offset = 0
 
         new_rows_sel = []
         for key in list(rows_sel):
-            if not isinstance(key, (int, np.int, np.int64, np.int32)):
+            if not isinstance(key, (int, np.int64, np.int32)):
                 raise TypeError(
                     "cannot do positional indexing with these indexers [{}] of {}".format(
                         key, type(key)

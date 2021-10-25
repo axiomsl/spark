@@ -193,9 +193,27 @@ class DataFrameAggregateSuite extends QueryTest
     intercept[AnalysisException] {
       courseSales.groupBy().agg(grouping("course")).explain()
     }
+
     intercept[AnalysisException] {
       courseSales.groupBy().agg(grouping_id("course")).explain()
     }
+
+    val groupingColMismatchEx = intercept[AnalysisException] {
+      courseSales.cube("course", "year").agg(grouping("earnings")).explain()
+    }
+    assert(groupingColMismatchEx.getErrorClass == "GROUPING_COLUMN_MISMATCH")
+    assert(groupingColMismatchEx.getMessage.matches(
+      "Column of grouping \\(earnings.*\\) can't be found in grouping columns course.*,year.*"))
+
+
+    val groupingIdColMismatchEx = intercept[AnalysisException] {
+      courseSales.cube("course", "year").agg(grouping_id("earnings")).explain()
+    }
+    assert(groupingIdColMismatchEx.getErrorClass == "GROUPING_ID_COLUMN_MISMATCH")
+    assert(groupingIdColMismatchEx.getMessage.matches(
+      "Columns of grouping_id \\(earnings.*\\) does not match " +
+        "grouping columns \\(course.*,year.*\\)"),
+      groupingIdColMismatchEx.getMessage)
   }
 
   test("grouping/grouping_id inside window function") {
@@ -1397,6 +1415,12 @@ class DataFrameAggregateSuite extends QueryTest
     checkAnswer(df1, Row(Duration.ofDays(1), 1))
     val df2 = Seq(Period.ofYears(1)).toDF("a").groupBy("a").count()
     checkAnswer(df2, Row(Period.ofYears(1), 1))
+  }
+
+  test("SPARK-36926: decimal average mistakenly overflow") {
+    val df = (1 to 10).map(_ => "9999999999.99").toDF("d")
+    val res = df.select($"d".cast("decimal(12, 2)").as("d")).agg(avg($"d").cast("string"))
+    checkAnswer(res, Row("9999999999.990000"))
   }
 }
 

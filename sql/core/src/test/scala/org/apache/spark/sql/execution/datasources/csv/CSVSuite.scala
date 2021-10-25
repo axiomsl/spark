@@ -29,6 +29,7 @@ import scala.collection.JavaConverters._
 import scala.util.Properties
 
 import com.univocity.parsers.common.TextParsingException
+import org.apache.commons.lang3.exception.ExceptionUtils
 import org.apache.commons.lang3.time.FastDateFormat
 import org.apache.hadoop.io.SequenceFile.CompressionType
 import org.apache.hadoop.io.compress.GzipCodec
@@ -365,6 +366,7 @@ abstract class CSVSuite
       }
 
       assert(exception.getMessage.contains("Malformed CSV record"))
+      assert(ExceptionUtils.getRootCause(exception).isInstanceOf[RuntimeException])
     }
   }
 
@@ -2344,7 +2346,7 @@ abstract class CSVSuite
   }
 
   test("exception mode for parsing date/timestamp string") {
-    val ds = Seq("2020-01-27T20:06:11.847-0800").toDS()
+    val ds = Seq("2020-01-27T20:06:11.847-08000").toDS()
     val csv = spark.read
       .option("header", false)
       .option("timestampFormat", "yyyy-MM-dd'T'HH:mm:ss.SSSz")

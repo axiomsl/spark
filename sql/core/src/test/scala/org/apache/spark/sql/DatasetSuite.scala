@@ -2008,11 +2008,6 @@ class DatasetSuite extends QueryTest
     checkAnswer(withUDF, Row(Row(1), null, null) :: Row(Row(1), null, null) :: Nil)
   }
 
-  test("SPARK-35664: implicit encoder for java.time.LocalDateTime") {
-    val localDateTime = java.time.LocalDateTime.parse("2021-06-08T12:31:58.999999")
-    assert(Seq(localDateTime).toDS().head() === localDateTime)
-  }
-
   test("SPARK-34605: implicit encoder for java.time.Duration") {
     val duration = java.time.Duration.ofMinutes(10)
     assert(spark.range(1).map { _ => duration }.head === duration)
@@ -2039,6 +2034,23 @@ class DatasetSuite extends QueryTest
     checkDataset(
       joined,
       (1, 1), (2, 2), (3, 3))
+  }
+
+  test("SPARK-36210: withColumns preserve insertion ordering") {
+    val df = Seq(1, 2, 3).toDS()
+
+    val colNames = (1 to 10).map(i => s"value${i}")
+    val cols = (1 to 10).map(i => col("value") + i)
+
+    val inserted = df.withColumns(colNames, cols)
+
+    assert(inserted.columns === "value" +: colNames)
+
+    checkDataset(
+      inserted.as[(Int, Int, Int, Int, Int, Int, Int, Int, Int, Int, Int)],
+      (1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11),
+      (2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12),
+      (3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13))
   }
 }
 

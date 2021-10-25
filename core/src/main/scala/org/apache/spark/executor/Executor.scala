@@ -315,23 +315,30 @@ private[spark] class Executor(
       ShutdownHookManager.removeShutdownHook(stopHookReference)
       env.metricsSystem.report()
       try {
-        metricsPoller.stop()
+        if (metricsPoller != null) {
+          metricsPoller.stop()
+        }
       } catch {
         case NonFatal(e) =>
           logWarning("Unable to stop executor metrics poller", e)
       }
       try {
-        heartbeater.stop()
+        if (heartbeater != null) {
+          heartbeater.stop()
+        }
       } catch {
         case NonFatal(e) =>
           logWarning("Unable to stop heartbeater", e)
       }
       ShuffleBlockPusher.stop()
-      threadPool.shutdown()
-
-      // Notify plugins that executor is shutting down so they can terminate cleanly
-      Utils.withContextClassLoader(replClassLoader) {
-        plugins.foreach(_.shutdown())
+      if (threadPool != null) {
+        threadPool.shutdown()
+      }
+      if (replClassLoader != null && plugins != null) {
+        // Notify plugins that executor is shutting down so they can terminate cleanly
+        Utils.withContextClassLoader(replClassLoader) {
+          plugins.foreach(_.shutdown())
+        }
       }
       if (!isLocal) {
         env.stop()
@@ -878,8 +885,6 @@ private[spark] class Executor(
     val urls = userClassPath.toArray ++ currentJars.keySet.map { uri =>
       new File(uri.split("/").last).toURI.toURL
     }
-    logInfo(s"Starting executor with user classpath (userClassPathFirst = $userClassPathFirst): " +
-        urls.mkString("'", ",", "'"))
     if (userClassPathFirst) {
       new ChildFirstURLClassLoader(urls, currentLoader)
     } else {
