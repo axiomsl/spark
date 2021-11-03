@@ -21,7 +21,7 @@
   <parent>
     <groupId>org.apache.spark</groupId>
     <artifactId>spark-parent_2.12</artifactId>
-    <version>3.2.1-SNAPSHOT</version>
+    <version>3.2.0-AX</version>
     <relativePath>../pom.xml</relativePath>
   </parent>
 
@@ -215,6 +215,10 @@
     <dependency>
       <groupId>log4j</groupId>
       <artifactId>log4j</artifactId>
+    </dependency>
+    <dependency>
+      <groupId>log4j</groupId>
+      <artifactId>apache-log4j-extras</artifactId>
     </dependency>
     <dependency>
       <groupId>org.slf4j</groupId>
@@ -536,9 +540,9 @@
             <configuration>
               <!-- Execute the shell script to generate the spark build information. -->
               <target>
-                <exec executable="bash">
-                  <arg value="${project.basedir}/../build/spark-build-info"/>
-                  <arg value="${project.build.directory}/extra-resources"/>
+                <exec executable="bash" dir="${project.basedir}">
+                  <arg value="../build/spark-build-info"/>
+                  <arg value="target/extra-resources"/>
                   <arg value="${project.version}"/>
                 </exec>
               </target>

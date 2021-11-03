@@ -69,6 +69,11 @@ abstract class EventLogFileWriter(
     CompressionCodec.getShortName(c.getClass.getName)
   }
 
+  def flush(): Unit = {
+    writer.foreach(_.flush())
+    hadoopDataStream.foreach(_.hflush())
+  }
+
   // Only defined if the file system scheme is not local
   protected var hadoopDataStream: Option[FSDataOutputStream] = None
   protected var writer: Option[PrintWriter] = None
