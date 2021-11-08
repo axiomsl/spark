@@ -40,7 +40,7 @@ class StringType private() extends AtomicType {
   /**
    * The default size of a value of the StringType is 20 bytes.
    */
-  override def defaultSize: Int = 20
+  override def defaultSize: Int = 4096
 
   private[spark] override def asNullable: StringType = this
 }
