@@ -159,6 +159,7 @@ case class BroadcastExchangeExec(
 
             longMetric("dataSize") += dataSize
             if (dataSize >= MAX_BROADCAST_TABLE_BYTES) {
+              logError(s"[Cannot Broadcast Table Over Max Table Bytes] ${this.schemaString}")
               throw QueryExecutionErrors.cannotBroadcastTableOverMaxTableBytesError(
                 MAX_BROADCAST_TABLE_BYTES, dataSize)
             }
