@@ -17,6 +17,7 @@
 
 package org.apache.spark.sql.catalyst.plans.logical.statsEstimation
 
+import org.apache.spark.internal.Logging
 import org.apache.spark.sql.catalyst.expressions.AttributeMap
 import org.apache.spark.sql.catalyst.plans.{LeftAnti, LeftSemi}
 import org.apache.spark.sql.catalyst.plans.logical._
@@ -24,7 +25,7 @@ import org.apache.spark.sql.catalyst.plans.logical._
 /**
  * An [[LogicalPlanVisitor]] that computes a single dimension for plan stats: size in bytes.
  */
-object SizeInBytesOnlyStatsPlanVisitor extends LogicalPlanVisitor[Statistics] {
+object SizeInBytesOnlyStatsPlanVisitor extends LogicalPlanVisitor[Statistics] with Logging {
 
   /**
    * A default, commonly used estimation for unary nodes. We assume the input row number is the
@@ -42,7 +43,7 @@ object SizeInBytesOnlyStatsPlanVisitor extends LogicalPlanVisitor[Statistics] {
       // (product of children).
       sizeInBytes = 1
     }
-
+    logInfo(s"Statistics for [${p.nodeName}] [${p.schemaString}]; sizeInBytes = [$sizeInBytes]")
     // Don't propagate rowCount and attributeStats, since they are not estimated here.
     Statistics(sizeInBytes = sizeInBytes)
   }
