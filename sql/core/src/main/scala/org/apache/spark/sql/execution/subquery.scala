@@ -19,12 +19,12 @@ package org.apache.spark.sql.execution
 
 import scala.collection.mutable
 import scala.collection.mutable.ArrayBuffer
-
 import org.apache.spark.sql.SparkSession
-import org.apache.spark.sql.catalyst.{expressions, InternalRow}
-import org.apache.spark.sql.catalyst.expressions.{Expression, ExprId, InSet, Literal, PlanExpression}
+import org.apache.spark.sql.catalyst.{InternalRow, expressions}
+import org.apache.spark.sql.catalyst.expressions.{ExprId, Expression, InSet, Literal, PlanExpression}
 import org.apache.spark.sql.catalyst.expressions.codegen.{CodegenContext, ExprCode}
 import org.apache.spark.sql.catalyst.rules.Rule
+import org.apache.spark.sql.catalyst.trees.{LeafLike, UnaryLike}
 import org.apache.spark.sql.internal.SQLConf
 import org.apache.spark.sql.types.{BooleanType, DataType, StructType}
 
@@ -46,10 +46,9 @@ abstract class ExecSubqueryExpression extends PlanExpression[SubqueryExec] {
 case class ScalarSubquery(
     plan: SubqueryExec,
     exprId: ExprId)
-  extends ExecSubqueryExpression {
+  extends ExecSubqueryExpression with LeafLike[Expression] {
 
   override def dataType: DataType = plan.schema.fields.head.dataType
-  override def children: Seq[Expression] = Nil
   override def nullable: Boolean = true
   override def toString: String = plan.simpleString
   override def withNewPlan(query: SubqueryExec): ScalarSubquery = copy(plan = query)
@@ -98,10 +97,9 @@ case class InSubquery(
     plan: SubqueryExec,
     exprId: ExprId,
     private var result: Array[Any] = null,
-    private var updated: Boolean = false) extends ExecSubqueryExpression {
+    private var updated: Boolean = false) extends ExecSubqueryExpression with UnaryLike[Expression] {
 
   override def dataType: DataType = BooleanType
-  override def children: Seq[Expression] = child :: Nil
   override def nullable: Boolean = child.nullable
   override def toString: String = s"$child IN ${plan.name}"
   override def withNewPlan(plan: SubqueryExec): InSubquery = copy(plan = plan)
@@ -131,6 +129,9 @@ case class InSubquery(
     require(updated, s"$this has not finished")
     InSet(child, result.toSet).doGenCode(ctx, ev)
   }
+
+  override protected def withNewChildInternal(newChild: Expression): InSubquery =
+    copy(child = newChild)
 }
 
 /**

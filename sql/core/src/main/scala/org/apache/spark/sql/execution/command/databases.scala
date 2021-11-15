@@ -31,7 +31,7 @@ import org.apache.spark.sql.types.StringType
  *   SHOW (DATABASES|SCHEMAS) [LIKE 'identifier_with_wildcards'];
  * }}}
  */
-case class ShowDatabasesCommand(databasePattern: Option[String]) extends RunnableCommand {
+case class ShowDatabasesCommand(databasePattern: Option[String]) extends LeafRunnableCommand {
 
   // The result of SHOW DATABASES has one column called 'databaseName'
   override val output: Seq[Attribute] = {
@@ -53,7 +53,7 @@ case class ShowDatabasesCommand(databasePattern: Option[String]) extends Runnabl
  *   USE database_name;
  * }}}
  */
-case class SetDatabaseCommand(databaseName: String) extends RunnableCommand {
+case class SetDatabaseCommand(databaseName: String) extends LeafRunnableCommand {
 
   override def run(sparkSession: SparkSession): Seq[Row] = {
     sparkSession.sessionState.catalog.setCurrentDatabase(databaseName)

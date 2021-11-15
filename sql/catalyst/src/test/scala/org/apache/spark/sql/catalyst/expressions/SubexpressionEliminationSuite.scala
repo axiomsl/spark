@@ -166,4 +166,6 @@ class SubexpressionEliminationSuite extends SparkFunSuite {
 case class CodegenFallbackExpression(child: Expression)
   extends UnaryExpression with CodegenFallback {
   override def dataType: DataType = child.dataType
+  override protected def withNewChildInternal(newChild: Expression): CodegenFallbackExpression =
+    copy(child = newChild)
 }

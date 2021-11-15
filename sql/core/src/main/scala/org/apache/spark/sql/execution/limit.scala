@@ -44,6 +44,9 @@ case class CollectLimitExec(limit: Int, child: SparkPlan) extends UnaryExecNode 
         locallyLimited, child.output, SinglePartition, serializer))
     shuffled.mapPartitionsInternal(_.take(limit))
   }
+
+  override protected def withNewChildInternal(newChild: SparkPlan): SparkPlan =
+    copy(child = newChild)
 }
 
 /**
@@ -100,6 +103,9 @@ case class LocalLimitExec(limit: Int, child: SparkPlan) extends BaseLimitExec {
   override def outputOrdering: Seq[SortOrder] = child.outputOrdering
 
   override def outputPartitioning: Partitioning = child.outputPartitioning
+
+  override protected def withNewChildInternal(newChild: SparkPlan): SparkPlan =
+    copy(child = newChild)
 }
 
 /**
@@ -112,6 +118,9 @@ case class GlobalLimitExec(limit: Int, child: SparkPlan) extends BaseLimitExec {
   override def outputPartitioning: Partitioning = child.outputPartitioning
 
   override def outputOrdering: Seq[SortOrder] = child.outputOrdering
+
+  override protected def withNewChildInternal(newChild: SparkPlan): SparkPlan =
+    copy(child = newChild)
 }
 
 /**
@@ -175,4 +184,7 @@ case class TakeOrderedAndProjectExec(
 
     s"TakeOrderedAndProject(limit=$limit, orderBy=$orderByString, output=$outputString)"
   }
+
+  override protected def withNewChildInternal(newChild: SparkPlan): SparkPlan =
+    copy(child = newChild)
 }

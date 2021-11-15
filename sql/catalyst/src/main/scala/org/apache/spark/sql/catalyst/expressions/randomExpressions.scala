@@ -100,6 +100,8 @@ case class Rand(child: Expression) extends RDG with ExpressionWithRandomSeed {
   }
 
   override def freshCopy(): Rand = Rand(child)
+
+  override protected def withNewChildInternal(newChild: Expression): Rand = copy(child = newChild)
 }
 
 object Rand {
@@ -141,6 +143,8 @@ case class Randn(child: Expression) extends RDG with ExpressionWithRandomSeed {
   }
 
   override def freshCopy(): Randn = Randn(child)
+
+  override protected def withNewChildInternal(newChild: Expression): Randn = copy(child = newChild)
 }
 
 object Randn {

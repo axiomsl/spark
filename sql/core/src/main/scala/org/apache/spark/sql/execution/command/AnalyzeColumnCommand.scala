@@ -37,7 +37,7 @@ import org.apache.spark.sql.types._
  */
 case class AnalyzeColumnCommand(
     tableIdent: TableIdentifier,
-    columnNames: Seq[String]) extends RunnableCommand {
+    columnNames: Seq[String]) extends LeafRunnableCommand {
 
   override def run(sparkSession: SparkSession): Seq[Row] = {
     val sessionState = sparkSession.sessionState

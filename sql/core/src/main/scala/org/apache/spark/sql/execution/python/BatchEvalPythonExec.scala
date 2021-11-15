@@ -37,6 +37,9 @@ case class BatchEvalPython(
     output: Seq[Attribute],
     child: LogicalPlan) extends UnaryNode {
   override def producedAttributes: AttributeSet = AttributeSet(output.drop(child.output.length))
+
+  override protected def withNewChildInternal(newChild: LogicalPlan): LogicalPlan =
+    copy(child = newChild)
 }
 
 /**
@@ -103,4 +106,7 @@ case class BatchEvalPythonExec(udfs: Seq[PythonUDF], output: Seq[Attribute], chi
       }
     }
   }
+
+  override protected def withNewChildInternal(newChild: SparkPlan): BatchEvalPythonExec =
+    copy(child = newChild)
 }

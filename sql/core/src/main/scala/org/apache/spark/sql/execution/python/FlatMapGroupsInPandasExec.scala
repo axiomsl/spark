@@ -148,4 +148,7 @@ case class FlatMapGroupsInPandasExec(
       columnarBatchIter.flatMap(_.rowIterator.asScala).map(UnsafeProjection.create(output, output))
     }
   }
+
+  override protected def withNewChildInternal(newChild: SparkPlan): FlatMapGroupsInPandasExec =
+    copy(child = newChild)
 }

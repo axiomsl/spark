@@ -29,7 +29,6 @@ case class KnownNotNull(child: Expression) extends UnaryExpression {
     child.genCode(ctx).copy(isNull = FalseLiteral)
   }
 
-  override def eval(input: InternalRow): Any = {
-    child.eval(input)
-  }
+  override protected def withNewChildInternal(newChild: Expression): KnownNotNull =
+    copy(child = newChild)
 }

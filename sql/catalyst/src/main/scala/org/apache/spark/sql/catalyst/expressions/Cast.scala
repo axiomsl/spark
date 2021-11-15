@@ -202,6 +202,8 @@ object Cast {
 case class Cast(child: Expression, dataType: DataType, timeZoneId: Option[String] = None)
   extends UnaryExpression with TimeZoneAwareExpression with NullIntolerant {
 
+  override protected def withNewChildInternal(newChild: Expression): Cast = copy(child = newChild)
+
   def this(child: Expression, dataType: DataType) = this(child, dataType, None)
 
   override def toString: String = s"cast($child as ${dataType.simpleString})"
@@ -1376,4 +1378,6 @@ if ($d.changePrecision(${decimalType.precision}, ${decimalType.scale})) {
 case class UpCast(child: Expression, dataType: DataType, walkedTypePath: Seq[String])
   extends UnaryExpression with Unevaluable {
   override lazy val resolved = false
+
+  override protected def withNewChildInternal(newChild: Expression): UpCast = copy(child = newChild)
 }

@@ -63,7 +63,7 @@ case class CreateDatabaseCommand(
     path: Option[String],
     comment: Option[String],
     props: Map[String, String])
-  extends RunnableCommand {
+  extends LeafRunnableCommand {
 
   override def run(sparkSession: SparkSession): Seq[Row] = {
     val catalog = sparkSession.sessionState.catalog
@@ -99,7 +99,7 @@ case class DropDatabaseCommand(
     databaseName: String,
     ifExists: Boolean,
     cascade: Boolean)
-  extends RunnableCommand {
+  extends LeafRunnableCommand {
 
   override def run(sparkSession: SparkSession): Seq[Row] = {
     sparkSession.sessionState.catalog.dropDatabase(databaseName, ifExists, cascade)
@@ -119,7 +119,7 @@ case class DropDatabaseCommand(
 case class AlterDatabasePropertiesCommand(
     databaseName: String,
     props: Map[String, String])
-  extends RunnableCommand {
+  extends LeafRunnableCommand {
 
   override def run(sparkSession: SparkSession): Seq[Row] = {
     val catalog = sparkSession.sessionState.catalog
@@ -143,7 +143,7 @@ case class AlterDatabasePropertiesCommand(
 case class DescribeDatabaseCommand(
     databaseName: String,
     extended: Boolean)
-  extends RunnableCommand {
+  extends LeafRunnableCommand {
 
   override def run(sparkSession: SparkSession): Seq[Row] = {
     val dbMetadata: CatalogDatabase =
@@ -185,7 +185,7 @@ case class DropTableCommand(
     tableName: TableIdentifier,
     ifExists: Boolean,
     isView: Boolean,
-    purge: Boolean) extends RunnableCommand {
+    purge: Boolean) extends LeafRunnableCommand {
 
   override def run(sparkSession: SparkSession): Seq[Row] = {
     val catalog = sparkSession.sessionState.catalog
@@ -236,7 +236,7 @@ case class AlterTableSetPropertiesCommand(
     tableName: TableIdentifier,
     properties: Map[String, String],
     isView: Boolean)
-  extends RunnableCommand {
+  extends LeafRunnableCommand {
 
   override def run(sparkSession: SparkSession): Seq[Row] = {
     val catalog = sparkSession.sessionState.catalog
@@ -268,7 +268,7 @@ case class AlterTableUnsetPropertiesCommand(
     propKeys: Seq[String],
     ifExists: Boolean,
     isView: Boolean)
-  extends RunnableCommand {
+  extends LeafRunnableCommand {
 
   override def run(sparkSession: SparkSession): Seq[Row] = {
     val catalog = sparkSession.sessionState.catalog
@@ -307,7 +307,7 @@ case class AlterTableUnsetPropertiesCommand(
 case class AlterTableChangeColumnCommand(
     tableName: TableIdentifier,
     columnName: String,
-    newColumn: StructField) extends RunnableCommand {
+    newColumn: StructField) extends LeafRunnableCommand {
 
   // TODO: support change column name/dataType/metadata/position.
   override def run(sparkSession: SparkSession): Seq[Row] = {
@@ -377,7 +377,7 @@ case class AlterTableSerDePropertiesCommand(
     serdeClassName: Option[String],
     serdeProperties: Option[Map[String, String]],
     partSpec: Option[TablePartitionSpec])
-  extends RunnableCommand {
+  extends LeafRunnableCommand {
 
   // should never happen if we parsed things correctly
   require(serdeClassName.isDefined || serdeProperties.isDefined,
@@ -430,7 +430,7 @@ case class AlterTableAddPartitionCommand(
     tableName: TableIdentifier,
     partitionSpecsAndLocs: Seq[(TablePartitionSpec, Option[String])],
     ifNotExists: Boolean)
-  extends RunnableCommand {
+  extends LeafRunnableCommand {
 
   override def run(sparkSession: SparkSession): Seq[Row] = {
     val catalog = sparkSession.sessionState.catalog
@@ -486,7 +486,7 @@ case class AlterTableRenamePartitionCommand(
     tableName: TableIdentifier,
     oldPartition: TablePartitionSpec,
     newPartition: TablePartitionSpec)
-  extends RunnableCommand {
+  extends LeafRunnableCommand {
 
   override def run(sparkSession: SparkSession): Seq[Row] = {
     val catalog = sparkSession.sessionState.catalog
@@ -533,7 +533,7 @@ case class AlterTableDropPartitionCommand(
     ifExists: Boolean,
     purge: Boolean,
     retainData: Boolean)
-  extends RunnableCommand {
+  extends LeafRunnableCommand {
 
   override def run(sparkSession: SparkSession): Seq[Row] = {
     val catalog = sparkSession.sessionState.catalog
@@ -575,7 +575,7 @@ case class PartitionStatistics(numFiles: Int, totalSize: Long)
  */
 case class AlterTableRecoverPartitionsCommand(
     tableName: TableIdentifier,
-    cmd: String = "ALTER TABLE RECOVER PARTITIONS") extends RunnableCommand {
+    cmd: String = "ALTER TABLE RECOVER PARTITIONS") extends LeafRunnableCommand {
 
   // These are list of statistics that can be collected quickly without requiring a scan of the data
   // see https://github.com/apache/hive/blob/master/
@@ -785,7 +785,7 @@ case class AlterTableSetLocationCommand(
     tableName: TableIdentifier,
     partitionSpec: Option[TablePartitionSpec],
     location: String)
-  extends RunnableCommand {
+  extends LeafRunnableCommand {
 
   override def run(sparkSession: SparkSession): Seq[Row] = {
     val catalog = sparkSession.sessionState.catalog

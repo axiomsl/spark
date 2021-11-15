@@ -19,6 +19,7 @@ package org.apache.spark.sql.catalyst.expressions.aggregate
 
 import org.apache.spark.sql.catalyst.dsl.expressions._
 import org.apache.spark.sql.catalyst.expressions._
+import org.apache.spark.sql.catalyst.trees.UnaryLike
 import org.apache.spark.sql.types._
 
 /**
@@ -43,14 +44,13 @@ import org.apache.spark.sql.types._
  * @param child to compute central moments of.
  */
 abstract class CentralMomentAgg(child: Expression)
-  extends DeclarativeAggregate with ImplicitCastInputTypes {
+  extends DeclarativeAggregate with ImplicitCastInputTypes with UnaryLike[Expression] {
 
   /**
    * The central moment order to be computed.
    */
   protected def momentOrder: Int
 
-  override def children: Seq[Expression] = Seq(child)
   override def nullable: Boolean = true
   override def dataType: DataType = DoubleType
   override def inputTypes: Seq[AbstractDataType] = Seq(DoubleType)
@@ -146,6 +146,9 @@ case class StddevPop(child: Expression) extends CentralMomentAgg(child) {
   }
 
   override def prettyName: String = "stddev_pop"
+
+  override protected def withNewChildInternal(newChild: Expression): StddevPop =
+    copy(child = newChild)
 }
 
 // Compute the sample standard deviation of a column
@@ -163,6 +166,9 @@ case class StddevSamp(child: Expression) extends CentralMomentAgg(child) {
   }
 
   override def prettyName: String = "stddev_samp"
+
+  override protected def withNewChildInternal(newChild: Expression): StddevSamp =
+    copy(child = newChild)
 }
 
 // Compute the population variance of a column
@@ -177,6 +183,9 @@ case class VariancePop(child: Expression) extends CentralMomentAgg(child) {
   }
 
   override def prettyName: String = "var_pop"
+
+  override protected def withNewChildInternal(newChild: Expression): VariancePop =
+    copy(child = newChild)
 }
 
 // Compute the sample variance of a column
@@ -192,6 +201,9 @@ case class VarianceSamp(child: Expression) extends CentralMomentAgg(child) {
   }
 
   override def prettyName: String = "var_samp"
+
+  override protected def withNewChildInternal(newChild: Expression): VarianceSamp =
+    copy(child = newChild)
 }
 
 @ExpressionDescription(
@@ -206,6 +218,9 @@ case class Skewness(child: Expression) extends CentralMomentAgg(child) {
     If(n === 0.0, Literal.create(null, DoubleType),
       If(m2 === 0.0, Double.NaN, sqrt(n) * m3 / sqrt(m2 * m2 * m2)))
   }
+
+  override protected def withNewChildInternal(newChild: Expression): Skewness =
+    copy(child = newChild)
 }
 
 @ExpressionDescription(
@@ -220,4 +235,7 @@ case class Kurtosis(child: Expression) extends CentralMomentAgg(child) {
   }
 
   override def prettyName: String = "kurtosis"
+
+  override protected def withNewChildInternal(newChild: Expression): Kurtosis =
+    copy(child = newChild)
 }

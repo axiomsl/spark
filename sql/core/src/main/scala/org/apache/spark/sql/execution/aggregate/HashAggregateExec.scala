@@ -951,6 +951,9 @@ $fastRowType $fastRowBuffer = null;
           s"$allAggregateExpressions $resultExpressions fallbackStartsAt=$fallbackStartsAt"
     }
   }
+
+  override protected def withNewChildInternal(newChild: SparkPlan): HashAggregateExec =
+    copy(child = newChild)
 }
 
 object HashAggregateExec {

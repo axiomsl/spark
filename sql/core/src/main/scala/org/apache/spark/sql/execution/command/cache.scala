@@ -26,7 +26,7 @@ import org.apache.spark.sql.catalyst.plans.logical.LogicalPlan
 case class CacheTableCommand(
     tableIdent: TableIdentifier,
     plan: Option[LogicalPlan],
-    isLazy: Boolean) extends RunnableCommand {
+    isLazy: Boolean) extends LeafRunnableCommand {
   require(plan.isEmpty || tableIdent.database.isEmpty,
     "Database name is not allowed in CACHE TABLE AS SELECT")
 
@@ -50,7 +50,7 @@ case class CacheTableCommand(
 
 case class UncacheTableCommand(
     tableIdent: TableIdentifier,
-    ifExists: Boolean) extends RunnableCommand {
+    ifExists: Boolean) extends LeafRunnableCommand {
 
   override def run(sparkSession: SparkSession): Seq[Row] = {
     val tableId = tableIdent.quotedString
@@ -64,7 +64,7 @@ case class UncacheTableCommand(
 /**
  * Clear all cached data from the in-memory cache.
  */
-case class ClearCacheCommand() extends RunnableCommand {
+case class ClearCacheCommand() extends LeafRunnableCommand {
 
   override def run(sparkSession: SparkSession): Seq[Row] = {
     sparkSession.catalog.clearCache()

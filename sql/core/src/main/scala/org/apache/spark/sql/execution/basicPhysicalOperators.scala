@@ -80,6 +80,9 @@ case class ProjectExec(projectList: Seq[NamedExpression], child: SparkPlan)
   override def outputOrdering: Seq[SortOrder] = child.outputOrdering
 
   override def outputPartitioning: Partitioning = child.outputPartitioning
+
+  override protected def withNewChildInternal(newChild: SparkPlan): ProjectExec =
+    copy(child = newChild)
 }
 
 
@@ -230,6 +233,9 @@ case class FilterExec(condition: Expression, child: SparkPlan)
   override def outputOrdering: Seq[SortOrder] = child.outputOrdering
 
   override def outputPartitioning: Partitioning = child.outputPartitioning
+
+  override protected def withNewChildInternal(newChild: SparkPlan): FilterExec =
+    copy(child = newChild)
 }
 
 /**
@@ -336,6 +342,9 @@ case class SampleExec(
        """.stripMargin.trim
     }
   }
+
+  override protected def withNewChildInternal(newChild: SparkPlan): SampleExec =
+    copy(child = newChild)
 }
 
 
@@ -588,6 +597,9 @@ case class UnionExec(children: Seq[SparkPlan]) extends SparkPlan {
 
   protected override def doExecute(): RDD[InternalRow] =
     sparkContext.union(children.map(_.execute()))
+
+  override protected def withNewChildrenInternal(newChildren: IndexedSeq[SparkPlan]): UnionExec =
+    copy(children = newChildren)
 }
 
 /**
@@ -621,6 +633,9 @@ case class CoalesceExec(numPartitions: Int, child: SparkPlan) extends UnaryExecN
       child.execute().coalesce(numPartitions, shuffle = false)
     }
   }
+
+  override protected def withNewChildInternal(newChild: SparkPlan): CoalesceExec =
+    copy(child = newChild)
 }
 
 object CoalesceExec {
@@ -690,6 +705,9 @@ case class SubqueryExec(name: String, child: SparkPlan) extends UnaryExecNode {
   override def executeCollect(): Array[InternalRow] = {
     ThreadUtils.awaitResult(relationFuture, Duration.Inf)
   }
+
+  override protected def withNewChildInternal(newChild: SparkPlan): SubqueryExec =
+    copy(child = newChild)
 }
 
 object SubqueryExec {

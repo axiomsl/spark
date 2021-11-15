@@ -50,6 +50,9 @@ case class PrintToStderr(child: Expression) extends UnaryExpression {
          | ${ev.value} = $c;
        """.stripMargin)
   }
+
+  override protected def withNewChildInternal(newChild: Expression): PrintToStderr =
+    copy(child = newChild)
 }
 
 /**
@@ -97,6 +100,9 @@ case class AssertTrue(child: Expression) extends UnaryExpression with ImplicitCa
   }
 
   override def sql: String = s"assert_true(${child.sql})"
+
+  override protected def withNewChildInternal(newChild: Expression): AssertTrue =
+    copy(child = newChild)
 }
 
 /**

@@ -106,6 +106,9 @@ private[hive] case class HiveSimpleUDF(
   override def prettyName: String = name
 
   override def sql: String = s"$name(${children.map(_.sql).mkString(", ")})"
+
+  override protected def withNewChildrenInternal(newChildren: IndexedSeq[Expression]): Expression =
+    copy(children = newChildren)
 }
 
 // Adapter from Catalyst ExpressionResult to Hive DeferredObject
@@ -182,6 +185,9 @@ private[hive] case class HiveGenericUDF(
   override def toString: String = {
     s"$nodeName#${funcWrapper.functionClassName}(${children.mkString(",")})"
   }
+
+  override protected def withNewChildrenInternal(newChildren: IndexedSeq[Expression]): Expression =
+    copy(children = newChildren)
 }
 
 /**
@@ -271,6 +277,9 @@ private[hive] case class HiveGenericUDTF(
   }
 
   override def prettyName: String = name
+
+  override protected def withNewChildrenInternal(newChildren: IndexedSeq[Expression]): Expression =
+    copy(children = newChildren)
 }
 
 /**
@@ -520,6 +529,9 @@ private[hive] case class HiveUDAFFunction(
       buffer
     }
   }
+
+  override protected def withNewChildrenInternal(newChildren: IndexedSeq[Expression]): Expression =
+    copy(children = newChildren)
 }
 
 case class HiveUDAFBuffer(buf: AggregationBuffer, canDoMerge: Boolean)

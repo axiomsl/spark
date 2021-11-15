@@ -135,6 +135,9 @@ do {
 } while (false);
 """)
   }
+
+  override protected def withNewChildrenInternal(newChildren: IndexedSeq[Expression]): Coalesce =
+    copy(children = newChildren)
 }
 
 
@@ -155,6 +158,8 @@ case class IfNull(left: Expression, right: Expression, child: Expression)
 
   override def flatArguments: Iterator[Any] = Iterator(left, right)
   override def sql: String = s"$prettyName(${left.sql}, ${right.sql})"
+
+  override protected def withNewChildInternal(newChild: Expression): IfNull = copy(child = newChild)
 }
 
 
@@ -175,6 +180,8 @@ case class NullIf(left: Expression, right: Expression, child: Expression)
 
   override def flatArguments: Iterator[Any] = Iterator(left, right)
   override def sql: String = s"$prettyName(${left.sql}, ${right.sql})"
+
+  override protected def withNewChildInternal(newChild: Expression): NullIf = copy(child = newChild)
 }
 
 
@@ -194,6 +201,8 @@ case class Nvl(left: Expression, right: Expression, child: Expression) extends R
 
   override def flatArguments: Iterator[Any] = Iterator(left, right)
   override def sql: String = s"$prettyName(${left.sql}, ${right.sql})"
+
+  override protected def withNewChildInternal(newChild: Expression): Nvl = copy(child = newChild)
 }
 
 
@@ -216,6 +225,8 @@ case class Nvl2(expr1: Expression, expr2: Expression, expr3: Expression, child: 
 
   override def flatArguments: Iterator[Any] = Iterator(expr1, expr2, expr3)
   override def sql: String = s"$prettyName(${expr1.sql}, ${expr2.sql}, ${expr3.sql})"
+
+  override protected def withNewChildInternal(newChild: Expression): Nvl2 = copy(child = newChild)
 }
 
 
@@ -259,6 +270,8 @@ case class IsNaN(child: Expression) extends UnaryExpression
           ${ev.value} = !${eval.isNull} && Double.isNaN(${eval.value});""", isNull = FalseLiteral)
     }
   }
+
+  override protected def withNewChildInternal(newChild: Expression): IsNaN = copy(child = newChild)
 }
 
 /**
@@ -320,6 +333,9 @@ case class NaNvl(left: Expression, right: Expression)
           }""")
     }
   }
+
+  override protected def withNewChildrenInternal(newLeft: Expression, newRight: Expression): NaNvl =
+    copy(left = newLeft, right = newRight)
 }
 
 
@@ -347,6 +363,8 @@ case class IsNull(child: Expression) extends UnaryExpression with Predicate {
   }
 
   override def sql: String = s"(${child.sql} IS NULL)"
+
+  override protected def withNewChildInternal(newChild: Expression): IsNull = copy(child = newChild)
 }
 
 
@@ -379,6 +397,9 @@ case class IsNotNull(child: Expression) extends UnaryExpression with Predicate {
   }
 
   override def sql: String = s"(${child.sql} IS NOT NULL)"
+
+  override protected def withNewChildInternal(newChild: Expression): IsNotNull =
+    copy(child = newChild)
 }
 
 
@@ -472,4 +493,7 @@ do {
 ${CodeGenerator.JAVA_BOOLEAN} ${ev.value} = $nonnull >= $n;
        """, isNull = FalseLiteral)
   }
+
+  override protected def withNewChildrenInternal(
+    newChildren: IndexedSeq[Expression]): AtLeastNNonNulls = copy(children = newChildren)
 }

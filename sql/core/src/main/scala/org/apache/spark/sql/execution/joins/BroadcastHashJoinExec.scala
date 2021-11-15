@@ -500,4 +500,8 @@ ${consume(ctx, resultVar)}
 """
     }
   }
+
+  override protected def withNewChildrenInternal(
+      newLeft: SparkPlan, newRight: SparkPlan): BroadcastHashJoinExec =
+    copy(left = newLeft, right = newRight)
 }

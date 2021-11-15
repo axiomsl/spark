@@ -18,6 +18,7 @@
 package org.apache.spark.sql.catalyst.trees
 
 import java.util.UUID
+import java.util.concurrent.atomic.AtomicBoolean
 
 import scala.collection.Map
 import scala.reflect.ClassTag
@@ -27,8 +28,12 @@ import org.json4s.JsonAST._
 import org.json4s.JsonDSL._
 import org.json4s.jackson.JsonMethods._
 
+import org.apache.spark.SparkEnv
+import org.apache.spark.internal.Logging
 import org.apache.spark.sql.catalyst.IdentifierWithDatabase
+import org.apache.spark.sql.catalyst.FunctionIdentifier
 import org.apache.spark.sql.catalyst.ScalaReflection._
+import org.apache.spark.sql.catalyst.TableIdentifier
 import org.apache.spark.sql.catalyst.catalog.{BucketSpec, CatalogStorageFormat, CatalogTable, CatalogTableType, FunctionResource}
 import org.apache.spark.sql.catalyst.errors._
 import org.apache.spark.sql.catalyst.expressions._
@@ -37,6 +42,7 @@ import org.apache.spark.sql.catalyst.plans.physical.{BroadcastMode, Partitioning
 import org.apache.spark.sql.types._
 import org.apache.spark.storage.StorageLevel
 import org.apache.spark.util.Utils
+import org.apache.spark.util.Utils.{logWarning, maxNumToStringFields, truncationWarningPrinted}
 
 /** Used by [[TreeNode.getNodeNumbered]] when traversing the tree for a given number */
 private class MutableInt(var i: Int)
@@ -65,14 +71,17 @@ object CurrentOrigin {
   }
 
   def withOrigin[A](o: Origin)(f: => A): A = {
+    // remember the previous one so it can be reset to this
+    // this way withOrigin can be recursive
+    val previous = get
     set(o)
-    val ret = try f finally { reset() }
+    val ret = try f finally { set(previous) }
     ret
   }
 }
 
 // scalastyle:off
-abstract class TreeNode[BaseType <: TreeNode[BaseType]] extends Product {
+abstract class TreeNode[BaseType <: TreeNode[BaseType]] extends Product with Logging {
 // scalastyle:on
   self: BaseType =>
 
@@ -86,7 +95,30 @@ abstract class TreeNode[BaseType <: TreeNode[BaseType]] extends Product {
 
   lazy val containsChild: Set[TreeNode[_]] = children.toSet
 
-  private lazy val _hashCode: Int = scala.util.hashing.MurmurHash3.productHash(this)
+  // Copied from Scala 2.13.1
+  // github.com/scala/scala/blob/v2.13.1/src/library/scala/util/hashing/MurmurHash3.scala#L56-L73
+  // to prevent the issue https://github.com/scala/bug/issues/10495
+  // TODO(SPARK-30848): Remove this once we drop Scala 2.12.
+  private final def productHash(x: Product, seed: Int, ignorePrefix: Boolean = false): Int = {
+    val arr = x.productArity
+    // Case objects have the hashCode inlined directly into the
+    // synthetic hashCode method, but this method should still give
+    // a correct result if passed a case object.
+    if (arr == 0) {
+      x.productPrefix.hashCode
+    } else {
+      var h = seed
+      if (!ignorePrefix) h = scala.util.hashing.MurmurHash3.mix(h, x.productPrefix.hashCode)
+      var i = 0
+      while (i < arr) {
+        h = scala.util.hashing.MurmurHash3.mix(h, x.productElement(i).##)
+        i += 1
+      }
+      scala.util.hashing.MurmurHash3.finalizeHash(h, arr)
+    }
+  }
+
+  private lazy val _hashCode: Int = productHash(this, scala.util.hashing.MurmurHash3.productSeed)
   override def hashCode(): Int = _hashCode
 
   /**
@@ -134,7 +166,7 @@ abstract class TreeNode[BaseType <: TreeNode[BaseType]] extends Product {
   def map[A](f: BaseType => A): Seq[A] = {
     val ret = new collection.mutable.ArrayBuffer[A]()
     foreach(ret += f(_))
-    ret
+    ret.toSeq
   }
 
   /**
@@ -144,7 +176,7 @@ abstract class TreeNode[BaseType <: TreeNode[BaseType]] extends Product {
   def flatMap[A](f: BaseType => TraversableOnce[A]): Seq[A] = {
     val ret = new collection.mutable.ArrayBuffer[A]()
     foreach(ret ++= f(_))
-    ret
+    ret.toSeq
   }
 
   /**
@@ -155,7 +187,7 @@ abstract class TreeNode[BaseType <: TreeNode[BaseType]] extends Product {
     val ret = new collection.mutable.ArrayBuffer[B]()
     val lifted = pf.lift
     foreach(node => lifted(node).foreach(ret.+=))
-    ret
+    ret.toSeq
   }
 
   /**
@@ -189,11 +221,50 @@ abstract class TreeNode[BaseType <: TreeNode[BaseType]] extends Product {
     arr
   }
 
+  private def childrenFastEquals(
+      originalChildren: IndexedSeq[BaseType], newChildren: IndexedSeq[BaseType]): Boolean = {
+    val size = originalChildren.size
+    var i = 0
+    while (i < size) {
+      if (!originalChildren(i).fastEquals(newChildren(i))) return false
+      i += 1
+    }
+    true
+  }
+
+  // This is a temporary solution, we will change the type of children to IndexedSeq in a
+  // followup PR
+  private def asIndexedSeq(seq: Seq[BaseType]): IndexedSeq[BaseType] = {
+    if (seq.isInstanceOf[IndexedSeq[BaseType]]) {
+      seq.asInstanceOf[IndexedSeq[BaseType]]
+    } else {
+      seq.toIndexedSeq
+    }
+  }
+
+  final def withNewChildren(newChildren: Seq[BaseType]): BaseType = {
+    val childrenIndexedSeq = asIndexedSeq(children)
+    val newChildrenIndexedSeq = asIndexedSeq(newChildren)
+    assert(newChildrenIndexedSeq.size == childrenIndexedSeq.size, "Incorrect number of children")
+    if (childrenIndexedSeq.isEmpty ||
+        childrenFastEquals(newChildrenIndexedSeq, childrenIndexedSeq)) {
+      this
+    } else {
+      CurrentOrigin.withOrigin(origin) {
+        val res = withNewChildrenInternal(newChildrenIndexedSeq)
+//        res.copyTagsFrom(this)
+        res
+      }
+    }
+  }
+
+  protected def withNewChildrenInternal(newChildren: IndexedSeq[BaseType]): BaseType
+
   /**
    * Returns a copy of this node with the children replaced.
    * TODO: Validate somewhere (in debug mode?) that children are ordered correctly.
    */
-  def withNewChildren(newChildren: Seq[BaseType]): BaseType = {
+  protected final def legacyWithNewChildren(newChildren: Seq[BaseType]): BaseType = {
     assert(newChildren.size == children.size, "Incorrect number of children")
     var changed = false
     val remainingNewChildren = newChildren.toBuffer
@@ -224,8 +295,10 @@ abstract class TreeNode[BaseType <: TreeNode[BaseType]] extends Product {
       case s: Seq[_] =>
         s.map(mapChild)
       case m: Map[_, _] =>
+        // `map.mapValues().view.force` return `Map` in Scala 2.12 but return `IndexedSeq` in Scala
+        // 2.13, call `toMap` method manually to compatible with Scala 2.12 and Scala 2.13
         // `mapValues` is lazy and we need to force it to materialize
-        m.mapValues(mapChild).view.force
+        m.mapValues(mapChild).view.force.toMap
       case arg: TreeNode[_] if containsChild(arg) => mapTreeNode(arg)
       case Some(child) => Some(mapChild(child))
       case nonChild: AnyRef => nonChild
@@ -241,7 +314,7 @@ abstract class TreeNode[BaseType <: TreeNode[BaseType]] extends Product {
    * Users should not expect a specific directionality. If a specific directionality is needed,
    * transformDown or transformUp should be used.
    *
-   * @param rule the function use to transform this nodes children
+   * @param rule the function used to transform this nodes children
    */
   def transform(rule: PartialFunction[BaseType, BaseType]): BaseType = {
     transformDown(rule)
@@ -290,77 +363,91 @@ abstract class TreeNode[BaseType <: TreeNode[BaseType]] extends Product {
    * Returns a copy of this node where `f` has been applied to all the nodes children.
    */
   def mapChildren(f: BaseType => BaseType): BaseType = {
-    if (children.nonEmpty) {
-      var changed = false
-      def mapChild(child: Any): Any = child match {
-        case arg: TreeNode[_] if containsChild(arg) =>
-          val newChild = f(arg.asInstanceOf[BaseType])
-          if (!(newChild fastEquals arg)) {
-            changed = true
-            newChild
-          } else {
-            arg
-          }
-        case tuple@(arg1: TreeNode[_], arg2: TreeNode[_]) =>
-          val newChild1 = if (containsChild(arg1)) {
-            f(arg1.asInstanceOf[BaseType])
-          } else {
-            arg1.asInstanceOf[BaseType]
-          }
-
-          val newChild2 = if (containsChild(arg2)) {
-            f(arg2.asInstanceOf[BaseType])
-          } else {
-            arg2.asInstanceOf[BaseType]
-          }
-
-          if (!(newChild1 fastEquals arg1) || !(newChild2 fastEquals arg2)) {
-            changed = true
-            (newChild1, newChild2)
-          } else {
-            tuple
-          }
-        case other => other
-      }
-
-      val newArgs = mapProductIterator {
-        case arg: TreeNode[_] if containsChild(arg) =>
-          val newChild = f(arg.asInstanceOf[BaseType])
-          if (!(newChild fastEquals arg)) {
-            changed = true
-            newChild
-          } else {
-            arg
-          }
-        case Some(arg: TreeNode[_]) if containsChild(arg) =>
-          val newChild = f(arg.asInstanceOf[BaseType])
-          if (!(newChild fastEquals arg)) {
-            changed = true
-            Some(newChild)
-          } else {
-            Some(arg)
-          }
-        case m: Map[_, _] => m.mapValues {
-          case arg: TreeNode[_] if containsChild(arg) =>
-            val newChild = f(arg.asInstanceOf[BaseType])
-            if (!(newChild fastEquals arg)) {
-              changed = true
-              newChild
-            } else {
-              arg
-            }
-          case other => other
-        }.view.force // `mapValues` is lazy and we need to force it to materialize
-        case d: DataType => d // Avoid unpacking Structs
-        case args: Stream[_] => args.map(mapChild).force // Force materialization on stream
-        case args: Traversable[_] => args.map(mapChild)
-        case nonChild: AnyRef => nonChild
-        case null => null
-      }
-      if (changed) makeCopy(newArgs) else this
+    if (containsChild.nonEmpty) {
+      withNewChildren(children.map(f))
     } else {
       this
     }
+  }
+
+  /**
+   * Returns a copy of this node where `f` has been applied to all the nodes in `children`.
+   * @param f The transform function to be applied on applicable `TreeNode` elements.
+   * @param forceCopy Whether to force making a copy of the nodes even if no child has been changed.
+   */
+  private def mapChildren(
+      f: BaseType => BaseType,
+      forceCopy: Boolean): BaseType = {
+    var changed = false
+
+    def mapChild(child: Any): Any = child match {
+      case arg: TreeNode[_] if containsChild(arg) =>
+        val newChild = f(arg.asInstanceOf[BaseType])
+        if (forceCopy || !(newChild fastEquals arg)) {
+          changed = true
+          newChild
+        } else {
+          arg
+        }
+      case tuple @ (arg1: TreeNode[_], arg2: TreeNode[_]) =>
+        val newChild1 = if (containsChild(arg1)) {
+          f(arg1.asInstanceOf[BaseType])
+        } else {
+          arg1.asInstanceOf[BaseType]
+        }
+
+        val newChild2 = if (containsChild(arg2)) {
+          f(arg2.asInstanceOf[BaseType])
+        } else {
+          arg2.asInstanceOf[BaseType]
+        }
+
+        if (forceCopy || !(newChild1 fastEquals arg1) || !(newChild2 fastEquals arg2)) {
+          changed = true
+          (newChild1, newChild2)
+        } else {
+          tuple
+        }
+      case other => other
+    }
+
+    val newArgs = mapProductIterator {
+      case arg: TreeNode[_] if containsChild(arg) =>
+        val newChild = f(arg.asInstanceOf[BaseType])
+        if (forceCopy || !(newChild fastEquals arg)) {
+          changed = true
+          newChild
+        } else {
+          arg
+        }
+      case Some(arg: TreeNode[_]) if containsChild(arg) =>
+        val newChild = f(arg.asInstanceOf[BaseType])
+        if (forceCopy || !(newChild fastEquals arg)) {
+          changed = true
+          Some(newChild)
+        } else {
+          Some(arg)
+        }
+      // `map.mapValues().view.force` return `Map` in Scala 2.12 but return `IndexedSeq` in Scala
+      // 2.13, call `toMap` method manually to compatible with Scala 2.12 and Scala 2.13
+      case m: Map[_, _] => m.mapValues {
+        case arg: TreeNode[_] if containsChild(arg) =>
+          val newChild = f(arg.asInstanceOf[BaseType])
+          if (forceCopy || !(newChild fastEquals arg)) {
+            changed = true
+            newChild
+          } else {
+            arg
+          }
+        case other => other
+      }.view.force.toMap // `mapValues` is lazy and we need to force it to materialize
+      case d: DataType => d // Avoid unpacking Structs
+      case args: Stream[_] => args.map(mapChild).force // Force materialization on stream
+      case args: Iterable[_] => args.map(mapChild)
+      case nonChild: AnyRef => nonChild
+      case null => null
+    }
+    if (forceCopy || changed) makeCopy(newArgs, forceCopy) else this
   }
 
   /**
@@ -376,9 +463,27 @@ abstract class TreeNode[BaseType <: TreeNode[BaseType]] extends Product {
    * that are not present in the productIterator.
    * @param newArgs the new product arguments.
    */
-  def makeCopy(newArgs: Array[AnyRef]): BaseType = attachTree(this, "makeCopy") {
+  def makeCopy(newArgs: Array[AnyRef]): BaseType = makeCopy(newArgs, allowEmptyArgs = false)
+
+  /**
+   * Creates a copy of this type of tree node after a transformation.
+   * Must be overridden by child classes that have constructor arguments
+   * that are not present in the productIterator.
+   * @param newArgs the new product arguments.
+   * @param allowEmptyArgs whether to allow argument list to be empty.
+   */
+  private def makeCopy(
+      newArgs: Array[AnyRef],
+      allowEmptyArgs: Boolean): BaseType = {
+    val allCtors = getClass.getConstructors
+    if (newArgs.isEmpty && allCtors.isEmpty) {
+      // This is a singleton object which doesn't have any constructor. Just return `this` as we
+      // can't copy it.
+      return this
+    }
+
     // Skip no-arg constructors that are just there for kryo.
-    val ctors = getClass.getConstructors.filter(_.getParameterTypes.length != 0)
+    val ctors = allCtors.filter(allowEmptyArgs || _.getParameterTypes.size != 0)
     if (ctors.isEmpty) {
       sys.error(s"No valid constructor for $nodeName")
     }
@@ -402,7 +507,9 @@ abstract class TreeNode[BaseType <: TreeNode[BaseType]] extends Product {
 
     try {
       CurrentOrigin.withOrigin(origin) {
-        defaultCtor.newInstance(allArgs.toArray: _*).asInstanceOf[BaseType]
+        val res = defaultCtor.newInstance(allArgs.toArray: _*).asInstanceOf[BaseType]
+//        res.copyTagsFrom(this)
+        res
       }
     } catch {
       case e: java.lang.IllegalArgumentException =>
@@ -417,6 +524,10 @@ abstract class TreeNode[BaseType <: TreeNode[BaseType]] extends Product {
              |args: ${newArgs.mkString(", ")}
            """.stripMargin)
     }
+  }
+
+  override def clone(): BaseType = {
+    mapChildren(_.clone(), forceCopy = true)
   }
 
   private def simpleClassName: String = Utils.getSimpleName(this.getClass)
@@ -473,7 +584,21 @@ abstract class TreeNode[BaseType <: TreeNode[BaseType]] extends Product {
   def treeString: String = treeString(verbose = true)
 
   def treeString(verbose: Boolean, addSuffix: Boolean = false): String = {
-    generateTreeString(0, Nil, new StringBuilder, verbose = verbose, addSuffix = addSuffix).toString
+    truncatedTreeString(verbose, addSuffix)
+  }
+
+  def truncatedTreeString(
+      verbose: Boolean,
+      addSuffix: Boolean = false,
+      maxDepth: Int = TreeNode.maxTreeToStringDepth
+    ): String = {
+    generateTreeString(
+      0,
+      Nil,
+      new StringBuilder,
+      verbose = verbose,
+      addSuffix = addSuffix,
+      maxDepth = maxDepth).toString
   }
 
   /**
@@ -539,7 +664,8 @@ abstract class TreeNode[BaseType <: TreeNode[BaseType]] extends Product {
       builder: StringBuilder,
       verbose: Boolean,
       prefix: String = "",
-      addSuffix: Boolean = false): StringBuilder = {
+      addSuffix: Boolean = false,
+      maxDepth: Int = TreeNode.maxTreeToStringDepth): StringBuilder = {
 
     if (depth > 0) {
       lastChildren.init.foreach { isLast =>
@@ -548,29 +674,42 @@ abstract class TreeNode[BaseType <: TreeNode[BaseType]] extends Product {
       builder.append(if (lastChildren.last) "+- " else ":- ")
     }
 
-    val str = if (verbose) {
-      if (addSuffix) verboseStringWithSuffix else verboseString
-    } else {
-      simpleString
-    }
-    builder.append(prefix)
-    builder.append(str)
-    builder.append("\n")
+    if (depth < maxDepth) {
+      val str = if (verbose) {
+        if (addSuffix) verboseStringWithSuffix else verboseString
+      } else {
+        simpleString
+      }
 
-    if (innerChildren.nonEmpty) {
-      innerChildren.init.foreach(_.generateTreeString(
-        depth + 2, lastChildren :+ children.isEmpty :+ false, builder, verbose,
-        addSuffix = addSuffix))
-      innerChildren.last.generateTreeString(
-        depth + 2, lastChildren :+ children.isEmpty :+ true, builder, verbose,
-        addSuffix = addSuffix)
-    }
+      builder.append(prefix)
+      builder.append(str)
+      builder.append("\n")
 
-    if (children.nonEmpty) {
-      children.init.foreach(_.generateTreeString(
-        depth + 1, lastChildren :+ false, builder, verbose, prefix, addSuffix))
-      children.last.generateTreeString(
-        depth + 1, lastChildren :+ true, builder, verbose, prefix, addSuffix)
+      if (innerChildren.nonEmpty) {
+        innerChildren.init.foreach(_.generateTreeString(
+          depth + 2, lastChildren :+ children.isEmpty :+ false, builder, verbose,
+          addSuffix = addSuffix, maxDepth = maxDepth))
+        innerChildren.last.generateTreeString(
+          depth + 2, lastChildren :+ children.isEmpty :+ true, builder, verbose,
+          addSuffix = addSuffix, maxDepth = maxDepth)
+      }
+
+      if (children.nonEmpty) {
+        children.init.foreach(_.generateTreeString(
+          depth + 1, lastChildren :+ false, builder, verbose, prefix, addSuffix, maxDepth))
+        children.last.generateTreeString(
+          depth + 1, lastChildren :+ true, builder, verbose, prefix, addSuffix, maxDepth)
+      }
+    }
+    else {
+      if (TreeNode.treeDepthWarningPrinted.compareAndSet(false, true)) {
+        logWarning(
+          "Truncated the string representation of a plan since it was nested too deeply. " +
+            "This behavior can be adjusted by setting 'spark.debug.maxToStringTreeDepth' in " +
+            "SparkEnv.conf.")
+      }
+      builder.append(prefix)
+      builder.append("...\n")
     }
 
     builder
@@ -690,4 +829,154 @@ abstract class TreeNode[BaseType <: TreeNode[BaseType]] extends Product {
     case _: CatalogStorageFormat => true
     case _ => false
   }
+}
+
+object TreeNode {
+  /**
+    * Query plans for large, deeply nested plans can get extremely large. To limit the impact,
+    * we add a parameter that limits the logging to the top layers if the tree gets too deep.
+    * This can be overridden by setting the 'spark.debug.maxToStringTreeDepth' conf in SparkEnv.
+    */
+  val DEFAULT_MAX_TO_STRING_TREE_DEPTH = 15
+
+  def maxTreeToStringDepth: Int = {
+    if (SparkEnv.get != null) {
+      SparkEnv.get.conf.getInt("spark.debug.maxToStringTreeDepth", DEFAULT_MAX_TO_STRING_TREE_DEPTH)
+    } else {
+      DEFAULT_MAX_TO_STRING_TREE_DEPTH
+    }
+  }
+
+  /** Whether we have warned about plan string truncation yet. */
+  private val treeDepthWarningPrinted = new AtomicBoolean(false)
+}
+
+trait LeafLike[T <: TreeNode[T]] { self: TreeNode[T] =>
+  override final def children: Seq[T] = Nil
+  override final def mapChildren(f: T => T): T = this.asInstanceOf[T]
+  override final def withNewChildrenInternal(newChildren: IndexedSeq[T]): T = this.asInstanceOf[T]
+}
+
+trait UnaryLike[T <: TreeNode[T]] { self: TreeNode[T] =>
+  def child: T
+  @transient override final lazy val children: Seq[T] = IndexedSeq(child)
+
+  override final def mapChildren(f: T => T): T = {
+    val newChild = f(child)
+    if (newChild fastEquals child) {
+      this.asInstanceOf[T]
+    } else {
+      CurrentOrigin.withOrigin(origin) {
+        val res = withNewChildInternal(newChild)
+//        res.copyTagsFrom(this.asInstanceOf[T])
+        res
+      }
+    }
+  }
+
+  override final def withNewChildrenInternal(newChildren: IndexedSeq[T]): T = {
+    assert(newChildren.size == 1, "Incorrect number of children")
+    withNewChildInternal(newChildren.head)
+  }
+
+  protected def withNewChildInternal(newChild: T): T
+}
+
+trait BinaryLike[T <: TreeNode[T]] { self: TreeNode[T] =>
+  def left: T
+  def right: T
+  @transient override final lazy val children: Seq[T] = IndexedSeq(left, right)
+
+  override final def mapChildren(f: T => T): T = {
+    var newLeft = f(left)
+    newLeft = if (newLeft fastEquals left) left else newLeft
+    var newRight = f(right)
+    newRight = if (newRight fastEquals right) right else newRight
+
+    if (newLeft.eq(left) && newRight.eq(right)) {
+      this.asInstanceOf[T]
+    } else {
+      CurrentOrigin.withOrigin(origin) {
+        val res = withNewChildrenInternal(newLeft, newRight)
+//        res.copyTagsFrom(this.asInstanceOf[T])
+        res
+      }
+    }
+  }
+
+  override final def withNewChildrenInternal(newChildren: IndexedSeq[T]): T = {
+    assert(newChildren.size == 2, "Incorrect number of children")
+    withNewChildrenInternal(newChildren(0), newChildren(1))
+  }
+
+  protected def withNewChildrenInternal(newLeft: T, newRight: T): T
+}
+
+trait TernaryLike[T <: TreeNode[T]] { self: TreeNode[T] =>
+  def first: T
+  def second: T
+  def third: T
+  @transient override final lazy val children: Seq[T] = IndexedSeq(first, second, third)
+
+  override final def mapChildren(f: T => T): T = {
+    var newFirst = f(first)
+    newFirst = if (newFirst fastEquals first) first else newFirst
+    var newSecond = f(second)
+    newSecond = if (newSecond fastEquals second) second else newSecond
+    var newThird = f(third)
+    newThird = if (newThird fastEquals third) third else newThird
+
+    if (newFirst.eq(first) && newSecond.eq(second) && newThird.eq(third)) {
+      this.asInstanceOf[T]
+    } else {
+      CurrentOrigin.withOrigin(origin) {
+        val res = withNewChildrenInternal(newFirst, newSecond, newThird)
+//        res.copyTagsFrom(this.asInstanceOf[T])
+        res
+      }
+    }
+  }
+
+  override final def withNewChildrenInternal(newChildren: IndexedSeq[T]): T = {
+    assert(newChildren.size == 3, "Incorrect number of children")
+    withNewChildrenInternal(newChildren(0), newChildren(1), newChildren(2))
+  }
+
+  protected def withNewChildrenInternal(newFirst: T, newSecond: T, newThird: T): T
+}
+
+trait QuaternaryLike[T <: TreeNode[T]] { self: TreeNode[T] =>
+  def first: T
+  def second: T
+  def third: T
+  def fourth: T
+  @transient override final lazy val children: Seq[T] = IndexedSeq(first, second, third, fourth)
+
+  override final def mapChildren(f: T => T): T = {
+    var newFirst = f(first)
+    newFirst = if (newFirst fastEquals first) first else newFirst
+    var newSecond = f(second)
+    newSecond = if (newSecond fastEquals second) second else newSecond
+    var newThird = f(third)
+    newThird = if (newThird fastEquals third) third else newThird
+    var newFourth = f(fourth)
+    newFourth = if (newFourth fastEquals fourth) fourth else newFourth
+
+    if (newFirst.eq(first) && newSecond.eq(second) && newThird.eq(third) && newFourth.eq(fourth)) {
+      this.asInstanceOf[T]
+    } else {
+      CurrentOrigin.withOrigin(origin) {
+        val res = withNewChildrenInternal(newFirst, newSecond, newThird, newFourth)
+//        res.copyTagsFrom(this.asInstanceOf[T])
+        res
+      }
+    }
+  }
+
+  override final def withNewChildrenInternal(newChildren: IndexedSeq[T]): T = {
+    assert(newChildren.size == 4, "Incorrect number of children")
+    withNewChildrenInternal(newChildren(0), newChildren(1), newChildren(2), newChildren(3))
+  }
+
+  protected def withNewChildrenInternal(newFirst: T, newSecond: T, newThird: T, newFourth: T): T
 }

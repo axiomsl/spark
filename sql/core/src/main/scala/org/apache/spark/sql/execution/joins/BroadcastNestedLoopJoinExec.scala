@@ -375,4 +375,8 @@ case class BroadcastNestedLoopJoinExec(
       }
     }
   }
+
+  override protected def withNewChildrenInternal(
+      newLeft: SparkPlan, newRight: SparkPlan): BroadcastNestedLoopJoinExec =
+    copy(left = newLeft, right = newRight)
 }

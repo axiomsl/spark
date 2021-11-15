@@ -27,7 +27,7 @@ import org.apache.spark.sql.catalyst.catalog.CatalogTableType
  */
 case class AnalyzeTableCommand(
     tableIdent: TableIdentifier,
-    noscan: Boolean = true) extends RunnableCommand {
+    noscan: Boolean = true) extends LeafRunnableCommand {
 
   override def run(sparkSession: SparkSession): Seq[Row] = {
     val sessionState = sparkSession.sessionState
