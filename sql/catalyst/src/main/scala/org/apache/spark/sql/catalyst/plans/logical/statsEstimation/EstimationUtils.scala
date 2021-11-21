@@ -41,7 +41,7 @@ object EstimationUtils {
    *  in the corresponding statistic. */
   def columnStatsWithCountsExist(statsAndAttr: (Statistics, Attribute)*): Boolean = {
     statsAndAttr.forall { case (stats, attr) =>
-      stats.attributeStats.get(attr).map(_.hasCountStats).getOrElse(false)
+      stats.attributeStats.get(attr).exists(_.hasCountStats)
     }
   }
 
@@ -95,7 +95,7 @@ object EstimationUtils {
     // We assign a generic overhead for a Row object, the actual overhead is different for different
     // Row format.
     8 + attributes.map { attr =>
-      if (attrStats.get(attr).map(_.avgLen.isDefined).getOrElse(false)) {
+      if (attrStats.get(attr).exists(_.avgLen.isDefined)) {
         attr.dataType match {
           case StringType =>
             // UTF8String: base + offset + numBytes
@@ -104,7 +104,16 @@ object EstimationUtils {
             attrStats(attr).avgLen.get
         }
       } else {
-        attr.dataType.defaultSize
+        attr.dataType match {
+          case StringType =>
+            if (attr.metadata.contains("max")) {
+              attr.metadata.getLong("max").toInt + 8 + 4
+            } else {
+              attr.dataType.defaultSize
+            }
+          case _ =>
+              attr.dataType.defaultSize
+        }
       }
     }.sum
   }
