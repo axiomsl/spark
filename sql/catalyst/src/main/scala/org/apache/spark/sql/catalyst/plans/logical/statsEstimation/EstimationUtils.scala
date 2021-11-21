@@ -106,8 +106,8 @@ object EstimationUtils {
       } else {
         attr.dataType match {
           case StringType =>
-            if (attr.metadata.contains("max")) {
-              attr.metadata.getLong("max") + 8 + 4
+            if (attr.metadata.contains("maxLength")) {
+              attr.metadata.getLong("maxLength") + 8 + 4
             } else if (attr.metadata.contains("childCount")) {
               attr.dataType.defaultSize * attr.metadata.getLong("childCount")
             } else {
