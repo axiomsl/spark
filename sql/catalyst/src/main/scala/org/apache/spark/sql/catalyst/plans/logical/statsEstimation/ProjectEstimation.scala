@@ -17,10 +17,11 @@
 
 package org.apache.spark.sql.catalyst.plans.logical.statsEstimation
 
+import org.apache.spark.internal.Logging
 import org.apache.spark.sql.catalyst.expressions.AttributeMap
 import org.apache.spark.sql.catalyst.plans.logical.{Project, Statistics}
 
-object ProjectEstimation {
+object ProjectEstimation extends Logging {
   import EstimationUtils._
 
   def estimate(project: Project): Option[Statistics] = {
@@ -30,8 +31,10 @@ object ProjectEstimation {
 
       val outputAttrStats =
         getOutputMap(AttributeMap(childStats.attributeStats.toSeq ++ aliasStats), project.output)
+      val sizeInBytes = getOutputSize(project.output, childStats.rowCount.get, outputAttrStats)
+      logInfo(s"Statistics for [Project] [${project.schemaString.replace("\n", "")}]; sizeInBytes = [$sizeInBytes]")
       Some(childStats.copy(
-        sizeInBytes = getOutputSize(project.output, childStats.rowCount.get, outputAttrStats),
+        sizeInBytes = sizeInBytes,
         attributeStats = outputAttrStats))
     } else {
       None
