@@ -43,7 +43,10 @@ object SizeInBytesOnlyStatsPlanVisitor extends LogicalPlanVisitor[Statistics] wi
       // (product of children).
       sizeInBytes = 1
     }
-    logInfo(s"Statistics for [${p.nodeName}] [${p.schemaString.replace("\n", "")}]; sizeInBytes = [$sizeInBytes]")
+    logInfo({
+      val schemaString = p.schemaString.replace("\n", "")
+      s"Statistics for [${p.nodeName}] [$schemaString]; sizeInBytes = [$sizeInBytes]"
+    })
     // Don't propagate rowCount and attributeStats, since they are not estimated here.
     Statistics(sizeInBytes = sizeInBytes)
   }
