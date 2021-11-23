@@ -19,11 +19,11 @@ package org.apache.spark.sql.catalyst.plans.logical.statsEstimation
 
 import scala.collection.mutable
 import scala.collection.mutable.ArrayBuffer
-
 import org.apache.spark.internal.Logging
 import org.apache.spark.sql.catalyst.expressions.{Attribute, AttributeMap, AttributeReference, Expression}
 import org.apache.spark.sql.catalyst.planning.ExtractEquiJoinKeys
 import org.apache.spark.sql.catalyst.plans._
+import org.apache.spark.sql.catalyst.plans.logical.statsEstimation.AggregateEstimation.logInfo
 import org.apache.spark.sql.catalyst.plans.logical.{ColumnStat, Histogram, Join, Statistics}
 import org.apache.spark.sql.catalyst.plans.logical.statsEstimation.EstimationUtils._
 
@@ -138,8 +138,15 @@ case class JoinEstimation(join: Join) extends Logging {
       }
 
       val outputAttrStats = AttributeMap(outputStats)
+
+      val sizeInBytes = getOutputSize(join.output, outputRows, outputAttrStats)
+      logInfo({
+        val schemaString = join.schemaString.replace("\n", "")
+        s"Statistics for [Join] [$schemaString]; sizeInBytes = [$sizeInBytes]"
+      })
+
       Some(Statistics(
-        sizeInBytes = getOutputSize(join.output, outputRows, outputAttrStats),
+        sizeInBytes = sizeInBytes,
         rowCount = Some(outputRows),
         attributeStats = outputAttrStats))
 

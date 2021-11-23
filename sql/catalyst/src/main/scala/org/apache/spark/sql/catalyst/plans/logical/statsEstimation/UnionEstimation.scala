@@ -17,6 +17,7 @@
 
 package org.apache.spark.sql.catalyst.plans.logical.statsEstimation
 
+import org.apache.spark.internal.Logging
 import org.apache.spark.sql.catalyst.expressions.{Attribute, AttributeMap}
 import org.apache.spark.sql.catalyst.plans.logical.{ColumnStat, Statistics, Union}
 import org.apache.spark.sql.types._
@@ -26,7 +27,7 @@ import org.apache.spark.sql.types._
  * and estimate min and max stats for each column by finding the overall min and max of that
  * column coming from its children.
  */
-object UnionEstimation {
+object UnionEstimation extends Logging {
   import EstimationUtils._
 
   private def createStatComparator(dt: DataType): (Any, Any) => Boolean = dt match {
@@ -79,6 +80,11 @@ object UnionEstimation {
       }
       AttributeMap(newMinMaxStats ++ overwriteStats)
     }
+
+    logInfo({
+      val schemaString = union.schemaString.replace("\n", "")
+      s"Statistics for [Union] [$schemaString]; sizeInBytes = [$sizeInBytes]"
+    })
 
     Some(
       Statistics(
