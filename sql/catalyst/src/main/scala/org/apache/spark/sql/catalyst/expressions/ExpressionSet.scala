@@ -27,10 +27,6 @@ object ExpressionSet {
     expressions.foreach(set.add)
     set
   }
-
-  def apply(): ExpressionSet = {
-    new ExpressionSet()
-  }
 }
 
 /**

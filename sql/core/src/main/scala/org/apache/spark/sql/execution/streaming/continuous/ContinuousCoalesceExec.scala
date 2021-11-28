@@ -17,11 +17,13 @@
 
 package org.apache.spark.sql.execution.streaming.continuous
 
+import java.util.UUID
+
+import org.apache.spark.{HashPartitioner, SparkEnv}
 import org.apache.spark.rdd.RDD
 import org.apache.spark.sql.catalyst.InternalRow
 import org.apache.spark.sql.catalyst.expressions.{Attribute, UnsafeRow}
 import org.apache.spark.sql.catalyst.plans.physical.{Partitioning, SinglePartition}
-import org.apache.spark.sql.catalyst.trees.UnaryLike
 import org.apache.spark.sql.execution.SparkPlan
 import org.apache.spark.sql.execution.streaming.continuous.shuffle.{ContinuousShuffleReadPartition, ContinuousShuffleReadRDD}
 
@@ -30,9 +32,10 @@ import org.apache.spark.sql.execution.streaming.continuous.shuffle.{ContinuousSh
  *
  * Currently, only coalesces to a single partition are supported. `numPartitions` must be 1.
  */
-
-case class ContinuousCoalesceExec(numPartitions: Int, child: SparkPlan) extends SparkPlan with UnaryLike[SparkPlan] {
+case class ContinuousCoalesceExec(numPartitions: Int, child: SparkPlan) extends SparkPlan {
   override def output: Seq[Attribute] = child.output
+
+  override def children: Seq[SparkPlan] = child :: Nil
 
   override def outputPartitioning: Partitioning = SinglePartition
 
@@ -45,7 +48,4 @@ case class ContinuousCoalesceExec(numPartitions: Int, child: SparkPlan) extends 
       sparkContext.getLocalProperty(ContinuousExecution.EPOCH_INTERVAL_KEY).toLong,
       child.execute())
   }
-
-  override protected def withNewChildInternal(newChild: SparkPlan): SparkPlan =
-    copy(child = newChild)
 }

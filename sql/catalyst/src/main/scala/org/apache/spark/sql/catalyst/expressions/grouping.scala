@@ -19,7 +19,6 @@ package org.apache.spark.sql.catalyst.expressions
 
 import org.apache.spark.sql.catalyst.InternalRow
 import org.apache.spark.sql.catalyst.expressions.codegen.CodegenFallback
-import org.apache.spark.sql.catalyst.trees.UnaryLike
 import org.apache.spark.sql.types._
 
 /**
@@ -58,10 +57,7 @@ trait GroupingSet extends Expression with CodegenFallback {
   """,
   since = "2.0.0")
 // scalastyle:on line.size.limit
-case class Cube(groupByExprs: Seq[Expression]) extends GroupingSet {
-  override protected def withNewChildrenInternal(newChildren: IndexedSeq[Expression]): Cube =
-    copy(groupByExprs = newChildren)
-}
+case class Cube(groupByExprs: Seq[Expression]) extends GroupingSet {}
 
 // scalastyle:off line.size.limit
 @ExpressionDescription(
@@ -80,10 +76,7 @@ case class Cube(groupByExprs: Seq[Expression]) extends GroupingSet {
   """,
   since = "2.0.0")
 // scalastyle:on line.size.limit
-case class Rollup(groupByExprs: Seq[Expression]) extends GroupingSet {
-  override protected def withNewChildrenInternal(newChildren: IndexedSeq[Expression]): Rollup =
-    copy(groupByExprs = newChildren)
-}
+case class Rollup(groupByExprs: Seq[Expression]) extends GroupingSet {}
 
 /**
  * Indicates whether a specified column expression in a GROUP BY list is aggregated or not.
@@ -104,13 +97,11 @@ case class Rollup(groupByExprs: Seq[Expression]) extends GroupingSet {
   """,
   since = "2.0.0")
 // scalastyle:on line.size.limit
-case class Grouping(child: Expression) extends Expression with Unevaluable
-  with UnaryLike[Expression] {
+case class Grouping(child: Expression) extends Expression with Unevaluable {
   override def references: AttributeSet = AttributeSet(VirtualColumn.groupingIdAttribute :: Nil)
+  override def children: Seq[Expression] = child :: Nil
   override def dataType: DataType = ByteType
   override def nullable: Boolean = false
-  override protected def withNewChildInternal(newChild: Expression): Grouping =
-    copy(child = newChild)
 }
 
 /**
@@ -147,6 +138,4 @@ case class GroupingID(groupByExprs: Seq[Expression]) extends Expression with Une
   override def dataType: DataType = IntegerType
   override def nullable: Boolean = false
   override def prettyName: String = "grouping_id"
-  override protected def withNewChildrenInternal(newChildren: IndexedSeq[Expression]): GroupingID =
-    copy(groupByExprs = newChildren)
 }

@@ -58,7 +58,4 @@ case class AvroDataToCatalyst(child: Expression, jsonFormatSchema: String)
     defineCodeGen(ctx, ev, input =>
       s"(${CodeGenerator.boxedType(dataType)})$expr.nullSafeEval($input)")
   }
-
-  override protected def withNewChildInternal(newChild: Expression): AvroDataToCatalyst =
-    copy(child = newChild)
 }

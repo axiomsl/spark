@@ -71,9 +71,6 @@ case class Count(children: Seq[Expression]) extends CountLike {
       )
     }
   }
-
-  override protected def withNewChildrenInternal(newChildren: IndexedSeq[Expression]): Count =
-    copy(children = newChildren)
 }
 
 object Count {

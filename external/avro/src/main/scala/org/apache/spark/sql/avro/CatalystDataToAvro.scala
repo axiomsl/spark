@@ -59,7 +59,4 @@ case class CatalystDataToAvro(child: Expression) extends UnaryExpression {
     defineCodeGen(ctx, ev, input =>
       s"(byte[]) $expr.nullSafeEval($input)")
   }
-
-  override protected def withNewChildInternal(newChild: Expression): CatalystDataToAvro =
-    copy(child = newChild)
 }

@@ -26,7 +26,6 @@ import org.apache.spark.sql.catalyst.analysis.TypeCheckResult
 import org.apache.spark.sql.catalyst.analysis.TypeCheckResult.{TypeCheckFailure, TypeCheckSuccess}
 import org.apache.spark.sql.catalyst.expressions._
 import org.apache.spark.sql.catalyst.expressions.aggregate.ApproximatePercentile.PercentileDigest
-import org.apache.spark.sql.catalyst.trees.TernaryLike
 import org.apache.spark.sql.catalyst.util.{ArrayData, GenericArrayData}
 import org.apache.spark.sql.catalyst.util.QuantileSummaries
 import org.apache.spark.sql.catalyst.util.QuantileSummaries.{defaultCompressThreshold, Stats}
@@ -74,8 +73,7 @@ case class ApproximatePercentile(
     accuracyExpression: Expression,
     override val mutableAggBufferOffset: Int,
     override val inputAggBufferOffset: Int)
-  extends TypedImperativeAggregate[PercentileDigest] with ImplicitCastInputTypes
-  with TernaryLike[Expression] {
+  extends TypedImperativeAggregate[PercentileDigest] with ImplicitCastInputTypes {
 
   def this(child: Expression, percentageExpression: Expression, accuracyExpression: Expression) = {
     this(child, percentageExpression, accuracyExpression, 0, 0)
@@ -178,9 +176,7 @@ case class ApproximatePercentile(
   override def withNewInputAggBufferOffset(newOffset: Int): ApproximatePercentile =
     copy(inputAggBufferOffset = newOffset)
 
-  override def first: Expression = child
-  override def second: Expression = percentageExpression
-  override def third: Expression = accuracyExpression
+  override def children: Seq[Expression] = Seq(child, percentageExpression, accuracyExpression)
 
   // Returns null for empty inputs
   override def nullable: Boolean = true
@@ -199,10 +195,6 @@ case class ApproximatePercentile(
   override def deserialize(bytes: Array[Byte]): PercentileDigest = {
     ApproximatePercentile.serializer.deserialize(bytes)
   }
-
-  override protected def withNewChildrenInternal(
-      newFirst: Expression, newSecond: Expression, newThird: Expression): ApproximatePercentile =
-    copy(child = newFirst, percentageExpression = newSecond, accuracyExpression = newThird)
 }
 
 object ApproximatePercentile {
@@ -274,7 +266,7 @@ object ApproximatePercentile {
   }
 
   /**
-   * Serializer for class [[PercentileDigest]]
+   * Serializer  for class [[PercentileDigest]]
    *
    * This class is thread safe.
    */

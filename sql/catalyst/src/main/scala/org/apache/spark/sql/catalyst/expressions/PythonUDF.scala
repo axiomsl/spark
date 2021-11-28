@@ -65,7 +65,4 @@ case class PythonUDF(
     exprId = resultId)
 
   override def nullable: Boolean = true
-
-  override protected def withNewChildrenInternal(newChildren: IndexedSeq[Expression]): PythonUDF =
-    copy(children = newChildren)
 }

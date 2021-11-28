@@ -65,7 +65,7 @@ case class CreateTableLikeCommand(
     targetTable: TableIdentifier,
     sourceTable: TableIdentifier,
     location: Option[String],
-    ifNotExists: Boolean) extends LeafRunnableCommand {
+    ifNotExists: Boolean) extends RunnableCommand {
 
   override def run(sparkSession: SparkSession): Seq[Row] = {
     val catalog = sparkSession.sessionState.catalog
@@ -124,7 +124,7 @@ case class CreateTableLikeCommand(
  */
 case class CreateTableCommand(
     table: CatalogTable,
-    ignoreIfExists: Boolean) extends LeafRunnableCommand {
+    ignoreIfExists: Boolean) extends RunnableCommand {
 
   override def run(sparkSession: SparkSession): Seq[Row] = {
     sparkSession.sessionState.catalog.createTable(table, ignoreIfExists)
@@ -146,7 +146,7 @@ case class AlterTableRenameCommand(
     oldName: TableIdentifier,
     newName: TableIdentifier,
     isView: Boolean)
-  extends LeafRunnableCommand {
+  extends RunnableCommand {
 
   override def run(sparkSession: SparkSession): Seq[Row] = {
     val catalog = sparkSession.sessionState.catalog
@@ -186,7 +186,7 @@ case class AlterTableRenameCommand(
 */
 case class AlterTableAddColumnsCommand(
     table: TableIdentifier,
-    colsToAdd: Seq[StructField]) extends LeafRunnableCommand {
+    colsToAdd: Seq[StructField]) extends RunnableCommand {
   override def run(sparkSession: SparkSession): Seq[Row] = {
     val catalog = sparkSession.sessionState.catalog
     val catalogTable = verifyAlterTableAddColumn(sparkSession.sessionState.conf, catalog, table)
@@ -258,7 +258,7 @@ case class LoadDataCommand(
     path: String,
     isLocal: Boolean,
     isOverwrite: Boolean,
-    partition: Option[TablePartitionSpec]) extends LeafRunnableCommand {
+    partition: Option[TablePartitionSpec]) extends RunnableCommand {
 
   override def run(sparkSession: SparkSession): Seq[Row] = {
     val catalog = sparkSession.sessionState.catalog
@@ -402,7 +402,7 @@ object LoadDataCommand {
  */
 case class TruncateTableCommand(
     tableName: TableIdentifier,
-    partitionSpec: Option[TablePartitionSpec]) extends LeafRunnableCommand {
+    partitionSpec: Option[TablePartitionSpec]) extends RunnableCommand {
 
   override def run(spark: SparkSession): Seq[Row] = {
     val catalog = spark.sessionState.catalog
@@ -565,7 +565,7 @@ case class DescribeTableCommand(
     table: TableIdentifier,
     partitionSpec: TablePartitionSpec,
     isExtended: Boolean)
-  extends LeafRunnableCommand {
+  extends RunnableCommand {
 
   override val output: Seq[Attribute] = Seq(
     // Column names are based on Hive.
@@ -695,7 +695,7 @@ case class DescribeColumnCommand(
     table: TableIdentifier,
     colNameParts: Seq[String],
     isExtended: Boolean)
-  extends LeafRunnableCommand {
+  extends RunnableCommand {
 
   override val output: Seq[Attribute] = {
     Seq(
@@ -782,7 +782,7 @@ case class ShowTablesCommand(
     databaseName: Option[String],
     tableIdentifierPattern: Option[String],
     isExtended: Boolean = false,
-    partitionSpec: Option[TablePartitionSpec] = None) extends LeafRunnableCommand {
+    partitionSpec: Option[TablePartitionSpec] = None) extends RunnableCommand {
 
   // The result of SHOW TABLES/SHOW TABLE has three basic columns: database, tableName and
   // isTemporary. If `isExtended` is true, append column `information` to the output columns.
@@ -853,7 +853,7 @@ case class ShowTablesCommand(
  * }}}
  */
 case class ShowTablePropertiesCommand(table: TableIdentifier, propertyKey: Option[String])
-  extends LeafRunnableCommand {
+  extends RunnableCommand {
 
   override val output: Seq[Attribute] = {
     val schema = AttributeReference("value", StringType, nullable = false)() :: Nil
@@ -894,7 +894,7 @@ case class ShowTablePropertiesCommand(table: TableIdentifier, propertyKey: Optio
  */
 case class ShowColumnsCommand(
     databaseName: Option[String],
-    tableName: TableIdentifier) extends LeafRunnableCommand {
+    tableName: TableIdentifier) extends RunnableCommand {
   override val output: Seq[Attribute] = {
     AttributeReference("col_name", StringType, nullable = false)() :: Nil
   }
@@ -931,7 +931,7 @@ case class ShowColumnsCommand(
  */
 case class ShowPartitionsCommand(
     tableName: TableIdentifier,
-    spec: Option[TablePartitionSpec]) extends LeafRunnableCommand {
+    spec: Option[TablePartitionSpec]) extends RunnableCommand {
   override val output: Seq[Attribute] = {
     AttributeReference("partition", StringType, nullable = false)() :: Nil
   }
@@ -975,7 +975,7 @@ case class ShowPartitionsCommand(
   }
 }
 
-case class ShowCreateTableCommand(table: TableIdentifier) extends LeafRunnableCommand {
+case class ShowCreateTableCommand(table: TableIdentifier) extends RunnableCommand {
   override val output: Seq[Attribute] = Seq(
     AttributeReference("createtab_stmt", StringType, nullable = false)()
   )

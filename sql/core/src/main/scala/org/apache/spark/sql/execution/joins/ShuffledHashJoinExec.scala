@@ -67,8 +67,4 @@ case class ShuffledHashJoinExec(
       join(streamIter, hashed, numOutputRows)
     }
   }
-
-  override protected def withNewChildrenInternal(
-      newLeft: SparkPlan, newRight: SparkPlan): ShuffledHashJoinExec =
-    copy(left = newLeft, right = newRight)
 }

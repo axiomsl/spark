@@ -124,7 +124,4 @@ case class EventTimeWatermarkExec(
       a
     }
   }
-
-  override protected def withNewChildInternal(newChild: SparkPlan): EventTimeWatermarkExec =
-    copy(child = newChild)
 }

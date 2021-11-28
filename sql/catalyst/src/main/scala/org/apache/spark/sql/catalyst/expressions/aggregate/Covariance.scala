@@ -19,16 +19,16 @@ package org.apache.spark.sql.catalyst.expressions.aggregate
 
 import org.apache.spark.sql.catalyst.dsl.expressions._
 import org.apache.spark.sql.catalyst.expressions._
-import org.apache.spark.sql.catalyst.trees.BinaryLike
 import org.apache.spark.sql.types._
 
 /**
  * Compute the covariance between two expressions.
  * When applied on empty data (i.e., count is zero), it returns NULL.
  */
-abstract class Covariance(val left: Expression, val right: Expression)
-  extends DeclarativeAggregate with ImplicitCastInputTypes with BinaryLike[Expression] {
+abstract class Covariance(x: Expression, y: Expression)
+  extends DeclarativeAggregate with ImplicitCastInputTypes {
 
+  override def children: Seq[Expression] = Seq(x, y)
   override def nullable: Boolean = true
   override def dataType: DataType = DoubleType
   override def inputTypes: Seq[AbstractDataType] = Seq(DoubleType, DoubleType)
@@ -62,14 +62,14 @@ abstract class Covariance(val left: Expression, val right: Expression)
 
   protected def updateExpressionsDef: Seq[Expression] = {
     val newN = n + 1.0
-    val dx = left - xAvg
-    val dy = right - yAvg
+    val dx = x - xAvg
+    val dy = y - yAvg
     val dyN = dy / newN
     val newXAvg = xAvg + dx / newN
     val newYAvg = yAvg + dyN
-    val newCk = ck + dx * (right - newYAvg)
+    val newCk = ck + dx * (y - newYAvg)
 
-    val isNull = left.isNull || right.isNull
+    val isNull = x.isNull || y.isNull
     Seq(
       If(isNull, n, newN),
       If(isNull, xAvg, newXAvg),
@@ -81,27 +81,20 @@ abstract class Covariance(val left: Expression, val right: Expression)
 
 @ExpressionDescription(
   usage = "_FUNC_(expr1, expr2) - Returns the population covariance of a set of number pairs.")
-case class CovPopulation(override val left: Expression, override val  right: Expression) extends Covariance(left, right) {
+case class CovPopulation(left: Expression, right: Expression) extends Covariance(left, right) {
   override val evaluateExpression: Expression = {
     If(n === 0.0, Literal.create(null, DoubleType), ck / n)
   }
   override def prettyName: String = "covar_pop"
-
-  override protected def withNewChildrenInternal(
-      newLeft: Expression, newRight: Expression): CovPopulation =
-    copy(left = newLeft, right = newRight)
 }
 
 
 @ExpressionDescription(
   usage = "_FUNC_(expr1, expr2) - Returns the sample covariance of a set of number pairs.")
-case class CovSample(override val left: Expression, override val right: Expression) extends Covariance(left, right) {
+case class CovSample(left: Expression, right: Expression) extends Covariance(left, right) {
   override val evaluateExpression: Expression = {
     If(n === 0.0, Literal.create(null, DoubleType),
       If(n === 1.0, Double.NaN, ck / (n - 1.0)))
   }
   override def prettyName: String = "covar_samp"
-
-  override protected def withNewChildrenInternal(
-      newLeft: Expression, newRight: Expression): CovSample = copy(left = newLeft, right = newRight)
 }

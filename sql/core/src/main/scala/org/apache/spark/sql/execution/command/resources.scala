@@ -29,7 +29,7 @@ import org.apache.spark.sql.types.{IntegerType, StringType, StructField, StructT
 /**
  * Adds a jar to the current session so it can be used (for UDFs or serdes).
  */
-case class AddJarCommand(path: String) extends LeafRunnableCommand {
+case class AddJarCommand(path: String) extends RunnableCommand {
   override val output: Seq[Attribute] = {
     val schema = StructType(
       StructField("result", IntegerType, nullable = false) :: Nil)
@@ -45,7 +45,7 @@ case class AddJarCommand(path: String) extends LeafRunnableCommand {
 /**
  * Adds a file to the current session so it can be used.
  */
-case class AddFileCommand(path: String) extends LeafRunnableCommand {
+case class AddFileCommand(path: String) extends RunnableCommand {
   override def run(sparkSession: SparkSession): Seq[Row] = {
     sparkSession.sparkContext.addFile(path)
     Seq.empty[Row]
@@ -56,7 +56,7 @@ case class AddFileCommand(path: String) extends LeafRunnableCommand {
  * Returns a list of file paths that are added to resources.
  * If file paths are provided, return the ones that are added to resources.
  */
-case class ListFilesCommand(files: Seq[String] = Seq.empty[String]) extends LeafRunnableCommand {
+case class ListFilesCommand(files: Seq[String] = Seq.empty[String]) extends RunnableCommand {
   override val output: Seq[Attribute] = {
     AttributeReference("Results", StringType, nullable = false)() :: Nil
   }
@@ -83,7 +83,7 @@ case class ListFilesCommand(files: Seq[String] = Seq.empty[String]) extends Leaf
  * Returns a list of jar files that are added to resources.
  * If jar files are provided, return the ones that are added to resources.
  */
-case class ListJarsCommand(jars: Seq[String] = Seq.empty[String]) extends LeafRunnableCommand {
+case class ListJarsCommand(jars: Seq[String] = Seq.empty[String]) extends RunnableCommand {
   override val output: Seq[Attribute] = {
     AttributeReference("Results", StringType, nullable = false)() :: Nil
   }

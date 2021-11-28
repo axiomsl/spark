@@ -239,7 +239,4 @@ case class FlatMapGroupsWithStateExec(
       CompletionIterator[InternalRow, Iterator[InternalRow]](mappedIterator, onIteratorCompletion)
     }
   }
-
-  override protected def withNewChildInternal(newChild: SparkPlan): SparkPlan =
-    copy(child = newChild)
 }

@@ -104,7 +104,4 @@ case class ExprReuseOutput(child: Expression) extends UnaryExpression {
     row.update(0, child.eval(input))
     row
   }
-
-  override protected def withNewChildInternal(newChild: Expression): ExprReuseOutput =
-    copy(child = newChild)
 }

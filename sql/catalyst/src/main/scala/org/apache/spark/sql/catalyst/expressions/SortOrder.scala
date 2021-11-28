@@ -64,9 +64,7 @@ case class SortOrder(
     direction: SortDirection,
     nullOrdering: NullOrdering,
     sameOrderExpressions: Set[Expression])
-  extends Expression with Unevaluable {
-
-  override def children: Seq[Expression] = Seq(child) ++ sameOrderExpressions
+  extends UnaryExpression with Unevaluable {
 
   /** Sort order is not foldable because we don't have an eval for it. */
   override def foldable: Boolean = false
@@ -91,9 +89,6 @@ case class SortOrder(
     (sameOrderExpressions + child).exists(required.child.semanticEquals) &&
       direction == required.direction && nullOrdering == required.nullOrdering
   }
-
-  override protected def withNewChildrenInternal(newChildren: IndexedSeq[Expression]): SortOrder =
-    copy(child = newChildren.head, sameOrderExpressions = newChildren.tail.toSet)
 }
 
 object SortOrder {
@@ -232,7 +227,4 @@ if (!${childCode.isNull}) {
   }
 
   override def dataType: DataType = LongType
-
-  override protected def withNewChildInternal(newChild: Expression): SortPrefix =
-    copy(child = newChild.asInstanceOf[SortOrder])
 }

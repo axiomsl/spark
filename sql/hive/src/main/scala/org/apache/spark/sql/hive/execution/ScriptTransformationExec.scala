@@ -244,9 +244,6 @@ case class ScriptTransformationExec(
       }
     }
   }
-
-  override protected def withNewChildInternal(newChild: SparkPlan): SparkPlan =
-    copy(child = newChild)
 }
 
 private class ScriptTransformationWriterThread(

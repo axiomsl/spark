@@ -37,9 +37,6 @@ case class UnscaledValue(child: Expression) extends UnaryExpression {
   override def doGenCode(ctx: CodegenContext, ev: ExprCode): ExprCode = {
     defineCodeGen(ctx, ev, c => s"$c.toUnscaledLong()")
   }
-
-  override protected def withNewChildInternal(newChild: Expression): UnscaledValue =
-    copy(child = newChild)
 }
 
 /**
@@ -64,15 +61,6 @@ case class MakeDecimal(child: Expression, precision: Int, scale: Int) extends Un
       """
     })
   }
-
-  override protected def withNewChildInternal(newChild: Expression): MakeDecimal =
-    copy(child = newChild)
-}
-
-object MakeDecimal {
-  def apply(child: Expression, precision: Int, scale: Int): MakeDecimal = {
-    new MakeDecimal(child, precision, scale)
-  }
 }
 
 /**
@@ -89,9 +77,6 @@ case class PromotePrecision(child: Expression) extends UnaryExpression {
   override def prettyName: String = "promote_precision"
   override def sql: String = child.sql
   override lazy val canonicalized: Expression = child.canonicalized
-
-  override protected def withNewChildInternal(newChild: Expression): Expression =
-    copy(child = newChild)
 }
 
 /**
@@ -122,7 +107,4 @@ case class CheckOverflow(child: Expression, dataType: DecimalType) extends Unary
   override def toString: String = s"CheckOverflow($child, $dataType)"
 
   override def sql: String = child.sql
-
-  override protected def withNewChildInternal(newChild: Expression): CheckOverflow =
-    copy(child = newChild)
 }

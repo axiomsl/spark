@@ -18,14 +18,14 @@
 package org.apache.spark.ml.stat
 
 import java.io._
+
 import org.apache.spark.annotation.{Experimental, Since}
 import org.apache.spark.internal.Logging
-import org.apache.spark.ml.linalg.{Vector, VectorUDT, Vectors}
+import org.apache.spark.ml.linalg.{Vector, Vectors, VectorUDT}
 import org.apache.spark.sql.Column
 import org.apache.spark.sql.catalyst.InternalRow
 import org.apache.spark.sql.catalyst.expressions.{Expression, ImplicitCastInputTypes, UnsafeArrayData}
 import org.apache.spark.sql.catalyst.expressions.aggregate.{AggregateExpression, Complete, TypedImperativeAggregate}
-import org.apache.spark.sql.catalyst.trees.BinaryLike
 import org.apache.spark.sql.functions.lit
 import org.apache.spark.sql.types._
 
@@ -571,7 +571,7 @@ private[ml] object SummaryBuilderImpl extends Logging {
       weightExpr: Expression,
       mutableAggBufferOffset: Int,
       inputAggBufferOffset: Int)
-    extends TypedImperativeAggregate[SummarizerBuffer] with ImplicitCastInputTypes with BinaryLike[Expression] {
+    extends TypedImperativeAggregate[SummarizerBuffer] with ImplicitCastInputTypes {
 
     override def eval(state: SummarizerBuffer): Any = {
       val metrics = requestedMetrics.map {
@@ -588,6 +588,8 @@ private[ml] object SummaryBuilderImpl extends Logging {
     }
 
     override def inputTypes: Seq[DataType] = vectorUDT :: DoubleType :: Nil
+
+    override def children: Seq[Expression] = featuresExpr :: weightExpr :: Nil
 
     override def update(state: SummarizerBuffer, row: InternalRow): SummarizerBuffer = {
       val features = vectorUDT.deserialize(featuresExpr.eval(row))
@@ -633,13 +635,5 @@ private[ml] object SummaryBuilderImpl extends Logging {
 
     override def prettyName: String = "aggregate_metrics"
 
-    override def left: Expression = featuresExpr
-    override def right: Expression = weightExpr
-
-    override protected def withNewChildrenInternal(
-        newLeft: Expression, newRight: Expression): MetricsAggregate =
-      copy(featuresExpr = newLeft, weightExpr = newRight)
   }
-
-
 }

@@ -169,7 +169,4 @@ private case class ExceptionInjectingOperator(child: SparkPlan) extends UnaryExe
   override def output: Seq[Attribute] = child.output
 
   override def outputPartitioning: Partitioning = child.outputPartitioning
-
-  override protected def withNewChildInternal(newChild: SparkPlan): SparkPlan =
-    copy(child = newChild)
 }

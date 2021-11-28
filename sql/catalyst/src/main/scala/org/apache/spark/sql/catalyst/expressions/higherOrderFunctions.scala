@@ -18,11 +18,12 @@
 package org.apache.spark.sql.catalyst.expressions
 
 import java.util.concurrent.atomic.AtomicReference
+
 import scala.collection.mutable
+
 import org.apache.spark.sql.catalyst.InternalRow
 import org.apache.spark.sql.catalyst.analysis.{TypeCheckResult, TypeCoercion, UnresolvedAttribute, UnresolvedException}
 import org.apache.spark.sql.catalyst.expressions.codegen._
-import org.apache.spark.sql.catalyst.trees.{BinaryLike, QuaternaryLike, TernaryLike}
 import org.apache.spark.sql.catalyst.util._
 import org.apache.spark.sql.types._
 import org.apache.spark.unsafe.array.ByteArrayMethods
@@ -96,12 +97,6 @@ case class LambdaFunction(
   lazy val bound: Boolean = arguments.forall(_.resolved)
 
   override def eval(input: InternalRow): Any = function.eval(input)
-
-  override protected def withNewChildrenInternal(
-      newChildren: IndexedSeq[Expression]): LambdaFunction =
-    copy(
-      function = newChildren.head,
-      arguments = newChildren.tail.asInstanceOf[Seq[NamedExpression]])
 }
 
 object LambdaFunction {
@@ -129,7 +124,7 @@ trait HigherOrderFunction extends Expression with ExpectsInputTypes {
   def argumentTypes: Seq[AbstractDataType]
 
   /**
-   * All arguments have been resolved. This means that the types and nullability of (most of) the
+   * All arguments have been resolved. This means that the types and nullabilty of (most of) the
    * lambda function arguments is known, and that we can start binding the lambda functions.
    */
   lazy val argumentsResolved: Boolean = arguments.forall(_.resolved)
@@ -182,7 +177,7 @@ trait HigherOrderFunction extends Expression with ExpectsInputTypes {
 /**
  * Trait for functions having as input one argument and one function.
  */
-trait SimpleHigherOrderFunction extends HigherOrderFunction with BinaryLike[Expression] {
+trait SimpleHigherOrderFunction extends HigherOrderFunction  {
 
   def argument: Expression
 
@@ -201,9 +196,6 @@ trait SimpleHigherOrderFunction extends HigherOrderFunction with BinaryLike[Expr
   override def functionTypes: Seq[AbstractDataType] = functionType :: Nil
 
   def functionForEval: Expression = functionsForEval.head
-
-  override def left: Expression = argument
-  override def right: Expression = function
 
   /**
    * Called by [[eval]]. If a subclass keeps the default nullability, it can override this method
@@ -288,10 +280,6 @@ case class ArrayTransform(
   }
 
   override def prettyName: String = "transform"
-
-  override protected def withNewChildrenInternal(
-      newLeft: Expression, newRight: Expression): ArrayTransform =
-    copy(argument = newLeft, function = newRight)
 }
 
 /**
@@ -337,10 +325,6 @@ case class ArrayFilter(
   }
 
   override def prettyName: String = "filter"
-
-  override protected def withNewChildrenInternal(
-      newLeft: Expression, newRight: Expression): ArrayFilter =
-    copy(argument = newLeft, function = newRight)
 }
 
 /**
@@ -386,10 +370,6 @@ case class ArrayExists(
   }
 
   override def prettyName: String = "exists"
-
-  override protected def withNewChildrenInternal(
-      newLeft: Expression, newRight: Expression): ArrayExists =
-    copy(argument = newLeft, function = newRight)
 }
 
 /**
@@ -415,7 +395,7 @@ case class ArrayAggregate(
     zero: Expression,
     merge: Expression,
     finish: Expression)
-  extends HigherOrderFunction with CodegenFallback with QuaternaryLike[Expression] {
+  extends HigherOrderFunction with CodegenFallback {
 
   def this(argument: Expression, zero: Expression, merge: Expression) = {
     this(argument, zero, merge, LambdaFunction.identity)
@@ -481,15 +461,6 @@ case class ArrayAggregate(
   }
 
   override def prettyName: String = "aggregate"
-
-  override def first: Expression = argument
-  override def second: Expression = zero
-  override def third: Expression = merge
-  override def fourth: Expression = finish
-
-  override protected def withNewChildrenInternal(first: Expression, second: Expression,
-      third: Expression, fourth: Expression): ArrayAggregate =
-    copy(argument = first, zero = second, merge = third, finish = fourth)
 }
 
 // scalastyle:off line.size.limit
@@ -507,7 +478,7 @@ case class ArrayAggregate(
   since = "2.4.0")
 // scalastyle:on line.size.limit
 case class ZipWith(left: Expression, right: Expression, function: Expression)
-  extends HigherOrderFunction with CodegenFallback with TernaryLike[Expression] {
+  extends HigherOrderFunction with CodegenFallback {
 
   def functionForEval: Expression = functionsForEval.head
 
@@ -564,12 +535,4 @@ case class ZipWith(left: Expression, right: Expression, function: Expression)
   }
 
   override def prettyName: String = "zip_with"
-
-  override def first: Expression = left
-  override def second: Expression = right
-  override def third: Expression = function
-
-  override protected def withNewChildrenInternal(
-      newFirst: Expression, newSecond: Expression, newThird: Expression): ZipWith =
-    copy(left = newFirst, right = newSecond, function = newThird)
 }

@@ -139,9 +139,6 @@ case class GetStructField(child: Expression, ordinal: Int, name: Option[String] 
       }
     })
   }
-
-  override protected def withNewChildInternal(newChild: Expression): GetStructField =
-    copy(child = newChild)
 }
 
 /**
@@ -216,9 +213,6 @@ case class GetArrayStructFields(
       """
     })
   }
-
-  override protected def withNewChildInternal(newChild: Expression): GetArrayStructFields =
-    copy(child = newChild)
 }
 
 /**
@@ -271,10 +265,6 @@ case class GetArrayItem(child: Expression, ordinal: Expression)
       """
     })
   }
-
-  override protected def withNewChildrenInternal(
-      newLeft: Expression, newRight: Expression): GetArrayItem =
-    copy(child = newLeft, ordinal = newRight)
 }
 
 /**
@@ -390,8 +380,4 @@ case class GetMapValue(child: Expression, key: Expression)
   override def doGenCode(ctx: CodegenContext, ev: ExprCode): ExprCode = {
     doGetValueGenCode(ctx, ev, child.dataType.asInstanceOf[MapType])
   }
-
-  override protected def withNewChildrenInternal(
-      newLeft: Expression, newRight: Expression): GetMapValue =
-    copy(child = newLeft, key = newRight)
 }

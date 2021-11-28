@@ -208,9 +208,6 @@ case class Alias(child: Expression, name: String)(
     val qualifierPrefix = if (qualifier.nonEmpty) qualifier.mkString(".") + "." else ""
     s"${child.sql} AS $qualifierPrefix${quoteIdentifier(name)}"
   }
-
-  override protected def withNewChildInternal(newChild: Expression): Alias =
-    copy(child = newChild)(exprId, qualifier, explicitMetadata)
 }
 
 /**

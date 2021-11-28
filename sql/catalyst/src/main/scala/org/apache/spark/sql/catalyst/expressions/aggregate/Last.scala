@@ -21,7 +21,6 @@ import org.apache.spark.sql.catalyst.analysis.TypeCheckResult
 import org.apache.spark.sql.catalyst.analysis.TypeCheckResult.TypeCheckSuccess
 import org.apache.spark.sql.catalyst.dsl.expressions._
 import org.apache.spark.sql.catalyst.expressions._
-import org.apache.spark.sql.catalyst.trees.UnaryLike
 import org.apache.spark.sql.types._
 
 /**
@@ -37,13 +36,15 @@ import org.apache.spark.sql.types._
       If `isIgnoreNull` is true, returns only non-null values.
   """)
 case class Last(child: Expression, ignoreNulls: Boolean)
-  extends DeclarativeAggregate with ExpectsInputTypes with UnaryLike[Expression] {
+  extends DeclarativeAggregate with ExpectsInputTypes {
 
   def this(child: Expression) = this(child, false)
 
   def this(child: Expression, ignoreNullsExpr: Expression) = {
     this(child, FirstLast.validateIgnoreNullExpr(ignoreNullsExpr, "last"))
   }
+
+  override def children: Seq[Expression] = child :: Nil
 
   override def nullable: Boolean = true
 
@@ -101,6 +102,4 @@ case class Last(child: Expression, ignoreNulls: Boolean)
   override lazy val evaluateExpression: AttributeReference = last
 
   override def toString: String = s"last($child)${if (ignoreNulls) " ignore nulls"}"
-
-  override protected def withNewChildInternal(newChild: Expression): Last = copy(child = newChild)
 }

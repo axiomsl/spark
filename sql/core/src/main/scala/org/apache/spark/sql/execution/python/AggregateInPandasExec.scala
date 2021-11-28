@@ -153,7 +153,4 @@ case class AggregateInPandasExec(
       }
     }
   }
-
-  override protected def withNewChildInternal(newChild: SparkPlan): SparkPlan =
-    copy(child = newChild)
 }

@@ -18,9 +18,11 @@
 package org.apache.spark.sql.catalyst.expressions.codegen
 
 import java.lang.{Boolean => JBool}
+
 import scala.collection.mutable.ArrayBuffer
 import scala.language.{existentials, implicitConversions}
-import org.apache.spark.sql.catalyst.trees.{LeafLike, TreeNode}
+
+import org.apache.spark.sql.catalyst.trees.TreeNode
 import org.apache.spark.sql.types.{BooleanType, DataType}
 
 /**
@@ -285,13 +287,11 @@ case class CodeBlock(codeParts: Seq[String], blockInputs: Seq[JavaCode]) extends
     }
     buf.toString
   }
-
-  override protected def withNewChildrenInternal(newChildren: IndexedSeq[Block]): Block =
-    super.legacyWithNewChildren(newChildren)
 }
 
-case object EmptyBlock extends Block with Serializable with LeafLike[Block] {
+case object EmptyBlock extends Block with Serializable {
   override val code: String = ""
+  override def children: Seq[Block] = Seq.empty
 }
 
 /**

@@ -18,6 +18,7 @@
 package org.apache.spark.sql.execution.datasources.v2
 
 import scala.util.control.NonFatal
+
 import org.apache.spark.{SparkEnv, SparkException, TaskContext}
 import org.apache.spark.executor.CommitDeniedException
 import org.apache.spark.internal.Logging
@@ -26,8 +27,8 @@ import org.apache.spark.sql.Row
 import org.apache.spark.sql.catalyst.InternalRow
 import org.apache.spark.sql.catalyst.encoders.{ExpressionEncoder, RowEncoder}
 import org.apache.spark.sql.catalyst.expressions.Attribute
-import org.apache.spark.sql.catalyst.plans.logical.{LogicalPlan, UnaryNode}
-import org.apache.spark.sql.execution.{SparkPlan, UnaryExecNode}
+import org.apache.spark.sql.catalyst.plans.logical.LogicalPlan
+import org.apache.spark.sql.execution.SparkPlan
 import org.apache.spark.sql.execution.streaming.MicroBatchExecution
 import org.apache.spark.sql.sources.v2.writer._
 import org.apache.spark.sql.types.StructType
@@ -38,19 +39,18 @@ import org.apache.spark.util.Utils
  * specific logical plans, like [[org.apache.spark.sql.catalyst.plans.logical.AppendData]].
  */
 @deprecated("Use specific logical plans like AppendData instead", "2.4.0")
-case class WriteToDataSourceV2(writer: DataSourceWriter, query: LogicalPlan) extends UnaryNode {
-  override def child: LogicalPlan = query
+case class WriteToDataSourceV2(writer: DataSourceWriter, query: LogicalPlan) extends LogicalPlan {
+  override def children: Seq[LogicalPlan] = Seq(query)
   override def output: Seq[Attribute] = Nil
-  override protected def withNewChildInternal(newChild: LogicalPlan): WriteToDataSourceV2 =
-    copy(query = newChild)
 }
 
 /**
  * The physical plan for writing data into data source v2.
  */
-case class WriteToDataSourceV2Exec(writer: DataSourceWriter, query: SparkPlan) extends UnaryExecNode {
+case class WriteToDataSourceV2Exec(writer: DataSourceWriter, query: SparkPlan) extends SparkPlan {
+  override def children: Seq[SparkPlan] = Seq(query)
   override def output: Seq[Attribute] = Nil
-  override def child: SparkPlan = query
+
   override protected def doExecute(): RDD[InternalRow] = {
     val writeTask = writer.createWriterFactory()
     val useCommitCoordinator = writer.useCommitCoordinator
@@ -96,9 +96,6 @@ case class WriteToDataSourceV2Exec(writer: DataSourceWriter, query: SparkPlan) e
 
     sparkContext.emptyRDD
   }
-
-  override protected def withNewChildInternal(newChild: SparkPlan): WriteToDataSourceV2Exec =
-    copy(query = newChild)
 }
 
 object DataWritingSparkTask extends Logging {

@@ -21,10 +21,9 @@ import org.apache.spark.sql.catalyst.analysis.{DecimalPrecision, TypeCheckResult
 import org.apache.spark.sql.catalyst.dsl.expressions._
 import org.apache.spark.sql.catalyst.expressions._
 import org.apache.spark.sql.catalyst.util.TypeUtils
-import org.apache.spark.sql.catalyst.trees.UnaryLike
 import org.apache.spark.sql.types._
 
-abstract class AverageLike(child: Expression) extends DeclarativeAggregate with UnaryLike[Expression] {
+abstract class AverageLike(child: Expression) extends DeclarativeAggregate {
 
   override def nullable: Boolean = true
   // Return data type.
@@ -82,11 +81,10 @@ case class Average(child: Expression)
 
   override def prettyName: String = "avg"
 
+  override def children: Seq[Expression] = child :: Nil
+
   override def inputTypes: Seq[AbstractDataType] = Seq(NumericType)
 
   override def checkInputDataTypes(): TypeCheckResult =
     TypeUtils.checkForNumericExpr(child.dataType, "function average")
-
-  override protected def withNewChildInternal(newChild: Expression): Average =
-    copy(child = newChild)
 }

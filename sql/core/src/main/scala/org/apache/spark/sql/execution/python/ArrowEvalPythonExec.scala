@@ -65,9 +65,6 @@ case class ArrowEvalPython(
     output: Seq[Attribute],
     child: LogicalPlan) extends UnaryNode {
   override def producedAttributes: AttributeSet = AttributeSet(output.drop(child.output.length))
-
-  override protected def withNewChildInternal(newChild: LogicalPlan): LogicalPlan =
-    copy(child = newChild)
 }
 
 /**
@@ -124,7 +121,4 @@ case class ArrowEvalPythonExec(udfs: Seq[PythonUDF], output: Seq[Attribute], chi
       override def next(): InternalRow = currentIter.next()
     }
   }
-
-  override protected def withNewChildInternal(newChild: SparkPlan): SparkPlan =
-    copy(child = newChild)
 }

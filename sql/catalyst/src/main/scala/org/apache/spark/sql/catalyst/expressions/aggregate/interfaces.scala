@@ -61,9 +61,10 @@ case object Complete extends AggregateMode
  * A place holder expressions used in code-gen, it does not change the corresponding value
  * in the row.
  */
-case object NoOp extends LeafExpression with Unevaluable {
+case object NoOp extends Expression with Unevaluable {
   override def nullable: Boolean = true
   override def dataType: DataType = NullType
+  override def children: Seq[Expression] = Nil
 }
 
 object AggregateExpression {
@@ -143,10 +144,6 @@ case class AggregateExpression(
   }
 
   override def sql: String = aggregateFunction.sql(isDistinct)
-
-  override protected def withNewChildrenInternal(
-     newChildren: IndexedSeq[Expression]): AggregateExpression =
-      copy(aggregateFunction = newChildren(0).asInstanceOf[AggregateFunction])
 }
 
 /**

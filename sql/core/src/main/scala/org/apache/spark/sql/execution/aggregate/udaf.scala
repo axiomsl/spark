@@ -449,7 +449,4 @@ case class ScalaUDAF(
   }
 
   override def nodeName: String = udaf.getClass.getSimpleName
-
-  override protected def withNewChildrenInternal(newChildren: IndexedSeq[Expression]): ScalaUDAF =
-    copy(children = newChildren)
 }

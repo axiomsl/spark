@@ -18,11 +18,12 @@
 package org.apache.spark.sql.catalyst.expressions
 
 import java.util.Locale
+
 import org.apache.spark.sql.catalyst.InternalRow
 import org.apache.spark.sql.catalyst.analysis.{TypeCheckResult, TypeCoercion}
 import org.apache.spark.sql.catalyst.expressions.codegen._
 import org.apache.spark.sql.catalyst.expressions.codegen.Block._
-import org.apache.spark.sql.catalyst.trees.{BinaryLike, LeafLike, TernaryLike, TreeNode, UnaryLike}
+import org.apache.spark.sql.catalyst.trees.TreeNode
 import org.apache.spark.sql.types._
 import org.apache.spark.util.Utils
 
@@ -361,16 +362,21 @@ trait Stateful extends Nondeterministic {
 /**
  * A leaf expression, i.e. one without any child expressions.
  */
-abstract class LeafExpression extends Expression with LeafLike[Expression]
+abstract class LeafExpression extends Expression {
+
+  override final def children: Seq[Expression] = Nil
+}
 
 
 /**
  * An expression with one input and one output. The output is by default evaluated to null
  * if the input is evaluated to null.
  */
-abstract class UnaryExpression extends Expression with UnaryLike[Expression] {
+abstract class UnaryExpression extends Expression {
 
   def child: Expression
+
+  override final def children: Seq[Expression] = child :: Nil
 
   override def foldable: Boolean = child.foldable
   override def nullable: Boolean = child.nullable
@@ -447,17 +453,16 @@ abstract class UnaryExpression extends Expression with UnaryLike[Expression] {
   }
 }
 
-
-object UnaryExpression {
-  def unapply(e: UnaryExpression): Option[Expression] = Some(e.child)
-}
-
-
 /**
  * An expression with two inputs and one output. The output is by default evaluated to null
  * if any input is evaluated to null.
  */
-abstract class BinaryExpression extends Expression with BinaryLike[Expression] {
+abstract class BinaryExpression extends Expression {
+
+  def left: Expression
+  def right: Expression
+
+  override final def children: Seq[Expression] = Seq(left, right)
 
   override def foldable: Boolean = left.foldable && right.foldable
 
@@ -548,11 +553,6 @@ abstract class BinaryExpression extends Expression with BinaryLike[Expression] {
 }
 
 
-object BinaryExpression {
-  def unapply(e: BinaryExpression): Option[(Expression, Expression)] = Some((e.left, e.right))
-}
-
-
 /**
  * A [[BinaryExpression]] that is an operator, with two properties:
  *
@@ -601,7 +601,7 @@ object BinaryOperator {
  * An expression with three inputs and one output. The output is by default evaluated to null
  * if any input is evaluated to null.
  */
-abstract class TernaryExpression extends Expression with TernaryLike[Expression] {
+abstract class TernaryExpression extends Expression {
 
   override def foldable: Boolean = children.forall(_.foldable)
 
@@ -612,11 +612,12 @@ abstract class TernaryExpression extends Expression with TernaryLike[Expression]
    * If subclass of TernaryExpression override nullable, probably should also override this.
    */
   override def eval(input: InternalRow): Any = {
-    val value1 = first.eval(input)
+    val exprs = children
+    val value1 = exprs(0).eval(input)
     if (value1 != null) {
-      val value2 = second.eval(input)
+      val value2 = exprs(1).eval(input)
       if (value2 != null) {
-        val value3 = third.eval(input)
+        val value3 = exprs(2).eval(input)
         if (value3 != null) {
           return nullSafeEval(value1, value2, value3)
         }

@@ -20,7 +20,6 @@ package org.apache.spark.sql.catalyst.expressions.aggregate
 import org.apache.spark.sql.AnalysisException
 import org.apache.spark.sql.catalyst.InternalRow
 import org.apache.spark.sql.catalyst.expressions._
-import org.apache.spark.sql.catalyst.trees.UnaryLike
 import org.apache.spark.sql.catalyst.util.HyperLogLogPlusPlusHelper
 import org.apache.spark.sql.types._
 
@@ -42,7 +41,7 @@ import org.apache.spark.sql.types._
  * https://docs.google.com/document/d/1gyjfMHy43U9OWBXxfaeG-3MjGzejW1dlpyMwEYAAWEI/view?fullscreen#
  *
  * @param child to estimate the cardinality of.
- * @param relativeSD the maximum relative standard deviation allowed.
+ * @param relativeSD the maximum estimation error allowed.
  */
 // scalastyle:on
 @ExpressionDescription(
@@ -55,7 +54,7 @@ case class HyperLogLogPlusPlus(
     relativeSD: Double = 0.05,
     mutableAggBufferOffset: Int = 0,
     inputAggBufferOffset: Int = 0)
-  extends ImperativeAggregate with UnaryLike[Expression] {
+  extends ImperativeAggregate {
 
   def this(child: Expression) = {
     this(child = child, relativeSD = 0.05, mutableAggBufferOffset = 0, inputAggBufferOffset = 0)
@@ -76,6 +75,8 @@ case class HyperLogLogPlusPlus(
 
   override def withNewInputAggBufferOffset(newInputAggBufferOffset: Int): ImperativeAggregate =
     copy(inputAggBufferOffset = newInputAggBufferOffset)
+
+  override def children: Seq[Expression] = Seq(child)
 
   override def nullable: Boolean = false
 
@@ -132,9 +133,6 @@ case class HyperLogLogPlusPlus(
   override def eval(buffer: InternalRow): Any = {
     hllppHelper.query(buffer, mutableAggBufferOffset)
   }
-
-  override protected def withNewChildInternal(newChild: Expression): HyperLogLogPlusPlus =
-    copy(child = newChild)
 }
 
 object HyperLogLogPlusPlus {

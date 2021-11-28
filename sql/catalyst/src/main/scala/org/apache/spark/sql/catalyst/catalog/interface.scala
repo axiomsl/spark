@@ -496,9 +496,8 @@ object CatalogColumnStat extends Logging {
       case FloatType => s.toFloat
       case DoubleType => s.toDouble
       case _: DecimalType => Decimal(s)
-      case StringType => s
-      // This version of Spark does not use min/max for binary type so we ignore it.
-      case BinaryType  => null
+      // This version of Spark does not use min/max for binary/string types so we ignore it.
+      case BinaryType | StringType => null
       case _ =>
         throw new AnalysisException("Column statistics deserialization is not supported for " +
           s"column $name of data type: $dataType.")
@@ -511,7 +510,6 @@ object CatalogColumnStat extends Logging {
    */
   def toExternalString(v: Any, colName: String, dataType: DataType): String = {
     val externalValue = dataType match {
-      case StringType => v
       case DateType => DateTimeUtils.toJavaDate(v.asInstanceOf[Int])
       case TimestampType => DateTimeUtils.toJavaTimestamp(v.asInstanceOf[Long])
       case BooleanType | _: IntegralType | FloatType | DoubleType => v

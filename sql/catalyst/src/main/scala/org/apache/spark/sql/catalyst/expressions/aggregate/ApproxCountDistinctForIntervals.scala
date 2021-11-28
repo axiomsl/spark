@@ -23,7 +23,6 @@ import org.apache.spark.sql.catalyst.InternalRow
 import org.apache.spark.sql.catalyst.analysis.TypeCheckResult
 import org.apache.spark.sql.catalyst.analysis.TypeCheckResult.{TypeCheckFailure, TypeCheckSuccess}
 import org.apache.spark.sql.catalyst.expressions.{ExpectsInputTypes, Expression, GenericInternalRow}
-import org.apache.spark.sql.catalyst.trees.BinaryLike
 import org.apache.spark.sql.catalyst.util.{ArrayData, GenericArrayData, HyperLogLogPlusPlusHelper}
 import org.apache.spark.sql.types._
 import org.apache.spark.unsafe.Platform
@@ -48,7 +47,7 @@ case class ApproxCountDistinctForIntervals(
     relativeSD: Double = 0.05,
     mutableAggBufferOffset: Int = 0,
     inputAggBufferOffset: Int = 0)
-  extends TypedImperativeAggregate[Array[Long]] with ExpectsInputTypes with BinaryLike[Expression] {
+  extends TypedImperativeAggregate[Array[Long]] with ExpectsInputTypes {
 
   def this(child: Expression, endpointsExpression: Expression, relativeSD: Expression) = {
     this(
@@ -213,8 +212,7 @@ case class ApproxCountDistinctForIntervals(
     copy(inputAggBufferOffset = newInputAggBufferOffset)
   }
 
-  override def left: Expression = child
-  override def right: Expression = endpointsExpression
+  override def children: Seq[Expression] = Seq(child, endpointsExpression)
 
   override def nullable: Boolean = false
 
@@ -248,8 +246,4 @@ case class ApproxCountDistinctForIntervals(
     override def getLong(offset: Int): Long = array(offset)
     override def setLong(offset: Int, value: Long): Unit = { array(offset) = value }
   }
-
-  override protected def withNewChildrenInternal(
-      newLeft: Expression, newRight: Expression): ApproxCountDistinctForIntervals =
-    copy(child = newLeft, endpointsExpression = newRight)
 }

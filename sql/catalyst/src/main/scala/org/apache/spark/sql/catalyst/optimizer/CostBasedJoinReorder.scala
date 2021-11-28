@@ -109,9 +109,6 @@ case class OrderedJoin(
     joinType: JoinType,
     condition: Option[Expression]) extends BinaryNode {
   override def output: Seq[Attribute] = left.output ++ right.output
-  override protected def withNewChildrenInternal(
-      newLeft: LogicalPlan, newRight: LogicalPlan): OrderedJoin =
-    copy(left = newLeft, right = newRight)
 }
 
 /**

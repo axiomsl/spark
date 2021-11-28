@@ -420,15 +420,11 @@ case class InputAdapter(child: SparkPlan) extends UnaryExecNode with CodegenSupp
       builder: StringBuilder,
       verbose: Boolean,
       prefix: String = "",
-      addSuffix: Boolean = false,
-      maxDepth: Int): StringBuilder = {
-    child.generateTreeString(depth, lastChildren, builder, verbose, "", addSuffix, maxDepth)
+      addSuffix: Boolean = false): StringBuilder = {
+    child.generateTreeString(depth, lastChildren, builder, verbose, "")
   }
 
   override def needCopyResult: Boolean = false
-
-  override protected def withNewChildInternal(newChild: SparkPlan): InputAdapter =
-    copy(child = newChild)
 }
 
 object WholeStageCodegenExec {
@@ -700,24 +696,13 @@ append(${row.value}$doCopy);
       builder: StringBuilder,
       verbose: Boolean,
       prefix: String = "",
-      addSuffix: Boolean = false,
-      maxDepth: Int): StringBuilder = {
-    child.generateTreeString(
-	    depth,
-	    lastChildren,
-	    builder,
-	    verbose,
-	    s"*($codegenStageId) ",
-	    addSuffix,
-	    maxDepth)
+      addSuffix: Boolean = false): StringBuilder = {
+    child.generateTreeString(depth, lastChildren, builder, verbose, s"*($codegenStageId) ")
   }
 
   override def needStopCheck: Boolean = true
 
   override protected def otherCopyArgs: Seq[AnyRef] = Seq(codegenStageId.asInstanceOf[Integer])
-
-  override protected def withNewChildInternal(newChild: SparkPlan): WholeStageCodegenExec =
-    copy(child = newChild)(codegenStageId)
 }
 
 

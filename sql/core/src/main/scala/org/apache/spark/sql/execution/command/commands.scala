@@ -18,6 +18,7 @@
 package org.apache.spark.sql.execution.command
 
 import java.util.UUID
+
 import org.apache.spark.rdd.RDD
 import org.apache.spark.sql.{Row, SparkSession}
 import org.apache.spark.sql.catalyst.{CatalystTypeConverters, InternalRow}
@@ -25,8 +26,7 @@ import org.apache.spark.sql.catalyst.errors.TreeNodeException
 import org.apache.spark.sql.catalyst.expressions.{Attribute, AttributeReference}
 import org.apache.spark.sql.catalyst.plans.QueryPlan
 import org.apache.spark.sql.catalyst.plans.logical.{Command, LogicalPlan}
-import org.apache.spark.sql.catalyst.trees.LeafLike
-import org.apache.spark.sql.execution.{LeafExecNode, SparkPlan, UnaryExecNode}
+import org.apache.spark.sql.execution.{LeafExecNode, SparkPlan}
 import org.apache.spark.sql.execution.debug._
 import org.apache.spark.sql.execution.metric.SQLMetric
 import org.apache.spark.sql.execution.streaming.{IncrementalExecution, OffsetSeqMetadata}
@@ -45,8 +45,6 @@ trait RunnableCommand extends Command {
 
   def run(sparkSession: SparkSession): Seq[Row]
 }
-
-trait LeafRunnableCommand extends RunnableCommand with LeafLike[LogicalPlan]
 
 /**
  * A physical operator that executes the run method of a `RunnableCommand` and
@@ -97,7 +95,7 @@ case class ExecutedCommandExec(cmd: RunnableCommand) extends LeafExecNode {
  * @param child the physical plan child ran by the `DataWritingCommand`.
  */
 case class DataWritingCommandExec(cmd: DataWritingCommand, child: SparkPlan)
-  extends UnaryExecNode {
+  extends SparkPlan {
 
   override lazy val metrics: Map[String, SQLMetric] = cmd.metrics
 
@@ -107,6 +105,8 @@ case class DataWritingCommandExec(cmd: DataWritingCommand, child: SparkPlan)
 
     rows.map(converter(_).asInstanceOf[InternalRow])
   }
+
+  override def children: Seq[SparkPlan] = child :: Nil
 
   override def output: Seq[Attribute] = cmd.output
 
@@ -121,9 +121,6 @@ case class DataWritingCommandExec(cmd: DataWritingCommand, child: SparkPlan)
   protected override def doExecute(): RDD[InternalRow] = {
     sqlContext.sparkContext.parallelize(sideEffectResult, 1)
   }
-
-  override protected def withNewChildInternal(newChild: SparkPlan): DataWritingCommandExec =
-    copy(child = newChild)
 }
 
 /**
@@ -146,7 +143,7 @@ case class ExplainCommand(
     extended: Boolean = false,
     codegen: Boolean = false,
     cost: Boolean = false)
-  extends LeafRunnableCommand {
+  extends RunnableCommand {
 
   override val output: Seq[Attribute] =
     Seq(AttributeReference("plan", StringType, nullable = true)())
@@ -182,7 +179,7 @@ case class ExplainCommand(
 /** An explain command for users to see how a streaming batch is executed. */
 case class StreamingExplainCommand(
     queryExecution: IncrementalExecution,
-    extended: Boolean) extends LeafRunnableCommand {
+    extended: Boolean) extends RunnableCommand {
 
   override val output: Seq[Attribute] =
     Seq(AttributeReference("plan", StringType, nullable = true)())

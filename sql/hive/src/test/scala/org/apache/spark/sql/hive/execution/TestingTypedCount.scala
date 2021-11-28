@@ -22,7 +22,6 @@ import java.io.{ByteArrayInputStream, ByteArrayOutputStream, DataInputStream, Da
 import org.apache.spark.sql.catalyst.InternalRow
 import org.apache.spark.sql.catalyst.expressions._
 import org.apache.spark.sql.catalyst.expressions.aggregate.{ImperativeAggregate, TypedImperativeAggregate}
-import org.apache.spark.sql.catalyst.trees.UnaryLike
 import org.apache.spark.sql.hive.execution.TestingTypedCount.State
 import org.apache.spark.sql.types._
 
@@ -33,10 +32,11 @@ case class TestingTypedCount(
     child: Expression,
     mutableAggBufferOffset: Int = 0,
     inputAggBufferOffset: Int = 0)
-  extends TypedImperativeAggregate[TestingTypedCount.State]
-  with UnaryLike[Expression] {
+  extends TypedImperativeAggregate[TestingTypedCount.State] {
 
   def this(child: Expression) = this(child, 0, 0)
+
+  override def children: Seq[Expression] = child :: Nil
 
   override def dataType: DataType = LongType
 
@@ -78,9 +78,6 @@ case class TestingTypedCount(
     copy(inputAggBufferOffset = newInputAggBufferOffset)
 
   override val prettyName: String = "typed_count"
-
-  override protected def withNewChildInternal(newChild: Expression): TestingTypedCount =
-    copy(child = newChild)
 }
 
 object TestingTypedCount {

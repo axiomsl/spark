@@ -106,6 +106,6 @@ object CombineTypedFilters extends Rule[LogicalPlan] {
  */
 object EliminateMapObjects extends Rule[LogicalPlan] {
   def apply(plan: LogicalPlan): LogicalPlan = plan transformAllExpressions {
-     case MapObjects(_, LambdaVariable(_, _, _, false), inputData, None) => inputData
+     case MapObjects(_, _, _, LambdaVariable(_, _, _, false), inputData, None) => inputData
   }
 }

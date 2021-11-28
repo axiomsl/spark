@@ -856,6 +856,4 @@ private case class DummySparkPlan(
   ) extends SparkPlan {
   override protected def doExecute(): RDD[InternalRow] = throw new NotImplementedError
   override def output: Seq[Attribute] = Seq.empty
-  override protected def withNewChildrenInternal(newChildren: IndexedSeq[SparkPlan]): SparkPlan =
-    copy(children = newChildren)
 }

@@ -66,9 +66,6 @@ class LogicalPlanSuite extends SparkFunSuite {
 
     case class TestBinaryRelation(left: LogicalPlan, right: LogicalPlan) extends BinaryNode {
       override def output: Seq[Attribute] = left.output ++ right.output
-      override protected def withNewChildrenInternal(
-          newLeft: LogicalPlan, newRight: LogicalPlan): LogicalPlan =
-        copy(left = newLeft, right = newRight)
     }
 
     require(relation.isStreaming === false)

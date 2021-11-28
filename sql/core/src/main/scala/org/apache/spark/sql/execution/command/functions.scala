@@ -53,7 +53,7 @@ case class CreateFunctionCommand(
     isTemp: Boolean,
     ignoreIfExists: Boolean,
     replace: Boolean)
-  extends LeafRunnableCommand {
+  extends RunnableCommand {
 
   if (ignoreIfExists && replace) {
     throw new AnalysisException("CREATE FUNCTION with both IF NOT EXISTS and REPLACE" +
@@ -105,7 +105,7 @@ case class CreateFunctionCommand(
  */
 case class DescribeFunctionCommand(
     functionName: FunctionIdentifier,
-    isExtended: Boolean) extends LeafRunnableCommand {
+    isExtended: Boolean) extends RunnableCommand {
 
   override val output: Seq[Attribute] = {
     val schema = StructType(StructField("function_desc", StringType, nullable = false) :: Nil)
@@ -174,7 +174,7 @@ case class DropFunctionCommand(
     functionName: String,
     ifExists: Boolean,
     isTemp: Boolean)
-  extends LeafRunnableCommand {
+  extends RunnableCommand {
 
   override def run(sparkSession: SparkSession): Seq[Row] = {
     val catalog = sparkSession.sessionState.catalog
@@ -212,7 +212,7 @@ case class ShowFunctionsCommand(
     db: Option[String],
     pattern: Option[String],
     showUserFunctions: Boolean,
-    showSystemFunctions: Boolean) extends LeafRunnableCommand {
+    showSystemFunctions: Boolean) extends RunnableCommand {
 
   override val output: Seq[Attribute] = {
     val schema = StructType(StructField("function", StringType, nullable = false) :: Nil)

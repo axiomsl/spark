@@ -71,15 +71,6 @@ case class CreateArray(children: Seq[Expression]) extends Expression {
   }
 
   override def prettyName: String = "array"
-
-  override protected def withNewChildrenInternal(newChildren: IndexedSeq[Expression]): CreateArray =
-    copy(children = newChildren)
-}
-
-object CreateArray {
-  def apply(children: Seq[Expression]): CreateArray = {
-    new CreateArray(children)
-  }
 }
 
 private [sql] object GenArrayData {
@@ -246,15 +237,6 @@ case class CreateMap(children: Seq[Expression]) extends Expression {
   }
 
   override def prettyName: String = "map"
-
-  override protected def withNewChildrenInternal(newChildren: IndexedSeq[Expression]): CreateMap =
-    copy(children = newChildren)
-}
-
-object CreateMap {
-  def apply(children: Seq[Expression]): CreateMap = {
-    new CreateMap(children)
-  }
 }
 
 /**
@@ -325,10 +307,6 @@ case class MapFromArrays(left: Expression, right: Expression)
   }
 
   override def prettyName: String = "map_from_arrays"
-
-  override protected def withNewChildrenInternal(
-      newLeft: Expression, newRight: Expression): MapFromArrays =
-    copy(left = newLeft, right = newRight)
 }
 
 /**
@@ -475,9 +453,6 @@ case class CreateNamedStruct(children: Seq[Expression]) extends CreateNamedStruc
   }
 
   override def prettyName: String = "named_struct"
-
-  override protected def withNewChildrenInternal(
-    newChildren: IndexedSeq[Expression]): CreateNamedStruct = copy(children = newChildren)
 }
 
 /**
@@ -494,9 +469,6 @@ case class CreateNamedStructUnsafe(children: Seq[Expression]) extends CreateName
   }
 
   override def prettyName: String = "named_struct_unsafe"
-
-  override protected def withNewChildrenInternal(
-    newChildren: IndexedSeq[Expression]): CreateNamedStructUnsafe = copy(children = newChildren)
 }
 
 /**
@@ -524,9 +496,7 @@ case class StringToMap(text: Expression, pairDelim: Expression, keyValueDelim: E
     this(child, Literal(","), Literal(":"))
   }
 
-  override def first: Expression = text
-  override def second: Expression = pairDelim
-  override def third: Expression = keyValueDelim
+  override def children: Seq[Expression] = Seq(text, pairDelim, keyValueDelim)
 
   override def inputTypes: Seq[AbstractDataType] = Seq(StringType, StringType, StringType)
 
@@ -565,11 +535,4 @@ case class StringToMap(text: Expression, pairDelim: Expression, keyValueDelim: E
   }
 
   override def prettyName: String = "str_to_map"
-
-  override protected def withNewChildrenInternal(
-      newFirst: Expression, newSecond: Expression, newThird: Expression): Expression = copy(
-    text = newFirst,
-    pairDelim = newSecond,
-    keyValueDelim = newThird
-  )
 }

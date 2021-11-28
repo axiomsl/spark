@@ -42,7 +42,7 @@ import org.apache.spark.sql.types.StructType
  * }}}
  */
 case class CreateDataSourceTableCommand(table: CatalogTable, ignoreIfExists: Boolean)
-  extends LeafRunnableCommand {
+  extends RunnableCommand {
 
   override def run(sparkSession: SparkSession): Seq[Row] = {
     assert(table.tableType != CatalogTableType.VIEW)
@@ -221,7 +221,4 @@ case class CreateDataSourceTableAsSelectCommand(
         throw ex
     }
   }
-
-  override protected def withNewChildInternal(newChild: LogicalPlan): LogicalPlan =
-    copy(query = newChild)
 }

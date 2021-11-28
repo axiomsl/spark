@@ -18,12 +18,13 @@
 package org.apache.spark.sql.execution.datasources
 
 import java.util.Locale
+
 import org.apache.spark.sql._
 import org.apache.spark.sql.catalyst.TableIdentifier
 import org.apache.spark.sql.catalyst.catalog.{CatalogTable, CatalogUtils}
 import org.apache.spark.sql.catalyst.expressions.Attribute
 import org.apache.spark.sql.catalyst.plans.logical.LogicalPlan
-import org.apache.spark.sql.execution.command.{DDLUtils, LeafRunnableCommand}
+import org.apache.spark.sql.execution.command.{DDLUtils, RunnableCommand}
 import org.apache.spark.sql.types._
 
 /**
@@ -49,10 +50,6 @@ case class CreateTable(
   override def children: Seq[LogicalPlan] = query.toSeq
   override def output: Seq[Attribute] = Seq.empty
   override lazy val resolved: Boolean = false
-
-  override protected def withNewChildrenInternal(
-      newChildren: IndexedSeq[LogicalPlan]): LogicalPlan =
-    copy(query = if (query.isDefined) Some(newChildren.head) else None)
 }
 
 /**
@@ -64,7 +61,7 @@ case class CreateTempViewUsing(
     replace: Boolean,
     global: Boolean,
     provider: String,
-    options: Map[String, String]) extends LeafRunnableCommand {
+    options: Map[String, String]) extends RunnableCommand {
 
   if (tableIdent.database.isDefined) {
     throw new AnalysisException(
@@ -106,7 +103,7 @@ case class CreateTempViewUsing(
 }
 
 case class RefreshTable(tableIdent: TableIdentifier)
-  extends LeafRunnableCommand {
+  extends RunnableCommand {
 
   override def run(sparkSession: SparkSession): Seq[Row] = {
     // Refresh the given table's metadata. If this table is cached as an InMemoryRelation,
@@ -117,7 +114,7 @@ case class RefreshTable(tableIdent: TableIdentifier)
 }
 
 case class RefreshResource(path: String)
-  extends LeafRunnableCommand {
+  extends RunnableCommand {
 
   override def run(sparkSession: SparkSession): Seq[Row] = {
     sparkSession.catalog.refreshByPath(path)
