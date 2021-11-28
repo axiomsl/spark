@@ -36,6 +36,8 @@ import org.apache.spark.internal.config._
 import org.apache.spark.io.CompressionCodec
 import org.apache.spark.util.{JsonProtocol, Utils}
 
+import java.util.concurrent.locks.ReentrantLock
+
 /**
  * A SparkListener that logs events to persistent storage.
  *
@@ -87,8 +89,6 @@ private[spark] class EventLoggingListener(
 
   private var writer: Option[PrintWriter] = None
 
-  private val lock = new Object()
-
   // For testing. Keep track of all JSON serialized events that have been logged.
   private[scheduler] val loggedEvents = new ArrayBuffer[JValue]
 
@@ -98,9 +98,12 @@ private[spark] class EventLoggingListener(
   private var stopped = false
 
   private val syncThread = new Thread("event-log-sync") {
+    val lock = new Object()
     override def run(): Unit = {
       while (!isInterrupted && !stopped) {
-        lock.wait()
+        lock.synchronized {
+          lock.wait()
+        }
         TimeUnit.MINUTES.sleep(5)
         if (!stopped) {
           logInfo("Flushing events to disk.")
@@ -166,7 +169,10 @@ private[spark] class EventLoggingListener(
       writer.foreach(_.flush())
       hadoopDataStream.foreach(_.hflush())
     } else {
-      lock.notifyAll()
+      import scala.language.reflectiveCalls
+      syncThread.lock.synchronized{
+        syncThread.lock.notifyAll()
+      }
     }
     if (testing) {
       loggedEvents += eventJson
