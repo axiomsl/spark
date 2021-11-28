@@ -87,6 +87,8 @@ private[spark] class EventLoggingListener(
 
   private var writer: Option[PrintWriter] = None
 
+  private val lock = new Object()
+
   // For testing. Keep track of all JSON serialized events that have been logged.
   private[scheduler] val loggedEvents = new ArrayBuffer[JValue]
 
@@ -98,6 +100,7 @@ private[spark] class EventLoggingListener(
   private val syncThread = new Thread("event-log-sync") {
     override def run(): Unit = {
       while (!isInterrupted && !stopped) {
+        lock.wait()
         TimeUnit.MINUTES.sleep(5)
         if (!stopped) {
           logInfo("Flushing events to disk.")
@@ -162,6 +165,8 @@ private[spark] class EventLoggingListener(
     if (flushLogger) {
       writer.foreach(_.flush())
       hadoopDataStream.foreach(_.hflush())
+    } else {
+      lock.notifyAll()
     }
     if (testing) {
       loggedEvents += eventJson
