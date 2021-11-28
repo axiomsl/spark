@@ -82,6 +82,16 @@ case class JoinEstimation(join: Join) extends Logging {
           numInnerJoinedRows
       }
 
+      logInfo({
+        val schemaString = join.compactSchemaString
+        s"Statistics for [Join] [$schemaString];" +
+          s" leftSchema = [${join.left.compactSchemaString}];" +
+          s" rightSchema = [${join.right.compactSchemaString}];" +
+          s" leftRows = [$leftRows];" +
+          s" rightRows = [$rightRows];" +
+          s" numInnerJoinedRows = [$numInnerJoinedRows]; "
+      })
+
       // 3. Update statistics based on the output of join
       val inputAttrStats = AttributeMap(
         leftStats.attributeStats.toSeq ++ rightStats.attributeStats.toSeq)
@@ -141,7 +151,7 @@ case class JoinEstimation(join: Join) extends Logging {
 
       val sizeInBytes = getOutputSize(join.output, outputRows, outputAttrStats)
       logInfo({
-        val schemaString = join.schemaString.replace("\n", "")
+        val schemaString = join.compactSchemaString
         s"Statistics for [Join] [$schemaString]; sizeInBytes = [$sizeInBytes]"
       })
 

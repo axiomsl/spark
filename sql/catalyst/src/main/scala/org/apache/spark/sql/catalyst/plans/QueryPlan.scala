@@ -17,6 +17,7 @@
 
 package org.apache.spark.sql.catalyst.plans
 
+import org.apache.commons.lang3.StringUtils
 import scala.collection.mutable
 
 import org.apache.spark.sql.AnalysisException
@@ -373,6 +374,11 @@ abstract class QueryPlan[PlanType <: QueryPlan[PlanType]]
 
   /** Returns the output schema in the tree format. */
   def schemaString: String = schema.treeString
+
+  /** Returns the output schema in the tree format. */
+  def compactSchemaString: String = StringUtils.replaceEach(schema.treeString,
+    Array("\n", "|-- ", "nullable = "),
+    Array("", ",", ""))
 
   /** Prints out the schema in the tree format */
   // scalastyle:off println

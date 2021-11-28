@@ -67,7 +67,7 @@ object AggregateEstimation extends Logging {
         AttributeMap(childStats.attributeStats.toSeq  ++ aliasStats ), agg.output)
       val sizeInBytes = getOutputSize(agg.output, outputRows, outputAttrStats)
       logInfo({
-        val schemaString = agg.schemaString.replace("\n", "")
+        val schemaString = agg.compactSchemaString
         s"Statistics for [Aggregate] [$schemaString]; sizeInBytes = [$sizeInBytes]"
       })
 

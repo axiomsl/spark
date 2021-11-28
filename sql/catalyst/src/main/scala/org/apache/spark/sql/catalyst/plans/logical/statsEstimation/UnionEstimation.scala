@@ -82,7 +82,7 @@ object UnionEstimation extends Logging {
     }
 
     logInfo({
-      val schemaString = union.schemaString.replace("\n", "")
+      val schemaString = union.compactSchemaString
       s"Statistics for [Union] [$schemaString]; sizeInBytes = [$sizeInBytes]"
     })
 

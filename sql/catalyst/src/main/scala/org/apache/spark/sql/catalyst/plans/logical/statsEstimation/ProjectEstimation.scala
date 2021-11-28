@@ -33,7 +33,7 @@ object ProjectEstimation extends Logging {
         getOutputMap(AttributeMap(childStats.attributeStats.toSeq ++ aliasStats), project.output)
       val sizeInBytes = getOutputSize(project.output, childStats.rowCount.get, outputAttrStats)
       logInfo({
-        val schemaString = project.schemaString.replace("\n", "")
+        val schemaString = project.compactSchemaString
         s"Statistics for [Project] [$schemaString]; sizeInBytes = [$sizeInBytes]"
       })
       Some(childStats.copy(
