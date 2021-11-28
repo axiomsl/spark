@@ -84,7 +84,7 @@ case class JoinEstimation(join: Join) extends Logging {
 
       logInfo({
         val schemaString = join.compactSchemaString
-        s"Statistics for [Join] [$schemaString];" +
+        s"Statistics for [Join (${joinType.sql})] [$schemaString];" +
           s" leftSchema = [${join.left.compactSchemaString}];" +
           s" rightSchema = [${join.right.compactSchemaString}];" +
           s" leftRows = [$leftRows];" +
@@ -152,7 +152,7 @@ case class JoinEstimation(join: Join) extends Logging {
       val sizeInBytes = getOutputSize(join.output, outputRows, outputAttrStats)
       logInfo({
         val schemaString = join.compactSchemaString
-        s"Statistics for [Join] [$schemaString]; sizeInBytes = [$sizeInBytes]"
+        s"Statistics for [Join (${joinType.sql})] [$schemaString]; sizeInBytes = [$sizeInBytes]"
       })
 
       Some(Statistics(
