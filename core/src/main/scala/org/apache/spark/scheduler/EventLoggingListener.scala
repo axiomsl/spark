@@ -21,7 +21,7 @@ import java.io._
 import java.net.URI
 import java.nio.charset.StandardCharsets
 import java.util.Locale
-import java.util.concurrent.{ConcurrentHashMap, TimeUnit}
+import java.util.concurrent.{ArrayBlockingQueue, BlockingQueue, ConcurrentHashMap, TimeUnit}
 import java.util.function.Function
 import scala.collection.mutable.ArrayBuffer
 import org.apache.hadoop.conf.Configuration
@@ -97,14 +97,16 @@ private[spark] class EventLoggingListener(
 
   private var stopped = false
 
-  private val syncThread = new Thread("event-log-sync") {
-    val lock = new Object()
+  trait WithLock {
+    def lock: BlockingQueue[Boolean]
+  }
+
+  private val syncThread = new Thread("event-log-sync") with WithLock {
+    val lock = new ArrayBlockingQueue[Boolean](1)
     override def run(): Unit = {
       while (!isInterrupted && !stopped) {
-        lock.synchronized {
-          lock.wait()
-        }
-        TimeUnit.MINUTES.sleep(5)
+        lock.take()
+        TimeUnit.MILLISECONDS.sleep(sparkConf.getTimeAsMs("spark.eventLog.sync.interval", "5m") )
         if (!stopped) {
           logInfo("Flushing events to disk.")
           writer.foreach(_.flush())
@@ -169,10 +171,7 @@ private[spark] class EventLoggingListener(
       writer.foreach(_.flush())
       hadoopDataStream.foreach(_.hflush())
     } else {
-      import scala.language.reflectiveCalls
-      syncThread.lock.synchronized{
-        syncThread.lock.notifyAll()
-      }
+      syncThread.lock.offer(true)
     }
     if (testing) {
       loggedEvents += eventJson
