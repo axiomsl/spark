@@ -61,7 +61,9 @@ case class FilterEstimation(plan: Filter) extends Logging {
 
     logInfo({
       val schemaString = plan.compactSchemaString
-      s"Statistics for [Filter] [$schemaString]; sizeInBytes = [$filteredSizeInBytes]; filteredRowCount = [$filteredRowCount]"
+      s"Statistics for [Filter] [$schemaString]; " +
+        s"sizeInBytes = [$filteredSizeInBytes]; " +
+        s"filteredRowCount = [$filteredRowCount]"
     })
 
     Some(childStats.copy(sizeInBytes = filteredSizeInBytes, rowCount = Some(filteredRowCount),
