@@ -87,8 +87,8 @@ case class JoinEstimation(join: Join) extends Logging {
         s"Statistics for [Join (${joinType.sql})] [$schemaString];" +
           s" leftSchema = [${join.left.compactSchemaString}];" +
           s" rightSchema = [${join.right.compactSchemaString}];" +
-          s" leftRows = [$leftRows];" +
-          s" rightRows = [$rightRows];" +
+          s" leftRows(${join.left.nodeName}) = [$leftRows];" +
+          s" rightRows(${join.right.nodeName}) = [$rightRows];" +
           s" numInnerJoinedRows = [$numInnerJoinedRows]; "
       })
 
