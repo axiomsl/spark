@@ -2327,8 +2327,13 @@ private[spark] object Utils extends Logging {
   /**
    * configure a new log4j level
    */
-  def setLogLevel(l: org.apache.log4j.Level) {
-    org.apache.log4j.Logger.getRootLogger().setLevel(l)
+  def setLogLevel(l: org.apache.logging.log4j.Level): Unit = {
+    val rootLogger = org.apache.logging.log4j.LogManager.getRootLogger()
+      .asInstanceOf[org.apache.logging.log4j.core.Logger]
+    rootLogger.setLevel(l)
+    rootLogger.get().setLevel(l)
+    // Setting threshold to null as rootLevel will define log level for spark-shell
+    Logging.sparkShellThresholdLevel = null
   }
 
   /**
@@ -2830,11 +2835,11 @@ private[spark] object Utils extends Logging {
     if (lastDollarIndex < s.length - 1) {
       // The last char is not a dollar sign
       if (lastDollarIndex == -1 || !s.contains("$iw")) {
-        // The name does not have dollar sign or is not an intepreter
+        // The name does not have dollar sign or is not an interpreter
         // generated class, so we should return the full string
         s
       } else {
-        // The class name is intepreter generated,
+        // The class name is interpreter generated,
         // return the part after the last dollar sign
         // This is the same behavior as getClass.getSimpleName
         s.substring(lastDollarIndex + 1)
@@ -2867,14 +2872,14 @@ private[spark] object Utils extends Logging {
    */
   private val fullWidthRegex = ("""[""" +
     // scalastyle:off nonascii
-    """\u1100-\u115F""" +
-    """\u2E80-\uA4CF""" +
-    """\uAC00-\uD7A3""" +
-    """\uF900-\uFAFF""" +
-    """\uFE10-\uFE19""" +
-    """\uFE30-\uFE6F""" +
-    """\uFF00-\uFF60""" +
-    """\uFFE0-\uFFE6""" +
+    "\u1100-\u115F" +
+    "\u2E80-\uA4CF" +
+    "\uAC00-\uD7A3" +
+    "\uF900-\uFAFF" +
+    "\uFE10-\uFE19" +
+    "\uFE30-\uFE6F" +
+    "\uFF00-\uFF60" +
+    "\uFFE0-\uFFE6" +
     // scalastyle:on nonascii
     """]""").r
 

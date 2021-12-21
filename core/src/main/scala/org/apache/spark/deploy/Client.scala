@@ -22,8 +22,6 @@ import scala.concurrent.ExecutionContext
 import scala.reflect.ClassTag
 import scala.util.{Failure, Success}
 
-import org.apache.log4j.Logger
-
 import org.apache.spark.{SecurityManager, SparkConf}
 import org.apache.spark.deploy.DeployMessages._
 import org.apache.spark.deploy.master.{DriverState, Master}
@@ -234,7 +232,8 @@ private[spark] class ClientApp extends SparkApplication {
     if (!conf.contains("spark.rpc.askTimeout")) {
       conf.set("spark.rpc.askTimeout", "10s")
     }
-    Logger.getRootLogger.setLevel(driverArgs.logLevel)
+
+    org.apache.logging.log4j.core.config.Configurator.setRootLevel(driverArgs.logLevel)
 
     val rpcEnv =
       RpcEnv.create("driverClient", Utils.localHostName(), 0, conf, new SecurityManager(conf))

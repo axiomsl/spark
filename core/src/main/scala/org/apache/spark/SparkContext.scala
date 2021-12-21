@@ -28,8 +28,9 @@ import scala.collection.Map
 import scala.collection.generic.Growable
 import scala.collection.mutable.HashMap
 import scala.language.implicitConversions
-import scala.reflect.{classTag, ClassTag}
+import scala.reflect.{ClassTag, classTag}
 import scala.util.control.NonFatal
+import scala.util.Try
 
 import com.google.common.collect.MapMaker
 import org.apache.commons.lang3.SerializationUtils
@@ -351,20 +352,21 @@ class SparkContext(config: SparkConf) extends Logging {
    * @param logLevel The desired log level as a string.
    * Valid log levels include: ALL, DEBUG, ERROR, FATAL, INFO, OFF, TRACE, WARN
    */
-  def setLogLevel(logLevel: String) {
+  def setLogLevel(logLevel: String): Unit = {
     // let's allow lowercase or mixed case too
     val upperCased = logLevel.toUpperCase(Locale.ROOT)
     require(SparkContext.VALID_LOG_LEVELS.contains(upperCased),
       s"Supplied level $logLevel did not match one of:" +
         s" ${SparkContext.VALID_LOG_LEVELS.mkString(",")}")
-    Utils.setLogLevel(org.apache.log4j.Level.toLevel(upperCased))
+    Utils.setLogLevel(org.apache.logging.log4j.Level.toLevel(upperCased))
   }
 
-  def flushEventLog(): Unit = try { _eventLogger.foreach(_.flush()) }
+  def flushEventLog(): Unit = Try { _eventLogger.foreach(_.flush()) }
 
   try {
     _conf = config.clone()
     _conf.validateSettings()
+    _conf.set("spark.app.startTime", startTime.toString)
 
     if (!_conf.contains("spark.master")) {
       throw new SparkException("A master URL must be set in your configuration")

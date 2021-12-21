@@ -100,6 +100,12 @@
 <!--
       <classifier>core</classifier>
 -->
+      <exclusions>
+        <exclusion>
+          <artifactId>apache-log4j-extras</artifactId>
+          <groupId>log4j</groupId>
+        </exclusion>
+      </exclusions>
     </dependency>
     <dependency>
       <groupId>${hive.group}</groupId>

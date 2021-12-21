@@ -22,7 +22,7 @@ import java.net.{URI, URISyntaxException}
 import scala.annotation.tailrec
 import scala.collection.mutable.ListBuffer
 
-import org.apache.log4j.Level
+import org.apache.logging.log4j.Level
 
 import org.apache.spark.util.{IntParam, MemoryParam, Utils}
 
@@ -33,17 +33,17 @@ private[deploy] class ClientArguments(args: Array[String]) {
   import ClientArguments._
 
   var cmd: String = "" // 'launch' or 'kill'
-  var logLevel = Level.WARN
+  var logLevel: Level = Level.WARN
 
   // launch parameters
-  var masters: Array[String] = null
+  var masters: Array[String] = _
   var jarUrl: String = ""
   var mainClass: String = ""
   var supervise: Boolean = DEFAULT_SUPERVISE
   var memory: Int = DEFAULT_MEMORY
   var cores: Int = DEFAULT_CORES
-  private var _driverOptions = ListBuffer[String]()
-  def driverOptions: Seq[String] = _driverOptions.toSeq
+  private val _driverOptions = ListBuffer[String]()
+  def driverOptions: Seq[String] = _driverOptions
 
   // kill parameters
   var driverId: String = ""
@@ -64,7 +64,7 @@ private[deploy] class ClientArguments(args: Array[String]) {
       supervise = true
       parse(tail)
 
-    case ("--help" | "-h") :: tail =>
+    case ("--help" | "-h") :: _ =>
       printUsageAndExit(0)
 
     case ("--verbose" | "-v") :: tail =>
@@ -88,7 +88,7 @@ private[deploy] class ClientArguments(args: Array[String]) {
       mainClass = _mainClass
       _driverOptions ++= tail
 
-    case "kill" :: _master :: _driverId :: tail =>
+    case "kill" :: _master :: _driverId :: _ =>
       cmd = "kill"
       masters = Utils.parseStandaloneMasterUrls(_master)
       driverId = _driverId
@@ -100,7 +100,7 @@ private[deploy] class ClientArguments(args: Array[String]) {
   /**
    * Print usage and exit JVM with the given exit code.
    */
-  private def printUsageAndExit(exitCode: Int) {
+  private def printUsageAndExit(exitCode: Int): Unit = {
     // TODO: It wouldn't be too hard to allow users to submit their app and dependency jars
     //       separately similar to in the YARN client.
     val usage =
@@ -124,7 +124,7 @@ private[deploy] class ClientArguments(args: Array[String]) {
 
 private[deploy] object ClientArguments {
   val DEFAULT_CORES = 1
-  val DEFAULT_MEMORY = Utils.DEFAULT_DRIVER_MEM_MB // MB
+  val DEFAULT_MEMORY: Int = Utils.DEFAULT_DRIVER_MEM_MB // MB
   val DEFAULT_SUPERVISE = false
 
   def isValidJarUrl(s: String): Boolean = {
