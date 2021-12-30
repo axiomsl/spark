@@ -32,7 +32,10 @@ object CSVUtils {
     // with the one below, `filterCommentAndEmpty` but execution path is different. One of them
     // might have to be removed in the near future if possible.
     import lines.sqlContext.implicits._
-    val nonEmptyLines = lines.filter(length(trim($"value")) > 0)
+    val nonEmptyLines = {
+      if (options.ignoreEmptyLines) lines.filter(length(trim($"value")) > 0)
+      else lines
+    }
     if (options.isCommentSet) {
       nonEmptyLines.filter(!$"value".startsWith(options.comment.toString))
     } else {
@@ -45,8 +48,19 @@ object CSVUtils {
    * This is currently being used in CSV reading path and CSV schema inference.
    */
   def filterCommentAndEmpty(iter: Iterator[String], options: CSVOptions): Iterator[String] = {
+    // Ignored:
+    //   Comments - Never returned
+    //   Emtpy lines - Only returned if 'options.ignoreEmptyLines' = false
+
+    val shouldIncludeEmptyLine = !options.ignoreEmptyLines
+
+    @inline
+    val isComment = (line: String) => {
+      line.startsWith(options.comment.toString)
+    }
+
     iter.filter { line =>
-      line.trim.nonEmpty && !line.startsWith(options.comment.toString)
+      !isComment(line) && (shouldIncludeEmptyLine || line.nonEmpty)
     }
   }
 

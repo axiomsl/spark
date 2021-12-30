@@ -101,6 +101,7 @@ class CSVOptions(
       throw new RuntimeException("charToEscapeQuoteEscaping cannot be more than one character")
   }
   val comment = getChar("comment", '\u0000')
+  val ignoreEmptyLines = getBool("ignoreEmptyLines", true)
 
   val headerFlag = getBool("header")
   val inferSchemaFlag = getBool("inferSchema")
