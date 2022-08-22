@@ -25,6 +25,7 @@ import org.apache.spark.sql.catalyst.{CatalystTypeConverters, InternalRow}
 import org.apache.spark.sql.catalyst.analysis.TypeCheckResult
 import org.apache.spark.sql.catalyst.analysis.TypeCheckResult.{TypeCheckFailure, TypeCheckSuccess}
 import org.apache.spark.sql.catalyst.expressions._
+import org.apache.spark.sql.catalyst.trees.TernaryLike
 import org.apache.spark.sql.catalyst.util._
 import org.apache.spark.sql.types._
 import org.apache.spark.util.collection.OpenHashMap
@@ -61,7 +62,8 @@ case class Percentile(
     frequencyExpression : Expression,
     mutableAggBufferOffset: Int = 0,
     inputAggBufferOffset: Int = 0)
-  extends TypedImperativeAggregate[OpenHashMap[AnyRef, Long]] with ImplicitCastInputTypes {
+  extends TypedImperativeAggregate[OpenHashMap[AnyRef, Long]] with ImplicitCastInputTypes
+  with TernaryLike[Expression] {
 
   def this(child: Expression, percentageExpression: Expression) = {
     this(child, percentageExpression, Literal(1L), 0, 0)
@@ -89,9 +91,9 @@ case class Percentile(
       case arrayData: ArrayData => arrayData.toDoubleArray().toSeq
   }
 
-  override def children: Seq[Expression] = {
-    child  :: percentageExpression ::frequencyExpression :: Nil
-  }
+  override def first: Expression = child
+  override def second: Expression = percentageExpression
+  override def third: Expression = frequencyExpression
 
   // Returns null for empty inputs
   override def nullable: Boolean = true
@@ -290,4 +292,11 @@ case class Percentile(
       bis.close()
     }
   }
+
+  override protected def withNewChildrenInternal(
+      newFirst: Expression, newSecond: Expression, newThird: Expression): Percentile = copy(
+    child = newFirst,
+    percentageExpression = newSecond,
+    frequencyExpression = newThird
+  )
 }

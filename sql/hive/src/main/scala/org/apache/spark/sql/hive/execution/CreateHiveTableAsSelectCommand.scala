@@ -118,6 +118,9 @@ case class CreateHiveTableAsSelectCommand(
       ifPartitionNotExists = false,
       outputColumnNames = outputColumnNames)
   }
+
+  override protected def withNewChildInternal(
+    newChild: LogicalPlan): CreateHiveTableAsSelectCommand = copy(query = newChild)
 }
 
 /**
@@ -162,4 +165,7 @@ case class OptimizedCreateHiveTableAsSelectCommand(
       Some(hadoopRelation.location),
       query.output.map(_.name))
   }
+
+  override protected def withNewChildInternal(
+    newChild: LogicalPlan): OptimizedCreateHiveTableAsSelectCommand = copy(query = newChild)
 }

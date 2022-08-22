@@ -37,4 +37,7 @@ case class FlatMapGroupsInPandas(
    * from the input.
    */
   override val producedAttributes = AttributeSet(output)
+
+  override protected def withNewChildInternal(newChild: LogicalPlan): FlatMapGroupsInPandas =
+    copy(child = newChild)
 }

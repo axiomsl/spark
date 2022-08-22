@@ -63,6 +63,8 @@ case class Md5(child: Expression) extends UnaryExpression with ImplicitCastInput
     defineCodeGen(ctx, ev, c =>
       s"UTF8String.fromString(org.apache.commons.codec.digest.DigestUtils.md5Hex($c))")
   }
+
+  override protected def withNewChildInternal(newChild: Expression): Md5 = copy(child = newChild)
 }
 
 /**
@@ -144,6 +146,9 @@ case class Sha2(left: Expression, right: Expression)
       """
     })
   }
+
+  override protected def withNewChildrenInternal(newLeft: Expression, newRight: Expression): Sha2 =
+    copy(left = newLeft, right = newRight)
 }
 
 /**
@@ -171,6 +176,8 @@ case class Sha1(child: Expression) extends UnaryExpression with ImplicitCastInpu
       s"UTF8String.fromString(org.apache.commons.codec.digest.DigestUtils.sha1Hex($c))"
     )
   }
+
+  override protected def withNewChildInternal(newChild: Expression): Sha1 = copy(child = newChild)
 }
 
 /**
@@ -207,6 +214,8 @@ case class Crc32(child: Expression) extends UnaryExpression with ImplicitCastInp
       """
     })
   }
+
+  override protected def withNewChildInternal(newChild: Expression): Crc32 = copy(child = newChild)
 }
 
 
@@ -574,6 +583,9 @@ case class Murmur3Hash(children: Seq[Expression], seed: Int) extends HashExpress
   override protected def computeHash(value: Any, dataType: DataType, seed: Int): Int = {
     Murmur3HashFunction.hash(value, dataType, seed).toInt
   }
+
+  override protected def withNewChildrenInternal(newChildren: IndexedSeq[Expression]): Murmur3Hash =
+    copy(children = newChildren)
 }
 
 object Murmur3HashFunction extends InterpretedHashFunction {
@@ -605,6 +617,9 @@ case class XxHash64(children: Seq[Expression], seed: Long) extends HashExpressio
   override protected def computeHash(value: Any, dataType: DataType, seed: Long): Long = {
     XxHash64Function.hash(value, dataType, seed)
   }
+
+  override protected def withNewChildrenInternal(newChildren: IndexedSeq[Expression]): XxHash64 =
+    copy(children = newChildren)
 }
 
 object XxHash64Function extends InterpretedHashFunction {
@@ -807,6 +822,9 @@ ${CodeGenerator.JAVA_INT} $childResult = 0;
 $code
      """
   }
+
+  override protected def withNewChildrenInternal(newChildren: IndexedSeq[Expression]): HiveHash =
+    copy(children = newChildren)
 }
 
 object HiveHashFunction extends InterpretedHashFunction {

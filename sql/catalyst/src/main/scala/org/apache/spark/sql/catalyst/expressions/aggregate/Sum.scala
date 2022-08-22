@@ -20,14 +20,13 @@ package org.apache.spark.sql.catalyst.expressions.aggregate
 import org.apache.spark.sql.catalyst.analysis.TypeCheckResult
 import org.apache.spark.sql.catalyst.dsl.expressions._
 import org.apache.spark.sql.catalyst.expressions._
+import org.apache.spark.sql.catalyst.trees.UnaryLike
 import org.apache.spark.sql.catalyst.util.TypeUtils
 import org.apache.spark.sql.types._
 
 @ExpressionDescription(
   usage = "_FUNC_(expr) - Returns the sum calculated from values of a group.")
-case class Sum(child: Expression) extends DeclarativeAggregate with ImplicitCastInputTypes {
-
-  override def children: Seq[Expression] = child :: Nil
+case class Sum(child: Expression) extends DeclarativeAggregate with ImplicitCastInputTypes with UnaryLike[Expression] {
 
   override def nullable: Boolean = child.nullable
 
@@ -91,6 +90,8 @@ case class Sum(child: Expression) extends DeclarativeAggregate with ImplicitCast
       )
     }
   }
+
+  override protected def withNewChildInternal(newChild: Expression): Sum = copy(child = newChild)
 
   override lazy val evaluateExpression: Expression = sum
 }

@@ -170,4 +170,7 @@ case class WindowInPandasExec(
       }
     }
   }
+
+  override protected def withNewChildInternal(newChild: SparkPlan): WindowInPandasExec =
+    copy(child = newChild)
 }

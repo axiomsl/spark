@@ -1554,12 +1554,16 @@ object TypeCoercionSuite {
     extends UnaryExpression with ExpectsInputTypes with Unevaluable {
     override def inputTypes: Seq[AbstractDataType] = Seq(AnyDataType)
     override def dataType: DataType = NullType
+    override protected def withNewChildInternal(newChild: Expression): AnyTypeUnaryExpression =
+      copy(child = newChild)
   }
 
   case class NumericTypeUnaryExpression(child: Expression)
     extends UnaryExpression with ExpectsInputTypes with Unevaluable {
     override def inputTypes: Seq[AbstractDataType] = Seq(NumericType)
     override def dataType: DataType = NullType
+    override protected def withNewChildInternal(newChild: Expression): NumericTypeUnaryExpression =
+      copy(child = newChild)
   }
 
   case class AnyTypeBinaryOperator(left: Expression, right: Expression)
@@ -1567,6 +1571,9 @@ object TypeCoercionSuite {
     override def dataType: DataType = NullType
     override def inputType: AbstractDataType = AnyDataType
     override def symbol: String = "anytype"
+    override protected def withNewChildrenInternal(
+        newLeft: Expression, newRight: Expression): AnyTypeBinaryOperator =
+      copy(left = newLeft, right = newRight)
   }
 
   case class NumericTypeBinaryOperator(left: Expression, right: Expression)
@@ -1574,5 +1581,8 @@ object TypeCoercionSuite {
     override def dataType: DataType = NullType
     override def inputType: AbstractDataType = NumericType
     override def symbol: String = "numerictype"
+    override protected def withNewChildrenInternal(
+        newLeft: Expression, newRight: Expression): NumericTypeBinaryOperator =
+      copy(left = newLeft, right = newRight)
   }
 }

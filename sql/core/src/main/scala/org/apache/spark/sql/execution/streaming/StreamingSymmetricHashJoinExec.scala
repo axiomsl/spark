@@ -504,4 +504,8 @@ case class StreamingSymmetricHashJoinExec(
 
     def numUpdatedStateRows: Long = updatedStateRowsCount
   }
+
+  override protected def withNewChildrenInternal(
+      newLeft: SparkPlan, newRight: SparkPlan): StreamingSymmetricHashJoinExec =
+    copy(left = newLeft, right = newRight)
 }

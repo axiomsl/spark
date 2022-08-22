@@ -20,12 +20,12 @@ package org.apache.spark.sql.util
 import scala.collection.mutable.ArrayBuffer
 
 import org.apache.spark._
-import org.apache.spark.sql.{functions, AnalysisException, Dataset, QueryTest, Row, SparkSession}
+import org.apache.spark.sql.{AnalysisException, Dataset, QueryTest, Row, SparkSession, functions}
 import org.apache.spark.sql.catalyst.analysis.UnresolvedRelation
 import org.apache.spark.sql.catalyst.expressions.{Attribute, AttributeReference}
 import org.apache.spark.sql.catalyst.plans.logical.{Aggregate, InsertIntoTable, LogicalPlan, Project}
 import org.apache.spark.sql.execution.{QueryExecution, QueryExecutionException, WholeStageCodegenExec}
-import org.apache.spark.sql.execution.command.RunnableCommand
+import org.apache.spark.sql.execution.command.LeafRunnableCommand
 import org.apache.spark.sql.execution.datasources.{CreateTable, InsertIntoHadoopFsRelationCommand}
 import org.apache.spark.sql.execution.datasources.json.JsonFileFormat
 import org.apache.spark.sql.test.SharedSQLContext
@@ -237,7 +237,7 @@ class DataFrameCallbackSuite extends QueryTest with SharedSQLContext {
 }
 
 /** A test command that throws `java.lang.Error` during execution. */
-case class ErrorTestCommand(foo: String) extends RunnableCommand {
+case class ErrorTestCommand(foo: String) extends LeafRunnableCommand {
 
   override val output: Seq[Attribute] = Seq(AttributeReference("foo", StringType)())
 

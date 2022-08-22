@@ -89,6 +89,9 @@ case class TimeWindow(
     }
     dataTypeCheck
   }
+
+  override protected def withNewChildInternal(newChild: Expression): TimeWindow =
+    copy(timeColumn = newChild)
 }
 
 object TimeWindow {
@@ -152,4 +155,7 @@ ${CodeGenerator.javaType(dataType)} ${ev.value} = ${eval.value};
        """)
   }
   override def nullSafeEval(input: Any): Any = input
+
+  override protected def withNewChildInternal(newChild: Expression): PreciseTimestampConversion =
+    copy(child = newChild)
 }

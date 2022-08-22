@@ -249,5 +249,8 @@ package object debug {
     override def doConsume(ctx: CodegenContext, input: Seq[ExprCode], row: ExprCode): String = {
       consume(ctx, input)
     }
+
+    override protected def withNewChildInternal(newChild: SparkPlan): DebugExec =
+      copy(child = newChild)
   }
 }

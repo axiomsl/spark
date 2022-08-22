@@ -18,13 +18,11 @@
 package org.apache.spark.sql.catalyst.expressions.objects
 
 import java.lang.reflect.{Method, Modifier}
-
 import scala.collection.JavaConverters._
 import scala.collection.mutable.Builder
 import scala.language.existentials
 import scala.reflect.ClassTag
 import scala.util.Try
-
 import org.apache.spark.{SparkConf, SparkEnv}
 import org.apache.spark.serializer._
 import org.apache.spark.sql.Row
@@ -34,6 +32,7 @@ import org.apache.spark.sql.catalyst.encoders.RowEncoder
 import org.apache.spark.sql.catalyst.expressions._
 import org.apache.spark.sql.catalyst.expressions.codegen._
 import org.apache.spark.sql.catalyst.expressions.codegen.Block._
+import org.apache.spark.sql.catalyst.trees.TernaryLike
 import org.apache.spark.sql.catalyst.util.{ArrayBasedMapData, ArrayData, GenericArrayData, MapData}
 import org.apache.spark.sql.types._
 import org.apache.spark.unsafe.types.{CalendarInterval, UTF8String}
@@ -308,6 +307,9 @@ case class StaticInvoke(
      """
     ev.copy(code = code)
   }
+
+  override protected def withNewChildrenInternal(newChildren: IndexedSeq[Expression]): Expression =
+    copy(arguments = newChildren)
 }
 
 /**
@@ -424,6 +426,9 @@ case class Invoke(
   }
 
   override def toString: String = s"$targetObject.$functionName"
+
+  override protected def withNewChildrenInternal(newChildren: IndexedSeq[Expression]): Invoke =
+    copy(targetObject = newChildren.head, arguments = newChildren.tail)
 }
 
 object NewInstance {
@@ -524,6 +529,9 @@ case class NewInstance(
   }
 
   override def toString: String = s"newInstance($cls)"
+
+  override protected def withNewChildrenInternal(newChildren: IndexedSeq[Expression]): NewInstance =
+    copy(arguments = newChildren)
 }
 
 /**
@@ -561,6 +569,9 @@ case class UnwrapOption(
     """
     ev.copy(code = code)
   }
+
+  override protected def withNewChildInternal(newChild: Expression): UnwrapOption =
+    copy(child = newChild)
 }
 
 /**
@@ -590,6 +601,36 @@ case class WrapOption(child: Expression, optType: DataType)
         scala.Option$$.MODULE$$.apply(null) : new scala.Some(${inputObject.value});
     """
     ev.copy(code = code, isNull = FalseLiteral)
+  }
+
+  override protected def withNewChildInternal(newChild: Expression): WrapOption =
+    copy(child = newChild)
+}
+
+object LambdaVariable {
+  private val curId = new java.util.concurrent.atomic.AtomicLong()
+
+  // Returns the codegen-ed `LambdaVariable` and add it to mutable states, so that it can be
+  // accessed anywhere in the generated code.
+  def prepareLambdaVariable(ctx: CodegenContext, variable: LambdaVariable): ExprCode = {
+    val variableCode = variable.genCode(ctx)
+    assert(variableCode.code.isEmpty)
+
+    ctx.addMutableState(
+      CodeGenerator.javaType(variable.dataType),
+      variableCode.value,
+      forceInline = true,
+      useFreshName = false)
+
+    if (variable.nullable) {
+      ctx.addMutableState(
+        CodeGenerator.JAVA_BOOLEAN,
+        variableCode.isNull,
+        forceInline = true,
+        useFreshName = false)
+    }
+
+    variableCode
   }
 }
 
@@ -649,6 +690,9 @@ case class UnresolvedMapObjects(
   override def dataType: DataType = customCollectionCls.map(ObjectType.apply).getOrElse {
     throw new UnsupportedOperationException("not resolved")
   }
+
+  override protected def withNewChildInternal(newChild: Expression): UnresolvedMapObjects =
+    copy(child = newChild)
 }
 
 object MapObjects {
@@ -680,7 +724,7 @@ object MapObjects {
     }
     val loopVar = LambdaVariable(loopValue, loopIsNull, elementType, elementNullable)
     MapObjects(
-      loopValue, loopIsNull, elementType, function(loopVar), inputData, customCollectionCls)
+      loopVar, function(loopVar), inputData, customCollectionCls)
   }
 }
 
@@ -709,16 +753,22 @@ object MapObjects {
  *                            or None (returning ArrayType)
  */
 case class MapObjects private(
-    loopValue: String,
-    loopIsNull: String,
-    loopVarDataType: DataType,
+    loopVar: LambdaVariable,
     lambdaFunction: Expression,
     inputData: Expression,
-    customCollectionCls: Option[Class[_]]) extends Expression with NonSQLExpression {
+    customCollectionCls: Option[Class[_]]) extends Expression with NonSQLExpression
+  with TernaryLike[Expression] {
 
   override def nullable: Boolean = inputData.nullable
 
-  override def children: Seq[Expression] = lambdaFunction :: inputData :: Nil
+  private val loopValue: String = loopVar.value
+  private val loopIsNull: String = loopVar.isNull
+  private val loopVarDataType: DataType = loopVar.dataType
+
+  override def first: Expression = loopVar
+  override def second: Expression = lambdaFunction
+  override def third: Expression = inputData
+
 
   // The data with UserDefinedType are actually stored with the data type of its sqlType.
   // When we want to apply MapObjects on it, we have to use it.
@@ -982,6 +1032,13 @@ case class MapObjects private(
     """
     ev.copy(code = code, isNull = genInputData.isNull)
   }
+
+  override protected def withNewChildrenInternal(
+      newFirst: Expression, newSecond: Expression, newThird: Expression): Expression =
+    copy(
+      loopVar = newFirst.asInstanceOf[LambdaVariable],
+      lambdaFunction = newSecond,
+      inputData = newThird)
 }
 
 object CatalystToExternalMap {
@@ -1012,8 +1069,8 @@ object CatalystToExternalMap {
     }
     val valueLoopVar = LambdaVariable(valueLoopValue, valueLoopIsNull, mapType.valueType)
     CatalystToExternalMap(
-      keyLoopValue, keyFunction(keyLoopVar),
-      valueLoopValue, valueLoopIsNull, valueFunction(valueLoopVar),
+      keyLoopVar, keyFunction(keyLoopVar),
+      valueLoopVar, valueFunction(valueLoopVar),
       inputData, collClass)
   }
 }
@@ -1038,18 +1095,21 @@ object CatalystToExternalMap {
  * @param collClass The type of the resulting collection.
  */
 case class CatalystToExternalMap private(
-    keyLoopValue: String,
+    keyLoopVar: LambdaVariable,
     keyLambdaFunction: Expression,
-    valueLoopValue: String,
-    valueLoopIsNull: String,
+    valueLoopVar: LambdaVariable,
     valueLambdaFunction: Expression,
     inputData: Expression,
     collClass: Class[_]) extends Expression with NonSQLExpression {
 
+  private val keyLoopValue: String = keyLoopVar.value
+  private val valueLoopValue: String = valueLoopVar.value
+  private val valueLoopIsNull: String = valueLoopVar.isNull
+
   override def nullable: Boolean = inputData.nullable
 
-  override def children: Seq[Expression] =
-    keyLambdaFunction :: valueLambdaFunction :: inputData :: Nil
+  override def children: Seq[Expression] = Seq(
+    keyLoopVar, keyLambdaFunction, valueLoopVar, valueLambdaFunction, inputData)
 
   private lazy val inputMapType = inputData.dataType.asInstanceOf[MapType]
 
@@ -1192,11 +1252,18 @@ case class CatalystToExternalMap private(
     """
     ev.copy(code = code, isNull = genInputData.isNull)
   }
+
+  override protected def withNewChildrenInternal(
+      newChildren: IndexedSeq[Expression]): CatalystToExternalMap =
+    copy(
+      keyLoopVar = newChildren(0).asInstanceOf[LambdaVariable],
+      keyLambdaFunction = newChildren(1),
+      valueLoopVar = newChildren(2).asInstanceOf[LambdaVariable],
+      valueLambdaFunction = newChildren(3),
+      inputData = newChildren(4))
 }
 
 object ExternalMapToCatalyst {
-  private val curId = new java.util.concurrent.atomic.AtomicInteger()
-
   def apply(
       inputMap: Expression,
       keyType: DataType,
@@ -1205,31 +1272,14 @@ object ExternalMapToCatalyst {
       valueType: DataType,
       valueConverter: Expression => Expression,
       valueNullable: Boolean): ExternalMapToCatalyst = {
-    val id = curId.getAndIncrement()
-    val keyName = "ExternalMapToCatalyst_key" + id
-    val keyIsNull = if (keyNullable) {
-      "ExternalMapToCatalyst_key_isNull" + id
-    } else {
-      "false"
-    }
-    val valueName = "ExternalMapToCatalyst_value" + id
-    val valueIsNull = if (valueNullable) {
-      "ExternalMapToCatalyst_value_isNull" + id
-    } else {
-      "false"
-    }
-
+    val keyLoopVar = LambdaVariable("ExternalMapToCatalyst_key", "inNull", keyType, keyNullable)
+    val valueLoopVar = LambdaVariable("ExternalMapToCatalyst_value", "inNull", valueType, valueNullable)
     ExternalMapToCatalyst(
-      keyName,
-      keyIsNull,
-      keyType,
-      keyConverter(LambdaVariable(keyName, keyIsNull, keyType, keyNullable)),
-      valueName,
-      valueIsNull,
-      valueType,
-      valueConverter(LambdaVariable(valueName, valueIsNull, valueType, valueNullable)),
-      inputMap
-    )
+      keyLoopVar,
+      keyConverter(keyLoopVar),
+      valueLoopVar,
+      valueConverter(valueLoopVar),
+      inputMap)
   }
 }
 
@@ -1252,21 +1302,22 @@ object ExternalMapToCatalyst {
  *                  used as input for the `valueConverter`
  * @param valueConverter A function that take the `value` as input, and converts it to catalyst
  *                       format.
- * @param child An expression that when evaluated returns the input map object.
+ * @param inputData An expression that when evaluated returns the input map object.
  */
 case class ExternalMapToCatalyst private(
-    key: String,
-    keyIsNull: String,
-    keyType: DataType,
+    keyLoopVar: LambdaVariable,
     keyConverter: Expression,
-    value: String,
-    valueIsNull: String,
-    valueType: DataType,
+    valueLoopVar: LambdaVariable,
     valueConverter: Expression,
-    child: Expression)
-  extends UnaryExpression with NonSQLExpression {
+    inputData: Expression)
+  extends Expression with NonSQLExpression {
 
   override def foldable: Boolean = false
+
+  override def nullable: Boolean = inputData.nullable
+
+  override def children: Seq[Expression] = Seq(
+    keyLoopVar, keyConverter, valueLoopVar, valueConverter, inputData)
 
   override def dataType: MapType = MapType(
     keyConverter.dataType, valueConverter.dataType, valueContainsNull = valueConverter.nullable)
@@ -1278,7 +1329,7 @@ case class ExternalMapToCatalyst private(
       rowBuffer
     }
 
-    child.dataType match {
+    inputData.dataType match {
       case ObjectType(cls) if classOf[java.util.Map[_, _]].isAssignableFrom(cls) =>
         (input: Any) => {
           val data = input.asInstanceOf[java.util.Map[Any, Any]]
@@ -1329,7 +1380,7 @@ case class ExternalMapToCatalyst private(
   }
 
   override def eval(input: InternalRow): Any = {
-    val result = child.eval(input)
+    val result = inputData.eval(input)
     if (result != null) {
       val (keys, values) = mapCatalystConverter(result)
       new ArrayBasedMapData(new GenericArrayData(keys), new GenericArrayData(values))
@@ -1339,7 +1390,7 @@ case class ExternalMapToCatalyst private(
   }
 
   override protected def doGenCode(ctx: CodegenContext, ev: ExprCode): ExprCode = {
-    val inputMap = child.genCode(ctx)
+    val inputMap = inputData.genCode(ctx)
     val genKeyConverter = keyConverter.genCode(ctx)
     val genValueConverter = valueConverter.genCode(ctx)
     val length = ctx.freshName("length")
@@ -1349,12 +1400,12 @@ case class ExternalMapToCatalyst private(
     val entry = ctx.freshName("entry")
     val entries = ctx.freshName("entries")
 
-    val keyElementJavaType = CodeGenerator.javaType(keyType)
-    val valueElementJavaType = CodeGenerator.javaType(valueType)
-    ctx.addMutableState(keyElementJavaType, key, forceInline = true, useFreshName = false)
-    ctx.addMutableState(valueElementJavaType, value, forceInline = true, useFreshName = false)
+    val keyJavaType = CodeGenerator.javaType(keyLoopVar.dataType)
+    val valueJavaType = CodeGenerator.javaType(valueLoopVar.dataType)
+    val keyCode = LambdaVariable.prepareLambdaVariable(ctx, keyLoopVar)
+    val valueCode = LambdaVariable.prepareLambdaVariable(ctx, valueLoopVar)
 
-    val (defineEntries, defineKeyValue) = child.dataType match {
+    val (defineEntries, defineKeyValue) = inputData.dataType match {
       case ObjectType(cls) if classOf[java.util.Map[_, _]].isAssignableFrom(cls) =>
         val javaIteratorCls = classOf[java.util.Iterator[_]].getName
         val javaMapEntryCls = classOf[java.util.Map.Entry[_, _]].getName
@@ -1365,8 +1416,8 @@ case class ExternalMapToCatalyst private(
         val defineKeyValue =
           s"""
             final $javaMapEntryCls $entry = ($javaMapEntryCls) $entries.next();
-            $key = (${CodeGenerator.boxedType(keyType)}) $entry.getKey();
-            $value = (${CodeGenerator.boxedType(valueType)}) $entry.getValue();
+            ${keyCode.value} = (${CodeGenerator.boxedType(keyJavaType)}) $entry.getKey();
+            ${valueCode.value} = (${CodeGenerator.boxedType(valueJavaType)}) $entry.getValue();
           """
 
         defineEntries -> defineKeyValue
@@ -1380,25 +1431,21 @@ case class ExternalMapToCatalyst private(
         val defineKeyValue =
           s"""
             final $scalaMapEntryCls $entry = ($scalaMapEntryCls) $entries.next();
-            $key = (${CodeGenerator.boxedType(keyType)}) $entry._1();
-            $value = (${CodeGenerator.boxedType(valueType)}) $entry._2();
+            ${keyCode.value} = (${CodeGenerator.boxedType(keyJavaType)}) $entry._1();
+            ${valueCode.value} = (${CodeGenerator.boxedType(valueJavaType)}) $entry._2();
           """
 
         defineEntries -> defineKeyValue
     }
 
-    val keyNullCheck = if (keyIsNull != "false") {
-      ctx.addMutableState(
-        CodeGenerator.JAVA_BOOLEAN, keyIsNull, forceInline = true, useFreshName = false)
-      s"$keyIsNull = $key == null;"
+    val keyNullCheck = if (keyLoopVar.nullable) {
+      s"${keyCode.isNull} = ${keyCode.value} == null;"
     } else {
       ""
     }
 
-    val valueNullCheck = if (valueIsNull != "false") {
-      ctx.addMutableState(
-        CodeGenerator.JAVA_BOOLEAN, valueIsNull, forceInline = true, useFreshName = false)
-      s"$valueIsNull = $value == null;"
+    val valueNullCheck = if (valueLoopVar.nullable) {
+      s"${valueCode.isNull} = ${valueCode.value} == null;"
     } else {
       ""
     }
@@ -1443,6 +1490,15 @@ case class ExternalMapToCatalyst private(
       """
     ev.copy(code = code, isNull = inputMap.isNull)
   }
+
+  override protected def withNewChildrenInternal(
+      newChildren: IndexedSeq[Expression]): ExternalMapToCatalyst =
+    copy(
+      keyLoopVar = newChildren(0).asInstanceOf[LambdaVariable],
+      keyConverter = newChildren(1),
+      valueLoopVar = newChildren(2).asInstanceOf[LambdaVariable],
+      valueConverter = newChildren(3),
+      inputData = newChildren(4))
 }
 
 /**
@@ -1493,6 +1549,9 @@ final ${classOf[Row].getName} ${ev.value} = new $rowClass($values, $schemaField)
        """
     ev.copy(code = code, isNull = FalseLiteral)
   }
+
+  override protected def withNewChildrenInternal(
+    newChildren: IndexedSeq[Expression]): CreateExternalRow = copy(children = newChildren)
 }
 
 /**
@@ -1522,6 +1581,9 @@ case class EncodeUsingSerializer(child: Expression, kryo: Boolean)
   }
 
   override def dataType: DataType = BinaryType
+
+  override protected def withNewChildInternal(newChild: Expression): EncodeUsingSerializer =
+    copy(child = newChild)
 }
 
 /**
@@ -1554,6 +1616,9 @@ case class DecodeUsingSerializer[T](child: Expression, tag: ClassTag[T], kryo: B
   }
 
   override def dataType: DataType = ObjectType(tag.runtimeClass)
+
+  override protected def withNewChildInternal(newChild: Expression): DecodeUsingSerializer[T] =
+    copy(child = newChild)
 }
 
 /**
@@ -1636,6 +1701,10 @@ if (!${instanceGen.isNull}) {
        """
     ev.copy(code = code, isNull = instanceGen.isNull, value = instanceGen.value)
   }
+
+  override protected def withNewChildrenInternal(
+      newChildren: IndexedSeq[Expression]): InitializeJavaBean =
+    super.legacyWithNewChildren(newChildren).asInstanceOf[InitializeJavaBean]
 }
 
 /**
@@ -1683,6 +1752,9 @@ case class AssertNotNull(child: Expression, walkedTypePath: Seq[String] = Nil)
      """
     ev.copy(code = code, isNull = FalseLiteral, value = childGen.value)
   }
+
+  override protected def withNewChildInternal(newChild: Expression): AssertNotNull =
+    copy(child = newChild)
 }
 
 /**
@@ -1734,6 +1806,9 @@ case class GetExternalRowField(
      """
     ev.copy(code = code, isNull = FalseLiteral)
   }
+
+  override protected def withNewChildInternal(newChild: Expression): GetExternalRowField =
+    copy(child = newChild)
 }
 
 /**
@@ -1808,4 +1883,7 @@ case class ValidateExternalType(child: Expression, expected: DataType)
     """
     ev.copy(code = code, isNull = input.isNull)
   }
+
+  override protected def withNewChildInternal(newChild: Expression): ValidateExternalType =
+    copy(child = newChild)
 }

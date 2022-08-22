@@ -18,13 +18,10 @@
 package org.apache.spark.sql.execution
 
 import java.io.{ByteArrayInputStream, ByteArrayOutputStream, DataInputStream, DataOutputStream}
-
 import scala.collection.mutable.ArrayBuffer
 import scala.concurrent.ExecutionContext
-
 import org.codehaus.commons.compiler.{CompileException, InternalCompilerException}
-
-import org.apache.spark.{broadcast, SparkEnv}
+import org.apache.spark.{SparkEnv, broadcast}
 import org.apache.spark.internal.Logging
 import org.apache.spark.io.CompressionCodec
 import org.apache.spark.rdd.{RDD, RDDOperationScope}
@@ -34,6 +31,7 @@ import org.apache.spark.sql.catalyst.expressions._
 import org.apache.spark.sql.catalyst.expressions.codegen.{Predicate => GenPredicate, _}
 import org.apache.spark.sql.catalyst.plans.QueryPlan
 import org.apache.spark.sql.catalyst.plans.physical._
+import org.apache.spark.sql.catalyst.trees.{BinaryLike, LeafLike, UnaryLike}
 import org.apache.spark.sql.execution.metric.SQLMetric
 import org.apache.spark.sql.types.DataType
 import org.apache.spark.util.ThreadUtils
@@ -82,6 +80,7 @@ abstract class SparkPlan extends QueryPlan[SparkPlan] with Logging with Serializ
    */
   def resetMetrics(): Unit = {
     metrics.valuesIterator.foreach(_.reset())
+    children.foreach(_.resetMetrics())
   }
 
   /**
@@ -441,8 +440,7 @@ object SparkPlan {
     ThreadUtils.newDaemonCachedThreadPool("subquery", 16))
 }
 
-trait LeafExecNode extends SparkPlan {
-  override final def children: Seq[SparkPlan] = Nil
+trait LeafExecNode extends SparkPlan with LeafLike[SparkPlan] {
   override def producedAttributes: AttributeSet = outputSet
 }
 
@@ -453,15 +451,6 @@ object UnaryExecNode {
   }
 }
 
-trait UnaryExecNode extends SparkPlan {
-  def child: SparkPlan
+trait UnaryExecNode extends SparkPlan  with UnaryLike[SparkPlan]
 
-  override final def children: Seq[SparkPlan] = child :: Nil
-}
-
-trait BinaryExecNode extends SparkPlan {
-  def left: SparkPlan
-  def right: SparkPlan
-
-  override final def children: Seq[SparkPlan] = Seq(left, right)
-}
+trait BinaryExecNode extends SparkPlan with BinaryLike[SparkPlan]

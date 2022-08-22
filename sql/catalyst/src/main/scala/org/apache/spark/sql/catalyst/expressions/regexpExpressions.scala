@@ -151,6 +151,9 @@ case class Like(left: Expression, right: Expression) extends StringRegexExpressi
       })
     }
   }
+
+  override protected def withNewChildrenInternal(newLeft: Expression, newRight: Expression): Like =
+    copy(left = newLeft, right = newRight)
 }
 
 @ExpressionDescription(
@@ -227,8 +230,15 @@ case class RLike(left: Expression, right: Expression) extends StringRegexExpress
       })
     }
   }
+
+  override protected def withNewChildrenInternal(newLeft: Expression, newRight: Expression): RLike =
+    copy(left = newLeft, right = newRight)
 }
 
+
+object StringSplit {
+  def apply(str: Expression, pattern: Expression):StringSplit = StringSplit(str, pattern, Literal(-1))
+}
 
 /**
  * Splits str around pat (pattern is a regular expression).
@@ -241,27 +251,32 @@ case class RLike(left: Expression, right: Expression) extends StringRegexExpress
        ["one","two","three",""]
   """,
   since = "1.5.0")
-case class StringSplit(str: Expression, pattern: Expression)
-  extends BinaryExpression with ImplicitCastInputTypes {
+case class StringSplit(str: Expression, pattern: Expression, limit: Expression)
+  extends TernaryExpression with ImplicitCastInputTypes {
 
-  override def left: Expression = str
-  override def right: Expression = pattern
   override def dataType: DataType = ArrayType(StringType)
-  override def inputTypes: Seq[DataType] = Seq(StringType, StringType)
+  override def inputTypes: Seq[DataType] = Seq(StringType, StringType, IntegerType)
+  override def first: Expression = str
+  override def second: Expression = pattern
+  override def third: Expression = limit
 
-  override def nullSafeEval(string: Any, regex: Any): Any = {
+  override def nullSafeEval(string: Any, regex: Any, limit: Any): Any = {
     val strings = string.asInstanceOf[UTF8String].split(regex.asInstanceOf[UTF8String], -1)
     new GenericArrayData(strings.asInstanceOf[Array[Any]])
   }
 
   override def doGenCode(ctx: CodegenContext, ev: ExprCode): ExprCode = {
     val arrayClass = classOf[GenericArrayData].getName
-    nullSafeCodeGen(ctx, ev, (str, pattern) =>
+    nullSafeCodeGen(ctx, ev, (str, pattern, limit) =>
       // Array in java is covariant, so we don't need to cast UTF8String[] to Object[].
-      s"""${ev.value} = new $arrayClass($str.split($pattern, -1));""")
+      s"""${ev.value} = new $arrayClass($str.split($pattern, $limit));""")
   }
 
   override def prettyName: String = "split"
+
+  override protected def withNewChildrenInternal(
+      newFirst: Expression, newSecond: Expression, newThird: Expression): StringSplit =
+    copy(str = newFirst, pattern = newSecond, limit = newThird)
 }
 
 
@@ -317,7 +332,6 @@ case class RegExpReplace(subject: Expression, regexp: Expression, rep: Expressio
 
   override def dataType: DataType = StringType
   override def inputTypes: Seq[AbstractDataType] = Seq(StringType, StringType, StringType)
-  override def children: Seq[Expression] = subject :: regexp :: rep :: Nil
   override def prettyName: String = "regexp_replace"
 
   override protected def doGenCode(ctx: CodegenContext, ev: ExprCode): ExprCode = {
@@ -364,6 +378,19 @@ case class RegExpReplace(subject: Expression, regexp: Expression, rep: Expressio
     """
     })
   }
+
+  override def first: Expression = subject
+  override def second: Expression = regexp
+  override def third: Expression = rep
+
+  override protected def withNewChildrenInternal(
+      first: Expression, second: Expression, third: Expression): RegExpReplace =
+    copy(subject = first, regexp = second, rep = third)
+}
+
+object RegExpReplace {
+  def apply(subject: Expression, regexp: Expression, rep: Expression): RegExpReplace =
+    new RegExpReplace(subject, regexp, rep)
 }
 
 object RegExpExtract {
@@ -391,6 +418,11 @@ object RegExpExtract {
 case class RegExpExtract(subject: Expression, regexp: Expression, idx: Expression)
   extends TernaryExpression with ImplicitCastInputTypes {
   def this(s: Expression, r: Expression) = this(s, r, Literal(1))
+
+
+  override def first: Expression = subject
+  override def second: Expression = regexp
+  override def third: Expression = idx
 
   // last regex in string, we will update the pattern iff regexp value changed.
   @transient private var lastRegex: UTF8String = _
@@ -421,7 +453,6 @@ case class RegExpExtract(subject: Expression, regexp: Expression, idx: Expressio
 
   override def dataType: DataType = StringType
   override def inputTypes: Seq[AbstractDataType] = Seq(StringType, StringType, IntegerType)
-  override def children: Seq[Expression] = subject :: regexp :: idx :: Nil
   override def prettyName: String = "regexp_extract"
 
   override protected def doGenCode(ctx: CodegenContext, ev: ExprCode): ExprCode = {
@@ -463,4 +494,9 @@ case class RegExpExtract(subject: Expression, regexp: Expression, idx: Expressio
       }"""
     })
   }
+
+  override protected def withNewChildrenInternal(
+      newFirst: Expression, newSecond: Expression, newThird: Expression): RegExpExtract =
+    copy(subject = newFirst, regexp = newSecond, idx = newThird)
 }
+

@@ -645,6 +645,10 @@ while (findNextInnerJoinRows($leftInput, $rightInput)) {
 $eagerCleanup
 """
   }
+
+  override protected def withNewChildrenInternal(
+      newLeft: SparkPlan, newRight: SparkPlan): SortMergeJoinExec =
+    copy(left = newLeft, right = newRight)
 }
 
 /**

@@ -331,6 +331,10 @@ case class GetJsonObject(json: Expression, path: Expression)
         false
     }
   }
+
+  override protected def withNewChildrenInternal(
+      newLeft: Expression, newRight: Expression): GetJsonObject =
+    copy(json = newLeft, path = newRight)
 }
 
 // scalastyle:off line.size.limit
@@ -487,6 +491,9 @@ case class JsonTuple(children: Seq[Expression])
         generator.copyCurrentStructure(parser)
     }
   }
+
+  override protected def withNewChildrenInternal(newChildren: IndexedSeq[Expression]): JsonTuple =
+    copy(children = newChildren)
 }
 
 /**
@@ -605,6 +612,9 @@ case class JsonToStructs(
     case _: MapType => "entries"
     case _ => super.sql
   }
+
+  override protected def withNewChildInternal(newChild: Expression): JsonToStructs =
+    copy(child = newChild)
 }
 
 /**
@@ -725,6 +735,9 @@ case class StructsToJson(
   override def nullSafeEval(value: Any): Any = converter(value)
 
   override def inputTypes: Seq[AbstractDataType] = TypeCollection(ArrayType, StructType) :: Nil
+
+  override protected def withNewChildInternal(newChild: Expression): StructsToJson =
+    copy(child = newChild)
 }
 
 /**
@@ -766,6 +779,9 @@ case class SchemaOfJson(child: Expression)
 
     UTF8String.fromString(dt.catalogString)
   }
+
+  override protected def withNewChildInternal(newChild: Expression): SchemaOfJson =
+    copy(child = newChild)
 }
 
 object JsonExprUtils {

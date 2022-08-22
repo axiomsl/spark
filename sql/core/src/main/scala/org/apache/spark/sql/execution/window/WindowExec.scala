@@ -392,4 +392,7 @@ case class WindowExec(
       }
     }
   }
+
+  override protected def withNewChildInternal(newChild: SparkPlan): WindowExec =
+    copy(child = newChild)
 }

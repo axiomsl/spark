@@ -99,6 +99,11 @@ case class CreateViewCommand(
 
   import ViewHelper._
 
+  override protected def withNewChildrenInternal(
+      newChildren: IndexedSeq[LogicalPlan]): CreateViewCommand = {
+    copy(child = newChildren.head)
+  }
+
   override protected def innerChildren: Seq[QueryPlan[_]] = Seq(child)
 
   if (viewType == PersistedView) {
@@ -284,6 +289,11 @@ case class AlterViewAsCommand(
     query: LogicalPlan) extends RunnableCommand {
 
   import ViewHelper._
+
+  override protected def withNewChildrenInternal(
+      newChildren: IndexedSeq[LogicalPlan]): AlterViewAsCommand = {
+    copy(query = newChildren.head)
+  }
 
   override protected def innerChildren: Seq[QueryPlan[_]] = Seq(query)
 

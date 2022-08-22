@@ -99,4 +99,7 @@ case class StreamingGlobalLimitExec(
   private def getValueRow(value: Long): UnsafeRow = {
     UnsafeProjection.create(valueSchema)(new GenericInternalRow(Array[Any](value)))
   }
+
+  override protected def withNewChildInternal(newChild: SparkPlan): SparkPlan =
+    copy(child = newChild)
 }

@@ -65,6 +65,9 @@ case class UnaryMinus(child: Expression) extends UnaryExpression
   }
 
   override def sql: String = s"(- ${child.sql})"
+
+  override protected def withNewChildInternal(newChild: Expression): UnaryMinus =
+    copy(child = newChild)
 }
 
 @ExpressionDescription(
@@ -83,6 +86,9 @@ case class UnaryPositive(child: Expression)
   protected override def nullSafeEval(input: Any): Any = input
 
   override def sql: String = s"(+ ${child.sql})"
+
+  override protected def withNewChildInternal(newChild: Expression): UnaryPositive =
+    copy(child = newChild)
 }
 
 /**
@@ -112,6 +118,8 @@ case class Abs(child: Expression)
   }
 
   protected override def nullSafeEval(input: Any): Any = numeric.abs(input)
+
+  override protected def withNewChildInternal(newChild: Expression): Abs = copy(child = newChild)
 }
 
 abstract class BinaryArithmetic extends BinaryOperator with NullIntolerant {
@@ -172,6 +180,9 @@ case class Add(left: Expression, right: Expression) extends BinaryArithmetic {
       numeric.plus(input1, input2)
     }
   }
+
+  override protected def withNewChildrenInternal(newLeft: Expression, newRight: Expression): Add =
+    copy(left = newLeft, right = newRight)
 }
 
 @ExpressionDescription(
@@ -200,6 +211,9 @@ case class Subtract(left: Expression, right: Expression) extends BinaryArithmeti
       numeric.minus(input1, input2)
     }
   }
+
+  override protected def withNewChildrenInternal(
+    newLeft: Expression, newRight: Expression): Subtract = copy(left = newLeft, right = newRight)
 }
 
 @ExpressionDescription(
@@ -219,6 +233,9 @@ case class Multiply(left: Expression, right: Expression) extends BinaryArithmeti
   private lazy val numeric = TypeUtils.getNumeric(dataType)
 
   protected override def nullSafeEval(input1: Any, input2: Any): Any = numeric.times(input1, input2)
+
+  override protected def withNewChildrenInternal(
+    newLeft: Expression, newRight: Expression): Multiply = copy(left = newLeft, right = newRight)
 }
 
 // Common base trait for Divide and Remainder, since these two classes are almost identical
@@ -312,6 +329,9 @@ case class Divide(left: Expression, right: Expression) extends DivModLike {
   }
 
   override def evalOperation(left: Any, right: Any): Any = div(left, right)
+
+  override protected def withNewChildrenInternal(
+    newLeft: Expression, newRight: Expression): Divide = copy(left = newLeft, right = newRight)
 }
 
 @ExpressionDescription(
@@ -347,6 +367,9 @@ case class Remainder(left: Expression, right: Expression) extends DivModLike {
   }
 
   override def evalOperation(left: Any, right: Any): Any = mod(left, right)
+
+  override protected def withNewChildrenInternal(
+    newLeft: Expression, newRight: Expression): Remainder = copy(left = newLeft, right = newRight)
 }
 
 @ExpressionDescription(
@@ -501,6 +524,9 @@ case class Pmod(left: Expression, right: Expression) extends BinaryArithmetic {
   }
 
   override def sql: String = s"$prettyName(${left.sql}, ${right.sql})"
+
+  override protected def withNewChildrenInternal(newLeft: Expression, newRight: Expression): Pmod =
+    copy(left = newLeft, right = newRight)
 }
 
 /**
@@ -574,6 +600,9 @@ $resultType ${ev.value} = ${CodeGenerator.defaultValue(dataType)};
 $codes
 """)
   }
+
+  override protected def withNewChildrenInternal(newChildren: IndexedSeq[Expression]): Least =
+    copy(children = newChildren)
 }
 
 @ExpressionDescription(
@@ -779,6 +808,9 @@ private $javaType $funcName(InternalRow ${ctx.INPUT_ROW}) {
       eval.code = code"$javaType $newValue = $funcFullName(${ctx.INPUT_ROW});"
     }
   }
+
+  override protected def withNewChildrenInternal(newChildren: IndexedSeq[Expression]): LeastNullIntolerant =
+    copy(children = newChildren)
 }
 
 
@@ -926,6 +958,9 @@ $codes
 """)
     }
   }
+
+  override protected def withNewChildrenInternal(newChildren: IndexedSeq[Expression]): Greatest =
+    copy(children = newChildren)
 }
 
 /**
@@ -1137,4 +1172,7 @@ private $javaType $funcName(InternalRow ${ctx.INPUT_ROW}) {
       eval.code = code"$javaType $newValue = $funcFullName(${ctx.INPUT_ROW});"
     }
   }
+
+  override protected def withNewChildrenInternal(newChildren: IndexedSeq[Expression]): GreatestNullIntolerant =
+    copy(children = newChildren)
 }
