@@ -17,6 +17,8 @@
 
 package org.apache.spark.ui
 
+import org.apache.commons.lang3.StringUtils
+
 import java.util.EnumSet
 import javax.servlet.DispatcherType
 import javax.servlet.http.{HttpServlet, HttpServletRequest}
@@ -174,7 +176,7 @@ private[spark] abstract class WebUI(
  */
 private[spark] abstract class WebUITab(parent: WebUI, val prefix: String) {
   val pages = ArrayBuffer[WebUIPage]()
-  val name = prefix.capitalize
+  val name = StringUtils.splitByCharacterTypeCamelCase(prefix).map(_.capitalize).mkString(" ")
 
   /** Attach a page to this tab. This prepends the page's prefix with the tab's own prefix. */
   def attachPage(page: WebUIPage) {

@@ -29,7 +29,7 @@ import org.apache.spark.status.api.v1._
 import org.apache.spark.ui.JettyUtils._
 import org.apache.spark.ui.env.EnvironmentTab
 import org.apache.spark.ui.exec.ExecutorsTab
-import org.apache.spark.ui.jobs.{JobsTab, StagesTab}
+import org.apache.spark.ui.jobs.{JobsTab, JobsTabNoTimeLine, StagesTab}
 import org.apache.spark.ui.storage.StorageTab
 import org.apache.spark.util.Utils
 
@@ -58,6 +58,8 @@ private[spark] class SparkUI private (
 
   /** Initialize all components of the server. */
   def initialize(): Unit = {
+    val jobsTabNoTimeLine = new JobsTabNoTimeLine(this, store)
+    attachTab(jobsTabNoTimeLine)
     val jobsTab = new JobsTab(this, store)
     attachTab(jobsTab)
     val stagesTab = new StagesTab(this, store)

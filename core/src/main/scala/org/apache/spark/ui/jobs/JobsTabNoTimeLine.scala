@@ -17,18 +17,16 @@
 
 package org.apache.spark.ui.jobs
 
-import javax.servlet.http.HttpServletRequest
-
-import scala.collection.JavaConverters._
-
 import org.apache.spark.JobExecutionStatus
 import org.apache.spark.scheduler.SchedulingMode
 import org.apache.spark.status.AppStatusStore
 import org.apache.spark.ui._
 
+import javax.servlet.http.HttpServletRequest
+
 /** Web UI showing progress status of all jobs in the given SparkContext. */
-private[ui] class JobsTab(parent: SparkUI, store: AppStatusStore)
-  extends SparkUITab(parent, "jobsTimeLine") {
+private[ui] class JobsTabNoTimeLine(parent: SparkUI, store: AppStatusStore)
+  extends SparkUITab(parent, "jobs") {
 
   val sc = parent.sc
   val killEnabled = parent.killEnabled
@@ -44,8 +42,8 @@ private[ui] class JobsTab(parent: SparkUI, store: AppStatusStore)
 
   def getSparkUser: String = parent.getSparkUser
 
-  attachPage(new AllJobsPage(this, store))
-  attachPage(new JobPage(this, store))
+  attachPage(new AllJobsPageNoTimeLine(this, store))
+  attachPage(new JobPageNoTimeLine(this, store))
 
   def handleKillRequest(request: HttpServletRequest): Unit = {
     if (killEnabled && parent.securityManager.checkModifyPermissions(request.getRemoteUser)) {
