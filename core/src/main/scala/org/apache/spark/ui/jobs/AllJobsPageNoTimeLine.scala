@@ -152,51 +152,6 @@ private[ui] class AllJobsPageNoTimeLine(parent: JobsTabNoTimeLine, store: AppSta
     events.toSeq
   }
 
-  private def makeTimeline(
-      jobs: Seq[v1.JobData],
-      executors: Seq[v1.ExecutorSummary],
-      startTime: Long): Seq[Node] = {
-
-    val jobEventJsonAsStrSeq = makeJobEvent(jobs)
-    val executorEventJsonAsStrSeq = makeExecutorEvent(executors)
-
-    val groupJsonArrayAsStr =
-      s"""
-[
-  {
-    'id': 'executors',
-    'content': '<div>Executors</div>${EXECUTORS_LEGEND}',
-  },
-  {
-    'id': 'jobs',
-    'content': '<div>Jobs</div>${JOBS_LEGEND}',
-  }
-]
-"""
-
-    val eventArrayAsStr =
-      (jobEventJsonAsStrSeq ++ executorEventJsonAsStrSeq).mkString("[", ",", "]")
-
-    <span class="expand-application-timeline">
-      <span class="expand-application-timeline-arrow arrow-closed"></span>
-      <a data-toggle="tooltip" title={ToolTips.JOB_TIMELINE} data-placement="right">
-        Event Timeline
-      </a>
-    </span> ++
-    <div id="application-timeline" class="collapsed">
-      <div class="control-panel">
-        <div id="application-timeline-zoom-lock">
-          <input type="checkbox"></input>
-          <span>Enable zooming</span>
-        </div>
-      </div>
-    </div> ++
-    <script type="text/javascript">
-      {Unparsed(s"drawApplicationTimeline(${groupJsonArrayAsStr}," +
-      s"${eventArrayAsStr}, ${startTime}, ${UIUtils.getTimeZoneOffset()});")}
-    </script>
-  }
-
   private def jobsTable(
       request: HttpServletRequest,
       tableHeaderId: String,
@@ -386,6 +341,17 @@ private[ui] class AllJobsPageNoTimeLine(parent: JobsTabNoTimeLine, store: AppSta
             <a>Completed Jobs ({completedJobNumStr})</a>
           </h4>
         </span> ++
+          <div class="form-inline">
+            <script src={UIUtils.prependBaseUri(request, "/static/search-utils.js")}></script>
+            <div class="bs-example" data-example-id="simple-form-inline">
+              <div class="form-group">
+                <div class="input-group">
+                  Search:
+                  <input type="text" class="form-control" id="search" oninput="onSearchStringChange('job-[0-9]+')"></input>
+                </div>
+              </div>
+            </div>
+          </div> ++
         <div class="aggregated-completedJobs collapsible-table">
           {completedJobsTable}
         </div>
