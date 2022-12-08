@@ -110,7 +110,7 @@ private[spark] class Executor(
       .setNameFormat("Executor task launch worker-%d")
       .setThreadFactory((r: Runnable) => new UninterruptibleThread(r, "unused"))
       .build()
-    Executors.newCachedThreadPool(threadFactory).asInstanceOf[ThreadPoolExecutor]
+    ThreadUtils.newDaemonCachedThreadPool(threadFactory)
   }
   private val schemes = conf.get(EXECUTOR_METRICS_FILESYSTEM_SCHEMES)
     .toLowerCase(Locale.ROOT).split(",").map(_.trim).filter(_.nonEmpty)
