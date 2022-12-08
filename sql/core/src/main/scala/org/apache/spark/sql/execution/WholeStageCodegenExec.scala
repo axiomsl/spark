@@ -34,7 +34,7 @@ import org.apache.spark.sql.catalyst.rules.Rule
 import org.apache.spark.sql.execution.aggregate.{HashAggregateExec, SortAggregateExec}
 import org.apache.spark.sql.execution.columnar.InMemoryTableScanExec
 import org.apache.spark.sql.execution.joins.{BroadcastHashJoinExec, BroadcastNestedLoopJoinExec, ShuffledHashJoinExec, SortMergeJoinExec}
-import org.apache.spark.sql.execution.metric.SQLMetrics
+import org.apache.spark.sql.execution.metric.{SQLMetric, SQLMetrics}
 import org.apache.spark.sql.internal.SQLConf
 import org.apache.spark.sql.types._
 import org.apache.spark.sql.vectorized.ColumnarBatch
@@ -77,7 +77,7 @@ trait CodegenSupport extends SparkPlan {
   /**
    * Which SparkPlan is calling produce() of this one. It's itself for the first SparkPlan.
    */
-  protected var parent: CodegenSupport = null
+  protected var parent: CodegenSupport = _
 
   /**
    * Returns all the RDDs of InternalRow which generates the input rows.
@@ -130,7 +130,7 @@ trait CodegenSupport extends SparkPlan {
         // generate the code to create a UnsafeRow
         ctx.INPUT_ROW = row
         ctx.currentVars = colVars
-        val ev = GenerateUnsafeProjection.createCode(ctx, colExprs, false)
+        val ev = GenerateUnsafeProjection.createCode(ctx, colExprs)
         val code = code"""
           |$evaluateInputs
           |${ev.code}
@@ -637,7 +637,7 @@ case class WholeStageCodegenExec(child: SparkPlan)(val codegenStageId: Int)
   // transformation but just for consistency
   override def supportsColumnar: Boolean = child.supportsColumnar
 
-  override lazy val metrics = Map(
+  override lazy val metrics: Map[String, SQLMetric] = Map(
     "pipelineTime" -> SQLMetrics.createTimingMetric(sparkContext,
       WholeStageCodegenExec.PIPELINE_DURATION_METRIC))
 
@@ -678,7 +678,7 @@ case class WholeStageCodegenExec(child: SparkPlan)(val codegenStageId: Int)
         s"""Codegened pipeline for stage (id=$codegenStageId)
            |${this.treeString.trim}""".stripMargin,
          "wsc_codegenPipeline")}
-      ${ctx.registerComment(s"codegenStageId=$codegenStageId", "wsc_codegenStageId", true)}
+      ${ctx.registerComment(s"codegenStageId=$codegenStageId", "wsc_codegenStageId", force = true)}
       final class $className extends ${classOf[BufferedRowIterator].getName} {
 
         private Object[] references;
