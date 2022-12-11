@@ -203,9 +203,9 @@ case class GenerateExec(
         val valueArray = ctx.freshName("valueArray")
         val initArrayData =
           s"""
-             |ArrayData $keyArray = ${data.isNull} ? null : ${data.value}.keyArray();
-             |ArrayData $valueArray = ${data.isNull} ? null : ${data.value}.valueArray();
-           """.stripMargin
+             ArrayData $keyArray = ${data.isNull} ? null : ${data.value}.keyArray();
+             ArrayData $valueArray = ${data.isNull} ? null : ${data.value}.valueArray();
+           """
         val values = Seq(
           codeGenAccessor(ctx, keyArray, "key", index, keyType, nullable = false, checks),
           codeGenAccessor(ctx, valueArray, "value", index, valueType, valueContainsNull, checks))
@@ -223,15 +223,15 @@ case class GenerateExec(
     }
     val numOutput = metricTerm(ctx, "numOutputRows")
     s"""
-       |${data.code}
-       |$initMapData
-       |int $numElements = ${data.isNull} ? 0 : ${data.value}.numElements();
-       |for (int $index = $init; $index < $numElements; $index++) {
-       |  $numOutput.add(1);
-       |  $updateRowData
-       |  ${consume(ctx, input ++ position ++ values)}
-       |}
-     """.stripMargin
+       ${data.code}
+       $initMapData
+       int $numElements = ${data.isNull} ? 0 : ${data.value}.numElements();
+       for (int $index = $init; $index < $numElements; $index++) {
+         $numOutput.add(1);
+         $updateRowData
+         ${consume(ctx, input ++ position ++ values)}
+       }
+     """
   }
 
   /**
@@ -267,27 +267,27 @@ case class GenerateExec(
     if (outer) {
       val outerVal = ctx.freshName("outer")
       s"""
-         |${data.code}
-         |scala.collection.Iterator<InternalRow> $iterator = ${data.value}.toIterator();
-         |boolean $outerVal = true;
-         |while ($iterator.hasNext() || $outerVal) {
-         |  $numOutput.add(1);
-         |  boolean $hasNext = $iterator.hasNext();
-         |  InternalRow $current = (InternalRow)($hasNext? $iterator.next() : null);
-         |  $outerVal = false;
-         |  ${consume(ctx, requiredInput ++ values)}
-         |}
-      """.stripMargin
+         ${data.code}
+         scala.collection.Iterator<InternalRow> $iterator = ${data.value}.toIterator();
+         boolean $outerVal = true;
+         while ($iterator.hasNext() || $outerVal) {
+           $numOutput.add(1);
+           boolean $hasNext = $iterator.hasNext();
+           InternalRow $current = (InternalRow)($hasNext? $iterator.next() : null);
+           $outerVal = false;
+           ${consume(ctx, requiredInput ++ values)}
+         }
+      """
     } else {
       s"""
-         |${data.code}
-         |scala.collection.Iterator<InternalRow> $iterator = ${data.value}.toIterator();
-         |while ($iterator.hasNext()) {
-         |  $numOutput.add(1);
-         |  InternalRow $current = (InternalRow)($iterator.next());
-         |  ${consume(ctx, requiredInput ++ values)}
-         |}
-      """.stripMargin
+         ${data.code}
+         scala.collection.Iterator<InternalRow> $iterator = ${data.value}.toIterator();
+         while ($iterator.hasNext()) {
+           $numOutput.add(1);
+           InternalRow $current = (InternalRow)($iterator.next());
+           ${consume(ctx, requiredInput ++ values)}
+         }
+      """
     }
   }
 
@@ -310,9 +310,9 @@ case class GenerateExec(
       val isNull = ctx.freshName("isNull")
       val code =
         code"""
-           |boolean $isNull = ${checks.mkString(" || ")};
-           |$javaType $value = $isNull ? ${CodeGenerator.defaultValue(dt)} : $getter;
-         """.stripMargin
+           boolean $isNull = ${checks.mkString(" || ")};
+           $javaType $value = $isNull ? ${CodeGenerator.defaultValue(dt)} : $getter;
+         """
       ExprCode(code, JavaCode.isNullVariable(isNull), JavaCode.variable(value, dt))
     } else {
       ExprCode(code"$javaType $value = $getter;", FalseLiteral, JavaCode.variable(value, dt))

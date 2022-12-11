@@ -197,9 +197,9 @@ abstract class BaseDynamicPartitionDataWriter(
 
   assert(isPartitioned || isBucketed,
     s"""DynamicPartitionWriteTask should be used for writing out data that's either
-       |partitioned or bucketed. In this case neither is true.
-       |WriteJobDescription: $description
-       """.stripMargin)
+       partitioned or bucketed. In this case neither is true.
+       WriteJobDescription: $description
+       """)
 
   /** Number of records in current file. */
   protected var recordsInFile: Long = _
@@ -590,10 +590,10 @@ class WriteJobDescription(
 
   assert(AttributeSet(allColumns) == AttributeSet(partitionColumns ++ dataColumns),
     s"""
-         |All columns: ${allColumns.mkString(", ")}
-         |Partition columns: ${partitionColumns.mkString(", ")}
-         |Data columns: ${dataColumns.mkString(", ")}
-       """.stripMargin)
+         All columns: ${allColumns.mkString(", ")}
+         Partition columns: ${partitionColumns.mkString(", ")}
+         Data columns: ${dataColumns.mkString(", ")}
+       """)
 }
 
 /** The result of a successful write task. */

@@ -415,15 +415,15 @@ case class SortMergeJoinExec(
   private def genComparison(ctx: CodegenContext, a: Seq[ExprCode], b: Seq[ExprCode]): String = {
     val comparisons = a.zip(b).zipWithIndex.map { case ((l, r), i) =>
       s"""
-         |if (comp == 0) {
-         |  comp = ${ctx.genComp(leftKeys(i).dataType, l.value, r.value)};
-         |}
-       """.stripMargin.trim
+         if (comp == 0) {
+           comp = ${ctx.genComp(leftKeys(i).dataType, l.value, r.value)};
+         }
+       """.trim
     }
     s"""
-       |comp = 0;
-       |${comparisons.mkString("\n")}
-     """.stripMargin
+       comp = 0;
+       ${comparisons.mkString("\n")}
+     """
   }
 
   /**
@@ -463,18 +463,18 @@ case class SortMergeJoinExec(
       case _: InnerLike | LeftSemi =>
         // Skip streamed row.
         s"""
-           |$streamedRow = null;
-           |continue;
-         """.stripMargin
+           $streamedRow = null;
+           continue;
+         """
       case LeftOuter | RightOuter | LeftAnti | ExistenceJoin(_) =>
         // Eagerly return streamed row. Only call `matches.clear()` when `matches.isEmpty()` is
         // false, to reduce unnecessary computation.
         s"""
-           |if (!$matches.isEmpty()) {
-           |  $matches.clear();
-           |}
-           |return false;
-         """.stripMargin
+           if (!$matches.isEmpty()) {
+             $matches.clear();
+           }
+           return false;
+         """
       case x =>
         throw new IllegalArgumentException(
           s"SortMergeJoin.genScanner should not take $x as the JoinType")
@@ -496,10 +496,10 @@ case class SortMergeJoinExec(
     val addRowToBuffer =
       if (onlyBufferFirstMatchedRow) {
         s"""
-           |if ($matches.isEmpty()) {
-           |  $matches.add((UnsafeRow) $bufferedRow);
-           |}
-         """.stripMargin
+           if ($matches.isEmpty()) {
+             $matches.add((UnsafeRow) $bufferedRow);
+           }
+         """
       } else {
         s"$matches.add((UnsafeRow) $bufferedRow);"
       }
@@ -537,59 +537,59 @@ case class SortMergeJoinExec(
     val findNextJoinRowsFuncName = ctx.freshName("findNextJoinRows")
     ctx.addNewFunction(findNextJoinRowsFuncName,
       s"""
-         |private boolean $findNextJoinRowsFuncName(
-         |    scala.collection.Iterator streamedIter,
-         |    scala.collection.Iterator bufferedIter) {
-         |  $streamedRow = null;
-         |  int comp = 0;
-         |  while ($streamedRow == null) {
-         |    if (!streamedIter.hasNext()) return false;
-         |    $streamedRow = (InternalRow) streamedIter.next();
-         |    ${streamedKeyVars.map(_.code).mkString("\n")}
-         |    if ($streamedAnyNull) {
-         |      $handleStreamedAnyNull
-         |    }
-         |    if (!$matches.isEmpty()) {
-         |      ${genComparison(ctx, streamedKeyVars, matchedKeyVars)}
-         |      if (comp == 0) {
-         |        return true;
-         |      }
-         |      $matches.clear();
-         |    }
-         |
-         |    do {
-         |      if ($bufferedRow == null) {
-         |        if (!bufferedIter.hasNext()) {
-         |          ${matchedKeyVars.map(_.code).mkString("\n")}
-         |          return !$matches.isEmpty();
-         |        }
-         |        $bufferedRow = (InternalRow) bufferedIter.next();
-         |        ${bufferedKeyTmpVars.map(_.code).mkString("\n")}
-         |        if ($bufferedAnyNull) {
-         |          $bufferedRow = null;
-         |          continue;
-         |        }
-         |        ${bufferedKeyVars.map(_.code).mkString("\n")}
-         |      }
-         |      ${genComparison(ctx, streamedKeyVars, bufferedKeyVars)}
-         |      if (comp > 0) {
-         |        $bufferedRow = null;
-         |      } else if (comp < 0) {
-         |        if (!$matches.isEmpty()) {
-         |          ${matchedKeyVars.map(_.code).mkString("\n")}
-         |          return true;
-         |        } else {
-         |          $handleStreamedWithoutMatch
-         |        }
-         |      } else {
-         |        $addRowToBuffer
-         |        $bufferedRow = null;
-         |      }
-         |    } while ($streamedRow != null);
-         |  }
-         |  return false; // unreachable
-         |}
-       """.stripMargin, inlineToOuterClass = true)
+         private boolean $findNextJoinRowsFuncName(
+             scala.collection.Iterator streamedIter,
+             scala.collection.Iterator bufferedIter) {
+           $streamedRow = null;
+           int comp = 0;
+           while ($streamedRow == null) {
+             if (!streamedIter.hasNext()) return false;
+             $streamedRow = (InternalRow) streamedIter.next();
+             ${streamedKeyVars.map(_.code).mkString("\n")}
+             if ($streamedAnyNull) {
+               $handleStreamedAnyNull
+             }
+             if (!$matches.isEmpty()) {
+               ${genComparison(ctx, streamedKeyVars, matchedKeyVars)}
+               if (comp == 0) {
+                 return true;
+               }
+               $matches.clear();
+             }
+
+             do {
+               if ($bufferedRow == null) {
+                 if (!bufferedIter.hasNext()) {
+                   ${matchedKeyVars.map(_.code).mkString("\n")}
+                   return !$matches.isEmpty();
+                 }
+                 $bufferedRow = (InternalRow) bufferedIter.next();
+                 ${bufferedKeyTmpVars.map(_.code).mkString("\n")}
+                 if ($bufferedAnyNull) {
+                   $bufferedRow = null;
+                   continue;
+                 }
+                 ${bufferedKeyVars.map(_.code).mkString("\n")}
+               }
+               ${genComparison(ctx, streamedKeyVars, bufferedKeyVars)}
+               if (comp > 0) {
+                 $bufferedRow = null;
+               } else if (comp < 0) {
+                 if (!$matches.isEmpty()) {
+                   ${matchedKeyVars.map(_.code).mkString("\n")}
+                   return true;
+                 } else {
+                   $handleStreamedWithoutMatch
+                 }
+               } else {
+                 $addRowToBuffer
+                 $bufferedRow = null;
+               }
+             } while ($streamedRow != null);
+           }
+           return false; // unreachable
+         }
+       """, inlineToOuterClass = true)
 
     (findNextJoinRowsFuncName, streamedRow, matches)
   }
@@ -614,14 +614,14 @@ case class SortMergeJoinExec(
         val isNull = ctx.freshName("isNull")
         val code =
           code"""
-             |$isNull = $streamedRow.isNullAt($i);
-             |$value = $isNull ? $defaultValue : ($valueCode);
-           """.stripMargin
+             $isNull = $streamedRow.isNullAt($i);
+             $value = $isNull ? $defaultValue : ($valueCode);
+           """
         val streamedVarsDecl =
           s"""
-             |boolean $isNull = false;
-             |$javaType $value = $defaultValue;
-           """.stripMargin
+             boolean $isNull = false;
+             $javaType $value = $defaultValue;
+           """
         (ExprCode(code, JavaCode.isNullVariable(isNull), JavaCode.variable(value, a.dataType)),
           streamedVarsDecl)
       } else {
@@ -724,9 +724,9 @@ case class SortMergeJoinExec(
           streamedBefore.trim
         case _ =>
           s"""
-             |boolean $loaded = false;
-             |$streamedBefore
-         """.stripMargin
+             boolean $loaded = false;
+             $streamedBefore
+         """
       }
 
       val loadStreamedAfterCondition = joinType match {
@@ -736,11 +736,11 @@ case class SortMergeJoinExec(
           ""
         case _ =>
           s"""
-             |if (!$loaded) {
-             |  $loaded = true;
-             |  $streamedAfter
-             |}
-         """.stripMargin
+             if (!$loaded) {
+               $loaded = true;
+               $streamedAfter
+             }
+         """
       }
 
       val loadBufferedAfterCondition = joinType match {
@@ -752,16 +752,16 @@ case class SortMergeJoinExec(
 
       val checking =
         s"""
-           |$bufferedBefore
-           |if ($bufferedRow != null) {
-           |  ${cond.code}
-           |  if (${cond.isNull} || !${cond.value}) {
-           |    continue;
-           |  }
-           |}
-           |$loadStreamedAfterCondition
-           |$loadBufferedAfterCondition
-         """.stripMargin
+           $bufferedBefore
+           if ($bufferedRow != null) {
+             ${cond.code}
+             if (${cond.isNull} || !${cond.value}) {
+               continue;
+             }
+           }
+           $loadStreamedAfterCondition
+           $loadBufferedAfterCondition
+         """
       (before, checking.trim, streamedAfter.trim)
     } else {
       (evaluateVariables(streamedVars), "", "")
@@ -769,15 +769,15 @@ case class SortMergeJoinExec(
 
     val beforeLoop =
       s"""
-         |${streamedVarDecl.mkString("\n")}
-         |${streamedBeforeLoop.trim}
-         |scala.collection.Iterator<UnsafeRow> $iterator = $matches.generateIterator();
-       """.stripMargin
+         ${streamedVarDecl.mkString("\n")}
+         ${streamedBeforeLoop.trim}
+         scala.collection.Iterator<UnsafeRow> $iterator = $matches.generateIterator();
+       """
     val outputRow =
       s"""
-         |$numOutput.add(1);
-         |${consume(ctx, resultVars)}
-       """.stripMargin
+         $numOutput.add(1);
+         ${consume(ctx, resultVars)}
+       """
     val findNextJoinRows = s"$findNextJoinRowsFuncName($streamedInput, $bufferedInput)"
     val thisPlan = ctx.addReferenceObj("plan", this)
     val eagerCleanup = s"$thisPlan.cleanupResources();"
@@ -806,22 +806,22 @@ case class SortMergeJoinExec(
     val initJoin = ctx.addMutableState(CodeGenerator.JAVA_BOOLEAN, "initJoin")
     val addHookToRecordMetrics =
       s"""
-         |$thisPlan.getTaskContext().addTaskCompletionListener(
-         |  new org.apache.spark.util.TaskCompletionListener() {
-         |    @Override
-         |    public void onTaskCompletion(org.apache.spark.TaskContext context) {
-         |      ${metricTerm(ctx, "spillSize")}.add($matches.spillSize());
-         |    }
-         |});
-       """.stripMargin
+         $thisPlan.getTaskContext().addTaskCompletionListener(
+           new org.apache.spark.util.TaskCompletionListener() {
+             @Override
+             public void onTaskCompletion(org.apache.spark.TaskContext context) {
+               ${metricTerm(ctx, "spillSize")}.add($matches.spillSize());
+             }
+         });
+       """
 
     s"""
-       |if (!$initJoin) {
-       |  $initJoin = true;
-       |  $addHookToRecordMetrics
-       |}
-       |$doJoin
-     """.stripMargin
+       if (!$initJoin) {
+         $initJoin = true;
+         $addHookToRecordMetrics
+       }
+       $doJoin
+     """
   }
 
   /**
@@ -836,17 +836,17 @@ case class SortMergeJoinExec(
       outputRow: String,
       eagerCleanup: String): String = {
     s"""
-       |while ($findNextJoinRows) {
-       |  $beforeLoop
-       |  while ($matchIterator.hasNext()) {
-       |    InternalRow $bufferedRow = (InternalRow) $matchIterator.next();
-       |    $conditionCheck
-       |    $outputRow
-       |  }
-       |  if (shouldStop()) return;
-       |}
-       |$eagerCleanup
-     """.stripMargin
+       while ($findNextJoinRows) {
+         $beforeLoop
+         while ($matchIterator.hasNext()) {
+           InternalRow $bufferedRow = (InternalRow) $matchIterator.next();
+           $conditionCheck
+           $outputRow
+         }
+         if (shouldStop()) return;
+       }
+       $eagerCleanup
+     """
   }
 
   /**
@@ -863,23 +863,23 @@ case class SortMergeJoinExec(
       outputRow: String,
       eagerCleanup: String): String = {
     s"""
-       |while ($streamedInput.hasNext()) {
-       |  $findNextJoinRows;
-       |  $beforeLoop
-       |  boolean $hasOutputRow = false;
-       |
-       |  // the last iteration of this loop is to emit an empty row if there is no matched rows.
-       |  while ($matchIterator.hasNext() || !$hasOutputRow) {
-       |    InternalRow $bufferedRow = $matchIterator.hasNext() ?
-       |      (InternalRow) $matchIterator.next() : null;
-       |    $conditionCheck
-       |    $hasOutputRow = true;
-       |    $outputRow
-       |  }
-       |  if (shouldStop()) return;
-       |}
-       |$eagerCleanup
-     """.stripMargin
+       while ($streamedInput.hasNext()) {
+         $findNextJoinRows;
+         $beforeLoop
+         boolean $hasOutputRow = false;
+
+         // the last iteration of this loop is to emit an empty row if there is no matched rows.
+         while ($matchIterator.hasNext() || !$hasOutputRow) {
+           InternalRow $bufferedRow = $matchIterator.hasNext() ?
+             (InternalRow) $matchIterator.next() : null;
+           $conditionCheck
+           $hasOutputRow = true;
+           $outputRow
+         }
+         if (shouldStop()) return;
+       }
+       $eagerCleanup
+     """
   }
 
   /**
@@ -895,20 +895,20 @@ case class SortMergeJoinExec(
       outputRow: String,
       eagerCleanup: String): String = {
     s"""
-       |while ($findNextJoinRows) {
-       |  $beforeLoop
-       |  boolean $hasOutputRow = false;
-       |
-       |  while (!$hasOutputRow && $matchIterator.hasNext()) {
-       |    InternalRow $bufferedRow = (InternalRow) $matchIterator.next();
-       |    $conditionCheck
-       |    $hasOutputRow = true;
-       |    $outputRow
-       |  }
-       |  if (shouldStop()) return;
-       |}
-       |$eagerCleanup
-     """.stripMargin
+       while ($findNextJoinRows) {
+         $beforeLoop
+         boolean $hasOutputRow = false;
+
+         while (!$hasOutputRow && $matchIterator.hasNext()) {
+           InternalRow $bufferedRow = (InternalRow) $matchIterator.next();
+           $conditionCheck
+           $hasOutputRow = true;
+           $outputRow
+         }
+         if (shouldStop()) return;
+       }
+       $eagerCleanup
+     """
   }
 
   /**
@@ -926,27 +926,27 @@ case class SortMergeJoinExec(
       outputRow: String,
       eagerCleanup: String): String = {
     s"""
-       |while ($streamedInput.hasNext()) {
-       |  $findNextJoinRows;
-       |  $beforeLoop
-       |  boolean $hasMatchedRow = false;
-       |
-       |  while (!$hasMatchedRow && $matchIterator.hasNext()) {
-       |    InternalRow $bufferedRow = (InternalRow) $matchIterator.next();
-       |    $conditionCheck
-       |    $hasMatchedRow = true;
-       |  }
-       |
-       |  if (!$hasMatchedRow) {
-       |    // load all values of streamed row, because the values not in join condition are not
-       |    // loaded yet.
-       |    $loadStreamed
-       |    $outputRow
-       |  }
-       |  if (shouldStop()) return;
-       |}
-       |$eagerCleanup
-     """.stripMargin
+       while ($streamedInput.hasNext()) {
+         $findNextJoinRows;
+         $beforeLoop
+         boolean $hasMatchedRow = false;
+
+         while (!$hasMatchedRow && $matchIterator.hasNext()) {
+           InternalRow $bufferedRow = (InternalRow) $matchIterator.next();
+           $conditionCheck
+           $hasMatchedRow = true;
+         }
+
+         if (!$hasMatchedRow) {
+           // load all values of streamed row, because the values not in join condition are not
+           // loaded yet.
+           $loadStreamed
+           $outputRow
+         }
+         if (shouldStop()) return;
+       }
+       $eagerCleanup
+     """
   }
 
   /**
@@ -964,28 +964,28 @@ case class SortMergeJoinExec(
       outputRow: String,
       eagerCleanup: String): String = {
     s"""
-       |while ($streamedInput.hasNext()) {
-       |  $findNextJoinRows;
-       |  $beforeLoop
-       |  boolean $exists = false;
-       |
-       |  while (!$exists && $matchIterator.hasNext()) {
-       |    InternalRow $bufferedRow = (InternalRow) $matchIterator.next();
-       |    $conditionCheck
-       |    $exists = true;
-       |  }
-       |
-       |  if (!$exists) {
-       |    // load all values of streamed row, because the values not in join condition are not
-       |    // loaded yet.
-       |    $loadStreamed
-       |  }
-       |  $outputRow
-       |
-       |  if (shouldStop()) return;
-       |}
-       |$eagerCleanup
-     """.stripMargin
+       while ($streamedInput.hasNext()) {
+         $findNextJoinRows;
+         $beforeLoop
+         boolean $exists = false;
+
+         while (!$exists && $matchIterator.hasNext()) {
+           InternalRow $bufferedRow = (InternalRow) $matchIterator.next();
+           $conditionCheck
+           $exists = true;
+         }
+
+         if (!$exists) {
+           // load all values of streamed row, because the values not in join condition are not
+           // loaded yet.
+           $loadStreamed
+         }
+         $outputRow
+
+         if (shouldStop()) return;
+       }
+       $eagerCleanup
+     """
   }
 
   /**
@@ -1044,27 +1044,27 @@ case class SortMergeJoinExec(
     val consumeFullOuterJoinRow = ctx.freshName("consumeFullOuterJoinRow")
     ctx.addNewFunction(consumeFullOuterJoinRow,
       s"""
-         |private void $consumeFullOuterJoinRow() throws java.io.IOException {
-         |  ${metricTerm(ctx, "numOutputRows")}.add(1);
-         |  ${consume(ctx, resultVars)}
-         |}
-       """.stripMargin)
+         private void $consumeFullOuterJoinRow() throws java.io.IOException {
+           ${metricTerm(ctx, "numOutputRows")}.add(1);
+           ${consume(ctx, resultVars)}
+         }
+       """)
 
     // Handle the case when input row has no match.
     val outputLeftNoMatch =
       s"""
-         |$leftOutputRow = $leftInputRow;
-         |$rightOutputRow = null;
-         |$leftInputRow = null;
-         |$consumeFullOuterJoinRow();
-       """.stripMargin
+         $leftOutputRow = $leftInputRow;
+         $rightOutputRow = null;
+         $leftInputRow = null;
+         $consumeFullOuterJoinRow();
+       """
     val outputRightNoMatch =
       s"""
-         |$rightOutputRow = $rightInputRow;
-         |$leftOutputRow = null;
-         |$rightInputRow = null;
-         |$consumeFullOuterJoinRow();
-       """.stripMargin
+         $rightOutputRow = $rightInputRow;
+         $leftOutputRow = null;
+         $rightInputRow = null;
+         $consumeFullOuterJoinRow();
+       """
 
     // Generate a function to scan both sides to find rows with matched join keys.
     // The matched rows from both sides are copied in buffers separately. This function assumes
@@ -1084,150 +1084,150 @@ case class SortMergeJoinExec(
     val findNextJoinRowsFuncName = ctx.freshName("findNextJoinRows")
     ctx.addNewFunction(findNextJoinRowsFuncName,
       s"""
-         |private void $findNextJoinRowsFuncName(
-         |    scala.collection.Iterator leftIter,
-         |    scala.collection.Iterator rightIter) throws java.io.IOException {
-         |  int comp = 0;
-         |  $leftBuffer.clear();
-         |  $rightBuffer.clear();
-         |
-         |  if ($leftInputRow == null) {
-         |    $leftInputRow = (InternalRow) leftIter.next();
-         |  }
-         |  if ($rightInputRow == null) {
-         |    $rightInputRow = (InternalRow) rightIter.next();
-         |  }
-         |
-         |  ${leftKeyVars.map(_.code).mkString("\n")}
-         |  if ($leftAnyNull) {
-         |    // The left row join key is null, join it with null row
-         |    $outputLeftNoMatch
-         |    return;
-         |  }
-         |
-         |  ${rightKeyVars.map(_.code).mkString("\n")}
-         |  if ($rightAnyNull) {
-         |    // The right row join key is null, join it with null row
-         |    $outputRightNoMatch
-         |    return;
-         |  }
-         |
-         |  ${genComparison(ctx, leftKeyVars, rightKeyVars)}
-         |  if (comp < 0) {
-         |    // The left row join key is smaller, join it with null row
-         |    $outputLeftNoMatch
-         |    return;
-         |  } else if (comp > 0) {
-         |    // The right row join key is smaller, join it with null row
-         |    $outputRightNoMatch
-         |    return;
-         |  }
-         |
-         |  ${matchedKeyVars.map(_.code).mkString("\n")}
-         |  $leftBuffer.add($leftInputRow.copy());
-         |  $rightBuffer.add($rightInputRow.copy());
-         |  $leftInputRow = null;
-         |  $rightInputRow = null;
-         |
-         |  // Buffer rows from both sides with same join key
-         |  while (leftIter.hasNext()) {
-         |    $leftInputRow = (InternalRow) leftIter.next();
-         |    ${leftMatchedKeyVars.map(_.code).mkString("\n")}
-         |    ${genComparison(ctx, leftMatchedKeyVars, matchedKeyVars)}
-         |    if (comp == 0) {
-         |
-         |      $leftBuffer.add($leftInputRow.copy());
-         |      $leftInputRow = null;
-         |    } else {
-         |      break;
-         |    }
-         |  }
-         |  while (rightIter.hasNext()) {
-         |    $rightInputRow = (InternalRow) rightIter.next();
-         |    ${rightMatchedKeyVars.map(_.code).mkString("\n")}
-         |    ${genComparison(ctx, rightMatchedKeyVars, matchedKeyVars)}
-         |    if (comp == 0) {
-         |      $rightBuffer.add($rightInputRow.copy());
-         |      $rightInputRow = null;
-         |    } else {
-         |      break;
-         |    }
-         |  }
-         |
-         |  // Reset bit sets of buffers accordingly
-         |  if ($leftBuffer.size() <= $leftMatched.capacity()) {
-         |    $leftMatched.clearUntil($leftBuffer.size());
-         |  } else {
-         |    $leftMatched = new $matchedClsName($leftBuffer.size());
-         |  }
-         |  if ($rightBuffer.size() <= $rightMatched.capacity()) {
-         |    $rightMatched.clearUntil($rightBuffer.size());
-         |  } else {
-         |    $rightMatched = new $matchedClsName($rightBuffer.size());
-         |  }
-         |}
-       """.stripMargin)
+         private void $findNextJoinRowsFuncName(
+             scala.collection.Iterator leftIter,
+             scala.collection.Iterator rightIter) throws java.io.IOException {
+           int comp = 0;
+           $leftBuffer.clear();
+           $rightBuffer.clear();
+
+           if ($leftInputRow == null) {
+             $leftInputRow = (InternalRow) leftIter.next();
+           }
+           if ($rightInputRow == null) {
+             $rightInputRow = (InternalRow) rightIter.next();
+           }
+
+           ${leftKeyVars.map(_.code).mkString("\n")}
+           if ($leftAnyNull) {
+             // The left row join key is null, join it with null row
+             $outputLeftNoMatch
+             return;
+           }
+
+           ${rightKeyVars.map(_.code).mkString("\n")}
+           if ($rightAnyNull) {
+             // The right row join key is null, join it with null row
+             $outputRightNoMatch
+             return;
+           }
+
+           ${genComparison(ctx, leftKeyVars, rightKeyVars)}
+           if (comp < 0) {
+             // The left row join key is smaller, join it with null row
+             $outputLeftNoMatch
+             return;
+           } else if (comp > 0) {
+             // The right row join key is smaller, join it with null row
+             $outputRightNoMatch
+             return;
+           }
+
+           ${matchedKeyVars.map(_.code).mkString("\n")}
+           $leftBuffer.add($leftInputRow.copy());
+           $rightBuffer.add($rightInputRow.copy());
+           $leftInputRow = null;
+           $rightInputRow = null;
+
+           // Buffer rows from both sides with same join key
+           while (leftIter.hasNext()) {
+             $leftInputRow = (InternalRow) leftIter.next();
+             ${leftMatchedKeyVars.map(_.code).mkString("\n")}
+             ${genComparison(ctx, leftMatchedKeyVars, matchedKeyVars)}
+             if (comp == 0) {
+
+               $leftBuffer.add($leftInputRow.copy());
+               $leftInputRow = null;
+             } else {
+               break;
+             }
+           }
+           while (rightIter.hasNext()) {
+             $rightInputRow = (InternalRow) rightIter.next();
+             ${rightMatchedKeyVars.map(_.code).mkString("\n")}
+             ${genComparison(ctx, rightMatchedKeyVars, matchedKeyVars)}
+             if (comp == 0) {
+               $rightBuffer.add($rightInputRow.copy());
+               $rightInputRow = null;
+             } else {
+               break;
+             }
+           }
+
+           // Reset bit sets of buffers accordingly
+           if ($leftBuffer.size() <= $leftMatched.capacity()) {
+             $leftMatched.clearUntil($leftBuffer.size());
+           } else {
+             $leftMatched = new $matchedClsName($leftBuffer.size());
+           }
+           if ($rightBuffer.size() <= $rightMatched.capacity()) {
+             $rightMatched.clearUntil($rightBuffer.size());
+           } else {
+             $rightMatched = new $matchedClsName($rightBuffer.size());
+           }
+         }
+       """)
 
     // Scan the left and right buffers to find all matched rows.
     val matchRowsInBuffer =
       s"""
-         |int $leftIndex;
-         |int $rightIndex;
-         |
-         |for ($leftIndex = 0; $leftIndex < $leftBuffer.size(); $leftIndex++) {
-         |  $leftOutputRow = (InternalRow) $leftBuffer.get($leftIndex);
-         |  for ($rightIndex = 0; $rightIndex < $rightBuffer.size(); $rightIndex++) {
-         |    $rightOutputRow = (InternalRow) $rightBuffer.get($rightIndex);
-         |    $conditionCheck {
-         |      $consumeFullOuterJoinRow();
-         |      $leftMatched.set($leftIndex);
-         |      $rightMatched.set($rightIndex);
-         |    }
-         |  }
-         |
-         |  if (!$leftMatched.get($leftIndex)) {
-         |
-         |    $rightOutputRow = null;
-         |    $consumeFullOuterJoinRow();
-         |  }
-         |}
-         |
-         |$leftOutputRow = null;
-         |for ($rightIndex = 0; $rightIndex < $rightBuffer.size(); $rightIndex++) {
-         |  if (!$rightMatched.get($rightIndex)) {
-         |    // The right row has never matched any left row, join it with null row
-         |    $rightOutputRow = (InternalRow) $rightBuffer.get($rightIndex);
-         |    $consumeFullOuterJoinRow();
-         |  }
-         |}
-       """.stripMargin
+         int $leftIndex;
+         int $rightIndex;
+
+         for ($leftIndex = 0; $leftIndex < $leftBuffer.size(); $leftIndex++) {
+           $leftOutputRow = (InternalRow) $leftBuffer.get($leftIndex);
+           for ($rightIndex = 0; $rightIndex < $rightBuffer.size(); $rightIndex++) {
+             $rightOutputRow = (InternalRow) $rightBuffer.get($rightIndex);
+             $conditionCheck {
+               $consumeFullOuterJoinRow();
+               $leftMatched.set($leftIndex);
+               $rightMatched.set($rightIndex);
+             }
+           }
+
+           if (!$leftMatched.get($leftIndex)) {
+
+             $rightOutputRow = null;
+             $consumeFullOuterJoinRow();
+           }
+         }
+
+         $leftOutputRow = null;
+         for ($rightIndex = 0; $rightIndex < $rightBuffer.size(); $rightIndex++) {
+           if (!$rightMatched.get($rightIndex)) {
+             // The right row has never matched any left row, join it with null row
+             $rightOutputRow = (InternalRow) $rightBuffer.get($rightIndex);
+             $consumeFullOuterJoinRow();
+           }
+         }
+       """
 
     s"""
-       |while (($leftInputRow != null || $leftInput.hasNext()) &&
-       |  ($rightInputRow != null || $rightInput.hasNext())) {
-       |  $findNextJoinRowsFuncName($leftInput, $rightInput);
-       |  $matchRowsInBuffer
-       |  if (shouldStop()) return;
-       |}
-       |
-       |// The right iterator has no more rows, join left row with null
-       |while ($leftInputRow != null || $leftInput.hasNext()) {
-       |  if ($leftInputRow == null) {
-       |    $leftInputRow = (InternalRow) $leftInput.next();
-       |  }
-       |  $outputLeftNoMatch
-       |  if (shouldStop()) return;
-       |}
-       |
-       |// The left iterator has no more rows, join right row with null
-       |while ($rightInputRow != null || $rightInput.hasNext()) {
-       |  if ($rightInputRow == null) {
-       |    $rightInputRow = (InternalRow) $rightInput.next();
-       |  }
-       |  $outputRightNoMatch
-       |  if (shouldStop()) return;
-       |}
-     """.stripMargin
+       while (($leftInputRow != null || $leftInput.hasNext()) &&
+         ($rightInputRow != null || $rightInput.hasNext())) {
+         $findNextJoinRowsFuncName($leftInput, $rightInput);
+         $matchRowsInBuffer
+         if (shouldStop()) return;
+       }
+       
+       // The right iterator has no more rows, join left row with null
+       while ($leftInputRow != null || $leftInput.hasNext()) {
+         if ($leftInputRow == null) {
+           $leftInputRow = (InternalRow) $leftInput.next();
+         }
+         $outputLeftNoMatch
+         if (shouldStop()) return;
+       }
+       
+       // The left iterator has no more rows, join right row with null
+       while ($rightInputRow != null || $rightInput.hasNext()) {
+         if ($rightInputRow == null) {
+           $rightInputRow = (InternalRow) $rightInput.next();
+         }
+         $outputRightNoMatch
+         if (shouldStop()) return;
+       }
+     """
   }
 
   override protected def withNewChildrenInternal(

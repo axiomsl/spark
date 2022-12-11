@@ -360,9 +360,9 @@ case class ShuffledHashJoinExec(
     val streamedKeyExprCode = GenerateUnsafeProjection.createCode(ctx, streamedBoundKeys)
     val streamedKeyEv =
       s"""
-         |$streamedKeyVariables
-         |${streamedKeyExprCode.code}
-       """.stripMargin
+         $streamedKeyVariables
+         ${streamedKeyExprCode.code}
+       """
     val streamedKeyAnyNull = s"${streamedKeyExprCode.value}.anyNull()"
 
     // Generate code for join condition
@@ -382,11 +382,11 @@ case class ShuffledHashJoinExec(
     val consumeFullOuterJoinRow = ctx.freshName("consumeFullOuterJoinRow")
     ctx.addNewFunction(consumeFullOuterJoinRow,
       s"""
-         |private void $consumeFullOuterJoinRow() throws java.io.IOException {
-         |  ${metricTerm(ctx, "numOutputRows")}.add(1);
-         |  ${consume(ctx, resultVars)}
-         |}
-       """.stripMargin)
+         private void $consumeFullOuterJoinRow() throws java.io.IOException {
+           ${metricTerm(ctx, "numOutputRows")}.add(1);
+           ${consume(ctx, resultVars)}
+         }
+       """)
 
     val joinWithUniqueKey = codegenFullOuterJoinWithUniqueKey(
       ctx, (streamedRow, buildRow), (streamedInput, buildInput), streamedKeyEv, streamedKeyAnyNull,
@@ -396,12 +396,12 @@ case class ShuffledHashJoinExec(
       streamedKeyExprCode.value, relationTerm, conditionCheck, consumeFullOuterJoinRow)
 
     s"""
-       |if ($keyIsUnique) {
-       |  $joinWithUniqueKey
-       |} else {
-       |  $joinWithNonUniqueKey
-       |}
-     """.stripMargin
+       if ($keyIsUnique) {
+         $joinWithUniqueKey
+       } else {
+         $joinWithNonUniqueKey
+       }
+     """
   }
 
   /**
@@ -430,59 +430,59 @@ case class ShuffledHashJoinExec(
 
     val joinStreamSide =
       s"""
-         |while ($streamedInput.hasNext()) {
-         |  $streamedRow = (InternalRow) $streamedInput.next();
-         |
-         |  // generate join key for stream side
-         |  $streamedKeyEv
-         |
-         |  // find matches from HashedRelation
-         |  boolean $foundMatch = false;
-         |  $buildRow = null;
-         |  $rowWithIndexClsName $rowWithIndex = $streamedKeyAnyNull ? null:
-         |    $relationTerm.getValueWithKeyIndex($streamedKeyValue);
-         |
-         |  if ($rowWithIndex != null) {
-         |    $buildRow = $rowWithIndex.getValue();
-         |    // check join condition
-         |    $conditionCheck {
-         |      // set key index in matched keys set
-         |      $matchedKeySet.set($rowWithIndex.getKeyIndex());
-         |      $foundMatch = true;
-         |    }
-         |
-         |    if (!$foundMatch) {
-         |      $buildRow = null;
-         |    }
-         |  }
-         |
-         |  $consumeFullOuterJoinRow();
-         |  if (shouldStop()) return;
-         |}
-       """.stripMargin
+         while ($streamedInput.hasNext()) {
+           $streamedRow = (InternalRow) $streamedInput.next();
+
+           // generate join key for stream side
+           $streamedKeyEv
+
+           // find matches from HashedRelation
+           boolean $foundMatch = false;
+           $buildRow = null;
+           $rowWithIndexClsName $rowWithIndex = $streamedKeyAnyNull ? null:
+             $relationTerm.getValueWithKeyIndex($streamedKeyValue);
+
+           if ($rowWithIndex != null) {
+             $buildRow = $rowWithIndex.getValue();
+             // check join condition
+             $conditionCheck {
+               // set key index in matched keys set
+               $matchedKeySet.set($rowWithIndex.getKeyIndex());
+               $foundMatch = true;
+             }
+
+             if (!$foundMatch) {
+               $buildRow = null;
+             }
+           }
+
+           $consumeFullOuterJoinRow();
+           if (shouldStop()) return;
+         }
+       """
 
     val filterBuildSide =
       s"""
-         |$streamedRow = null;
-         |
-         |// find non-matched rows from HashedRelation
-         |while ($buildInput.hasNext()) {
-         |  $rowWithIndexClsName $rowWithIndex = ($rowWithIndexClsName) $buildInput.next();
-         |
-         |  // check if key index is not in matched keys set
-         |  if (!$matchedKeySet.get($rowWithIndex.getKeyIndex())) {
-         |    $buildRow = $rowWithIndex.getValue();
-         |    $consumeFullOuterJoinRow();
-         |  }
-         |
-         |  if (shouldStop()) return;
-         |}
-       """.stripMargin
+         $streamedRow = null;
+
+         // find non-matched rows from HashedRelation
+         while ($buildInput.hasNext()) {
+           $rowWithIndexClsName $rowWithIndex = ($rowWithIndexClsName) $buildInput.next();
+
+           // check if key index is not in matched keys set
+           if (!$matchedKeySet.get($rowWithIndex.getKeyIndex())) {
+             $buildRow = $rowWithIndex.getValue();
+             $consumeFullOuterJoinRow();
+           }
+
+           if (shouldStop()) return;
+         }
+       """
 
     s"""
-       |$joinStreamSide
-       |$filterBuildSide
-     """.stripMargin
+       $joinStreamSide
+       $filterBuildSide
+     """
   }
 
   /**
@@ -520,72 +520,72 @@ case class ShuffledHashJoinExec(
 
     val joinStreamSide =
       s"""
-         |while ($streamedInput.hasNext()) {
-         |  $streamedRow = (InternalRow) $streamedInput.next();
-         |
-         |  // generate join key for stream side
-         |  $streamedKeyEv
-         |
-         |  // find matches from HashedRelation
-         |  boolean $foundMatch = false;
-         |  $buildRow = null;
-         |  scala.collection.Iterator $buildIterator = $streamedKeyAnyNull ? null:
-         |    $relationTerm.getWithKeyIndex($streamedKeyValue);
-         |
-         |  int $valueIndex = -1;
-         |  while ($buildIterator != null && $buildIterator.hasNext()) {
-         |    $rowWithIndexClsName $rowWithIndex = ($rowWithIndexClsName) $buildIterator.next();
-         |    int $keyIndex = $rowWithIndex.getKeyIndex();
-         |    $buildRow = $rowWithIndex.getValue();
-         |    $valueIndex++;
-         |
-         |    // check join condition
-         |    $conditionCheck {
-         |      // set row index in matched row set
-         |      $matchedRowSet.add($rowIndex);
-         |      $foundMatch = true;
-         |      $consumeFullOuterJoinRow();
-         |    }
-         |  }
-         |
-         |  if (!$foundMatch) {
-         |    $buildRow = null;
-         |    $consumeFullOuterJoinRow();
-         |  }
-         |
-         |  if (shouldStop()) return;
-         |}
-       """.stripMargin
+         while ($streamedInput.hasNext()) {
+           $streamedRow = (InternalRow) $streamedInput.next();
+
+           // generate join key for stream side
+           $streamedKeyEv
+
+           // find matches from HashedRelation
+           boolean $foundMatch = false;
+           $buildRow = null;
+           scala.collection.Iterator $buildIterator = $streamedKeyAnyNull ? null:
+             $relationTerm.getWithKeyIndex($streamedKeyValue);
+
+           int $valueIndex = -1;
+           while ($buildIterator != null && $buildIterator.hasNext()) {
+             $rowWithIndexClsName $rowWithIndex = ($rowWithIndexClsName) $buildIterator.next();
+             int $keyIndex = $rowWithIndex.getKeyIndex();
+             $buildRow = $rowWithIndex.getValue();
+             $valueIndex++;
+
+             // check join condition
+             $conditionCheck {
+               // set row index in matched row set
+               $matchedRowSet.add($rowIndex);
+               $foundMatch = true;
+               $consumeFullOuterJoinRow();
+             }
+           }
+
+           if (!$foundMatch) {
+             $buildRow = null;
+             $consumeFullOuterJoinRow();
+           }
+
+           if (shouldStop()) return;
+         }
+       """
 
     val filterBuildSide =
       s"""
-         |$streamedRow = null;
-         |
-         |// find non-matched rows from HashedRelation
-         |while ($buildInput.hasNext()) {
-         |  $rowWithIndexClsName $rowWithIndex = ($rowWithIndexClsName) $buildInput.next();
-         |  int $keyIndex = $rowWithIndex.getKeyIndex();
-         |  if ($prevKeyIndex == -1 || $keyIndex != $prevKeyIndex) {
-         |    $valueIndex = 0;
-         |    $prevKeyIndex = $keyIndex;
-         |  } else {
-         |    $valueIndex += 1;
-         |  }
-         |
-         |  // check if row index is not in matched row set
-         |  if (!$matchedRowSet.contains($rowIndex)) {
-         |    $buildRow = $rowWithIndex.getValue();
-         |    $consumeFullOuterJoinRow();
-         |  }
-         |
-         |  if (shouldStop()) return;
-         |}
-       """.stripMargin
+         $streamedRow = null;
+
+         // find non-matched rows from HashedRelation
+         while ($buildInput.hasNext()) {
+           $rowWithIndexClsName $rowWithIndex = ($rowWithIndexClsName) $buildInput.next();
+           int $keyIndex = $rowWithIndex.getKeyIndex();
+           if ($prevKeyIndex == -1 || $keyIndex != $prevKeyIndex) {
+             $valueIndex = 0;
+             $prevKeyIndex = $keyIndex;
+           } else {
+             $valueIndex += 1;
+           }
+
+           // check if row index is not in matched row set
+           if (!$matchedRowSet.contains($rowIndex)) {
+             $buildRow = $rowWithIndex.getValue();
+             $consumeFullOuterJoinRow();
+           }
+
+           if (shouldStop()) return;
+         }
+       """
 
     s"""
-       |$joinStreamSide
-       |$filterBuildSide
-     """.stripMargin
+       $joinStreamSide
+       $filterBuildSide
+     """
   }
 
   override protected def withNewChildrenInternal(

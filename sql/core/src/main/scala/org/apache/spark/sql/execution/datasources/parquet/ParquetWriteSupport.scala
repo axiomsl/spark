@@ -136,10 +136,10 @@ class ParquetWriteSupport extends WriteSupport[InternalRow] with Logging {
 
     logInfo(
       s"""Initialized Parquet WriteSupport with Catalyst schema:
-         |${schema.prettyJson}
-         |and corresponding Parquet message type:
-         |$messageType
-       """.stripMargin)
+         ${schema.prettyJson}
+         and corresponding Parquet message type:
+         $messageType
+       """)
 
     new WriteContext(messageType, metadata.asJava)
   }

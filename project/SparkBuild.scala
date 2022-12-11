@@ -443,9 +443,9 @@ object SparkBuild extends PomBuild {
   val sparkShell = taskKey[Unit]("start a spark-shell.")
   val sparkPackage = inputKey[Unit](
     s"""
-       |Download and run a spark package.
-       |Usage `builds/sbt "sparkPackage <group:artifact:version> <MainClass> [args]
-     """.stripMargin)
+       Download and run a spark package.
+       Usage `builds/sbt "sparkPackage <group:artifact:version> <MainClass> [args]
+     """)
   val sparkSql = taskKey[Unit]("starts the spark sql CLI.")
 
   enable(Seq(
@@ -774,24 +774,24 @@ object SQL {
   lazy val settings = Seq(
     (console / initialCommands) :=
       """
-        |import org.apache.spark.SparkContext
-        |import org.apache.spark.sql.SQLContext
-        |import org.apache.spark.sql.catalyst.analysis._
-        |import org.apache.spark.sql.catalyst.dsl._
-        |import org.apache.spark.sql.catalyst.errors._
-        |import org.apache.spark.sql.catalyst.expressions._
-        |import org.apache.spark.sql.catalyst.plans.logical._
-        |import org.apache.spark.sql.catalyst.rules._
-        |import org.apache.spark.sql.catalyst.util._
-        |import org.apache.spark.sql.execution
-        |import org.apache.spark.sql.functions._
-        |import org.apache.spark.sql.types._
-        |
-        |val sc = new SparkContext("local[*]", "dev-shell")
-        |val sqlContext = new SQLContext(sc)
-        |import sqlContext.implicits._
-        |import sqlContext._
-      """.stripMargin,
+        import org.apache.spark.SparkContext
+        import org.apache.spark.sql.SQLContext
+        import org.apache.spark.sql.catalyst.analysis._
+        import org.apache.spark.sql.catalyst.dsl._
+        import org.apache.spark.sql.catalyst.errors._
+        import org.apache.spark.sql.catalyst.expressions._
+        import org.apache.spark.sql.catalyst.plans.logical._
+        import org.apache.spark.sql.catalyst.rules._
+        import org.apache.spark.sql.catalyst.util._
+        import org.apache.spark.sql.execution
+        import org.apache.spark.sql.functions._
+        import org.apache.spark.sql.types._
+
+        val sc = new SparkContext("local[*]", "dev-shell")
+        val sqlContext = new SQLContext(sc)
+        import sqlContext.implicits._
+        import sqlContext._
+      """,
     (console / cleanupCommands) := "sc.stop()"
   )
 }
@@ -811,20 +811,20 @@ object Hive {
     }).value,
     (console / initialCommands) :=
       """
-        |import org.apache.spark.SparkContext
-        |import org.apache.spark.sql.catalyst.analysis._
-        |import org.apache.spark.sql.catalyst.dsl._
-        |import org.apache.spark.sql.catalyst.errors._
-        |import org.apache.spark.sql.catalyst.expressions._
-        |import org.apache.spark.sql.catalyst.plans.logical._
-        |import org.apache.spark.sql.catalyst.rules._
-        |import org.apache.spark.sql.catalyst.util._
-        |import org.apache.spark.sql.execution
-        |import org.apache.spark.sql.functions._
-        |import org.apache.spark.sql.hive._
-        |import org.apache.spark.sql.hive.test.TestHive._
-        |import org.apache.spark.sql.hive.test.TestHive.implicits._
-        |import org.apache.spark.sql.types._""".stripMargin,
+        import org.apache.spark.SparkContext
+        import org.apache.spark.sql.catalyst.analysis._
+        import org.apache.spark.sql.catalyst.dsl._
+        import org.apache.spark.sql.catalyst.errors._
+        import org.apache.spark.sql.catalyst.expressions._
+        import org.apache.spark.sql.catalyst.plans.logical._
+        import org.apache.spark.sql.catalyst.rules._
+        import org.apache.spark.sql.catalyst.util._
+        import org.apache.spark.sql.execution
+        import org.apache.spark.sql.functions._
+        import org.apache.spark.sql.hive._
+        import org.apache.spark.sql.hive.test.TestHive._
+        import org.apache.spark.sql.hive.test.TestHive.implicits._
+        import org.apache.spark.sql.types._""",
     (console / cleanupCommands) := "sparkContext.stop()",
     // Some of our log4j jars make it impossible to submit jobs from this JVM to Hive Map/Reduce
     // in order to generate golden files.  This is only required for developers who are adding new

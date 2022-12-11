@@ -187,10 +187,10 @@ case class ExpandExec(
     val updateCodes = switchCaseExprs.map { case (_, exprCodes, _) =>
       exprCodes.map { case (col, ev) =>
         s"""
-           |${ev.code}
-           |${outputColumns(col).isNull} = ${ev.isNull};
-           |${outputColumns(col).value} = ${ev.value};
-         """.stripMargin
+           ${ev.code}
+           ${outputColumns(col).isNull} = ${ev.isNull};
+           ${outputColumns(col).value} = ${ev.value};
+         """
       }.mkString("\n")
     }
 
@@ -205,28 +205,28 @@ case class ExpandExec(
           }
           ctx.addNewFunction(switchCaseFunc,
             s"""
-               |private void $switchCaseFunc(${argList.mkString(", ")}) {
-               |  $updateCode
-               |}
-             """.stripMargin)
+               private void $switchCaseFunc(${argList.mkString(", ")}) {
+                 $updateCode
+               }
+             """)
 
           s"$switchCaseFunc(${inputVars.map(_.variableName).mkString(", ")});"
         } else {
           updateCode
         }
         s"""
-           |case $row:
-           |  $maybeSplitUpdateCode
-           |  break;
-         """.stripMargin
+           case $row:
+             $maybeSplitUpdateCode
+             break;
+         """
       }
     } else {
       switchCaseExprs.map(_._1).zip(updateCodes).map { case (row, updateCode) =>
         s"""
-           |case $row:
-           |  $updateCode
-           |  break;
-         """.stripMargin
+           case $row:
+             $updateCode
+             break;
+         """
       }
     }
 
@@ -235,15 +235,15 @@ case class ExpandExec(
     // these column have to declared before the loop.
     val evaluate = evaluateVariables(outputColumns)
     s"""
-       |$evaluate
-       |for (int $i = 0; $i < ${projections.length}; $i ++) {
-       |  switch ($i) {
-       |    ${cases.mkString("\n").trim}
-       |  }
-       |  $numOutput.add(1);
-       |  ${consume(ctx, outputColumns)}
-       |}
-     """.stripMargin
+       $evaluate
+       for (int $i = 0; $i < ${projections.length}; $i ++) {
+         switch ($i) {
+           ${cases.mkString("\n").trim}
+         }
+         $numOutput.add(1);
+         ${consume(ctx, outputColumns)}
+       }
+     """
   }
 
   override protected def withNewChildInternal(newChild: SparkPlan): ExpandExec =

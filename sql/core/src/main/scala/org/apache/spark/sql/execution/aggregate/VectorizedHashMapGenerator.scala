@@ -58,32 +58,32 @@ class VectorizedHashMapGenerator(
     val aggBufferSchemaFieldsLength = bufferSchema.fields.length
 
     s"""
-       |  private ${classOf[OnHeapColumnVector].getName}[] vectors;
-       |  private ${classOf[ColumnarBatch].getName} batch;
-       |  private ${classOf[MutableColumnarRow].getName} aggBufferRow;
-       |  private int[] buckets;
-       |  private int capacity = 1 << $bitMaxCapacity;
-       |  private double loadFactor = 0.5;
-       |  private int numBuckets = (int) (capacity / loadFactor);
-       |  private int maxSteps = 2;
-       |  private int numRows = 0;
-       |
-       |  public $generatedClassName() {
-       |    vectors = ${classOf[OnHeapColumnVector].getName}.allocateColumns(capacity, $schema);
-       |    batch = new ${classOf[ColumnarBatch].getName}(vectors);
-       |
-       |    // Generates a projection to return the aggregate buffer only.
-       |    ${classOf[OnHeapColumnVector].getName}[] aggBufferVectors =
-       |      new ${classOf[OnHeapColumnVector].getName}[$aggBufferSchemaFieldsLength];
-       |    for (int i = 0; i < $aggBufferSchemaFieldsLength; i++) {
-       |      aggBufferVectors[i] = vectors[i + ${groupingKeys.length}];
-       |    }
-       |    aggBufferRow = new ${classOf[MutableColumnarRow].getName}(aggBufferVectors);
-       |
-       |    buckets = new int[numBuckets];
-       |    java.util.Arrays.fill(buckets, -1);
-       |  }
-     """.stripMargin
+         private ${classOf[OnHeapColumnVector].getName}[] vectors;
+         private ${classOf[ColumnarBatch].getName} batch;
+         private ${classOf[MutableColumnarRow].getName} aggBufferRow;
+         private int[] buckets;
+         private int capacity = 1 << $bitMaxCapacity;
+         private double loadFactor = 0.5;
+         private int numBuckets = (int) (capacity / loadFactor);
+         private int maxSteps = 2;
+         private int numRows = 0;
+
+         public $generatedClassName() {
+           vectors = ${classOf[OnHeapColumnVector].getName}.allocateColumns(capacity, $schema);
+           batch = new ${classOf[ColumnarBatch].getName}(vectors);
+
+           // Generates a projection to return the aggregate buffer only.
+           ${classOf[OnHeapColumnVector].getName}[] aggBufferVectors =
+             new ${classOf[OnHeapColumnVector].getName}[$aggBufferSchemaFieldsLength];
+           for (int i = 0; i < $aggBufferSchemaFieldsLength; i++) {
+             aggBufferVectors[i] = vectors[i + ${groupingKeys.length}];
+           }
+           aggBufferRow = new ${classOf[MutableColumnarRow].getName}(aggBufferVectors);
+
+           buckets = new int[numBuckets];
+           java.util.Arrays.fill(buckets, -1);
+         }
+     """
   }
 
 
@@ -110,10 +110,10 @@ class VectorizedHashMapGenerator(
     }
 
     s"""
-       |private boolean equals(int idx, $groupingKeySignature) {
-       |  return ${genEqualsForKeys(groupingKeys)};
-       |}
-     """.stripMargin
+       private boolean equals(int idx, $groupingKeySignature) {
+         return ${genEqualsForKeys(groupingKeys)};
+       }
+     """
   }
 
   /**
@@ -171,49 +171,49 @@ class VectorizedHashMapGenerator(
     }
 
     s"""
-       |public ${classOf[MutableColumnarRow].getName} findOrInsert($groupingKeySignature) {
-       |  long h = hash(${groupingKeys.map(_.name).mkString(", ")});
-       |  int step = 0;
-       |  int idx = (int) h & (numBuckets - 1);
-       |  while (step < maxSteps) {
-       |    // Return bucket index if it's either an empty slot or already contains the key
-       |    if (buckets[idx] == -1) {
-       |      if (numRows < capacity) {
-       |
-       |        // Initialize aggregate keys
-       |        ${genCodeToSetKeys(groupingKeys).mkString("\n")}
-       |
-       |        ${buffVars.map(_.code).mkString("\n")}
-       |
-       |        // Initialize aggregate values
-       |        ${genCodeToSetAggBuffers(bufferValues).mkString("\n")}
-       |
-       |        buckets[idx] = numRows++;
-       |        aggBufferRow.rowId = buckets[idx];
-       |        return aggBufferRow;
-       |      } else {
-       |        // No more space
-       |        return null;
-       |      }
-       |    } else if (equals(idx, ${groupingKeys.map(_.name).mkString(", ")})) {
-       |      aggBufferRow.rowId = buckets[idx];
-       |      return aggBufferRow;
-       |    }
-       |    idx = (idx + 1) & (numBuckets - 1);
-       |    step++;
-       |  }
-       |  // Didn't find it
-       |  return null;
-       |}
-     """.stripMargin
+       public ${classOf[MutableColumnarRow].getName} findOrInsert($groupingKeySignature) {
+         long h = hash(${groupingKeys.map(_.name).mkString(", ")});
+         int step = 0;
+         int idx = (int) h & (numBuckets - 1);
+         while (step < maxSteps) {
+           // Return bucket index if it's either an empty slot or already contains the key
+           if (buckets[idx] == -1) {
+             if (numRows < capacity) {
+
+               // Initialize aggregate keys
+               ${genCodeToSetKeys(groupingKeys).mkString("\n")}
+
+               ${buffVars.map(_.code).mkString("\n")}
+
+               // Initialize aggregate values
+               ${genCodeToSetAggBuffers(bufferValues).mkString("\n")}
+
+               buckets[idx] = numRows++;
+               aggBufferRow.rowId = buckets[idx];
+               return aggBufferRow;
+             } else {
+               // No more space
+               return null;
+             }
+           } else if (equals(idx, ${groupingKeys.map(_.name).mkString(", ")})) {
+             aggBufferRow.rowId = buckets[idx];
+             return aggBufferRow;
+           }
+           idx = (idx + 1) & (numBuckets - 1);
+           step++;
+         }
+         // Didn't find it
+         return null;
+       }
+     """
   }
 
   protected def generateRowIterator(): String = {
     s"""
-       |public java.util.Iterator<${classOf[InternalRow].getName}> rowIterator() {
-       |  batch.setNumRows(numRows);
-       |  return batch.rowIterator();
-       |}
-     """.stripMargin
+       public java.util.Iterator<${classOf[InternalRow].getName}> rowIterator() {
+         batch.setNumRows(numRows);
+         return batch.rowIterator();
+       }
+     """
   }
 }

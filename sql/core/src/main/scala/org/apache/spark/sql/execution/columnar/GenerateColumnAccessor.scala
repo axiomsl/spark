@@ -136,19 +136,19 @@ object GenerateColumnAccessor extends CodeGenerator[Seq[DataType], ColumnarItera
         val accessorNames = groupedAccessorsItr.zipWithIndex.map { case (body, i) =>
           val funcName = s"accessors$i"
           val funcCode = s"""
-             |private void $funcName() {
-             |  ${body.mkString("\n")}
-             |}
-           """.stripMargin
+             private void $funcName() {
+               ${body.mkString("\n")}
+             }
+           """
           ctx.addNewFunction(funcName, funcCode)
         }
         val extractorNames = groupedExtractorsItr.zipWithIndex.map { case (body, i) =>
           val funcName = s"extractors$i"
           val funcCode = s"""
-             |private void $funcName() {
-             |  ${body.mkString("\n")}
-             |}
-           """.stripMargin
+             private void $funcName() {
+               ${body.mkString("\n")}
+             }
+           """
           ctx.addNewFunction(funcName, funcCode)
         }
         (accessorNames.map { accessorName => s"$accessorName();" }.mkString("\n"),

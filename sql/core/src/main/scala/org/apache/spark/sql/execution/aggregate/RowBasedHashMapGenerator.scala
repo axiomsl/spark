@@ -55,40 +55,40 @@ class RowBasedHashMapGenerator(
     }
 
     s"""
-       |  private org.apache.spark.sql.catalyst.expressions.RowBasedKeyValueBatch batch;
-       |  private int[] buckets;
-       |  private int capacity = 1 << $bitMaxCapacity;
-       |  private double loadFactor = 0.5;
-       |  private int numBuckets = (int) (capacity / loadFactor);
-       |  private int maxSteps = 2;
-       |  private int numRows = 0;
-       |  private Object emptyVBase;
-       |  private long emptyVOff;
-       |  private int emptyVLen;
-       |  private boolean isBatchFull = false;
-       |  private org.apache.spark.sql.catalyst.expressions.codegen.UnsafeRowWriter agg_rowWriter;
-       |
-       |
-       |  public $generatedClassName(
-       |    org.apache.spark.memory.TaskMemoryManager taskMemoryManager,
-       |    InternalRow emptyAggregationBuffer) {
-       |    batch = org.apache.spark.sql.catalyst.expressions.RowBasedKeyValueBatch
-       |      .allocate($keySchema, $valueSchema, taskMemoryManager, capacity);
-       |
-       |    final UnsafeProjection valueProjection = UnsafeProjection.create($valueSchema);
-       |    final byte[] emptyBuffer = valueProjection.apply(emptyAggregationBuffer).getBytes();
-       |
-       |    emptyVBase = emptyBuffer;
-       |    emptyVOff = Platform.BYTE_ARRAY_OFFSET;
-       |    emptyVLen = emptyBuffer.length;
-       |
-       |    agg_rowWriter = new org.apache.spark.sql.catalyst.expressions.codegen.UnsafeRowWriter(
-       |      ${groupingKeySchema.length}, ${numVarLenFields * 32});
-       |
-       |    buckets = new int[numBuckets];
-       |    java.util.Arrays.fill(buckets, -1);
-       |  }
-     """.stripMargin
+         private org.apache.spark.sql.catalyst.expressions.RowBasedKeyValueBatch batch;
+         private int[] buckets;
+         private int capacity = 1 << $bitMaxCapacity;
+         private double loadFactor = 0.5;
+         private int numBuckets = (int) (capacity / loadFactor);
+         private int maxSteps = 2;
+         private int numRows = 0;
+         private Object emptyVBase;
+         private long emptyVOff;
+         private int emptyVLen;
+         private boolean isBatchFull = false;
+         private org.apache.spark.sql.catalyst.expressions.codegen.UnsafeRowWriter agg_rowWriter;
+       
+       
+         public $generatedClassName(
+           org.apache.spark.memory.TaskMemoryManager taskMemoryManager,
+           InternalRow emptyAggregationBuffer) {
+           batch = org.apache.spark.sql.catalyst.expressions.RowBasedKeyValueBatch
+             .allocate($keySchema, $valueSchema, taskMemoryManager, capacity);
+       
+           final UnsafeProjection valueProjection = UnsafeProjection.create($valueSchema);
+           final byte[] emptyBuffer = valueProjection.apply(emptyAggregationBuffer).getBytes();
+       
+           emptyVBase = emptyBuffer;
+           emptyVOff = Platform.BYTE_ARRAY_OFFSET;
+           emptyVLen = emptyBuffer.length;
+       
+           agg_rowWriter = new org.apache.spark.sql.catalyst.expressions.codegen.UnsafeRowWriter(
+             ${groupingKeySchema.length}, ${numVarLenFields * 32});
+       
+           buckets = new int[numBuckets];
+           java.util.Arrays.fill(buckets, -1);
+         }
+     """
   }
 
   /**
@@ -106,11 +106,11 @@ class RowBasedHashMapGenerator(
     }
 
     s"""
-       |private boolean equals(int idx, $groupingKeySignature) {
-       |  UnsafeRow row = batch.getKeyRow(buckets[idx]);
-       |  return ${genEqualsForKeys(groupingKeys)};
-       |}
-     """.stripMargin
+       private boolean equals(int idx, $groupingKeySignature) {
+         UnsafeRow row = batch.getKeyRow(buckets[idx]);
+         return ${genEqualsForKeys(groupingKeys)};
+       }
+     """
   }
 
   /**
@@ -142,53 +142,53 @@ class RowBasedHashMapGenerator(
     }
 
     s"""
-       |public org.apache.spark.sql.catalyst.expressions.UnsafeRow findOrInsert(${
+       public org.apache.spark.sql.catalyst.expressions.UnsafeRow findOrInsert(${
             groupingKeySignature}) {
-       |  long h = hash(${groupingKeys.map(_.name).mkString(", ")});
-       |  int step = 0;
-       |  int idx = (int) h & (numBuckets - 1);
-       |  while (step < maxSteps) {
-       |    // Return bucket index if it's either an empty slot or already contains the key
-       |    if (buckets[idx] == -1) {
-       |      if (numRows < capacity && !isBatchFull) {
-       |        agg_rowWriter.reset();
-       |        $resetNullBits
-       |        ${createUnsafeRowForKey};
-       |        org.apache.spark.sql.catalyst.expressions.UnsafeRow agg_result
-       |          = agg_rowWriter.getRow();
-       |        Object kbase = agg_result.getBaseObject();
-       |        long koff = agg_result.getBaseOffset();
-       |        int klen = agg_result.getSizeInBytes();
-       |
-       |        UnsafeRow vRow
-       |            = batch.appendRow(kbase, koff, klen, emptyVBase, emptyVOff, emptyVLen);
-       |        if (vRow == null) {
-       |          isBatchFull = true;
-       |        } else {
-       |          buckets[idx] = numRows++;
-       |        }
-       |        return vRow;
-       |      } else {
-       |        // No more space
-       |        return null;
-       |      }
-       |    } else if (equals(idx, ${groupingKeys.map(_.name).mkString(", ")})) {
-       |      return batch.getValueRow(buckets[idx]);
-       |    }
-       |    idx = (idx + 1) & (numBuckets - 1);
-       |    step++;
-       |  }
-       |  // Didn't find it
-       |  return null;
-       |}
-     """.stripMargin
+         long h = hash(${groupingKeys.map(_.name).mkString(", ")});
+         int step = 0;
+         int idx = (int) h & (numBuckets - 1);
+         while (step < maxSteps) {
+           // Return bucket index if it's either an empty slot or already contains the key
+           if (buckets[idx] == -1) {
+             if (numRows < capacity && !isBatchFull) {
+               agg_rowWriter.reset();
+               $resetNullBits
+               ${createUnsafeRowForKey};
+               org.apache.spark.sql.catalyst.expressions.UnsafeRow agg_result
+                 = agg_rowWriter.getRow();
+               Object kbase = agg_result.getBaseObject();
+               long koff = agg_result.getBaseOffset();
+               int klen = agg_result.getSizeInBytes();
+       
+               UnsafeRow vRow
+                   = batch.appendRow(kbase, koff, klen, emptyVBase, emptyVOff, emptyVLen);
+               if (vRow == null) {
+                 isBatchFull = true;
+               } else {
+                 buckets[idx] = numRows++;
+               }
+               return vRow;
+             } else {
+               // No more space
+               return null;
+             }
+           } else if (equals(idx, ${groupingKeys.map(_.name).mkString(", ")})) {
+             return batch.getValueRow(buckets[idx]);
+           }
+           idx = (idx + 1) & (numBuckets - 1);
+           step++;
+         }
+         // Didn't find it
+         return null;
+       }
+     """
   }
 
   protected def generateRowIterator(): String = {
     s"""
-       |public org.apache.spark.unsafe.KVIterator<UnsafeRow, UnsafeRow> rowIterator() {
-       |  return batch.rowIterator();
-       |}
-     """.stripMargin
+       public org.apache.spark.unsafe.KVIterator<UnsafeRow, UnsafeRow> rowIterator() {
+         return batch.rowIterator();
+       }
+     """
   }
 }

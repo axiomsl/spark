@@ -399,41 +399,41 @@ trait HashJoin extends JoinCodegenSupport {
 
     if (isEmptyHashedRelation) {
       """
-        |// If HashedRelation is empty, hash inner join simply returns nothing.
-      """.stripMargin
+        // If HashedRelation is empty, hash inner join simply returns nothing.
+      """
     } else if (keyIsUnique) {
       s"""
-         |// generate join key for stream side
-         |${keyEv.code}
-         |// find matches from HashedRelation
-         |UnsafeRow $matched = $anyNull ? null: (UnsafeRow)$relationTerm.getValue(${keyEv.value});
-         |if ($matched != null) {
-         |  $checkCondition {
-         |    $numOutput.add(1);
-         |    ${consume(ctx, resultVars)}
-         |  }
-         |}
-       """.stripMargin
+         // generate join key for stream side
+         ${keyEv.code}
+         // find matches from HashedRelation
+         UnsafeRow $matched = $anyNull ? null: (UnsafeRow)$relationTerm.getValue(${keyEv.value});
+         if ($matched != null) {
+           $checkCondition {
+             $numOutput.add(1);
+             ${consume(ctx, resultVars)}
+           }
+         }
+       """
     } else {
       val matches = ctx.freshName("matches")
       val iteratorCls = classOf[Iterator[UnsafeRow]].getName
 
       s"""
-         |// generate join key for stream side
-         |${keyEv.code}
-         |// find matches from HashRelation
-         |$iteratorCls $matches = $anyNull ?
-         |  null : ($iteratorCls)$relationTerm.get(${keyEv.value});
-         |if ($matches != null) {
-         |  while ($matches.hasNext()) {
-         |    UnsafeRow $matched = (UnsafeRow) $matches.next();
-         |    $checkCondition {
-         |      $numOutput.add(1);
-         |      ${consume(ctx, resultVars)}
-         |    }
-         |  }
-         |}
-       """.stripMargin
+         // generate join key for stream side
+         ${keyEv.code}
+         // find matches from HashRelation
+         $iteratorCls $matches = $anyNull ?
+           null : ($iteratorCls)$relationTerm.get(${keyEv.value});
+         if ($matches != null) {
+           while ($matches.hasNext()) {
+             UnsafeRow $matched = (UnsafeRow) $matches.next();
+             $checkCondition {
+               $numOutput.add(1);
+               ${consume(ctx, resultVars)}
+             }
+           }
+         }
+       """
     }
   }
 
@@ -457,13 +457,13 @@ trait HashJoin extends JoinCodegenSupport {
       val ev =
         BindReferences.bindReference(expr, streamedPlan.output ++ buildPlan.output).genCode(ctx)
       s"""
-         |boolean $conditionPassed = true;
-         |${eval.trim}
-         |if ($matched != null) {
-         |  ${ev.code}
-         |  $conditionPassed = !${ev.isNull} && ${ev.value};
-         |}
-       """.stripMargin
+         boolean $conditionPassed = true;
+         ${eval.trim}
+         if ($matched != null) {
+           ${ev.code}
+           $conditionPassed = !${ev.isNull} && ${ev.value};
+         }
+       """
     } else {
       s"final boolean $conditionPassed = true;"
     }
@@ -475,42 +475,42 @@ trait HashJoin extends JoinCodegenSupport {
 
     if (keyIsUnique) {
       s"""
-         |// generate join key for stream side
-         |${keyEv.code}
-         |// find matches from HashedRelation
-         |UnsafeRow $matched = $anyNull ? null: (UnsafeRow)$relationTerm.getValue(${keyEv.value});
-         |${checkCondition.trim}
-         |if (!$conditionPassed) {
-         |  $matched = null;
-         |  // reset the variables those are already evaluated.
-         |  ${buildVars.filter(_.code.isEmpty).map(v => s"${v.isNull} = true;").mkString("\n")}
-         |}
-         |$numOutput.add(1);
-         |${consume(ctx, resultVars)}
-       """.stripMargin
+         // generate join key for stream side
+         ${keyEv.code}
+         // find matches from HashedRelation
+         UnsafeRow $matched = $anyNull ? null: (UnsafeRow)$relationTerm.getValue(${keyEv.value});
+         ${checkCondition.trim}
+         if (!$conditionPassed) {
+           $matched = null;
+           // reset the variables those are already evaluated.
+           ${buildVars.filter(_.code.isEmpty).map(v => s"${v.isNull} = true;").mkString("\n")}
+         }
+         $numOutput.add(1);
+         ${consume(ctx, resultVars)}
+       """
     } else {
       val matches = ctx.freshName("matches")
       val iteratorCls = classOf[Iterator[UnsafeRow]].getName
       val found = ctx.freshName("found")
 
       s"""
-         |// generate join key for stream side
-         |${keyEv.code}
-         |// find matches from HashRelation
-         |$iteratorCls $matches = $anyNull ? null : ($iteratorCls)$relationTerm.get(${keyEv.value});
-         |boolean $found = false;
-         |// the last iteration of this loop is to emit an empty row if there is no matched rows.
-         |while ($matches != null && $matches.hasNext() || !$found) {
-         |  UnsafeRow $matched = $matches != null && $matches.hasNext() ?
-         |    (UnsafeRow) $matches.next() : null;
-         |  ${checkCondition.trim}
-         |  if ($conditionPassed) {
-         |    $found = true;
-         |    $numOutput.add(1);
-         |    ${consume(ctx, resultVars)}
-         |  }
-         |}
-       """.stripMargin
+         // generate join key for stream side
+         ${keyEv.code}
+         // find matches from HashRelation
+         $iteratorCls $matches = $anyNull ? null : ($iteratorCls)$relationTerm.get(${keyEv.value});
+         boolean $found = false;
+         // the last iteration of this loop is to emit an empty row if there is no matched rows.
+         while ($matches != null && $matches.hasNext() || !$found) {
+           UnsafeRow $matched = $matches != null && $matches.hasNext() ?
+             (UnsafeRow) $matches.next() : null;
+           ${checkCondition.trim}
+           if ($conditionPassed) {
+             $found = true;
+             $numOutput.add(1);
+             ${consume(ctx, resultVars)}
+           }
+         }
+       """
     }
   }
 
@@ -525,45 +525,45 @@ trait HashJoin extends JoinCodegenSupport {
 
     if (isEmptyHashedRelation) {
       """
-        |// If HashedRelation is empty, hash semi join simply returns nothing.
-      """.stripMargin
+        // If HashedRelation is empty, hash semi join simply returns nothing.
+      """
     } else if (keyIsUnique) {
       s"""
-         |// generate join key for stream side
-         |${keyEv.code}
-         |// find matches from HashedRelation
-         |UnsafeRow $matched = $anyNull ? null: (UnsafeRow)$relationTerm.getValue(${keyEv.value});
-         |if ($matched != null) {
-         |  $checkCondition {
-         |    $numOutput.add(1);
-         |    ${consume(ctx, input)}
-         |  }
-         |}
-       """.stripMargin
+         // generate join key for stream side
+         ${keyEv.code}
+         // find matches from HashedRelation
+         UnsafeRow $matched = $anyNull ? null: (UnsafeRow)$relationTerm.getValue(${keyEv.value});
+         if ($matched != null) {
+           $checkCondition {
+             $numOutput.add(1);
+             ${consume(ctx, input)}
+           }
+         }
+       """
     } else {
       val matches = ctx.freshName("matches")
       val iteratorCls = classOf[Iterator[UnsafeRow]].getName
       val found = ctx.freshName("found")
 
       s"""
-         |// generate join key for stream side
-         |${keyEv.code}
-         |// find matches from HashRelation
-         |$iteratorCls $matches = $anyNull ? null : ($iteratorCls)$relationTerm.get(${keyEv.value});
-         |if ($matches != null) {
-         |  boolean $found = false;
-         |  while (!$found && $matches.hasNext()) {
-         |    UnsafeRow $matched = (UnsafeRow) $matches.next();
-         |    $checkCondition {
-         |      $found = true;
-         |    }
-         |  }
-         |  if ($found) {
-         |    $numOutput.add(1);
-         |    ${consume(ctx, input)}
-         |  }
-         |}
-       """.stripMargin
+         // generate join key for stream side
+         ${keyEv.code}
+         // find matches from HashRelation
+         $iteratorCls $matches = $anyNull ? null : ($iteratorCls)$relationTerm.get(${keyEv.value});
+         if ($matches != null) {
+           boolean $found = false;
+           while (!$found && $matches.hasNext()) {
+             UnsafeRow $matched = (UnsafeRow) $matches.next();
+             $checkCondition {
+               $found = true;
+             }
+           }
+           if ($found) {
+             $numOutput.add(1);
+             ${consume(ctx, input)}
+           }
+         }
+       """
     }
   }
 
@@ -575,10 +575,10 @@ trait HashJoin extends JoinCodegenSupport {
     val numOutput = metricTerm(ctx, "numOutputRows")
     if (isEmptyHashedRelation) {
       return s"""
-                |// If HashedRelation is empty, hash anti join simply returns the stream side.
-                |$numOutput.add(1);
-                |${consume(ctx, input)}
-              """.stripMargin
+                // If HashedRelation is empty, hash anti join simply returns the stream side.
+                $numOutput.add(1);
+                ${consume(ctx, input)}
+              """
     }
 
     val (keyEv, anyNull) = genStreamSideJoinKey(ctx, input)
@@ -587,52 +587,52 @@ trait HashJoin extends JoinCodegenSupport {
     if (keyIsUnique) {
       val found = ctx.freshName("found")
       s"""
-         |boolean $found = false;
-         |// generate join key for stream side
-         |${keyEv.code}
-         |// Check if the key has nulls.
-         |if (!($anyNull)) {
-         |  // Check if the HashedRelation exists.
-         |  UnsafeRow $matched = (UnsafeRow)$relationTerm.getValue(${keyEv.value});
-         |  if ($matched != null) {
-         |    // Evaluate the condition.
-         |    $checkCondition {
-         |      $found = true;
-         |    }
-         |  }
-         |}
-         |if (!$found) {
-         |  $numOutput.add(1);
-         |  ${consume(ctx, input)}
-         |}
-       """.stripMargin
+         boolean $found = false;
+         // generate join key for stream side
+         ${keyEv.code}
+         // Check if the key has nulls.
+         if (!($anyNull)) {
+           // Check if the HashedRelation exists.
+           UnsafeRow $matched = (UnsafeRow)$relationTerm.getValue(${keyEv.value});
+           if ($matched != null) {
+             // Evaluate the condition.
+             $checkCondition {
+               $found = true;
+             }
+           }
+         }
+         if (!$found) {
+           $numOutput.add(1);
+           ${consume(ctx, input)}
+         }
+       """
     } else {
       val matches = ctx.freshName("matches")
       val iteratorCls = classOf[Iterator[UnsafeRow]].getName
       val found = ctx.freshName("found")
       s"""
-         |boolean $found = false;
-         |// generate join key for stream side
-         |${keyEv.code}
-         |// Check if the key has nulls.
-         |if (!($anyNull)) {
-         |  // Check if the HashedRelation exists.
-         |  $iteratorCls $matches = ($iteratorCls)$relationTerm.get(${keyEv.value});
-         |  if ($matches != null) {
-         |    // Evaluate the condition.
-         |    while (!$found && $matches.hasNext()) {
-         |      UnsafeRow $matched = (UnsafeRow) $matches.next();
-         |      $checkCondition {
-         |        $found = true;
-         |      }
-         |    }
-         |  }
-         |}
-         |if (!$found) {
-         |  $numOutput.add(1);
-         |  ${consume(ctx, input)}
-         |}
-       """.stripMargin
+         boolean $found = false;
+         // generate join key for stream side
+         ${keyEv.code}
+         // Check if the key has nulls.
+         if (!($anyNull)) {
+           // Check if the HashedRelation exists.
+           $iteratorCls $matches = ($iteratorCls)$relationTerm.get(${keyEv.value});
+           if ($matches != null) {
+             // Evaluate the condition.
+             while (!$found && $matches.hasNext()) {
+               UnsafeRow $matched = (UnsafeRow) $matches.next();
+               $checkCondition {
+                 $found = true;
+               }
+             }
+           }
+         }
+         if (!$found) {
+           $numOutput.add(1);
+           ${consume(ctx, input)}
+         }
+       """
     }
   }
 
@@ -656,10 +656,10 @@ trait HashJoin extends JoinCodegenSupport {
       val ev =
         BindReferences.bindReference(expr, streamedPlan.output ++ buildPlan.output).genCode(ctx)
       s"""
-         |$eval
-         |${ev.code}
-         |$existsVar = !${ev.isNull} && ${ev.value};
-       """.stripMargin
+         $eval
+         ${ev.code}
+         $existsVar = !${ev.isNull} && ${ev.value};
+       """
     } else {
       s"$existsVar = true;"
     }
@@ -669,35 +669,35 @@ trait HashJoin extends JoinCodegenSupport {
 
     if (keyIsUnique) {
       s"""
-         |// generate join key for stream side
-         |${keyEv.code}
-         |// find matches from HashedRelation
-         |UnsafeRow $matched = $anyNull ? null: (UnsafeRow)$relationTerm.getValue(${keyEv.value});
-         |boolean $existsVar = false;
-         |if ($matched != null) {
-         |  $checkCondition
-         |}
-         |$numOutput.add(1);
-         |${consume(ctx, resultVar)}
-       """.stripMargin
+         // generate join key for stream side
+         ${keyEv.code}
+         // find matches from HashedRelation
+         UnsafeRow $matched = $anyNull ? null: (UnsafeRow)$relationTerm.getValue(${keyEv.value});
+         boolean $existsVar = false;
+         if ($matched != null) {
+           $checkCondition
+         }
+         $numOutput.add(1);
+         ${consume(ctx, resultVar)}
+       """
     } else {
       val matches = ctx.freshName("matches")
       val iteratorCls = classOf[Iterator[UnsafeRow]].getName
       s"""
-         |// generate join key for stream side
-         |${keyEv.code}
-         |// find matches from HashRelation
-         |$iteratorCls $matches = $anyNull ? null : ($iteratorCls)$relationTerm.get(${keyEv.value});
-         |boolean $existsVar = false;
-         |if ($matches != null) {
-         |  while (!$existsVar && $matches.hasNext()) {
-         |    UnsafeRow $matched = (UnsafeRow) $matches.next();
-         |    $checkCondition
-         |  }
-         |}
-         |$numOutput.add(1);
-         |${consume(ctx, resultVar)}
-       """.stripMargin
+         // generate join key for stream side
+         ${keyEv.code}
+         // find matches from HashRelation
+         $iteratorCls $matches = $anyNull ? null : ($iteratorCls)$relationTerm.get(${keyEv.value});
+         boolean $existsVar = false;
+         if ($matches != null) {
+           while (!$existsVar && $matches.hasNext()) {
+             UnsafeRow $matched = (UnsafeRow) $matches.next();
+             $checkCondition
+           }
+         }
+         $numOutput.add(1);
+         ${consume(ctx, resultVar)}
+       """
     }
   }
 

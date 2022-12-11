@@ -52,9 +52,9 @@ abstract class HashMapGenerator(
       val ev = e.genCode(ctx)
       val initVars =
         code"""
-           | $isNull = ${ev.isNull};
-           | $value = ${ev.value};
-       """.stripMargin
+            $isNull = ${ev.isNull};
+            $value = ${ev.value};
+       """
       ExprCode(
         ev.code + initVars,
         JavaCode.isNullGlobal(isNull),
@@ -64,20 +64,20 @@ abstract class HashMapGenerator(
 
   def generate(): String = {
     s"""
-       |public class $generatedClassName {
-       |${initializeAggregateHashMap()}
-       |
-       |${generateFindOrInsert()}
-       |
-       |${generateEquals()}
-       |
-       |${generateHashFunction()}
-       |
-       |${generateRowIterator()}
-       |
-       |${generateClose()}
-       |}
-     """.stripMargin
+       public class $generatedClassName {
+       ${initializeAggregateHashMap()}
+       
+       ${generateFindOrInsert()}
+       
+       ${generateEquals()}
+       
+       ${generateHashFunction()}
+       
+       ${generateRowIterator()}
+       
+       ${generateClose()}
+       }
+     """
   }
 
   protected def initializeAggregateHashMap(): String
@@ -99,19 +99,19 @@ abstract class HashMapGenerator(
       groupingKeys.map { key =>
         val result = ctx.freshName("result")
         s"""
-           |${genComputeHash(ctx, key.name, key.dataType, result)}
-           |$hash = ($hash ^ (0x9e3779b9)) + $result + ($hash << 6) + ($hash >>> 2);
-          """.stripMargin
+           ${genComputeHash(ctx, key.name, key.dataType, result)}
+           $hash = ($hash ^ (0x9e3779b9)) + $result + ($hash << 6) + ($hash >>> 2);
+          """
       }.mkString("\n")
     }
 
     s"""
-       |private long hash($groupingKeySignature) {
-       |  long $hash = 0;
-       |  ${genHashForKeys(groupingKeys)}
-       |  return $hash;
-       |}
-     """.stripMargin
+       private long hash($groupingKeySignature) {
+         long $hash = 0;
+         ${genHashForKeys(groupingKeys)}
+         return $hash;
+       }
+     """
   }
 
   /**
@@ -130,10 +130,10 @@ abstract class HashMapGenerator(
 
   protected final def generateClose(): String = {
     s"""
-       |public void close() {
-       |  batch.close();
-       |}
-     """.stripMargin
+       public void close() {
+         batch.close();
+       }
+     """
   }
 
   protected final def genComputeHash(
@@ -147,13 +147,13 @@ abstract class HashMapGenerator(
       val hash = ctx.freshName("hash")
       val bytes = ctx.freshName("bytes")
       s"""
-         |int $result = 0;
-         |byte[] $bytes = $b;
-         |for (int i = 0; i < $bytes.length; i++) {
-         |  ${genComputeHash(ctx, s"$bytes[i]", ByteType, hash)}
-         |  $result = ($result ^ (0x9e3779b9)) + $hash + ($result << 6) + ($result >>> 2);
-         |}
-       """.stripMargin
+         int $result = 0;
+         byte[] $bytes = $b;
+         for (int i = 0; i < $bytes.length; i++) {
+           ${genComputeHash(ctx, s"$bytes[i]", ByteType, hash)}
+           $result = ($result ^ (0x9e3779b9)) + $hash + ($result << 6) + ($result >>> 2);
+         }
+       """
     }
 
     dataType match {

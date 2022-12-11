@@ -81,10 +81,10 @@ object V2ScanRelationPushDown extends Rule[LogicalPlan] with PredicateHelper wit
 
       logInfo(
         s"""
-           |Pushing operators to ${sHolder.relation.name}
-           |Pushed Filters: $pushedFiltersStr
-           |Post-Scan Filters: ${postScanFilters.mkString(",")}
-         """.stripMargin)
+           Pushing operators to ${sHolder.relation.name}
+           Pushed Filters: $pushedFiltersStr
+           Post-Scan Filters: ${postScanFilters.mkString(",")}
+         """)
 
       val filterCondition = postScanFilters.reduceLeftOption(And)
       filterCondition.map(Filter(_, sHolder)).getOrElse(sHolder)
@@ -197,13 +197,13 @@ object V2ScanRelationPushDown extends Rule[LogicalPlan] with PredicateHelper wit
 
                   logInfo(
                     s"""
-                       |Pushing operators to ${sHolder.relation.name}
-                       |Pushed Aggregate Functions:
-                       | ${pushedAggregates.get.aggregateExpressions.mkString(", ")}
-                       |Pushed Group by:
-                       | ${pushedAggregates.get.groupByExpressions.mkString(", ")}
-                       |Output: ${output.mkString(", ")}
-                      """.stripMargin)
+                       Pushing operators to ${sHolder.relation.name}
+                       Pushed Aggregate Functions:
+                        ${pushedAggregates.get.aggregateExpressions.mkString(", ")}
+                       Pushed Group by:
+                        ${pushedAggregates.get.groupByExpressions.mkString(", ")}
+                       Output: ${output.mkString(", ")}
+                      """)
 
                   val wrappedScan = getWrappedScan(scan, sHolder, pushedAggregates)
                   val scanRelation =
@@ -321,8 +321,8 @@ object V2ScanRelationPushDown extends Rule[LogicalPlan] with PredicateHelper wit
 
       logInfo(
         s"""
-           |Output: ${output.mkString(", ")}
-         """.stripMargin)
+           Output: ${output.mkString(", ")}
+         """)
 
       val wrappedScan = getWrappedScan(scan, sHolder, Option.empty[Aggregation])
 

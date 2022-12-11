@@ -80,10 +80,10 @@ trait DataSourceV2ScanExecBase extends LeafExecNode {
         Seq(scan.description())
     }
     s"""
-       |$formattedNodeName
-       |${ExplainUtils.generateFieldString("Output", output)}
-       |${metaDataStr.mkString("\n")}
-       |""".stripMargin
+       $formattedNodeName
+       ${ExplainUtils.generateFieldString("Output", output)}
+       ${metaDataStr.mkString("\n")}
+       """
   }
 
   override def outputPartitioning: physical.Partitioning = {
