@@ -495,7 +495,7 @@ case class RangeExec(range: org.apache.spark.sql.catalyst.plans.logical.Range)
            $BigInt step = $BigInt.valueOf(${step}L);
            $BigInt start = $BigInt.valueOf(${start}L);
            long partitionEnd;
-        
+
            $BigInt st = index.multiply(numElement).divide(numSlice).multiply(step).add(start);
            if (st.compareTo($BigInt.valueOf(Long.MAX_VALUE)) > 0) {
              $nextIndex = Long.MAX_VALUE;
@@ -505,7 +505,7 @@ case class RangeExec(range: org.apache.spark.sql.catalyst.plans.logical.Range)
              $nextIndex = st.longValue();
            }
            $batchEnd = $nextIndex;
-        
+
            $BigInt end = index.add($BigInt.ONE).multiply(numElement).divide(numSlice)
              .multiply(step).add(start);
            if (end.compareTo($BigInt.valueOf(Long.MAX_VALUE)) > 0) {
@@ -515,7 +515,7 @@ case class RangeExec(range: org.apache.spark.sql.catalyst.plans.logical.Range)
            } else {
              partitionEnd = end.longValue();
            }
-        
+
            $BigInt startToEnd = $BigInt.valueOf(partitionEnd).subtract(
              $BigInt.valueOf($nextIndex));
            $numElementsTodo  = startToEnd.divide(step).longValue();
@@ -578,7 +578,7 @@ case class RangeExec(range: org.apache.spark.sql.catalyst.plans.logical.Range)
          $initTerm = true;
          $initRangeFuncName(partitionIndex);
        }
-      
+
        while ($loopCondition) {
          if ($nextIndex == $batchEnd) {
            long $nextBatchTodo;
@@ -592,7 +592,7 @@ case class RangeExec(range: org.apache.spark.sql.catalyst.plans.logical.Range)
            }
            $batchEnd += $nextBatchTodo * ${step}L;
          }
-      
+
          int $localEnd = (int)(($batchEnd - $nextIndex) / ${step}L);
          for (int $localIdx = 0; $localIdx < $localEnd; $localIdx++) {
            long $value = ((long)$localIdx * ${step}L) + $nextIndex;

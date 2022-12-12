@@ -554,7 +554,7 @@ case class HashAggregateExec(
            UnsafeRow $keyTerm = (UnsafeRow) $iterTermForFastHashMap.getKey();
            UnsafeRow $bufferTerm = (UnsafeRow) $iterTermForFastHashMap.getValue();
            $outputFunc($keyTerm, $bufferTerm);
-         
+
            if (shouldStop()) return;
          }
          $fastHashMapTerm.close();
@@ -580,10 +580,10 @@ case class HashAggregateExec(
            ${generateKeyRow.code}
            ${generateBufferRow.code}
            $outputFunc(${generateKeyRow.value}, ${generateBufferRow.value});
-         
+
            if (shouldStop()) return;
          }
-         
+
          $fastHashMapTerm.close();
        """
     }

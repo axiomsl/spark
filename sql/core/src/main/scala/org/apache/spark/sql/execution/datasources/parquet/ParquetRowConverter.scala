@@ -147,7 +147,7 @@ private[parquet] class ParquetRowConverter(
   assert(
     parquetType.getFieldCount <= catalystType.length,
     s"""Field count of the Parquet schema is greater than the field count of the Catalyst schema:
-       
+
        Parquet schema:
        $parquetType
        Catalyst schema:
@@ -162,7 +162,7 @@ private[parquet] class ParquetRowConverter(
 
   logDebug(
     s"""Building row converter for the following schema:
-       
+
        Parquet form:
        $parquetType
        Catalyst form:

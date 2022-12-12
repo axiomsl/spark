@@ -1209,7 +1209,7 @@ case class SortMergeJoinExec(
          $matchRowsInBuffer
          if (shouldStop()) return;
        }
-       
+
        // The right iterator has no more rows, join left row with null
        while ($leftInputRow != null || $leftInput.hasNext()) {
          if ($leftInputRow == null) {
@@ -1218,7 +1218,7 @@ case class SortMergeJoinExec(
          $outputLeftNoMatch
          if (shouldStop()) return;
        }
-       
+
        // The left iterator has no more rows, join right row with null
        while ($rightInputRow != null || $rightInput.hasNext()) {
          if ($rightInputRow == null) {

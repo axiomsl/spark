@@ -67,24 +67,24 @@ class RowBasedHashMapGenerator(
          private int emptyVLen;
          private boolean isBatchFull = false;
          private org.apache.spark.sql.catalyst.expressions.codegen.UnsafeRowWriter agg_rowWriter;
-       
-       
+
+
          public $generatedClassName(
            org.apache.spark.memory.TaskMemoryManager taskMemoryManager,
            InternalRow emptyAggregationBuffer) {
            batch = org.apache.spark.sql.catalyst.expressions.RowBasedKeyValueBatch
              .allocate($keySchema, $valueSchema, taskMemoryManager, capacity);
-       
+
            final UnsafeProjection valueProjection = UnsafeProjection.create($valueSchema);
            final byte[] emptyBuffer = valueProjection.apply(emptyAggregationBuffer).getBytes();
-       
+
            emptyVBase = emptyBuffer;
            emptyVOff = Platform.BYTE_ARRAY_OFFSET;
            emptyVLen = emptyBuffer.length;
-       
+
            agg_rowWriter = new org.apache.spark.sql.catalyst.expressions.codegen.UnsafeRowWriter(
              ${groupingKeySchema.length}, ${numVarLenFields * 32});
-       
+
            buckets = new int[numBuckets];
            java.util.Arrays.fill(buckets, -1);
          }
@@ -159,7 +159,7 @@ class RowBasedHashMapGenerator(
                Object kbase = agg_result.getBaseObject();
                long koff = agg_result.getBaseOffset();
                int klen = agg_result.getSizeInBytes();
-       
+
                UnsafeRow vRow
                    = batch.appendRow(kbase, koff, klen, emptyVBase, emptyVOff, emptyVLen);
                if (vRow == null) {

@@ -66,15 +66,15 @@ abstract class HashMapGenerator(
     s"""
        public class $generatedClassName {
        ${initializeAggregateHashMap()}
-       
+
        ${generateFindOrInsert()}
-       
+
        ${generateEquals()}
-       
+
        ${generateHashFunction()}
-       
+
        ${generateRowIterator()}
-       
+
        ${generateClose()}
        }
      """
