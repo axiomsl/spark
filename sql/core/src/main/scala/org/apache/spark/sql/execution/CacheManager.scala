@@ -259,10 +259,10 @@ class CacheManager extends Logging {
    * false.
    */
   private def lookupAndRefresh(plan: LogicalPlan, fs: FileSystem, qualifiedPath: Path): Boolean = {
+    val prefixToInvalidate = qualifiedPath.toString
     plan match {
       case lr: LogicalRelation => lr.relation match {
         case hr: HadoopFsRelation =>
-          val prefixToInvalidate = qualifiedPath.toString
           val invalidate = hr.location.rootPaths
             .map(_.makeQualified(fs.getUri, fs.getWorkingDirectory).toString)
             .exists(_.startsWith(prefixToInvalidate))
