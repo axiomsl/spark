@@ -20,6 +20,7 @@ package org.apache.spark.util
 import java.io.FileNotFoundException
 
 import scala.collection.mutable
+import scala.util.{Failure, Success, Try}
 
 import org.apache.hadoop.conf.Configuration
 import org.apache.hadoop.fs._
@@ -81,9 +82,50 @@ private[spark] object HadoopFSUtils extends Logging {
       parallelismThreshold: Int,
       parallelismMax: Int): Seq[(Path, Seq[FileStatus])] = {
 
+    val awsCliCount = Option(sc.getLocalProperty("awsCliCount")).map(_.toInt).getOrElse(-1)
+    val finalPathList = if (paths.nonEmpty && paths.head.toString.startsWith("s3://") && awsCliCount > 0){
+      import scala.sys.process._
+      val originalPath = paths.head.toString.stripSuffix("/") + "/"
+      val command = s"aws s3 --summarize ls $originalPath"
+      Try( command.!!) match {
+        case Success(s) =>
+          logInfo(s">>> $command")
+          logInfo(s">>> $s")
+          val files = s.split("\n").map(_.trim)
+
+          val newPaths = files.find(_.startsWith("Total Objects:")).map(_.split(" ").last.toInt).getOrElse(-1) match {
+            case -1 => paths
+            case s if s >= awsCliCount =>
+              logInfo(s"There are $s files in [$originalPath]")
+              val r = "^[0-9].*".r
+              val filesOnly = files
+                .filter(f => r.pattern.matcher(f).find())
+                .map(_.trim)
+                .filterNot(_.endsWith(" _SUCCESS"))
+              if (filesOnly.length != s - 1) {
+                paths
+              } else {
+              filesOnly
+                .map(_.split(" ").last)
+                .map(n => s"${originalPath.stripSuffix("/")}/$n")
+                .map(new Path(_))
+                .toSeq
+              }
+            case _ => paths
+          }
+
+          newPaths
+        case Failure(e) =>
+          logError("aws list filed error: " + e.toString)
+          paths
+      }
+    } else {
+      paths
+    }
+
     // Short-circuits parallel listing when serial listing is likely to be faster.
-    if (paths.size <= parallelismThreshold) {
-      return paths.map { path =>
+    if (finalPathList.size <= parallelismThreshold) {
+      return finalPathList.map { path =>
         val leafFiles = listLeafFiles(
           path,
           hadoopConf,
@@ -98,26 +140,26 @@ private[spark] object HadoopFSUtils extends Logging {
       }
     }
 
-    logInfo(s"Listing leaf files and directories in parallel under ${paths.length} paths." +
-      s" The first several paths are: ${paths.take(10).mkString(", ")}.")
+    logInfo(s"Listing leaf files and directories in parallel under ${finalPathList.length} paths." +
+      s" The first several paths are: ${finalPathList.take(10).mkString(", ")}.")
     HiveCatalogMetrics.incrementParallelListingJobCount(1)
 
     val serializableConfiguration = new SerializableConfiguration(hadoopConf)
-    val serializedPaths = paths.map(_.toString)
+    val serializedPaths = finalPathList.map(_.toString)
 
     // Set the number of parallelism to prevent following file listing from generating many tasks
     // in case of large #defaultParallelism.
-    val numParallelism = Math.min(paths.size, parallelismMax)
+    val numParallelism = Math.min(finalPathList.size, parallelismMax)
 
     val previousJobDescription = sc.getLocalProperty(SparkContext.SPARK_JOB_DESCRIPTION)
     val statusMap = try {
-      val description = paths.size match {
+      val description = finalPathList.size match {
         case 0 =>
           "Listing leaf files and directories 0 paths"
         case 1 =>
-          s"Listing leaf files and directories for 1 path:<br/>${paths(0)}"
+          s"Listing leaf files and directories for 1 path:<br/>${finalPathList(0)}"
         case s =>
-          s"Listing leaf files and directories for $s paths:<br/>${paths(0)}, ..."
+          s"Listing leaf files and directories for $s paths:<br/>${finalPathList(0)}, ..."
       }
       sc.setJobDescription(description)
       sc
