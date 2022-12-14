@@ -195,7 +195,7 @@ object GenerateUnsafeProjection extends CodeGenerator[Seq[Expression], UnsafePro
        } else {
          final int $numElements = $tmpInput.numElements();
          $arrayWriter.initialize($numElements);
-       
+
          for (int $index = 0; $index < $numElements; $index++) {
            $elementAssignment
          }

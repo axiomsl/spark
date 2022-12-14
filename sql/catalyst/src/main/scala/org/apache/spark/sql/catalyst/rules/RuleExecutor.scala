@@ -59,7 +59,7 @@ class PlanChangeLogger[TreeType <: TreeNode[_]] extends Logging {
           s"""
              === Applying Rule $ruleName ===
              ${sideBySide(oldPlan.treeString, newPlan.treeString).mkString("\n")}
-           """.
+           """
         }
 
         logBasedOnLevel(message)
