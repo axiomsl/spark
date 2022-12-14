@@ -89,21 +89,21 @@ object SQLOpenHashSet {
     if (array1ElementNullable) {
       if (array2ElementNullable) {
         s"""
-           |if ($array.isNullAt($index)) {
-           |  if (!$hashSet.containsNull()) {
-           |    $hashSet.addNull();
-           |    $handleNull
-           |  }
-           |} else {
-           |  ${handleNotNull(array, index)}
-           |}
-         """.stripMargin
+           if ($array.isNullAt($index)) {
+             if (!$hashSet.containsNull()) {
+               $hashSet.addNull();
+               $handleNull
+             }
+           } else {
+             ${handleNotNull(array, index)}
+           }
+         """
       } else {
         s"""
-           |if (!$array.isNullAt($index)) {
-           | ${handleNotNull(array, index)}
-           |}
-         """.stripMargin
+           if (!$array.isNullAt($index)) {
+            ${handleNotNull(array, index)}
+           }
+         """
       }
     } else {
       handleNotNull(array, index)
@@ -150,15 +150,15 @@ object SQLOpenHashSet {
     }
     ret.map { case (isNaN, valueNaN) =>
       s"""
-         |if ($isNaN) {
-         |  if (!$hashSet.containsNaN()) {
-         |     $hashSet.addNaN();
-         |     ${handleNaN(valueNaN)}
-         |  }
-         |} else {
-         |  $handleNotNaN
-         |}
-       """.stripMargin
+         if ($isNaN) {
+           if (!$hashSet.containsNaN()) {
+              $hashSet.addNaN();
+              ${handleNaN(valueNaN)}
+           }
+         } else {
+           $handleNotNaN
+         }
+       """
     }.getOrElse(handleNotNaN)
   }
 }

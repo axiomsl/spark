@@ -98,13 +98,13 @@ case class QueryExecutionMetering() {
     }.mkString("\n", "\n", "")
 
     s"""
-       |=== Metrics of Analyzer/Optimizer Rules ===
-       |Total number of runs: $totalNumRuns
-       |Total time: ${totalTime / NANOS_PER_SECOND.toDouble} seconds
-       |
-       |$colRuleName $colRunTime $colNumRuns
-       |$ruleMetrics
-     """.stripMargin
+       === Metrics of Analyzer/Optimizer Rules ===
+       Total number of runs: $totalNumRuns
+       Total time: ${totalTime / NANOS_PER_SECOND.toDouble} seconds
+
+       $colRuleName $colRunTime $colNumRuns
+       $ruleMetrics
+     """
   }
 }
 

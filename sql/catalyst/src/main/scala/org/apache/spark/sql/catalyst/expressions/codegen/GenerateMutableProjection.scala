@@ -72,15 +72,15 @@ object GenerateMutableProjection extends CodeGenerator[Seq[Expression], MutableP
         val (code, isNull) = if (e.nullable) {
           val isNull = ctx.addMutableState(CodeGenerator.JAVA_BOOLEAN, "isNull")
           (s"""
-              |${ev.code}
-              |$isNull = ${ev.isNull};
-              |$value = ${ev.value};
-            """.stripMargin, JavaCode.isNullGlobal(isNull))
+              ${ev.code}
+              $isNull = ${ev.isNull};
+              $value = ${ev.value};
+            """, JavaCode.isNullGlobal(isNull))
         } else {
           (s"""
-              |${ev.code}
-              |$value = ${ev.value};
-            """.stripMargin, FalseLiteral)
+              ${ev.code}
+              $value = ${ev.value};
+            """, FalseLiteral)
         }
         val update = CodeGenerator.updateColumn(
           "mutableRow",

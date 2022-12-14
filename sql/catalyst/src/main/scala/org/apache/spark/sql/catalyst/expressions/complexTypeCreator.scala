@@ -144,17 +144,17 @@ private [sql] object GenArrayData {
         setArrayElement
       } else {
         s"""
-           |if (${eval.isNull}) {
-           |  $arrayDataName.setNullAt($i);
-           |} else {
-           |  $setArrayElement
-           |}
-         """.stripMargin
+           if (${eval.isNull}) {
+             $arrayDataName.setNullAt($i);
+           } else {
+             $setArrayElement
+           }
+         """
       }
       s"""
-         |${eval.code}
-         |$assignment
-       """.stripMargin
+         ${eval.code}
+         $assignment
+       """
     }
     val assignmentString = ctx.splitExpressionsWithCurrentInputs(
       expressions = assignments,
@@ -387,10 +387,10 @@ object CreateStruct {
       "_FUNC_(col1, col2, col3, ...) - Creates a struct with the given field values.",
       "",
       """
-        |    Examples:
-        |      > SELECT _FUNC_(1, 2, 3);
-        |       {"col1":1,"col2":2,"col3":3}
-        |  """.stripMargin,
+            Examples:
+              > SELECT _FUNC_(1, 2, 3);
+               {"col1":1,"col2":2,"col3":3}
+          """,
       "",
       "struct_funcs",
       "1.4.0",
@@ -476,13 +476,13 @@ case class CreateNamedStruct(children: Seq[Expression]) extends Expression with 
     val valCodes = valExprs.zipWithIndex.map { case (e, i) =>
       val eval = e.genCode(ctx)
       s"""
-         |${eval.code}
-         |if (${eval.isNull}) {
-         |  $values[$i] = null;
-         |} else {
-         |  $values[$i] = ${eval.value};
-         |}
-       """.stripMargin
+         ${eval.code}
+         if (${eval.isNull}) {
+           $values[$i] = null;
+         } else {
+           $values[$i] = ${eval.value};
+         }
+       """
     }
     val valuesCode = ctx.splitExpressionsWithCurrentInputs(
       expressions = valCodes,
@@ -491,11 +491,11 @@ case class CreateNamedStruct(children: Seq[Expression]) extends Expression with 
 
     ev.copy(code =
       code"""
-         |Object[] $values = new Object[${valExprs.size}];
-         |$valuesCode
-         |final InternalRow ${ev.value} = new $rowClass($values);
-         |$values = null;
-       """.stripMargin, isNull = FalseLiteral)
+         Object[] $values = new Object[${valExprs.size}];
+         $valuesCode
+         final InternalRow ${ev.value} = new $rowClass($values);
+         $values = null;
+       """, isNull = FalseLiteral)
   }
 
   // There is an alias set at `CreateStruct.create`. If there is an alias,
@@ -582,13 +582,13 @@ case class StringToMap(text: Expression, pairDelim: Expression, keyValueDelim: E
 
     nullSafeCodeGen(ctx, ev, (text, pd, kvd) =>
       s"""
-         |UTF8String[] $keyValues = $text.split($pd, -1);
-         |for(UTF8String kvEntry: $keyValues) {
-         |  UTF8String[] kv = kvEntry.split($kvd, 2);
-         |  $builderTerm.put(kv[0], kv.length == 2 ? kv[1] : null);
-         |}
-         |${ev.value} = $builderTerm.build();
-         |""".stripMargin
+         UTF8String[] $keyValues = $text.split($pd, -1);
+         for(UTF8String kvEntry: $keyValues) {
+           UTF8String[] kv = kvEntry.split($kvd, 2);
+           $builderTerm.put(kv[0], kv.length == 2 ? kv[1] : null);
+         }
+         ${ev.value} = $builderTerm.build();
+         """
     )
   }
 

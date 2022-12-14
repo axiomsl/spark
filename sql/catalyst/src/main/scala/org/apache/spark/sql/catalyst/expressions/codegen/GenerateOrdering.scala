@@ -97,21 +97,21 @@ object GenerateOrdering extends CodeGenerator[Seq[SortOrder], BaseOrdering] with
         case NullsLast => "-1"
       }
       s"""
-          |${l.code}
-          |${r.code}
-          |if (${l.isNull} && ${r.isNull}) {
-          |  // Nothing
-          |} else if (${l.isNull}) {
-          |  return $lRetValue;
-          |} else if (${r.isNull}) {
-          |  return $rRetValue;
-          |} else {
-          |  int comp = ${ctx.genComp(dt, l.value, r.value)};
-          |  if (comp != 0) {
-          |    return ${if (asc) "comp" else "-comp"};
-          |  }
-          |}
-      """.stripMargin
+          ${l.code}
+          ${r.code}
+          if (${l.isNull} && ${r.isNull}) {
+            // Nothing
+          } else if (${l.isNull}) {
+            return $lRetValue;
+          } else if (${r.isNull}) {
+            return $rRetValue;
+          } else {
+            int comp = ${ctx.genComp(dt, l.value, r.value)};
+            if (comp != 0) {
+              return ${if (asc) "comp" else "-comp"};
+            }
+          }
+      """
     }
 
     val code = ctx.splitExpressions(
@@ -121,19 +121,19 @@ object GenerateOrdering extends CodeGenerator[Seq[SortOrder], BaseOrdering] with
       returnType = "int",
       makeSplitFunction = { body =>
         s"""
-          |$body
-          |return 0;
-        """.stripMargin
+          $body
+          return 0;
+        """
       },
       foldFunctions = { funCalls =>
         funCalls.zipWithIndex.map { case (funCall, i) =>
           val comp = ctx.freshName("comp")
           s"""
-            |int $comp = $funCall;
-            |if ($comp != 0) {
-            |  return $comp;
-            |}
-          """.stripMargin
+            int $comp = $funCall;
+            if ($comp != 0) {
+              return $comp;
+            }
+          """
         }.mkString
       })
     ctx.currentVars = oldCurrentVars

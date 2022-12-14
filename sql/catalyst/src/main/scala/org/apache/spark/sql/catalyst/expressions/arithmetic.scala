@@ -60,12 +60,12 @@ case class UnaryMinus(
         val javaType = CodeGenerator.javaType(dataType)
         val originValue = ctx.freshName("origin")
         s"""
-           |$javaType $originValue = ($javaType)($eval);
-           |if ($originValue == $javaBoxedType.MIN_VALUE) {
-           |  throw QueryExecutionErrors.unaryMinusCauseOverflowError($originValue);
-           |}
-           |${ev.value} = ($javaType)(-($originValue));
-           """.stripMargin
+           $javaType $originValue = ($javaType)($eval);
+           if ($originValue == $javaBoxedType.MIN_VALUE) {
+             throw QueryExecutionErrors.unaryMinusCauseOverflowError($originValue);
+           }
+           ${ev.value} = ($javaType)(-($originValue));
+           """
       })
     case IntegerType | LongType if failOnError =>
       val mathUtils = MathUtils.getClass.getCanonicalName.stripSuffix("$")
@@ -180,14 +180,14 @@ case class Abs(child: Expression, failOnError: Boolean = SQLConf.get.ansiEnabled
       val javaType = CodeGenerator.javaType(dataType)
       nullSafeCodeGen(ctx, ev, eval =>
         s"""
-          |if ($eval == $javaBoxedType.MIN_VALUE) {
-          |  throw QueryExecutionErrors.unaryMinusCauseOverflowError($eval);
-          |} else if ($eval < 0) {
-          |  ${ev.value} = ($javaType)-$eval;
-          |} else {
-          |  ${ev.value} = $eval;
-          |}
-          |""".stripMargin)
+          if ($eval == $javaBoxedType.MIN_VALUE) {
+            throw QueryExecutionErrors.unaryMinusCauseOverflowError($eval);
+          } else if ($eval < 0) {
+            ${ev.value} = ($javaType)-$eval;
+          } else {
+            ${ev.value} = $eval;
+          }
+          """)
 
     case IntegerType | LongType if failOnError =>
       val mathUtils = MathUtils.getClass.getCanonicalName.stripSuffix("$")
@@ -262,27 +262,27 @@ abstract class BinaryArithmetic extends BinaryOperator with NullIntolerant
         val overflowCheck = if (failOnError) {
           val javaType = CodeGenerator.boxedType(dataType)
           s"""
-             |if ($tmpResult < $javaType.MIN_VALUE || $tmpResult > $javaType.MAX_VALUE) {
-             |  throw QueryExecutionErrors.binaryArithmeticCauseOverflowError(
-             |  $eval1, "$symbol", $eval2);
-             |}
-           """.stripMargin
+             if ($tmpResult < $javaType.MIN_VALUE || $tmpResult > $javaType.MAX_VALUE) {
+               throw QueryExecutionErrors.binaryArithmeticCauseOverflowError(
+               $eval1, "$symbol", $eval2);
+             }
+           """
         } else {
           ""
         }
         s"""
-           |${CodeGenerator.JAVA_INT} $tmpResult = $eval1 $symbol $eval2;
-           |$overflowCheck
-           |${ev.value} = (${CodeGenerator.javaType(dataType)})($tmpResult);
-         """.stripMargin
+           ${CodeGenerator.JAVA_INT} $tmpResult = $eval1 $symbol $eval2;
+           $overflowCheck
+           ${ev.value} = (${CodeGenerator.javaType(dataType)})($tmpResult);
+         """
       })
     case IntegerType | LongType if failOnError && exactMathMethod.isDefined =>
       nullSafeCodeGen(ctx, ev, (eval1, eval2) => {
         val errorContext = ctx.addReferenceObj("errCtx", queryContext)
         val mathUtils = MathUtils.getClass.getCanonicalName.stripSuffix("$")
         s"""
-           |${ev.value} = $mathUtils.${exactMathMethod.get}($eval1, $eval2, $errorContext);
-         """.stripMargin
+           ${ev.value} = $mathUtils.${exactMathMethod.get}($eval1, $eval2, $errorContext);
+         """
       })
 
     case IntegerType | LongType | DoubleType | FloatType =>
@@ -291,8 +291,8 @@ abstract class BinaryArithmetic extends BinaryOperator with NullIntolerant
       // - returns (+/-)Infinite: same behavior also other DBs have (e.g. Postgres)
       nullSafeCodeGen(ctx, ev, (eval1, eval2) => {
         s"""
-           |${ev.value} = $eval1 $symbol $eval2;
-         """.stripMargin
+           ${ev.value} = $eval1 $symbol $eval2;
+         """
       })
   }
 }
@@ -510,9 +510,9 @@ trait DivModLike extends BinaryArithmetic {
     lazy val errorContext = ctx.addReferenceObj("errCtx", queryContext)
     val checkIntegralDivideOverflow = if (checkDivideOverflow) {
       s"""
-        |if (${eval1.value} == ${Long.MinValue}L && ${eval2.value} == -1)
-        |  throw QueryExecutionErrors.overflowInIntegralDivideError($errorContext);
-        |""".stripMargin
+        if (${eval1.value} == ${Long.MinValue}L && ${eval2.value} == -1)
+          throw QueryExecutionErrors.overflowInIntegralDivideError($errorContext);
+        """
     } else {
       ""
     }
@@ -954,9 +954,9 @@ case class Least(children: Seq[Expression]) extends ComplexTypeMergingExpression
     ev.isNull = JavaCode.isNullGlobal(ctx.addMutableState(CodeGenerator.JAVA_BOOLEAN, ev.isNull))
     val evals = evalChildren.map(eval =>
       s"""
-         |${eval.code}
-         |${ctx.reassignIfSmaller(dataType, ev, eval)}
-      """.stripMargin
+         ${eval.code}
+         ${ctx.reassignIfSmaller(dataType, ev, eval)}
+      """
     )
 
     val resultType = CodeGenerator.javaType(dataType)
@@ -967,16 +967,16 @@ case class Least(children: Seq[Expression]) extends ComplexTypeMergingExpression
       returnType = resultType,
       makeSplitFunction = body =>
         s"""
-          |$body
-          |return ${ev.value};
-        """.stripMargin,
+          $body
+          return ${ev.value};
+        """,
       foldFunctions = _.map(funcCall => s"${ev.value} = $funcCall;").mkString("\n"))
     ev.copy(code =
       code"""
-         |${ev.isNull} = true;
-         |$resultType ${ev.value} = ${CodeGenerator.defaultValue(dataType)};
-         |$codes
-      """.stripMargin)
+         ${ev.isNull} = true;
+         $resultType ${ev.value} = ${CodeGenerator.defaultValue(dataType)};
+         $codes
+      """)
   }
 
   override protected def withNewChildrenInternal(newChildren: IndexedSeq[Expression]): Least =
@@ -1037,9 +1037,9 @@ case class Greatest(children: Seq[Expression]) extends ComplexTypeMergingExpress
     ev.isNull = JavaCode.isNullGlobal(ctx.addMutableState(CodeGenerator.JAVA_BOOLEAN, ev.isNull))
     val evals = evalChildren.map(eval =>
       s"""
-         |${eval.code}
-         |${ctx.reassignIfGreater(dataType, ev, eval)}
-      """.stripMargin
+         ${eval.code}
+         ${ctx.reassignIfGreater(dataType, ev, eval)}
+      """
     )
 
     val resultType = CodeGenerator.javaType(dataType)
@@ -1050,16 +1050,16 @@ case class Greatest(children: Seq[Expression]) extends ComplexTypeMergingExpress
       returnType = resultType,
       makeSplitFunction = body =>
         s"""
-           |$body
-           |return ${ev.value};
-        """.stripMargin,
+           $body
+           return ${ev.value};
+        """,
       foldFunctions = _.map(funcCall => s"${ev.value} = $funcCall;").mkString("\n"))
     ev.copy(code =
       code"""
-         |${ev.isNull} = true;
-         |$resultType ${ev.value} = ${CodeGenerator.defaultValue(dataType)};
-         |$codes
-      """.stripMargin)
+         ${ev.isNull} = true;
+         $resultType ${ev.value} = ${CodeGenerator.defaultValue(dataType)};
+         $codes
+      """)
   }
 
   override protected def withNewChildrenInternal(newChildren: IndexedSeq[Expression]): Greatest =

@@ -485,9 +485,9 @@ case class MakeYMInterval(years: Expression, months: Expression)
     defineCodeGen(ctx, ev, (years, months) => {
       val math = classOf[Math].getName.stripSuffix("$")
       s"""
-         |$math.toIntExact(java.lang.Math.addExact($months,
-         |  $math.multiplyExact($years, $MONTHS_PER_YEAR)))
-         |""".stripMargin
+         $math.toIntExact(java.lang.Math.addExact($months,
+           $math.multiplyExact($years, $MONTHS_PER_YEAR)))
+         """
     })
   }
 
@@ -673,31 +673,31 @@ case class DivideYMInterval(
         nullSafeCodeGen(ctx, ev, (m, n) => {
           val checkIntegralDivideOverflow =
             s"""
-               |if ($m == ${Int.MinValue} && $n == -1)
-               |  throw QueryExecutionErrors.overflowInIntegralDivideError($errorContext);
-               |""".stripMargin
+               if ($m == ${Int.MinValue} && $n == -1)
+                 throw QueryExecutionErrors.overflowInIntegralDivideError($errorContext);
+               """
           // Similarly to non-codegen code. The result of `divide(Int, Long, ...)` must fit
           // to `Int`. Casting to `Int` is safe here.
           s"""
-             |${divideByZeroCheckCodegen(right.dataType, n, errorContext)}
-             |$checkIntegralDivideOverflow
-             |${ev.value} = ($javaType)$math.divide($m, $n, java.math.RoundingMode.HALF_UP);
-          """.stripMargin
+             ${divideByZeroCheckCodegen(right.dataType, n, errorContext)}
+             $checkIntegralDivideOverflow
+             ${ev.value} = ($javaType)$math.divide($m, $n, java.math.RoundingMode.HALF_UP);
+          """
         })
       case _: DecimalType =>
         nullSafeCodeGen(ctx, ev, (m, n) =>
           s"""
-             |${divideByZeroCheckCodegen(right.dataType, n, errorContext)}
-             |${ev.value} = ((new Decimal()).set($m).$$div($n)).toJavaBigDecimal()
-             |  .setScale(0, java.math.RoundingMode.HALF_UP).intValueExact();
-          """.stripMargin)
+             ${divideByZeroCheckCodegen(right.dataType, n, errorContext)}
+             ${ev.value} = ((new Decimal()).set($m).$$div($n)).toJavaBigDecimal()
+               .setScale(0, java.math.RoundingMode.HALF_UP).intValueExact();
+          """)
       case _: FractionalType =>
         val math = classOf[DoubleMath].getName
         nullSafeCodeGen(ctx, ev, (m, n) =>
           s"""
-             |${divideByZeroCheckCodegen(right.dataType, n, errorContext)}
-             |${ev.value} = $math.roundToInt($m / (double)$n, java.math.RoundingMode.HALF_UP);
-          """.stripMargin)
+             ${divideByZeroCheckCodegen(right.dataType, n, errorContext)}
+             ${ev.value} = $math.roundToInt($m / (double)$n, java.math.RoundingMode.HALF_UP);
+          """)
     }
   }
 
@@ -746,29 +746,29 @@ case class DivideDTInterval(
         nullSafeCodeGen(ctx, ev, (m, n) => {
           val checkIntegralDivideOverflow =
             s"""
-               |if ($m == ${Long.MinValue}L && $n == -1L)
-               |  throw QueryExecutionErrors.overflowInIntegralDivideError($errorContext);
-               |""".stripMargin
+               if ($m == ${Long.MinValue}L && $n == -1L)
+                 throw QueryExecutionErrors.overflowInIntegralDivideError($errorContext);
+               """
           s"""
-             |${divideByZeroCheckCodegen(right.dataType, n, errorContext)}
-             |$checkIntegralDivideOverflow
-             |${ev.value} = $math.divide($m, $n, java.math.RoundingMode.HALF_UP);
-          """.stripMargin
+             ${divideByZeroCheckCodegen(right.dataType, n, errorContext)}
+             $checkIntegralDivideOverflow
+             ${ev.value} = $math.divide($m, $n, java.math.RoundingMode.HALF_UP);
+          """
         })
       case _: DecimalType =>
         nullSafeCodeGen(ctx, ev, (m, n) =>
           s"""
-             |${divideByZeroCheckCodegen(right.dataType, n, errorContext)}
-             |${ev.value} = ((new Decimal()).set($m).$$div($n)).toJavaBigDecimal()
-             |  .setScale(0, java.math.RoundingMode.HALF_UP).longValueExact();
-          """.stripMargin)
+             ${divideByZeroCheckCodegen(right.dataType, n, errorContext)}
+             ${ev.value} = ((new Decimal()).set($m).$$div($n)).toJavaBigDecimal()
+               .setScale(0, java.math.RoundingMode.HALF_UP).longValueExact();
+          """)
       case _: FractionalType =>
         val math = classOf[DoubleMath].getName
         nullSafeCodeGen(ctx, ev, (m, n) =>
           s"""
-             |${divideByZeroCheckCodegen(right.dataType, n, errorContext)}
-             |${ev.value} = $math.roundToLong($m / (double)$n, java.math.RoundingMode.HALF_UP);
-          """.stripMargin)
+             ${divideByZeroCheckCodegen(right.dataType, n, errorContext)}
+             ${ev.value} = $math.roundToLong($m / (double)$n, java.math.RoundingMode.HALF_UP);
+          """)
     }
   }
 

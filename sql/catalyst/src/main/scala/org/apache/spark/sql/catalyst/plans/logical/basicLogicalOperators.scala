@@ -1488,9 +1488,9 @@ case class RepartitionByExpression(
         "`SortOrder`, which means `RangePartitioning`, or none of them are `SortOrder`, which " +
         "means `HashPartitioning`. In this case we have:" +
       s"""
-         |SortOrder: $sortOrder
-         |NonSortOrder: $nonSortOrder
-       """.stripMargin)
+         SortOrder: $sortOrder
+         NonSortOrder: $nonSortOrder
+       """)
 
     if (numPartitions == 1) {
       SinglePartition

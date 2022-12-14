@@ -57,9 +57,9 @@ class PlanChangeLogger[TreeType <: TreeNode[_]] extends Logging {
       if (logRules.isEmpty || logRules.get.contains(ruleName)) {
         def message(): String = {
           s"""
-             |=== Applying Rule $ruleName ===
-             |${sideBySide(oldPlan.treeString, newPlan.treeString).mkString("\n")}
-           """.stripMargin
+             === Applying Rule $ruleName ===
+             ${sideBySide(oldPlan.treeString, newPlan.treeString).mkString("\n")}
+           """.
         }
 
         logBasedOnLevel(message)
@@ -72,9 +72,9 @@ class PlanChangeLogger[TreeType <: TreeNode[_]] extends Logging {
       def message(): String = {
         if (!oldPlan.fastEquals(newPlan)) {
           s"""
-             |=== Result of Batch $batchName ===
-             |${sideBySide(oldPlan.treeString, newPlan.treeString).mkString("\n")}
-          """.stripMargin
+             === Result of Batch $batchName ===
+             ${sideBySide(oldPlan.treeString, newPlan.treeString).mkString("\n")}
+          """
         } else {
           s"Batch $batchName has no effect."
         }
@@ -89,12 +89,12 @@ class PlanChangeLogger[TreeType <: TreeNode[_]] extends Logging {
     val totalTimeEffective = metrics.timeEffective / NANOS_PER_SECOND.toDouble
     val message =
       s"""
-         |=== Metrics of Executed Rules ===
-         |Total number of runs: ${metrics.numRuns}
-         |Total time: $totalTime seconds
-         |Total number of effective runs: ${metrics.numEffectiveRuns}
-         |Total time of effective runs: $totalTimeEffective seconds
-      """.stripMargin
+         === Metrics of Executed Rules ===
+         Total number of runs: ${metrics.numRuns}
+         Total time: $totalTime seconds
+         Total number of effective runs: ${metrics.numEffectiveRuns}
+         Total time of effective runs: $totalTimeEffective seconds
+      """
 
     logBasedOnLevel(message)
   }

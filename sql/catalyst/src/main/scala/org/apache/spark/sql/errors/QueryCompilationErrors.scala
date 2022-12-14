@@ -602,9 +602,9 @@ private[sql] object QueryCompilationErrors extends QueryErrorsBase {
       nonExistentColumnNames: Seq[String]): Throwable = {
     new AnalysisException(
       s"""
-         |Some existing schema fields (${nonExistentColumnNames.mkString("[", ",", "]")}) are
-         |not present in the new schema. We don't support dropping columns yet.
-         """.stripMargin)
+         Some existing schema fields (${nonExistentColumnNames.mkString("[", ",", "]")}) are
+         not present in the new schema. We don't support dropping columns yet.
+         """)
   }
 
   def cannotRetrieveTableOrViewNotInSameDatabaseError(
@@ -1024,11 +1024,11 @@ private[sql] object QueryCompilationErrors extends QueryErrorsBase {
       schema: StructType, actualSchema: StructType): Throwable = {
     new AnalysisException(
       s"""
-         |The user-specified schema doesn't match the actual schema:
-         |user-specified: ${schema.toDDL}, actual: ${actualSchema.toDDL}. If you're using
-         |DataFrameReader.schema API or creating a table, please do not specify the schema.
-         |Or if you're scanning an existed table, please drop it and re-create it.
-       """.stripMargin)
+         The user-specified schema doesn't match the actual schema:
+         user-specified: ${schema.toDDL}, actual: ${actualSchema.toDDL}. If you're using
+         DataFrameReader.schema API or creating a table, please do not specify the schema.
+         Or if you're scanning an existed table, please drop it and re-create it.
+       """)
   }
 
   def dataSchemaNotSpecifiedError(format: String, fileCatalog: String): Throwable = {
@@ -1052,42 +1052,42 @@ private[sql] object QueryCompilationErrors extends QueryErrorsBase {
   def orcNotUsedWithHiveEnabledError(): Throwable = {
     new AnalysisException(
       s"""
-         |Hive built-in ORC data source must be used with Hive support enabled.
-         |Please use the native ORC data source by setting 'spark.sql.orc.impl' to 'native'
-       """.stripMargin)
+         Hive built-in ORC data source must be used with Hive support enabled.
+         Please use the native ORC data source by setting 'spark.sql.orc.impl' to 'native'
+       """)
   }
 
   def failedToFindAvroDataSourceError(provider: String): Throwable = {
     new AnalysisException(
       s"""
-         |Failed to find data source: $provider. Avro is built-in but external data
-         |source module since Spark 2.4. Please deploy the application as per
-         |the deployment section of "Apache Avro Data Source Guide".
-       """.stripMargin.replaceAll("\n", " "))
+         Failed to find data source: $provider. Avro is built-in but external data
+         source module since Spark 2.4. Please deploy the application as per
+         the deployment section of "Apache Avro Data Source Guide".
+       """.replaceAll("\n", " "))
   }
 
   def failedToFindKafkaDataSourceError(provider: String): Throwable = {
     new AnalysisException(
       s"""
-         |Failed to find data source: $provider. Please deploy the application as
-         |per the deployment section of "Structured Streaming + Kafka Integration Guide".
-       """.stripMargin.replaceAll("\n", " "))
+         Failed to find data source: $provider. Please deploy the application as
+         per the deployment section of "Structured Streaming + Kafka Integration Guide".
+       """.replaceAll("\n", " "))
   }
 
   def findMultipleDataSourceError(provider: String, sourceNames: Seq[String]): Throwable = {
     new AnalysisException(
       s"""
-         |Multiple sources found for $provider (${sourceNames.mkString(", ")}),
-         | please specify the fully qualified class name.
-       """.stripMargin)
+         Multiple sources found for $provider (${sourceNames.mkString(", ")}),
+          please specify the fully qualified class name.
+       """)
   }
 
   def writeEmptySchemasUnsupportedByDataSourceError(): Throwable = {
     new AnalysisException(
       s"""
-         |Datasource does not support writing empty or nested empty schemas.
-         |Please make sure the data schema has at least one or more column(s).
-       """.stripMargin)
+         Datasource does not support writing empty or nested empty schemas.
+         Please make sure the data schema has at least one or more column(s).
+       """)
   }
 
   def insertMismatchedColumnNumberError(
@@ -1096,12 +1096,12 @@ private[sql] object QueryCompilationErrors extends QueryErrorsBase {
       staticPartitionsSize: Int): Throwable = {
     new AnalysisException(
       s"""
-         |The data to be inserted needs to have the same number of columns as the
-         |target table: target table has ${targetAttributes.size} column(s) but the
-         |inserted data has ${sourceAttributes.size + staticPartitionsSize} column(s),
-         |which contain $staticPartitionsSize partition column(s) having assigned
-         |constant values.
-       """.stripMargin)
+         The data to be inserted needs to have the same number of columns as the
+         target table: target table has ${targetAttributes.size} column(s) but the
+         inserted data has ${sourceAttributes.size + staticPartitionsSize} column(s),
+         which contain $staticPartitionsSize partition column(s) having assigned
+         constant values.
+       """)
   }
 
   def insertMismatchedPartitionNumberError(
@@ -1109,40 +1109,40 @@ private[sql] object QueryCompilationErrors extends QueryErrorsBase {
       providedPartitionsSize: Int): Throwable = {
     new AnalysisException(
       s"""
-         |The data to be inserted needs to have the same number of partition columns
-         |as the target table: target table has ${targetPartitionSchema.fields.size}
-         |partition column(s) but the inserted data has $providedPartitionsSize
-         |partition columns specified.
-       """.stripMargin.replaceAll("\n", " "))
+         The data to be inserted needs to have the same number of partition columns
+         as the target table: target table has ${targetPartitionSchema.fields.size}
+         partition column(s) but the inserted data has $providedPartitionsSize
+         partition columns specified.
+       """.replaceAll("\n", " "))
   }
 
   def invalidPartitionColumnError(
       partKey: String, targetPartitionSchema: StructType): Throwable = {
     new AnalysisException(
       s"""
-         |$partKey is not a partition column. Partition columns are
-         |${targetPartitionSchema.fields.map(_.name).mkString("[", ",", "]")}
-       """.stripMargin)
+         $partKey is not a partition column. Partition columns are
+         ${targetPartitionSchema.fields.map(_.name).mkString("[", ",", "]")}
+       """)
   }
 
   def multiplePartitionColumnValuesSpecifiedError(
       field: StructField, potentialSpecs: Map[String, String]): Throwable = {
     new AnalysisException(
       s"""
-         |Partition column ${field.name} have multiple values specified,
-         |${potentialSpecs.mkString("[", ", ", "]")}. Please only specify a single value.
-       """.stripMargin)
+         Partition column ${field.name} have multiple values specified,
+         ${potentialSpecs.mkString("[", ", ", "]")}. Please only specify a single value.
+       """)
   }
 
   def invalidOrderingForConstantValuePartitionColumnError(
       targetPartitionSchema: StructType): Throwable = {
     new AnalysisException(
       s"""
-         |The ordering of partition columns is
-         |${targetPartitionSchema.fields.map(_.name).mkString("[", ",", "]")}
-         |All partition columns having constant values need to appear before other
-         |partition columns that do not have an assigned constant value.
-       """.stripMargin)
+         The ordering of partition columns is
+         ${targetPartitionSchema.fields.map(_.name).mkString("[", ",", "]")}
+         All partition columns having constant values need to appear before other
+         partition columns that do not have an assigned constant value.
+       """)
   }
 
   def cannotWriteDataToRelationsWithMultiplePathsError(): Throwable = {
@@ -1162,13 +1162,13 @@ private[sql] object QueryCompilationErrors extends QueryErrorsBase {
   def failToResolveDataSourceForTableError(table: CatalogTable, key: String): Throwable = {
     new AnalysisException(
       s"""
-         |Fail to resolve data source for the table ${table.identifier} since the table
-         |serde property has the duplicated key $key with extra options specified for this
-         |scan operation. To fix this, you can rollback to the legacy behavior of ignoring
-         |the extra options by setting the config
-         |${SQLConf.LEGACY_EXTRA_OPTIONS_BEHAVIOR.key} to `false`, or address the
-         |conflicts of the same config.
-       """.stripMargin)
+         Fail to resolve data source for the table ${table.identifier} since the table
+         serde property has the duplicated key $key with extra options specified for this
+         scan operation. To fix this, you can rollback to the legacy behavior of ignoring
+         the extra options by setting the config
+         ${SQLConf.LEGACY_EXTRA_OPTIONS_BEHAVIOR.key} to `false`, or address the
+         conflicts of the same config.
+       """)
   }
 
   def outputPathAlreadyExistsError(outputPath: Path): Throwable = {
@@ -1204,9 +1204,9 @@ private[sql] object QueryCompilationErrors extends QueryErrorsBase {
       tableName: String, existingProvider: Class[_], specifiedProvider: Class[_]): Throwable = {
     new AnalysisException(
       s"""
-         |The format of the existing table $tableName is `${existingProvider.getSimpleName}`.
-         |It doesn't match the specified format `${specifiedProvider.getSimpleName}`.
-       """.stripMargin)
+         The format of the existing table $tableName is `${existingProvider.getSimpleName}`.
+         It doesn't match the specified format `${specifiedProvider.getSimpleName}`.
+       """)
   }
 
   def mismatchedTableLocationError(
@@ -1215,10 +1215,10 @@ private[sql] object QueryCompilationErrors extends QueryErrorsBase {
       tableDesc: CatalogTable): Throwable = {
     new AnalysisException(
       s"""
-         |The location of the existing table ${identifier.quotedString} is
-         |`${existingTable.location}`. It doesn't match the specified location
-         |`${tableDesc.location}`.
-       """.stripMargin)
+         The location of the existing table ${identifier.quotedString} is
+         `${existingTable.location}`. It doesn't match the specified location
+         `${tableDesc.location}`.
+       """)
   }
 
   def mismatchedTableColumnNumberError(
@@ -1227,10 +1227,10 @@ private[sql] object QueryCompilationErrors extends QueryErrorsBase {
       query: LogicalPlan): Throwable = {
     new AnalysisException(
       s"""
-         |The column number of the existing table $tableName
-         |(${existingTable.schema.catalogString}) doesn't match the data schema
-         |(${query.schema.catalogString})
-       """.stripMargin)
+         The column number of the existing table $tableName
+         (${existingTable.schema.catalogString}) doesn't match the data schema
+         (${query.schema.catalogString})
+       """)
   }
 
   def cannotResolveColumnGivenInputColumnsError(col: String, inputColumns: String): Throwable = {
@@ -1243,10 +1243,10 @@ private[sql] object QueryCompilationErrors extends QueryErrorsBase {
       existingPartCols: String): Throwable = {
     new AnalysisException(
       s"""
-         |Specified partitioning does not match that of the existing table $tableName.
-         |Specified partition columns: [${specifiedPartCols.mkString(", ")}]
-         |Existing partition columns: [$existingPartCols]
-       """.stripMargin)
+         Specified partitioning does not match that of the existing table $tableName.
+         Specified partition columns: [${specifiedPartCols.mkString(", ")}]
+         Existing partition columns: [$existingPartCols]
+       """)
   }
 
   def mismatchedTableBucketingError(
@@ -1255,10 +1255,10 @@ private[sql] object QueryCompilationErrors extends QueryErrorsBase {
       existingBucketString: String): Throwable = {
     new AnalysisException(
       s"""
-         |Specified bucketing does not match that of the existing table $tableName.
-         |Specified bucketing: $specifiedBucketString
-         |Existing bucketing: $existingBucketString
-       """.stripMargin)
+         Specified bucketing does not match that of the existing table $tableName.
+         Specified bucketing: $specifiedBucketString
+         Existing bucketing: $existingBucketString
+       """)
   }
 
   def specifyPartitionNotAllowedWhenTableSchemaNotDefinedError(): Throwable = {
@@ -1293,10 +1293,10 @@ private[sql] object QueryCompilationErrors extends QueryErrorsBase {
       partColNames: StructType): Throwable = {
     new AnalysisException(
       s"""
-         |Requested partitioning does not match the table $tableName:
-         |Requested partitions: ${normalizedPartSpec.keys.mkString(",")}
-         |Table partitions: ${partColNames.mkString(",")}
-       """.stripMargin)
+         Requested partitioning does not match the table $tableName:
+         Requested partitions: ${normalizedPartSpec.keys.mkString(",")}
+         Table partitions: ${partColNames.mkString(",")}
+       """)
   }
 
   def ddlWithoutHiveSupportEnabledError(detail: String): Throwable = {
@@ -1369,14 +1369,14 @@ private[sql] object QueryCompilationErrors extends QueryErrorsBase {
       ambiguousAttrs: Seq[AttributeReference]): Throwable = {
     new AnalysisException(
       s"""
-         |Column ${ambiguousAttrs.mkString(", ")} are ambiguous. It's probably because
-         |you joined several Datasets together, and some of these Datasets are the same.
-         |This column points to one of the Datasets but Spark is unable to figure out
-         |which one. Please alias the Datasets with different names via `Dataset.as`
-         |before joining them, and specify the column using qualified name, e.g.
-         |`df.as("a").join(df.as("b"), $$"a.id" > $$"b.id")`. You can also set
-         |${SQLConf.FAIL_AMBIGUOUS_SELF_JOIN_ENABLED.key} to false to disable this check.
-       """.stripMargin.replaceAll("\n", " "))
+         Column ${ambiguousAttrs.mkString(", ")} are ambiguous. It's probably because
+         you joined several Datasets together, and some of these Datasets are the same.
+         This column points to one of the Datasets but Spark is unable to figure out
+         which one. Please alias the Datasets with different names via `Dataset.as`
+         before joining them, and specify the column using qualified name, e.g.
+         `df.as("a").join(df.as("b"), $$"a.id" > $$"b.id")`. You can also set
+         ${SQLConf.FAIL_AMBIGUOUS_SELF_JOIN_ENABLED.key} to false to disable this check.
+       """.replaceAll("\n", " "))
   }
 
   def unexpectedEvalTypesForUDFsError(evalTypes: Set[Int]): Throwable = {
@@ -1422,10 +1422,10 @@ private[sql] object QueryCompilationErrors extends QueryErrorsBase {
   def setPathOptionAndCallWithPathParameterError(method: String): Throwable = {
     new AnalysisException(
       s"""
-         |There is a 'path' option set and $method() is called with a path
-         |parameter. Either remove the path option, or call $method() without the parameter.
-         |To ignore this check, set '${SQLConf.LEGACY_PATH_OPTION_BEHAVIOR.key}' to 'true'.
-       """.stripMargin.replaceAll("\n", " "))
+         There is a 'path' option set and $method() is called with a path
+         parameter. Either remove the path option, or call $method() without the parameter.
+         To ignore this check, set '${SQLConf.LEGACY_PATH_OPTION_BEHAVIOR.key}' to 'true'.
+       """.replaceAll("\n", " "))
   }
 
   def userSpecifiedSchemaUnsupportedError(operation: String): Throwable = {
@@ -1516,19 +1516,19 @@ private[sql] object QueryCompilationErrors extends QueryErrorsBase {
       tableName: String, expected: Seq[Attribute], query: LogicalPlan): Throwable = {
     new AnalysisException(
       s"""
-         |Cannot write to '$tableName', too many data columns:
-         |Table columns: ${expected.map(c => s"'${c.name}'").mkString(", ")}
-         |Data columns: ${query.output.map(c => s"'${c.name}'").mkString(", ")}
-       """.stripMargin)
+         Cannot write to '$tableName', too many data columns:
+         Table columns: ${expected.map(c => s"'${c.name}'").mkString(", ")}
+         Data columns: ${query.output.map(c => s"'${c.name}'").mkString(", ")}
+       """)
   }
 
   def cannotWriteNotEnoughColumnsToTableError(
       tableName: String, expected: Seq[Attribute], query: LogicalPlan): Throwable = {
     new AnalysisException(
       s"""Cannot write to '$tableName', not enough data columns:
-         |Table columns: ${expected.map(c => s"'${c.name}'").mkString(", ")}
-         |Data columns: ${query.output.map(c => s"'${c.name}'").mkString(", ")}"""
-        .stripMargin)
+         Table columns: ${expected.map(c => s"'${c.name}'").mkString(", ")}
+         Data columns: ${query.output.map(c => s"'${c.name}'").mkString(", ")}"""
+        )
   }
 
   def cannotWriteIncompatibleDataToTableError(tableName: String, errors: Seq[String]): Throwable = {
@@ -1580,14 +1580,14 @@ private[sql] object QueryCompilationErrors extends QueryErrorsBase {
       join: Join, left: LogicalPlan, right: LogicalPlan): Throwable = {
     new AnalysisException(
       s"""Detected implicit cartesian product for ${join.joinType.sql} join between logical plans
-         |${left.treeString(false).trim}
-         |and
-         |${right.treeString(false).trim}
-         |Join condition is missing or trivial.
-         |Either: use the CROSS JOIN syntax to allow cartesian products between these
-         |relations, or: enable implicit cartesian products by setting the configuration
-         |variable spark.sql.crossJoin.enabled=true"""
-        .stripMargin)
+         ${left.treeString(false).trim}
+         and
+         ${right.treeString(false).trim}
+         Join condition is missing or trivial.
+         Either: use the CROSS JOIN syntax to allow cartesian products between these
+         relations, or: enable implicit cartesian products by setting the configuration
+         variable spark.sql.crossJoin.enabled=true"""
+        )
   }
 
   def usePythonUDFInJoinConditionUnsupportedError(joinType: JoinType): Throwable = {
@@ -1696,9 +1696,9 @@ private[sql] object QueryCompilationErrors extends QueryErrorsBase {
 
   def negativeScaleNotAllowedError(scale: Int): Throwable = {
     new AnalysisException(
-      s"""|Negative scale is not allowed: $scale.
-         |You can use ${LEGACY_ALLOW_NEGATIVE_SCALE_OF_DECIMAL_ENABLED.key}=true
-         |to enable legacy mode to allow it.""".stripMargin.replaceAll("\n", " "))
+      s"""Negative scale is not allowed: $scale.
+         You can use ${LEGACY_ALLOW_NEGATIVE_SCALE_OF_DECIMAL_ENABLED.key}=true
+         to enable legacy mode to allow it.""".replaceAll("\n", " "))
   }
 
   def invalidPartitionColumnKeyInTableError(key: String, tblName: String): Throwable = {
@@ -1710,9 +1710,9 @@ private[sql] object QueryCompilationErrors extends QueryErrorsBase {
       partitionColumnNames: Seq[String],
       tableName: String): Throwable = {
     new AnalysisException(
-      s"""|Partition spec is invalid. The spec ($specKeys) must match
-        |the partition spec (${partitionColumnNames.mkString(", ")}) defined in
-        |table '$tableName'""".stripMargin.replaceAll("\n", " "))
+      s"""Partition spec is invalid. The spec ($specKeys) must match
+        the partition spec (${partitionColumnNames.mkString(", ")}) defined in
+        table '$tableName'""".replaceAll("\n", " "))
   }
 
   def foundDuplicateColumnError(colType: String, duplicateCol: Seq[String]): Throwable = {
@@ -1747,12 +1747,12 @@ private[sql] object QueryCompilationErrors extends QueryErrorsBase {
       specColumns: String): Throwable = {
     new AnalysisException(
       s"""
-         |The list of partition columns with values
-         |in partition specification for table '${table}'
-         |in database '${database}' is not a prefix of the list of
-         |partition columns defined in the table schema.
-         |Expected a prefix of [${schemaColumns}], but got [${specColumns}].
-       """.stripMargin.replaceAll("\n", " "))
+         The list of partition columns with values
+         in partition specification for table '${table}'
+         in database '${database}' is not a prefix of the list of
+         partition columns defined in the table schema.
+         Expected a prefix of [${schemaColumns}], but got [${specColumns}].
+       """.replaceAll("\n", " "))
   }
 
   def noSuchPartitionError(
@@ -1887,9 +1887,9 @@ private[sql] object QueryCompilationErrors extends QueryErrorsBase {
   def alterAddColNotSupportViewError(table: TableIdentifier): Throwable = {
     new AnalysisException(
       s"""
-         |ALTER ADD COLUMNS does not support views.
-         |You must drop and re-create the views for adding the new columns. Views: $table
-       """.stripMargin)
+         ALTER ADD COLUMNS does not support views.
+         You must drop and re-create the views for adding the new columns. Views: $table
+       """)
   }
 
   def alterAddColNotSupportDatasourceTableError(
@@ -1897,9 +1897,9 @@ private[sql] object QueryCompilationErrors extends QueryErrorsBase {
       table: TableIdentifier): Throwable = {
     new AnalysisException(
       s"""
-         |ALTER ADD COLUMNS does not support datasource table with type $tableType.
-         |You must drop and re-create the table for adding the new columns. Tables: $table
-       """.stripMargin)
+         ALTER ADD COLUMNS does not support datasource table with type $tableType.
+         You must drop and re-create the table for adding the new columns. Tables: $table
+       """)
   }
 
   def loadDataNotSupportedForDatasourceTablesError(tableIdentWithDB: String): Throwable = {
@@ -1917,10 +1917,10 @@ private[sql] object QueryCompilationErrors extends QueryErrorsBase {
       targetTableSize: Int): Throwable = {
     new AnalysisException(
       s"""
-         |LOAD DATA target table $tableIdentWithDB is partitioned,
-         |but number of columns in provided partition spec ($partitionSize)
-         |do not match number of partitioned columns in table ($targetTableSize)
-       """.stripMargin.replaceAll("\n", " "))
+         LOAD DATA target table $tableIdentWithDB is partitioned,
+         but number of columns in provided partition spec ($partitionSize)
+         do not match number of partitioned columns in table ($targetTableSize)
+       """.replaceAll("\n", " "))
   }
 
   def loadDataTargetTableNotPartitionedButPartitionSpecWasProvidedError(
@@ -2071,15 +2071,15 @@ private[sql] object QueryCompilationErrors extends QueryErrorsBase {
   def queryFromRawFilesIncludeCorruptRecordColumnError(): Throwable = {
     new AnalysisException(
       """
-        |Since Spark 2.3, the queries from raw JSON/CSV files are disallowed when the
-        |referenced columns only include the internal corrupt record column
-        |(named _corrupt_record by default). For example:
-        |spark.read.schema(schema).csv(file).filter($"_corrupt_record".isNotNull).count()
-        |and spark.read.schema(schema).csv(file).select("_corrupt_record").show().
-        |Instead, you can cache or save the parsed results and then send the same query.
-        |For example, val df = spark.read.schema(schema).csv(file).cache() and then
-        |df.filter($"_corrupt_record".isNotNull).count().
-      """.stripMargin)
+        Since Spark 2.3, the queries from raw JSON/CSV files are disallowed when the
+        referenced columns only include the internal corrupt record column
+        (named _corrupt_record by default). For example:
+        spark.read.schema(schema).csv(file).filter($"_corrupt_record".isNotNull).count()
+        and spark.read.schema(schema).csv(file).select("_corrupt_record").show().
+        Instead, you can cache or save the parsed results and then send the same query.
+        For example, val df = spark.read.schema(schema).csv(file).cache() and then
+        df.filter($"_corrupt_record".isNotNull).count().
+      """)
   }
 
   def userDefinedPartitionNotFoundInJDBCRelationError(
@@ -2091,10 +2091,10 @@ private[sql] object QueryCompilationErrors extends QueryErrorsBase {
   def invalidPartitionColumnTypeError(column: StructField): Throwable = {
     new AnalysisException(
       s"""
-         |Partition column type should be ${NumericType.simpleString},
-         |${DateType.catalogString}, or ${TimestampType.catalogString}, but
-         |${column.dataType.catalogString} found.
-       """.stripMargin.replaceAll("\n", " "))
+         Partition column type should be ${NumericType.simpleString},
+         ${DateType.catalogString}, or ${TimestampType.catalogString}, but
+         ${column.dataType.catalogString} found.
+       """.replaceAll("\n", " "))
   }
 
   def tableOrViewAlreadyExistsError(name: String): Throwable = {
@@ -2105,9 +2105,9 @@ private[sql] object QueryCompilationErrors extends QueryErrorsBase {
   def columnNameContainsInvalidCharactersError(name: String): Throwable = {
     new AnalysisException(
       s"""
-         |Column name "$name" contains invalid character(s).
-         |Please use alias to rename it.
-       """.stripMargin.replaceAll("\n", " "))
+         Column name "$name" contains invalid character(s).
+         Please use alias to rename it.
+       """.replaceAll("\n", " "))
   }
 
   def textDataSourceWithMultiColumnsError(schema: StructType): Throwable = {
@@ -2153,10 +2153,10 @@ private[sql] object QueryCompilationErrors extends QueryErrorsBase {
   def checkpointLocationNotSpecifiedError(): Throwable = {
     new AnalysisException(
       s"""
-         |checkpointLocation must be specified either
-         |through option("checkpointLocation", ...) or
-         |SparkSession.conf.set("${SQLConf.CHECKPOINT_LOCATION.key}", ...)
-       """.stripMargin.replaceAll("\n", " "))
+         checkpointLocation must be specified either
+         through option("checkpointLocation", ...) or
+         SparkSession.conf.set("${SQLConf.CHECKPOINT_LOCATION.key}", ...)
+       """.replaceAll("\n", " "))
   }
 
   def recoverQueryFromCheckpointUnsupportedError(checkpointPath: Path): Throwable = {
@@ -2202,20 +2202,20 @@ private[sql] object QueryCompilationErrors extends QueryErrorsBase {
   def pathOptionNotSetCorrectlyWhenReadingError(): Throwable = {
     new AnalysisException(
       s"""
-         |There is a 'path' or 'paths' option set and load() is called
-         |with path parameters. Either remove the path option if it's the same as the path
-         |parameter, or add it to the load() parameter if you do want to read multiple paths.
-         |To ignore this check, set '${SQLConf.LEGACY_PATH_OPTION_BEHAVIOR.key}' to 'true'.
-       """.stripMargin.replaceAll("\n", " "))
+         There is a 'path' or 'paths' option set and load() is called
+         with path parameters. Either remove the path option if it's the same as the path
+         parameter, or add it to the load() parameter if you do want to read multiple paths.
+         To ignore this check, set '${SQLConf.LEGACY_PATH_OPTION_BEHAVIOR.key}' to 'true'.
+       """.replaceAll("\n", " "))
   }
 
   def pathOptionNotSetCorrectlyWhenWritingError(): Throwable = {
     new AnalysisException(
       s"""
-         |There is a 'path' option set and save() is called with a path
-         |parameter. Either remove the path option, or call save() without the parameter.
-         |To ignore this check, set '${SQLConf.LEGACY_PATH_OPTION_BEHAVIOR.key}' to 'true'.
-       """.stripMargin.replaceAll("\n", " "))
+         There is a 'path' option set and save() is called with a path
+         parameter. Either remove the path option, or call save() without the parameter.
+         To ignore this check, set '${SQLConf.LEGACY_PATH_OPTION_BEHAVIOR.key}' to 'true'.
+       """.replaceAll("\n", " "))
   }
 
   def writeWithSaveModeUnsupportedBySourceError(source: String, createMode: String): Throwable = {
@@ -2226,10 +2226,10 @@ private[sql] object QueryCompilationErrors extends QueryErrorsBase {
   def partitionByDoesNotAllowedWhenUsingInsertIntoError(): Throwable = {
     new AnalysisException(
       """
-        |insertInto() can't be used together with partitionBy().
-        |Partition columns have already been defined for the table.
-        |It is not necessary to use partitionBy().
-      """.stripMargin.replaceAll("\n", " "))
+        insertInto() can't be used together with partitionBy().
+        Partition columns have already been defined for the table.
+        It is not necessary to use partitionBy().
+      """.replaceAll("\n", " "))
   }
 
   def cannotFindCatalogToHandleIdentifierError(quote: String): Throwable = {
@@ -2310,11 +2310,11 @@ private[sql] object QueryCompilationErrors extends QueryErrorsBase {
       pivotColumn: String, maxValues: Int): Throwable = {
     new AnalysisException(
       s"""
-         |The pivot column $pivotColumn has more than $maxValues distinct values,
-         |this could indicate an error.
-         |If this was intended, set ${SQLConf.DATAFRAME_PIVOT_MAX_VALUES.key}
-         |to at least the number of distinct values of the pivot column.
-       """.stripMargin.replaceAll("\n", " "))
+         The pivot column $pivotColumn has more than $maxValues distinct values,
+         this could indicate an error.
+         If this was intended, set ${SQLConf.DATAFRAME_PIVOT_MAX_VALUES.key}
+         to at least the number of distinct values of the pivot column.
+       """.replaceAll("\n", " "))
   }
 
   def cannotModifyValueOfStaticConfigError(key: String): Throwable = {
@@ -2324,9 +2324,9 @@ private[sql] object QueryCompilationErrors extends QueryErrorsBase {
   def cannotModifyValueOfSparkConfigError(key: String): Throwable = {
     new AnalysisException(
       s"""
-         |Cannot modify the value of a Spark config: $key.
-         |See also 'https://spark.apache.org/docs/latest/sql-migration-guide.html#ddl-statements'
-       """.stripMargin.replaceAll("\n", " "))
+         Cannot modify the value of a Spark config: $key.
+         See also 'https://spark.apache.org/docs/latest/sql-migration-guide.html#ddl-statements'
+       """.replaceAll("\n", " "))
   }
 
   def commandExecutionInRunnerUnsupportedError(runner: String): Throwable = {

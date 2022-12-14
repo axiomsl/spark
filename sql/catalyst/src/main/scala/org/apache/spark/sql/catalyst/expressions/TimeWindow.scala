@@ -191,8 +191,8 @@ case class PreciseTimestampConversion(
     val eval = child.genCode(ctx)
     ev.copy(code = eval.code +
       code"""boolean ${ev.isNull} = ${eval.isNull};
-         |${CodeGenerator.javaType(dataType)} ${ev.value} = ${eval.value};
-       """.stripMargin)
+         ${CodeGenerator.javaType(dataType)} ${ev.value} = ${eval.value};
+       """)
   }
   override def nullSafeEval(input: Any): Any = input
 

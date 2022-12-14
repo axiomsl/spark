@@ -448,10 +448,10 @@ trait CheckAnalysis extends PredicateHelper with LookupCatalog {
               if (child.output.length != ref.length) {
                 failAnalysis(
                   s"""
-                    |${operator.nodeName} can only be performed on tables with the same number
-                    |of columns, but the first table has ${ref.length} columns and
-                    |the ${ordinalNumber(ti + 1)} table has ${child.output.length} columns
-                  """.stripMargin.replace("\n", " ").trim())
+                    ${operator.nodeName} can only be performed on tables with the same number
+                    of columns, but the first table has ${ref.length} columns and
+                    the ${ordinalNumber(ti + 1)} table has ${child.output.length} columns
+                  """.replace("\n", " ").trim())
               }
 
               val dataTypesAreCompatibleFn = getDataTypesAreCompatibleFn(operator)
@@ -461,11 +461,11 @@ trait CheckAnalysis extends PredicateHelper with LookupCatalog {
                 if (!dataTypesAreCompatibleFn(dt1, dt2)) {
                   val errorMessage =
                     s"""
-                       |${operator.nodeName} can only be performed on tables with the compatible
-                       |column types. The ${ordinalNumber(ci)} column of the
-                       |${ordinalNumber(ti + 1)} table is ${dt1.catalogString} type which is not
-                       |compatible with ${dt2.catalogString} at same column of first table
-                    """.stripMargin.replace("\n", " ").trim()
+                       ${operator.nodeName} can only be performed on tables with the compatible
+                       column types. The ${ordinalNumber(ci)} column of the
+                       ${ordinalNumber(ti + 1)} table is ${dt1.catalogString} type which is not
+                       compatible with ${dt2.catalogString} at same column of first table
+                    """.replace("\n", " ").trim()
                   failAnalysis(errorMessage + extraHintForAnsiTypeCoercionPlan(operator))
                 }
               }
@@ -522,7 +522,7 @@ trait CheckAnalysis extends PredicateHelper with LookupCatalog {
           case p @ Project(exprs, _) if containsMultipleGenerators(exprs) =>
             failAnalysis(
               s"""Only a single table generating function is allowed in a SELECT clause, found:
-                 | ${exprs.map(_.sql).mkString(",")}""".stripMargin)
+                  ${exprs.map(_.sql).mkString(",")}""")
 
           case p @ Project(projectList, _) =>
             projectList.foreach(_.transformDownWithPruning(
@@ -535,37 +535,37 @@ trait CheckAnalysis extends PredicateHelper with LookupCatalog {
             val conflictingAttributes = j.left.outputSet.intersect(j.right.outputSet)
             failAnalysis(
               s"""
-                 |Failure when resolving conflicting references in Join:
-                 |$plan
-                 |Conflicting attributes: ${conflictingAttributes.mkString(",")}
-                 |""".stripMargin)
+                 Failure when resolving conflicting references in Join:
+                 $plan
+                 Conflicting attributes: ${conflictingAttributes.mkString(",")}
+                 """)
 
           case i: Intersect if !i.duplicateResolved =>
             val conflictingAttributes = i.left.outputSet.intersect(i.right.outputSet)
             failAnalysis(
               s"""
-                 |Failure when resolving conflicting references in Intersect:
-                 |$plan
-                 |Conflicting attributes: ${conflictingAttributes.mkString(",")}
-               """.stripMargin)
+                 Failure when resolving conflicting references in Intersect:
+                 $plan
+                 Conflicting attributes: ${conflictingAttributes.mkString(",")}
+               """)
 
           case e: Except if !e.duplicateResolved =>
             val conflictingAttributes = e.left.outputSet.intersect(e.right.outputSet)
             failAnalysis(
               s"""
-                 |Failure when resolving conflicting references in Except:
-                 |$plan
-                 |Conflicting attributes: ${conflictingAttributes.mkString(",")}
-               """.stripMargin)
+                 Failure when resolving conflicting references in Except:
+                 $plan
+                 Conflicting attributes: ${conflictingAttributes.mkString(",")}
+               """)
 
           case j: AsOfJoin if !j.duplicateResolved =>
             val conflictingAttributes = j.left.outputSet.intersect(j.right.outputSet)
             failAnalysis(
               s"""
-                 |Failure when resolving conflicting references in AsOfJoin:
-                 |$plan
-                 |Conflicting attributes: ${conflictingAttributes.mkString(",")}
-                 |""".stripMargin)
+                 Failure when resolving conflicting references in AsOfJoin:
+                 $plan
+                 Conflicting attributes: ${conflictingAttributes.mkString(",")}
+                 """)
 
           // TODO: although map type is not orderable, technically map type should be able to be
           // used in equality comparison, remove this type check once we support it.
@@ -583,10 +583,10 @@ trait CheckAnalysis extends PredicateHelper with LookupCatalog {
             // The rule above is used to check Aggregate operator.
             failAnalysis(
               s"""nondeterministic expressions are only allowed in
-                 |Project, Filter, Aggregate or Window, found:
-                 | ${o.expressions.map(_.sql).mkString(",")}
-                 |in operator ${operator.simpleString(SQLConf.get.maxToStringFields)}
-               """.stripMargin)
+                 Project, Filter, Aggregate or Window, found:
+                  ${o.expressions.map(_.sql).mkString(",")}
+                 in operator ${operator.simpleString(SQLConf.get.maxToStringFields)}
+               """)
 
           case _: UnresolvedHint => throw new IllegalStateException(
             "Logical hint operator should be removed during analysis.")
@@ -596,18 +596,18 @@ trait CheckAnalysis extends PredicateHelper with LookupCatalog {
             val invalidExprSqls = PlanHelper.specialExpressionsInUnsupportedOperator(f).map(_.sql)
             failAnalysis(
               s"""
-                 |Aggregate/Window/Generate expressions are not valid in where clause of the query.
-                 |Expression in where clause: [${condition.sql}]
-                 |Invalid expressions: [${invalidExprSqls.mkString(", ")}]""".stripMargin)
+                 Aggregate/Window/Generate expressions are not valid in where clause of the query.
+                 Expression in where clause: [${condition.sql}]
+                 Invalid expressions: [${invalidExprSqls.mkString(", ")}]""")
 
           case other if PlanHelper.specialExpressionsInUnsupportedOperator(other).nonEmpty =>
             val invalidExprSqls =
               PlanHelper.specialExpressionsInUnsupportedOperator(other).map(_.sql)
             failAnalysis(
               s"""
-                 |The query operator `${other.nodeName}` contains one or more unsupported
-                 |expression types Aggregate, Window or Generate.
-                 |Invalid expressions: [${invalidExprSqls.mkString(", ")}]""".stripMargin
+                 The query operator `${other.nodeName}` contains one or more unsupported
+                 expression types Aggregate, Window or Generate.
+                 Invalid expressions: [${invalidExprSqls.mkString(", ")}]"""
             )
 
           case _ => // Analysis successful!

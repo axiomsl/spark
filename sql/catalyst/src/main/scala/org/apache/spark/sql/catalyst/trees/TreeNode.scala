@@ -846,13 +846,13 @@ abstract class TreeNode[BaseType <: TreeNode[BaseType]] extends Product with Tre
       case e: java.lang.IllegalArgumentException =>
         throw new IllegalStateException(
           s"""
-             |Failed to copy node.
-             |Is otherCopyArgs specified correctly for $nodeName.
-             |Exception message: ${e.getMessage}
-             |ctor: $defaultCtor?
-             |types: ${newArgs.map(_.getClass).mkString(", ")}
-             |args: ${newArgs.mkString(", ")}
-           """.stripMargin)
+             Failed to copy node.
+             Is otherCopyArgs specified correctly for $nodeName.
+             Exception message: ${e.getMessage}
+             ctor: $defaultCtor?
+             types: ${newArgs.map(_.getClass).mkString(", ")}
+             args: ${newArgs.mkString(", ")}
+           """)
     }
   }
 

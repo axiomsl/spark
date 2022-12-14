@@ -363,10 +363,10 @@ private[sql] object QueryParsingErrors extends QueryErrorsBase {
   def unexpectedFomatForSetConfigurationError(ctx: ParserRuleContext): Throwable = {
     new ParseException(
       s"""
-         |Expected format is 'SET', 'SET key', or 'SET key=value'. If you want to include
-         |special characters in key, or include semicolon in value, please use quotes,
-         |e.g., SET `ke y`=`v;alue`.
-       """.stripMargin.replaceAll("\n", " "), ctx)
+         Expected format is 'SET', 'SET key', or 'SET key=value'. If you want to include
+         special characters in key, or include semicolon in value, please use quotes,
+         e.g., SET `ke y`=`v;alue`.
+       """.replaceAll("\n", " "), ctx)
   }
 
   def invalidPropertyKeyForSetQuotedConfigurationError(
@@ -386,9 +386,9 @@ private[sql] object QueryParsingErrors extends QueryErrorsBase {
   def unexpectedFormatForResetConfigurationError(ctx: ResetConfigurationContext): Throwable = {
     new ParseException(
       s"""
-         |Expected format is 'RESET' or 'RESET key'. If you want to include special characters
-         |in key, please use quotes, e.g., RESET `ke y`.
-       """.stripMargin.replaceAll("\n", " "), ctx)
+         Expected format is 'RESET' or 'RESET key'. If you want to include special characters
+         in key, please use quotes, e.g., RESET `ke y`.
+       """.replaceAll("\n", " "), ctx)
   }
 
   def intervalValueOutOfRangeError(ctx: IntervalContext): Throwable = {

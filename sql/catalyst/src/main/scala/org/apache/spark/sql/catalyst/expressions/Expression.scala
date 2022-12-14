@@ -178,12 +178,12 @@ abstract class Expression extends TreeNode[Expression] {
       val funcName = ctx.freshName(nodeName)
       val funcFullName = ctx.addNewFunction(funcName,
         s"""
-           |private $javaType $funcName(InternalRow ${ctx.INPUT_ROW}) {
-           |  ${eval.code}
-           |  $setIsNull
-           |  return ${eval.value};
-           |}
-           """.stripMargin)
+           private $javaType $funcName(InternalRow ${ctx.INPUT_ROW}) {
+             ${eval.code}
+             $setIsNull
+             return ${eval.value};
+           }
+           """)
 
       eval.value = JavaCode.variable(newValue, dataType)
       eval.code = code"$javaType $newValue = $funcFullName(${ctx.INPUT_ROW});"

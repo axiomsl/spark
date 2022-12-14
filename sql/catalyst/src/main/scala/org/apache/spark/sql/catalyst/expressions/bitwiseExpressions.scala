@@ -284,9 +284,9 @@ case class BitwiseGet(left: Expression, right: Expression)
   override def doGenCode(ctx: CodegenContext, ev: ExprCode): ExprCode = {
     nullSafeCodeGen(ctx, ev, (target, pos) => {
       s"""
-         |org.apache.spark.sql.catalyst.expressions.BitwiseGetUtil.checkPosition($pos, $bitSize);
-         |${ev.value} = (byte) ((((long) $target) >> $pos) & 1);
-       """.stripMargin
+         org.apache.spark.sql.catalyst.expressions.BitwiseGetUtil.checkPosition($pos, $bitSize);
+         ${ev.value} = (byte) ((((long) $target) >> $pos) & 1);
+       """
     })
   }
 

@@ -227,12 +227,12 @@ case class SortPrefix(child: SortOrder) extends UnaryExpression {
 
     ev.copy(code = childCode.code +
       code"""
-         |long ${ev.value} = 0L;
-         |boolean ${ev.isNull} = ${childCode.isNull};
-         |if (!${childCode.isNull}) {
-         |  ${ev.value} = $prefixCode;
-         |}
-      """.stripMargin)
+         long ${ev.value} = 0L;
+         boolean ${ev.isNull} = ${childCode.isNull};
+         if (!${childCode.isNull}) {
+           ${ev.value} = $prefixCode;
+         }
+      """)
   }
 
   override def dataType: DataType = LongType

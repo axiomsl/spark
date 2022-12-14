@@ -561,11 +561,11 @@ private[sql] object QueryExecutionErrors extends QueryErrorsBase {
   def createStreamingSourceNotSpecifySchemaError(): Throwable = {
     new IllegalArgumentException(
       s"""
-         |Schema must be specified when creating a streaming source DataFrame. If some
-         |files already exist in the directory, then depending on the file format you
-         |may be able to create a static DataFrame on that directory with
-         |'spark.read.load(directory)' and infer schema from it.
-       """.stripMargin)
+         Schema must be specified when creating a streaming source DataFrame. If some
+         files already exist in the directory, then depending on the file format you
+         may be able to create a static DataFrame on that directory with
+         'spark.read.load(directory)' and infer schema from it.
+       """)
   }
 
   def streamedOperatorUnsupportedByDataSourceError(
@@ -582,9 +582,9 @@ private[sql] object QueryExecutionErrors extends QueryErrorsBase {
   def failedToFindDataSourceError(provider: String, error: Throwable): Throwable = {
     new ClassNotFoundException(
       s"""
-         |Failed to find data source: $provider. Please find packages at
-         |https://spark.apache.org/third-party-projects.html
-       """.stripMargin, error)
+         Failed to find data source: $provider. Please find packages at
+         https://spark.apache.org/third-party-projects.html
+       """, error)
   }
 
   def removedClassInSpark2Error(className: String, e: Throwable): Throwable = {
@@ -608,16 +608,16 @@ private[sql] object QueryExecutionErrors extends QueryErrorsBase {
       messageParameters = Array(
         "3.0",
         s"""
-           |reading dates before 1582-10-15 or timestamps before 1900-01-01T00:00:00Z
-           |from $format files can be ambiguous, as the files may be written by
-           |Spark 2.x or legacy versions of Hive, which uses a legacy hybrid calendar
-           |that is different from Spark 3.0+'s Proleptic Gregorian calendar.
-           |See more details in SPARK-31404. You can set the SQL config ${toSQLConf(config)} or
-           |the datasource option ${toDSOption(option)} to "LEGACY" to rebase the datetime values
-           |w.r.t. the calendar difference during reading. To read the datetime values
-           |as it is, set the SQL config ${toSQLConf(config)} or the datasource option ${toDSOption(option)}
-           |to "CORRECTED".
-           |""".stripMargin),
+           reading dates before 1582-10-15 or timestamps before 1900-01-01T00:00:00Z
+           from $format files can be ambiguous, as the files may be written by
+           Spark 2.x or legacy versions of Hive, which uses a legacy hybrid calendar
+           that is different from Spark 3.0+'s Proleptic Gregorian calendar.
+           See more details in SPARK-31404. You can set the SQL config ${toSQLConf(config)} or
+           the datasource option ${toDSOption(option)} to "LEGACY" to rebase the datetime values
+           w.r.t. the calendar difference during reading. To read the datetime values
+           as it is, set the SQL config ${toSQLConf(config)} or the datasource option ${toDSOption(option)}
+           to "CORRECTED".
+           """),
       cause = null
     )
   }
@@ -629,16 +629,16 @@ private[sql] object QueryExecutionErrors extends QueryErrorsBase {
       messageParameters = Array(
         "3.0",
         s"""
-          |writing dates before 1582-10-15 or timestamps before 1900-01-01T00:00:00Z
-          |into $format files can be dangerous, as the files may be read by Spark 2.x
-          |or legacy versions of Hive later, which uses a legacy hybrid calendar that
-          |is different from Spark 3.0+'s Proleptic Gregorian calendar. See more
-          |details in SPARK-31404. You can set ${toSQLConf(config)} to "LEGACY" to rebase the
-          |datetime values w.r.t. the calendar difference during writing, to get maximum
-          |interoperability. Or set ${toSQLConf(config)} to "CORRECTED" to write the datetime
-          |values as it is, if you are 100% sure that the written files will only be read by
-          |Spark 3.0+ or other systems that use Proleptic Gregorian calendar.
-          |""".stripMargin),
+          writing dates before 1582-10-15 or timestamps before 1900-01-01T00:00:00Z
+          into $format files can be dangerous, as the files may be read by Spark 2.x
+          or legacy versions of Hive later, which uses a legacy hybrid calendar that
+          is different from Spark 3.0+'s Proleptic Gregorian calendar. See more
+          details in SPARK-31404. You can set ${toSQLConf(config)} to "LEGACY" to rebase the
+          datetime values w.r.t. the calendar difference during writing, to get maximum
+          interoperability. Or set ${toSQLConf(config)} to "CORRECTED" to write the datetime
+          values as it is, if you are 100% sure that the written files will only be read by
+          Spark 3.0+ or other systems that use Proleptic Gregorian calendar.
+          """),
       cause = null
     )
   }
@@ -658,11 +658,11 @@ private[sql] object QueryExecutionErrors extends QueryErrorsBase {
   def readCurrentFileNotFoundError(e: FileNotFoundException): Throwable = {
     new FileNotFoundException(
       s"""
-         |${e.getMessage}\n
-         |It is possible the underlying files have been updated. You can explicitly invalidate
-         |the cache in Spark by running 'REFRESH TABLE tableName' command in SQL or by
-         |recreating the Dataset/DataFrame involved.
-       """.stripMargin)
+         ${e.getMessage}\n
+         It is possible the underlying files have been updated. You can explicitly invalidate
+         the cache in Spark by running 'REFRESH TABLE tableName' command in SQL or by
+         recreating the Dataset/DataFrame involved.
+       """)
   }
 
   def saveModeUnsupportedError(saveMode: Any, pathExists: Boolean): Throwable = {
@@ -886,18 +886,18 @@ private[sql] object QueryExecutionErrors extends QueryErrorsBase {
       requiredFieldName: String, matchedOrcFields: String): Throwable = {
     new RuntimeException(
       s"""
-         |Found duplicate field(s) "$requiredFieldName": $matchedOrcFields
-         |in case-insensitive mode
-       """.stripMargin.replaceAll("\n", " "))
+         Found duplicate field(s) "$requiredFieldName": $matchedOrcFields
+         in case-insensitive mode
+       """.replaceAll("\n", " "))
   }
 
   def foundDuplicateFieldInFieldIdLookupModeError(
       requiredId: Int, matchedFields: String): Throwable = {
     new RuntimeException(
       s"""
-         |Found duplicate field(s) "$requiredId": $matchedFields
-         |in id mapping mode
-       """.stripMargin.replaceAll("\n", " "))
+         Found duplicate field(s) "$requiredId": $matchedFields
+         in id mapping mode
+       """.replaceAll("\n", " "))
   }
 
   def failedToMergeIncompatibleSchemasError(
@@ -916,10 +916,10 @@ private[sql] object QueryExecutionErrors extends QueryErrorsBase {
   def executeBroadcastTimeoutError(timeout: Long, ex: Option[TimeoutException]): Throwable = {
     new SparkException(
       s"""
-         |Could not execute broadcast in $timeout secs. You can increase the timeout
-         |for broadcasts via ${SQLConf.BROADCAST_TIMEOUT.key} or disable broadcast join
-         |by setting ${SQLConf.AUTO_BROADCASTJOIN_THRESHOLD.key} to -1
-       """.stripMargin.replaceAll("\n", " "), ex.getOrElse(null))
+         Could not execute broadcast in $timeout secs. You can increase the timeout
+         for broadcasts via ${SQLConf.BROADCAST_TIMEOUT.key} or disable broadcast join
+         by setting ${SQLConf.AUTO_BROADCASTJOIN_THRESHOLD.key} to -1
+       """.replaceAll("\n", " "), ex.getOrElse(null))
   }
 
   def cannotCompareCostWithTargetCostError(cost: String): Throwable = {
@@ -1088,10 +1088,10 @@ private[sql] object QueryExecutionErrors extends QueryErrorsBase {
       resultCandidate: String, e: Throwable): Throwable = {
     new SparkUpgradeException("3.0",
       s"""
-         |Fail to format it to '$resultCandidate' in the new formatter. You can set
-         |${SQLConf.LEGACY_TIME_PARSER_POLICY.key} to LEGACY to restore the behavior before
-         |Spark 3.0, or set to CORRECTED and treat it as an invalid datetime string.
-       """.stripMargin.replaceAll("\n", " "), e)
+         Fail to format it to '$resultCandidate' in the new formatter. You can set
+         ${SQLConf.LEGACY_TIME_PARSER_POLICY.key} to LEGACY to restore the behavior before
+         Spark 3.0, or set to CORRECTED and treat it as an invalid datetime string.
+       """.replaceAll("\n", " "), e)
   }
 
   def failToRecognizePatternAfterUpgradeError(pattern: String, e: Throwable): Throwable = {
@@ -1196,10 +1196,10 @@ private[sql] object QueryExecutionErrors extends QueryErrorsBase {
   def cannotFindConstructorForTypeError(tpe: String): Throwable = {
     new UnsupportedOperationException(
       s"""
-         |Unable to find constructor for $tpe.
-         |This could happen if $tpe is an interface, or a trait without companion object
-         |constructor.
-       """.stripMargin.replaceAll("\n", " "))
+         Unable to find constructor for $tpe.
+         This could happen if $tpe is an interface, or a trait without companion object
+         constructor.
+       """.replaceAll("\n", " "))
   }
 
   def paramExceedOneCharError(paramName: String): Throwable = {
@@ -1272,37 +1272,37 @@ private[sql] object QueryExecutionErrors extends QueryErrorsBase {
   def concatArraysWithElementsExceedLimitError(numberOfElements: Long): Throwable = {
     new RuntimeException(
       s"""
-         |Unsuccessful try to concat arrays with $numberOfElements
-         |elements due to exceeding the array size limit
-         |${ByteArrayMethods.MAX_ROUNDED_ARRAY_LENGTH}.
-       """.stripMargin.replaceAll("\n", " "))
+         Unsuccessful try to concat arrays with $numberOfElements
+         elements due to exceeding the array size limit
+         ${ByteArrayMethods.MAX_ROUNDED_ARRAY_LENGTH}.
+       """.replaceAll("\n", " "))
   }
 
   def flattenArraysWithElementsExceedLimitError(numberOfElements: Long): Throwable = {
     new RuntimeException(
       s"""
-         |Unsuccessful try to flatten an array of arrays with $numberOfElements
-         |elements due to exceeding the array size limit
-         |${ByteArrayMethods.MAX_ROUNDED_ARRAY_LENGTH}.
-       """.stripMargin.replaceAll("\n", " "))
+         Unsuccessful try to flatten an array of arrays with $numberOfElements
+         elements due to exceeding the array size limit
+         ${ByteArrayMethods.MAX_ROUNDED_ARRAY_LENGTH}.
+       """.replaceAll("\n", " "))
   }
 
   def createArrayWithElementsExceedLimitError(count: Any): RuntimeException = {
     new RuntimeException(
       s"""
-         |Unsuccessful try to create array with $count elements
-         |due to exceeding the array size limit
-         |${ByteArrayMethods.MAX_ROUNDED_ARRAY_LENGTH}.
-       """.stripMargin.replaceAll("\n", " "))
+         Unsuccessful try to create array with $count elements
+         due to exceeding the array size limit
+         ${ByteArrayMethods.MAX_ROUNDED_ARRAY_LENGTH}.
+       """.replaceAll("\n", " "))
   }
 
   def unionArrayWithElementsExceedLimitError(length: Int): Throwable = {
     new RuntimeException(
       s"""
-         |Unsuccessful try to union arrays with $length
-         |elements due to exceeding the array size limit
-         |${ByteArrayMethods.MAX_ROUNDED_ARRAY_LENGTH}.
-       """.stripMargin.replaceAll("\n", " "))
+         Unsuccessful try to union arrays with $length
+         elements due to exceeding the array size limit
+         ${ByteArrayMethods.MAX_ROUNDED_ARRAY_LENGTH}.
+       """.replaceAll("\n", " "))
   }
 
   def initialTypeNotTargetDataTypeError(dataType: DataType, target: String): Throwable = {
@@ -1332,10 +1332,10 @@ private[sql] object QueryExecutionErrors extends QueryErrorsBase {
   def malformedRecordsDetectedInSchemaInferenceError(dataType: DataType): Throwable = {
     new SparkException(
       s"""
-         |Malformed records are detected in schema inference.
-         |Parse Mode: ${FailFastMode.name}. Reasons: Failed to infer a common schema.
-         |Struct types are expected, but `${dataType.catalogString}` was found.
-       """.stripMargin.replaceAll("\n", " "))
+         Malformed records are detected in schema inference.
+         Parse Mode: ${FailFastMode.name}. Reasons: Failed to infer a common schema.
+         Struct types are expected, but `${dataType.catalogString}` was found.
+       """.replaceAll("\n", " "))
   }
 
   def cannotRewriteDomainJoinWithConditionsError(
@@ -1359,11 +1359,11 @@ private[sql] object QueryExecutionErrors extends QueryErrorsBase {
       conflictKeys: Set[String]): Throwable = {
     new UnsupportedOperationException(
       s"""
-         |Cannot safely merge SERDEPROPERTIES:
-         |${props1.map { case (k, v) => s"$k=$v" }.mkString("{", ",", "}")}
-         |${props2.map { case (k, v) => s"$k=$v" }.mkString("{", ",", "}")}
-         |The conflict keys: ${conflictKeys.mkString(", ")}
-         |""".stripMargin)
+         Cannot safely merge SERDEPROPERTIES:
+         ${props1.map { case (k, v) => s"$k=$v" }.mkString("{", ",", "}")}
+         ${props2.map { case (k, v) => s"$k=$v" }.mkString("{", ",", "}")}
+         The conflict keys: ${conflictKeys.mkString(", ")}
+         """)
   }
 
   def pairUnsupportedAtFunctionError(
@@ -1375,9 +1375,9 @@ private[sql] object QueryExecutionErrors extends QueryErrorsBase {
       batchName: String, plan: TreeType, reOptimized: TreeType): Throwable = {
     new RuntimeException(
       s"""
-         |Once strategy's idempotence is broken for batch $batchName
-         |${sideBySide(plan.treeString, reOptimized.treeString).mkString("\n")}
-       """.stripMargin)
+         Once strategy's idempotence is broken for batch $batchName
+         ${sideBySide(plan.treeString, reOptimized.treeString).mkString("\n")}
+       """)
   }
 
   def structuralIntegrityOfInputPlanIsBrokenInClassError(className: String): Throwable = {
@@ -1399,11 +1399,11 @@ private[sql] object QueryExecutionErrors extends QueryErrorsBase {
       numElements: Long, additionalErrorMessage: String): Throwable = {
     new RuntimeException(
       s"""
-         |Cannot create array with $numElements
-         |elements of data due to exceeding the limit
-         |${ByteArrayMethods.MAX_ROUNDED_ARRAY_LENGTH} elements for ArrayData.
-         |$additionalErrorMessage
-       """.stripMargin.replaceAll("\n", " "))
+         Cannot create array with $numElements
+         elements of data due to exceeding the limit
+         ${ByteArrayMethods.MAX_ROUNDED_ARRAY_LENGTH} elements for ArrayData.
+         $additionalErrorMessage
+       """.replaceAll("\n", " "))
   }
 
   def indexOutOfBoundsOfArrayDataError(idx: Int): Throwable = {
@@ -1438,10 +1438,10 @@ private[sql] object QueryExecutionErrors extends QueryErrorsBase {
       table: CatalogTable, partition: Map[String, Option[String]]): Throwable = {
     new SparkException(
       s"""
-         |Requested partitioning does not match the ${table.identifier.table} table:
-         |Requested partitions: ${partition.keys.mkString(",")}
-         |Table partitions: ${table.partitionColumnNames.mkString(",")}
-       """.stripMargin)
+         Requested partitioning does not match the ${table.identifier.table} table:
+         Requested partitions: ${partition.keys.mkString(",")}
+         Table partitions: ${table.partitionColumnNames.mkString(",")}
+       """)
   }
 
   def dynamicPartitionKeyNotAmongWrittenPartitionPathsError(key: String): Throwable = {
@@ -1494,12 +1494,12 @@ private[sql] object QueryExecutionErrors extends QueryErrorsBase {
   def getPartitionMetadataByFilterError(e: InvocationTargetException): Throwable = {
     new RuntimeException(
       s"""
-         |Caught Hive MetaException attempting to get partition metadata by filter
-         |from Hive. You can set the Spark configuration setting
-         |${SQLConf.HIVE_METASTORE_PARTITION_PRUNING_FALLBACK_ON_EXCEPTION.key} to true to work
-         |around this problem, however this will result in degraded performance. Please
-         |report a bug: https://issues.apache.org/jira/browse/SPARK
-       """.stripMargin.replaceAll("\n", " "), e)
+         Caught Hive MetaException attempting to get partition metadata by filter
+         from Hive. You can set the Spark configuration setting
+         ${SQLConf.HIVE_METASTORE_PARTITION_PRUNING_FALLBACK_ON_EXCEPTION.key} to true to work
+         around this problem, however this will result in degraded performance. Please
+         report a bug: https://issues.apache.org/jira/browse/SPARK
+       """.replaceAll("\n", " "), e)
   }
 
   def unsupportedHiveMetastoreVersionError(version: String, key: String): Throwable = {
@@ -1514,10 +1514,10 @@ private[sql] object QueryExecutionErrors extends QueryErrorsBase {
       e: InvocationTargetException): Throwable = {
     new ClassNotFoundException(
       s"""
-         |$cnf when creating Hive client using classpath: ${execJars.mkString(", ")}\n
-         |Please make sure that jars for your version of hive and hadoop are included in the
-         |paths passed to $key.
-       """.stripMargin.replaceAll("\n", " "), e)
+         $cnf when creating Hive client using classpath: ${execJars.mkString(", ")}\n
+         Please make sure that jars for your version of hive and hadoop are included in the
+         paths passed to $key.
+       """.replaceAll("\n", " "), e)
   }
 
   def cannotFetchTablesOfDatabaseError(dbName: String, e: Exception): Throwable = {
@@ -1549,22 +1549,22 @@ private[sql] object QueryExecutionErrors extends QueryErrorsBase {
   def legacyMetadataPathExistsError(metadataPath: Path, legacyMetadataPath: Path): Throwable = {
     new SparkException(
       s"""
-         |Error: we detected a possible problem with the location of your "_spark_metadata"
-         |directory and you likely need to move it before restarting this query.
-         |
-         |Earlier version of Spark incorrectly escaped paths when writing out the
-         |"_spark_metadata" directory for structured streaming. While this was corrected in
-         |Spark 3.0, it appears that your query was started using an earlier version that
-         |incorrectly handled the "_spark_metadata" path.
-         |
-         |Correct "_spark_metadata" Directory: $metadataPath
-         |Incorrect "_spark_metadata" Directory: $legacyMetadataPath
-         |
-         |Please move the data from the incorrect directory to the correct one, delete the
-         |incorrect directory, and then restart this query. If you believe you are receiving
-         |this message in error, you can disable it with the SQL conf
-         |${SQLConf.STREAMING_CHECKPOINT_ESCAPED_PATH_CHECK_ENABLED.key}.
-       """.stripMargin)
+         Error: we detected a possible problem with the location of your "_spark_metadata"
+         directory and you likely need to move it before restarting this query.
+
+         Earlier version of Spark incorrectly escaped paths when writing out the
+         "_spark_metadata" directory for structured streaming. While this was corrected in
+         Spark 3.0, it appears that your query was started using an earlier version that
+         incorrectly handled the "_spark_metadata" path.
+
+         Correct "_spark_metadata" Directory: $metadataPath
+         Incorrect "_spark_metadata" Directory: $legacyMetadataPath
+
+         Please move the data from the incorrect directory to the correct one, delete the
+         incorrect directory, and then restart this query. If you believe you are receiving
+         this message in error, you can disable it with the SQL conf
+         ${SQLConf.STREAMING_CHECKPOINT_ESCAPED_PATH_CHECK_ENABLED.key}.
+       """)
   }
 
   def partitionColumnNotFoundInSchemaError(col: String, schema: StructType): Throwable = {
@@ -1765,20 +1765,20 @@ private[sql] object QueryExecutionErrors extends QueryErrorsBase {
   def cannotCreateParquetConverterForTypeError(t: DecimalType, parquetType: String): Throwable = {
     new RuntimeException(
       s"""
-         |Unable to create Parquet converter for ${t.typeName}
-         |whose Parquet type is $parquetType without decimal metadata. Please read this
-         |column/field as Spark BINARY type.
-       """.stripMargin.replaceAll("\n", " "))
+         Unable to create Parquet converter for ${t.typeName}
+         whose Parquet type is $parquetType without decimal metadata. Please read this
+         column/field as Spark BINARY type.
+       """.replaceAll("\n", " "))
   }
 
   def cannotCreateParquetConverterForDecimalTypeError(
       t: DecimalType, parquetType: String): Throwable = {
     new RuntimeException(
       s"""
-         |Unable to create Parquet converter for decimal type ${t.json} whose Parquet type is
-         |$parquetType.  Parquet DECIMAL type can only be backed by INT32, INT64,
-         |FIXED_LEN_BYTE_ARRAY, or BINARY.
-       """.stripMargin.replaceAll("\n", " "))
+         Unable to create Parquet converter for decimal type ${t.json} whose Parquet type is
+         $parquetType.  Parquet DECIMAL type can only be backed by INT32, INT64,
+         FIXED_LEN_BYTE_ARRAY, or BINARY.
+       """.replaceAll("\n", " "))
   }
 
   def cannotCreateParquetConverterForDataTypeError(
@@ -1896,22 +1896,22 @@ private[sql] object QueryExecutionErrors extends QueryErrorsBase {
       checkpointPath: Path, legacyCheckpointDir: String): Throwable = {
     new SparkException(
       s"""
-         |Error: we detected a possible problem with the location of your checkpoint and you
-         |likely need to move it before restarting this query.
-         |
-         |Earlier version of Spark incorrectly escaped paths when writing out checkpoints for
-         |structured streaming. While this was corrected in Spark 3.0, it appears that your
-         |query was started using an earlier version that incorrectly handled the checkpoint
-         |path.
-         |
-         |Correct Checkpoint Directory: $checkpointPath
-         |Incorrect Checkpoint Directory: $legacyCheckpointDir
-         |
-         |Please move the data from the incorrect directory to the correct one, delete the
-         |incorrect directory, and then restart this query. If you believe you are receiving
-         |this message in error, you can disable it with the SQL conf
-         |${SQLConf.STREAMING_CHECKPOINT_ESCAPED_PATH_CHECK_ENABLED.key}.
-       """.stripMargin)
+         Error: we detected a possible problem with the location of your checkpoint and you
+         likely need to move it before restarting this query.
+
+         Earlier version of Spark incorrectly escaped paths when writing out checkpoints for
+         structured streaming. While this was corrected in Spark 3.0, it appears that your
+         query was started using an earlier version that incorrectly handled the checkpoint
+         path.
+
+         Correct Checkpoint Directory: $checkpointPath
+         Incorrect Checkpoint Directory: $legacyCheckpointDir
+
+         Please move the data from the incorrect directory to the correct one, delete the
+         incorrect directory, and then restart this query. If you believe you are receiving
+         this message in error, you can disable it with the SQL conf
+         ${SQLConf.STREAMING_CHECKPOINT_ESCAPED_PATH_CHECK_ENABLED.key}.
+       """)
   }
 
   def subprocessExitedError(
@@ -1945,10 +1945,10 @@ private[sql] object QueryExecutionErrors extends QueryErrorsBase {
   def databaseNameConflictWithSystemPreservedDatabaseError(globalTempDB: String): Throwable = {
     new SparkException(
       s"""
-         |$globalTempDB is a system preserved database, please rename your existing database
-         |to resolve the name conflict, or set a different value for
-         |${GLOBAL_TEMP_DATABASE.key}, and launch your Spark application again.
-       """.stripMargin.split("\n").mkString(" "))
+         $globalTempDB is a system preserved database, please rename your existing database
+         to resolve the name conflict, or set a different value for
+         ${GLOBAL_TEMP_DATABASE.key}, and launch your Spark application again.
+       """.split("\n").mkString(" "))
   }
 
   def commentOnTableUnsupportedError(): Throwable = {
@@ -1977,12 +1977,12 @@ private[sql] object QueryExecutionErrors extends QueryErrorsBase {
   def transformationsAndActionsNotInvokedByDriverError(): Throwable = {
     new SparkException(
       """
-        |Dataset transformations and actions can only be invoked by the driver, not inside of
-        |other Dataset transformations; for example, dataset1.map(x => dataset2.values.count()
-        |* x) is invalid because the values transformation and count action cannot be
-        |performed inside of the dataset1.map transformation. For more information,
-        |see SPARK-28702.
-      """.stripMargin.split("\n").mkString(" "))
+        Dataset transformations and actions can only be invoked by the driver, not inside of
+        other Dataset transformations; for example, dataset1.map(x => dataset2.values.count()
+        * x) is invalid because the values transformation and count action cannot be
+        performed inside of the dataset1.map transformation. For more information,
+        see SPARK-28702.
+      """.split("\n").mkString(" "))
   }
 
   def repeatedPivotsUnsupportedError(): Throwable = {

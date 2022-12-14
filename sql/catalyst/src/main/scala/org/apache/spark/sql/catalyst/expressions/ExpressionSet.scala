@@ -160,7 +160,7 @@ class ExpressionSet protected(
    */
   def toDebugString: String =
     s"""
-       |baseSet: ${baseSet.mkString(", ")}
-       |originals: ${originals.mkString(", ")}
-     """.stripMargin
+       baseSet: ${baseSet.mkString(", ")}
+       originals: ${originals.mkString(", ")}
+     """
 }

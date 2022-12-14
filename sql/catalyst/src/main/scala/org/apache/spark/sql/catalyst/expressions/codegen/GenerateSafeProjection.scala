@@ -74,11 +74,11 @@ object GenerateSafeProjection extends CodeGenerator[Seq[Expression], Projection]
     )
     val code =
       code"""
-         |final InternalRow $tmpInput = $input;
-         |final Object[] $values = new Object[${schema.length}];
-         |$allFields
-         |final InternalRow $output = new $rowClass($values);
-       """.stripMargin
+         final InternalRow $tmpInput = $input;
+         final Object[] $values = new Object[${schema.length}];
+         $allFields
+         final InternalRow $output = new $rowClass($values);
+       """
 
     ExprCode(code, FalseLiteral, JavaCode.variable(output, classOf[InternalRow]))
   }

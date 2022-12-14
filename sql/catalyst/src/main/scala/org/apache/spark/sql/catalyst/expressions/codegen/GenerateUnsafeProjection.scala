@@ -68,17 +68,17 @@ object GenerateUnsafeProjection extends CodeGenerator[Seq[Expression], UnsafePro
       v => s"$v = new $rowWriterClass($rowWriter, ${fieldEvals.length});")
     val previousCursor = ctx.freshName("previousCursor")
     s"""
-       |final InternalRow $tmpInput = $input;
-       |if ($tmpInput instanceof UnsafeRow) {
-       |  $rowWriter.write($index, (UnsafeRow) $tmpInput);
-       |} else {
-       |  // Remember the current cursor so that we can calculate how many bytes are
-       |  // written later.
-       |  final int $previousCursor = $rowWriter.cursor();
-       |  ${writeExpressionsToBuffer(ctx, tmpInput, fieldEvals, schemas, structRowWriter)}
-       |  $rowWriter.setOffsetAndSizeFromPreviousCursor($index, $previousCursor);
-       |}
-     """.stripMargin
+       final InternalRow $tmpInput = $input;
+       if ($tmpInput instanceof UnsafeRow) {
+         $rowWriter.write($index, (UnsafeRow) $tmpInput);
+       } else {
+         // Remember the current cursor so that we can calculate how many bytes are
+         // written later.
+         final int $previousCursor = $rowWriter.cursor();
+         ${writeExpressionsToBuffer(ctx, tmpInput, fieldEvals, schemas, structRowWriter)}
+         $rowWriter.setOffsetAndSizeFromPreviousCursor($index, $previousCursor);
+       }
+     """
   }
 
   private def writeExpressionsToBuffer(
@@ -118,18 +118,18 @@ object GenerateUnsafeProjection extends CodeGenerator[Seq[Expression], UnsafePro
         val writeField = writeElement(ctx, input.value, index.toString, dt, rowWriter)
         if (!nullable) {
           s"""
-             |${input.code}
-             |${writeField.trim}
-           """.stripMargin
+             ${input.code}
+             ${writeField.trim}
+           """
         } else {
           s"""
-             |${input.code}
-             |if (${input.isNull}) {
-             |  ${setNull.trim}
-             |} else {
-             |  ${writeField.trim}
-             |}
-           """.stripMargin
+             ${input.code}
+             if (${input.isNull}) {
+               ${setNull.trim}
+             } else {
+               ${writeField.trim}
+             }
+           """
         }
     }
 
@@ -144,9 +144,9 @@ object GenerateUnsafeProjection extends CodeGenerator[Seq[Expression], UnsafePro
         arguments = Seq("InternalRow" -> row))
     }
     s"""
-       |$resetWriter
-       |$writeFieldsCode
-     """.stripMargin
+       $resetWriter
+       $writeFieldsCode
+     """
   }
 
   private def writeArrayToBuffer(
@@ -178,29 +178,29 @@ object GenerateUnsafeProjection extends CodeGenerator[Seq[Expression], UnsafePro
 
     val elementAssignment = if (containsNull) {
       s"""
-         |if ($tmpInput.isNullAt($index)) {
-         |  $arrayWriter.setNull${elementOrOffsetSize}Bytes($index);
-         |} else {
-         |  ${writeElement(ctx, element, index, et, arrayWriter)}
-         |}
-       """.stripMargin
+         if ($tmpInput.isNullAt($index)) {
+           $arrayWriter.setNull${elementOrOffsetSize}Bytes($index);
+         } else {
+           ${writeElement(ctx, element, index, et, arrayWriter)}
+         }
+       """
     } else {
       writeElement(ctx, element, index, et, arrayWriter)
     }
 
     s"""
-       |final ArrayData $tmpInput = $input;
-       |if ($tmpInput instanceof UnsafeArrayData) {
-       |  $rowWriter.write((UnsafeArrayData) $tmpInput);
-       |} else {
-       |  final int $numElements = $tmpInput.numElements();
-       |  $arrayWriter.initialize($numElements);
-       |
-       |  for (int $index = 0; $index < $numElements; $index++) {
-       |    $elementAssignment
-       |  }
-       |}
-     """.stripMargin
+       final ArrayData $tmpInput = $input;
+       if ($tmpInput instanceof UnsafeArrayData) {
+         $rowWriter.write((UnsafeArrayData) $tmpInput);
+       } else {
+         final int $numElements = $tmpInput.numElements();
+         $arrayWriter.initialize($numElements);
+       
+         for (int $index = 0; $index < $numElements; $index++) {
+           $elementAssignment
+         }
+       }
+     """
   }
 
   private def writeMapToBuffer(
@@ -223,33 +223,33 @@ object GenerateUnsafeProjection extends CodeGenerator[Seq[Expression], UnsafePro
       ctx, s"$tmpInput.valueArray()", valueType, valueContainsNull, rowWriter)
 
     s"""
-       |final MapData $tmpInput = $input;
-       |if ($tmpInput instanceof UnsafeMapData) {
-       |  $rowWriter.write($index, (UnsafeMapData) $tmpInput);
-       |} else {
-       |  // Remember the current cursor so that we can calculate how many bytes are
-       |  // written later.
-       |  final int $previousCursor = $rowWriter.cursor();
-       |
-       |  // preserve 8 bytes to write the key array numBytes later.
-       |  $rowWriter.grow(8);
-       |  $rowWriter.increaseCursor(8);
-       |
-       |  // Remember the current cursor so that we can write numBytes of key array later.
-       |  final int $tmpCursor = $rowWriter.cursor();
-       |
-       |  $keyArray
-       |
-       |  // Write the numBytes of key array into the first 8 bytes.
-       |  Platform.putLong(
-       |    $rowWriter.getBuffer(),
-       |    $tmpCursor - 8,
-       |    $rowWriter.cursor() - $tmpCursor);
-       |
-       |  $valueArray
-       |  $rowWriter.setOffsetAndSizeFromPreviousCursor($index, $previousCursor);
-       |}
-     """.stripMargin
+       final MapData $tmpInput = $input;
+       if ($tmpInput instanceof UnsafeMapData) {
+         $rowWriter.write($index, (UnsafeMapData) $tmpInput);
+       } else {
+         // Remember the current cursor so that we can calculate how many bytes are
+         // written later.
+         final int $previousCursor = $rowWriter.cursor();
+       
+         // preserve 8 bytes to write the key array numBytes later.
+         $rowWriter.grow(8);
+         $rowWriter.increaseCursor(8);
+
+         // Remember the current cursor so that we can write numBytes of key array later.
+         final int $tmpCursor = $rowWriter.cursor();
+
+         $keyArray
+
+         // Write the numBytes of key array into the first 8 bytes.
+         Platform.putLong(
+           $rowWriter.getBuffer(),
+           $tmpCursor - 8,
+           $rowWriter.cursor() - $tmpCursor);
+
+         $valueArray
+         $rowWriter.setOffsetAndSizeFromPreviousCursor($index, $previousCursor);
+       }
+     """
   }
 
   private def writeElement(
@@ -265,12 +265,12 @@ object GenerateUnsafeProjection extends CodeGenerator[Seq[Expression], UnsafePro
     case ArrayType(et, en) =>
       val previousCursor = ctx.freshName("previousCursor")
       s"""
-         |// Remember the current cursor so that we can calculate how many bytes are
-         |// written later.
-         |final int $previousCursor = $writer.cursor();
-         |${writeArrayToBuffer(ctx, input, et, en, writer)}
-         |$writer.setOffsetAndSizeFromPreviousCursor($index, $previousCursor);
-       """.stripMargin
+         // Remember the current cursor so that we can calculate how many bytes are
+         // written later.
+         final int $previousCursor = $writer.cursor();
+         ${writeArrayToBuffer(ctx, input, et, en, writer)}
+         $writer.setOffsetAndSizeFromPreviousCursor($index, $previousCursor);
+       """
 
     case MapType(kt, vt, vn) =>
       writeMapToBuffer(ctx, input, index, kt, vt, vn, writer)
@@ -307,10 +307,10 @@ object GenerateUnsafeProjection extends CodeGenerator[Seq[Expression], UnsafePro
 
     val code =
       code"""
-         |$rowWriter.reset();
-         |$evalSubexpr
-         |$writeExpressions
-       """.stripMargin
+         $rowWriter.reset();
+         $evalSubexpr
+         $writeExpressions
+       """
     // `rowWriter` is declared as a class field, so we can access it directly in methods.
     ExprCode(code, FalseLiteral, JavaCode.expression(s"$rowWriter.getRow()", classOf[UnsafeRow]))
   }
@@ -339,37 +339,37 @@ object GenerateUnsafeProjection extends CodeGenerator[Seq[Expression], UnsafePro
 
     val codeBody =
       s"""
-         |public java.lang.Object generate(Object[] references) {
-         |  return new SpecificUnsafeProjection(references);
-         |}
-         |
-         |class SpecificUnsafeProjection extends ${classOf[UnsafeProjection].getName} {
-         |
-         |  private Object[] references;
-         |  ${ctx.declareMutableStates()}
-         |
-         |  public SpecificUnsafeProjection(Object[] references) {
-         |    this.references = references;
-         |    ${ctx.initMutableStates()}
-         |  }
-         |
-         |  public void initialize(int partitionIndex) {
-         |    ${ctx.initPartition()}
-         |  }
-         |
-         |  // Scala.Function1 need this
-         |  public java.lang.Object apply(java.lang.Object row) {
-         |    return apply((InternalRow) row);
-         |  }
-         |
-         |  public UnsafeRow apply(InternalRow ${ctx.INPUT_ROW}) {
-         |    ${eval.code}
-         |    return ${eval.value};
-         |  }
-         |
-         |  ${ctx.declareAddedFunctions()}
-         |}
-       """.stripMargin
+         public java.lang.Object generate(Object[] references) {
+           return new SpecificUnsafeProjection(references);
+         }
+
+         class SpecificUnsafeProjection extends ${classOf[UnsafeProjection].getName} {
+
+           private Object[] references;
+           ${ctx.declareMutableStates()}
+
+           public SpecificUnsafeProjection(Object[] references) {
+             this.references = references;
+             ${ctx.initMutableStates()}
+           }
+
+           public void initialize(int partitionIndex) {
+             ${ctx.initPartition()}
+           }
+
+           // Scala.Function1 need this
+           public java.lang.Object apply(java.lang.Object row) {
+             return apply((InternalRow) row);
+           }
+
+           public UnsafeRow apply(InternalRow ${ctx.INPUT_ROW}) {
+             ${eval.code}
+             return ${eval.value};
+           }
+
+           ${ctx.declareAddedFunctions()}
+         }
+       """
 
     val code = CodeFormatter.stripOverlappingComments(
       new CodeAndComment(codeBody, ctx.getPlaceHolderToComments()))

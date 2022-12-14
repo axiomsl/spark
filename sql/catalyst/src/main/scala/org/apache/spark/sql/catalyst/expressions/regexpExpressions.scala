@@ -316,22 +316,22 @@ sealed abstract class LikeAllBase extends MultiLikeBase {
 
     ev.copy(code =
       code"""
-            |${eval.code}
-            |boolean ${ev.isNull} = false;
-            |boolean ${ev.value} = true;
-            |if (${eval.isNull}) {
-            |  ${ev.isNull} = true;
-            |} else {
-            |  $javaDataType $valueArg = ${eval.value};
-            |  for ($patternClass $pattern: $patternCache) {
-            |    if ($checkNotMatchCode) {
-            |      ${ev.value} = false;
-            |      break;
-            |    }
-            |  }
-            |  if (${ev.value} && $hasNull) ${ev.isNull} = true;
-            |}
-      """.stripMargin)
+            ${eval.code}
+            boolean ${ev.isNull} = false;
+            boolean ${ev.value} = true;
+            if (${eval.isNull}) {
+              ${ev.isNull} = true;
+            } else {
+              $javaDataType $valueArg = ${eval.value};
+              for ($patternClass $pattern: $patternCache) {
+                if ($checkNotMatchCode) {
+                  ${ev.value} = false;
+                  break;
+                }
+              }
+              if (${ev.value} && $hasNull) ${ev.isNull} = true;
+            }
+      """)
   }
 }
 
@@ -376,22 +376,22 @@ sealed abstract class LikeAnyBase extends MultiLikeBase {
 
     ev.copy(code =
       code"""
-            |${eval.code}
-            |boolean ${ev.isNull} = false;
-            |boolean ${ev.value} = false;
-            |if (${eval.isNull}) {
-            |  ${ev.isNull} = true;
-            |} else {
-            |  $javaDataType $valueArg = ${eval.value};
-            |  for ($patternClass $pattern: $patternCache) {
-            |    if ($checkMatchCode) {
-            |      ${ev.value} = true;
-            |      break;
-            |    }
-            |  }
-            |  if (!${ev.value} && $hasNull) ${ev.isNull} = true;
-            |}
-      """.stripMargin)
+            ${eval.code}
+            boolean ${ev.isNull} = false;
+            boolean ${ev.value} = false;
+            if (${eval.isNull}) {
+              ${ev.isNull} = true;
+            } else {
+              $javaDataType $valueArg = ${eval.value};
+              for ($patternClass $pattern: $patternCache) {
+                if ($checkMatchCode) {
+                  ${ev.value} = true;
+                  break;
+                }
+              }
+              if (!${ev.value} && $hasNull) ${ev.isNull} = true;
+            }
+      """)
   }
 }
 
@@ -775,18 +775,18 @@ abstract class RegExpExtractBase
     val termPattern = ctx.addMutableState(classNamePattern, "pattern")
 
     s"""
-      |if (!$regexp.equals($termLastRegex)) {
-      |  // regex value changed
-      |  try {
-      |    UTF8String r = $regexp.clone();
-      |    $termPattern = $classNamePattern.compile(r.toString());
-      |    $termLastRegex = r;
-      |  } catch (java.util.regex.PatternSyntaxException e) {
-      |    throw QueryExecutionErrors.invalidPatternError("$prettyName", e.getPattern());
-      |  }
-      |}
-      |java.util.regex.Matcher $matcher = $termPattern.matcher($subject.toString());
-      |""".stripMargin
+      if (!$regexp.equals($termLastRegex)) {
+        // regex value changed
+        try {
+          UTF8String r = $regexp.clone();
+          $termPattern = $classNamePattern.compile(r.toString());
+          $termLastRegex = r;
+        } catch (java.util.regex.PatternSyntaxException e) {
+          throw QueryExecutionErrors.invalidPatternError("$prettyName", e.getPattern());
+        }
+      }
+      java.util.regex.Matcher $matcher = $termPattern.matcher($subject.toString());
+      """
   }
 }
 

@@ -1781,11 +1781,11 @@ case class WidthBucket(
   override def doGenCode(ctx: CodegenContext, ev: ExprCode): ExprCode = {
     nullSafeCodeGen(ctx, ev, (input, min, max, numBucket) => {
       s"""${ev.isNull} = org.apache.spark.sql.catalyst.expressions.WidthBucket
-         |  .isNull($input, $min, $max, $numBucket);
-         |if (!${ev.isNull}) {
-         |  ${ev.value} = org.apache.spark.sql.catalyst.expressions.WidthBucket
-         |    .computeBucketNumberNotNull($input, $min, $max, $numBucket);
-         |}""".stripMargin
+           .isNull($input, $min, $max, $numBucket);
+         if (!${ev.isNull}) {
+           ${ev.value} = org.apache.spark.sql.catalyst.expressions.WidthBucket
+             .computeBucketNumberNotNull($input, $min, $max, $numBucket);
+         }"""
     })
   }
 
