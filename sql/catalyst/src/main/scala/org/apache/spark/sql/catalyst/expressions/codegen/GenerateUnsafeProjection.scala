@@ -230,7 +230,7 @@ object GenerateUnsafeProjection extends CodeGenerator[Seq[Expression], UnsafePro
          // Remember the current cursor so that we can calculate how many bytes are
          // written later.
          final int $previousCursor = $rowWriter.cursor();
-       
+
          // preserve 8 bytes to write the key array numBytes later.
          $rowWriter.grow(8);
          $rowWriter.increaseCursor(8);
