@@ -804,8 +804,28 @@ class Dataset[T] private[sql](
    * @since 1.6.0
    */
   // scalastyle:off println
-  def show(numRows: Int, truncate: Boolean): Unit = if (truncate) {
-    println(showString(numRows, truncate = 20))
+  def show(numRows: Int, truncate: Boolean): Unit = show(numRows, truncate, x => println(x))
+
+  /**
+   * Displays the Dataset in a tabular form. For example:
+   * {{{
+   *   year  month AVG('Adj Close) MAX('Adj Close)
+   *   1980  12    0.503218        0.595103
+   *   1981  01    0.523289        0.570307
+   *   1982  02    0.436504        0.475256
+   *   1983  03    0.410516        0.442194
+   *   1984  04    0.450090        0.483521
+   * }}}
+   *
+   * @param numRows  Number of rows to show
+   * @param truncate Whether truncate long strings. If true, strings more than 20 characters will
+   *                 be truncated and all cells will be aligned right
+   * @group action
+   * @since 2.4.8
+   */
+  // scalastyle:off println
+  def show(numRows: Int, truncate: Boolean, out: String => Unit): Unit = if (truncate) {
+    out(showString(numRows))
   } else {
     println(showString(numRows, truncate = 0))
   }

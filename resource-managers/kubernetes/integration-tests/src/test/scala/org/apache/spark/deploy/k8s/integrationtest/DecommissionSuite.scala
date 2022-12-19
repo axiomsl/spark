@@ -51,7 +51,8 @@ private[spark] trait DecommissionSuite { k8sSuite: KubernetesSuite =>
 
           logger.spark.name = org.apache.spark
           logger.spark.level = debug
-      """),
+      """,
+        new File(logConfFilePath),
         StandardCharsets.UTF_8)
 
       f()
