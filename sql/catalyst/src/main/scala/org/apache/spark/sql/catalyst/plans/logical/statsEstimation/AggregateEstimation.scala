@@ -17,11 +17,12 @@
 
 package org.apache.spark.sql.catalyst.plans.logical.statsEstimation
 
+import org.apache.spark.internal.Logging
 import org.apache.spark.sql.catalyst.expressions.{Attribute, AttributeMap}
 import org.apache.spark.sql.catalyst.plans.logical.{Aggregate, Statistics}
 
 
-object AggregateEstimation {
+object AggregateEstimation extends Logging {
   import EstimationUtils._
 
   /**
@@ -64,8 +65,16 @@ object AggregateEstimation {
 
       val outputAttrStats = getOutputMap(
         AttributeMap(childStats.attributeStats.toSeq ++ aliasStats), agg.output)
+
+      val sizeInBytes = getOutputSize(agg.output, outputRows, outputAttrStats)
+
+      logInfo({
+        val schemaString = agg.schemaString
+        s"Statistics for [Aggregate] [$schemaString]; sizeInBytes = [$sizeInBytes]"
+      })
+
       Some(Statistics(
-        sizeInBytes = getOutputSize(agg.output, outputRows, outputAttrStats),
+        sizeInBytes = sizeInBytes,
         rowCount = Some(outputRows),
         attributeStats = outputAttrStats))
     } else {

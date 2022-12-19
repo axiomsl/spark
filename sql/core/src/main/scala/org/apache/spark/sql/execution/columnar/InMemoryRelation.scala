@@ -406,7 +406,8 @@ case class InMemoryRelation(
     } else {
       statsOfPlanToCache.copy(
         sizeInBytes = cacheBuilder.sizeInBytesStats.value.longValue,
-        rowCount = Some(cacheBuilder.rowCountStats.value.longValue)
+        rowCount = Some(cacheBuilder.rowCountStats.value.longValue),
+        attributeStats = statsOfPlanToCache.attributeStats
       )
     }
   }
