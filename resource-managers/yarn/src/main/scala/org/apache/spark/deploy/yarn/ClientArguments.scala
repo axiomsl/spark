@@ -83,16 +83,16 @@ private[spark] class ClientArguments(args: Array[String]) extends Logging {
     val message = if (unknownParam != null) s"Unknown/unsupported param $unknownParam\n" else ""
     message +
       s"""
-      |Usage: org.apache.spark.deploy.yarn.Client [options]
-      |Options:
-      |  --jar JAR_PATH           Path to your application's JAR file (required in YARN cluster
-      |                           mode)
-      |  --class CLASS_NAME       Name of your application's main class (required)
-      |  --primary-py-file        A main Python file
-      |  --primary-r-file         A main R file
-      |  --arg ARG                Argument to be passed to your application's main class.
-      |                           Multiple invocations are possible, each will be passed in order.
-      |  --verbose, -v            Print additional debug output.
-      """.stripMargin
+      Usage: org.apache.spark.deploy.yarn.Client [options]
+      Options:
+        --jar JAR_PATH           Path to your application's JAR file (required in YARN cluster
+                                 mode)
+        --class CLASS_NAME       Name of your application's main class (required)
+        --primary-py-file        A main Python file
+        --primary-r-file         A main R file
+        --arg ARG                Argument to be passed to your application's main class.
+                                 Multiple invocations are possible, each will be passed in order.
+        --verbose, -v            Print additional debug output.
+      """
   }
 }

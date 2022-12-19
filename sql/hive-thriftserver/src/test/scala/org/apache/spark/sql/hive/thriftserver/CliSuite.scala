@@ -124,16 +124,16 @@ class CliSuite extends SparkFunSuite with BeforeAndAfterAll with Logging {
       val cliScript = "../../bin/spark-sql".split("/").mkString(File.separator)
       val jdbcUrl = s"jdbc:derby:;databaseName=$metastore;create=true"
       s"""$cliScript
-         |  --master local
-         |  --driver-java-options -Dderby.system.durability=test
-         |  $extraHive
-         |  --conf spark.ui.enabled=false
-         |  --hiveconf ${ConfVars.METASTORECONNECTURLKEY}=$jdbcUrl
-         |  --hiveconf ${ConfVars.SCRATCHDIR}=$scratchDirPath
-         |  --hiveconf conf1=conftest
-         |  --hiveconf conf2=1
-         |  $warehouseConf
-       """.stripMargin.split("\\s+").toSeq ++ extraArgs
+           --master local
+           --driver-java-options -Dderby.system.durability=test
+           $extraHive
+           --conf spark.ui.enabled=false
+           --hiveconf ${ConfVars.METASTORECONNECTURLKEY}=$jdbcUrl
+           --hiveconf ${ConfVars.SCRATCHDIR}=$scratchDirPath
+           --hiveconf conf1=conftest
+           --hiveconf conf2=1
+           $warehouseConf
+       """.split("\\s+").toSeq ++ extraArgs
     }
 
     var next = 0
@@ -198,18 +198,18 @@ class CliSuite extends SparkFunSuite with BeforeAndAfterAll with Logging {
     } catch { case cause: Throwable =>
       val message =
         s"""
-           |=======================
-           |CliSuite failure output
-           |=======================
-           |Spark SQL CLI command line: ${command.mkString(" ")}
-           |Exception: $cause
-           |Failed to capture next expected output "${expectedAnswers(next)}" within $timeout.
-           |
-           |${buffer.mkString("\n")}
-           |===========================
-           |End CliSuite failure output
-           |===========================
-         """.stripMargin
+           =======================
+           CliSuite failure output
+           =======================
+           Spark SQL CLI command line: ${command.mkString(" ")}
+           Exception: $cause
+           Failed to capture next expected output "${expectedAnswers(next)}" within $timeout.
+           
+           ${buffer.mkString("\n")}
+           ===========================
+           End CliSuite failure output
+           ===========================
+         """
       logError(message, cause)
       fail(message, cause)
     } finally {
@@ -302,7 +302,7 @@ class CliSuite extends SparkFunSuite with BeforeAndAfterAll with Logging {
       "SHOW TABLES;"
         -> "hive_test",
       s"""LOAD DATA LOCAL INPATH '$dataFilePath'
-         |OVERWRITE INTO TABLE hive_test;""".stripMargin
+         OVERWRITE INTO TABLE hive_test;"""
         -> "",
       "CACHE TABLE hive_test;"
         -> "",
@@ -342,12 +342,12 @@ class CliSuite extends SparkFunSuite with BeforeAndAfterAll with Logging {
 
     runCliWithin(3.minute, Seq("--jars", s"$jarFile"))(
       """CREATE TABLE t1(key string, val string)
-        |ROW FORMAT SERDE 'org.apache.hive.hcatalog.data.JsonSerDe';""".stripMargin
+        ROW FORMAT SERDE 'org.apache.hive.hcatalog.data.JsonSerDe';"""
         -> "",
       "CREATE TABLE sourceTable (key INT, val STRING) USING hive;"
         -> "",
       s"""LOAD DATA LOCAL INPATH '$dataFilePath'
-         |OVERWRITE INTO TABLE sourceTable;""".stripMargin
+         OVERWRITE INTO TABLE sourceTable;"""
         -> "",
       "INSERT INTO TABLE t1 SELECT key, val FROM sourceTable;"
         -> "",
@@ -368,12 +368,12 @@ class CliSuite extends SparkFunSuite with BeforeAndAfterAll with Logging {
       3.minute,
       Seq("--conf", s"spark.hadoop.${ConfVars.HIVEAUXJARS}=$hiveContribJar"))(
       """CREATE TABLE addJarWithHiveAux(key string, val string)
-        |ROW FORMAT SERDE 'org.apache.hive.hcatalog.data.JsonSerDe';""".stripMargin
+        ROW FORMAT SERDE 'org.apache.hive.hcatalog.data.JsonSerDe';"""
         -> "",
       "CREATE TABLE sourceTableForWithHiveAux (key INT, val STRING) USING hive;"
         -> "",
       s"""LOAD DATA LOCAL INPATH '$dataFilePath'
-         |OVERWRITE INTO TABLE sourceTableForWithHiveAux;""".stripMargin
+         OVERWRITE INTO TABLE sourceTableForWithHiveAux;"""
         -> "",
       "INSERT INTO TABLE addJarWithHiveAux SELECT key, val FROM sourceTableForWithHiveAux;"
         -> "",
@@ -488,12 +488,12 @@ class CliSuite extends SparkFunSuite with BeforeAndAfterAll with Logging {
       3.minute)(
       s"ADD JAR ${hiveContribJar};" -> "",
       """CREATE TABLE addJarWithSQL(key string, val string)
-        |ROW FORMAT SERDE 'org.apache.hive.hcatalog.data.JsonSerDe';""".stripMargin
+        ROW FORMAT SERDE 'org.apache.hive.hcatalog.data.JsonSerDe';"""
         -> "",
       "CREATE TABLE sourceTableForWithSQL(key INT, val STRING) USING hive;"
         -> "",
       s"""LOAD DATA LOCAL INPATH '$dataFilePath'
-         |OVERWRITE INTO TABLE sourceTableForWithSQL;""".stripMargin
+         OVERWRITE INTO TABLE sourceTableForWithSQL;"""
         -> "",
       "INSERT INTO TABLE addJarWithSQL SELECT key, val FROM sourceTableForWithSQL;"
         -> "",
@@ -525,33 +525,33 @@ class CliSuite extends SparkFunSuite with BeforeAndAfterAll with Logging {
   test("SPARK-30049 Should not complain for quotes in commented lines") {
     runCliWithin(1.minute)(
       """SELECT concat('test', 'comment') -- someone's comment here
-        |;""".stripMargin -> "testcomment"
+        ;""" -> "testcomment"
     )
   }
 
   test("SPARK-31102 spark-sql fails to parse when contains comment") {
     runCliWithin(1.minute)(
       """SELECT concat('test', 'comment'),
-        |    -- someone's comment here
-        | 2;""".stripMargin -> "testcomment"
+            -- someone's comment here
+         2;""" -> "testcomment"
     )
   }
 
   test("SPARK-30049 Should not complain for quotes in commented with multi-lines") {
     runCliWithin(1.minute)(
       """SELECT concat('test', 'comment') -- someone's comment here \
-        | comment continues here with single ' quote \
-        | extra ' \
-        |;""".stripMargin -> "testcomment"
+         comment continues here with single ' quote \
+         extra ' \
+        ;""" -> "testcomment"
     )
   }
 
   test("SPARK-31595 Should allow unescaped quote mark in quoted string") {
     runCliWithin(1.minute)(
-      "SELECT '\"legal string a';select 1 + 234;".stripMargin -> "235"
+      "SELECT '\"legal string a';select 1 + 234;" -> "235"
     )
     runCliWithin(1.minute)(
-      "SELECT \"legal 'string b\";select 22222 + 1;".stripMargin -> "22223"
+      "SELECT \"legal 'string b\";select 22222 + 1;" -> "22223"
     )
   }
 
@@ -621,22 +621,22 @@ class CliSuite extends SparkFunSuite with BeforeAndAfterAll with Logging {
   test("SPARK-37471: spark-sql support nested bracketed comment ") {
     runCliWithin(1.minute)(
       """
-        |/* SELECT /*+ HINT() */ 4; */
-        |SELECT 1;
-        |""".stripMargin -> "SELECT 1"
+        /* SELECT /*+ HINT() */ 4; */
+        SELECT 1;
+        """ -> "SELECT 1"
     )
   }
 
   test("SPARK-37555: spark-sql should pass last unclosed comment to backend") {
     runCliWithin(2.minute)(
       // Only unclosed comment.
-      "/* SELECT /*+ HINT() 4; */;".stripMargin -> "Syntax error at or near ';'",
+      "/* SELECT /*+ HINT() 4; */;" -> "Syntax error at or near ';'",
       // Unclosed nested bracketed comment.
-      "/* SELECT /*+ HINT() 4; */ SELECT 1;".stripMargin -> "1",
+      "/* SELECT /*+ HINT() 4; */ SELECT 1;" -> "1",
       // Unclosed comment with query.
       "/* Here is a unclosed bracketed comment SELECT 1;"-> "Unclosed bracketed comment",
       // Whole comment.
-      "/* SELECT /*+ HINT() */ 4; */;".stripMargin -> ""
+      "/* SELECT /*+ HINT() */ 4; */;" -> ""
     )
   }
 

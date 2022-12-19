@@ -195,13 +195,13 @@ private[spark] object KafkaTokenUtil extends Logging {
       kerberosServiceName: String): String = {
     val params =
       s"""
-      |${SecurityUtils.getKrb5LoginModuleName} required
-      | debug=${SecurityUtils.isGlobalKrbDebugEnabled()}
-      | useKeyTab=true
-      | serviceName="$kerberosServiceName"
-      | keyTab="$keyTab"
-      | principal="$principal";
-      """.stripMargin.replace("\n", "")
+      ${SecurityUtils.getKrb5LoginModuleName} required
+       debug=${SecurityUtils.isGlobalKrbDebugEnabled()}
+       useKeyTab=true
+       serviceName="$kerberosServiceName"
+       keyTab="$keyTab"
+       principal="$principal";
+      """.replace("\n", "")
     logDebug(s"Krb keytab JAAS params: $params")
     params
   }
@@ -209,11 +209,11 @@ private[spark] object KafkaTokenUtil extends Logging {
   private def getTicketCacheJaasParams(clusterConf: KafkaTokenClusterConf): String = {
     val params =
       s"""
-      |${SecurityUtils.getKrb5LoginModuleName} required
-      | debug=${SecurityUtils.isGlobalKrbDebugEnabled()}
-      | useTicketCache=true
-      | serviceName="${clusterConf.kerberosServiceName}";
-      """.stripMargin.replace("\n", "").trim
+      ${SecurityUtils.getKrb5LoginModuleName} required
+       debug=${SecurityUtils.isGlobalKrbDebugEnabled()}
+       useTicketCache=true
+       serviceName="${clusterConf.kerberosServiceName}";
+      """.replace("\n", "").trim
     logDebug(s"Krb ticket cache JAAS params: $params")
     params
   }
@@ -263,12 +263,12 @@ private[spark] object KafkaTokenUtil extends Logging {
     val loginModuleName = classOf[ScramLoginModule].getName
     val params =
       s"""
-      |$loginModuleName required
-      | tokenauth=true
-      | serviceName="${clusterConf.kerberosServiceName}"
-      | username="$username"
-      | password="$password";
-      """.stripMargin.replace("\n", "").trim
+      $loginModuleName required
+       tokenauth=true
+       serviceName="${clusterConf.kerberosServiceName}"
+       username="$username"
+       password="$password";
+      """.replace("\n", "").trim
     logDebug(s"Scram JAAS params: ${KafkaRedactionUtil.redactJaasParam(params)}")
 
     params

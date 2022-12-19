@@ -40,16 +40,16 @@ class ApproximatePercentileQuerySuite extends QueryTest with SharedSparkSession 
       checkAnswer(
         spark.sql(
           s"""
-             |SELECT
-             |  percentile_approx(col, 0.25),
-             |  percentile_approx(col, 0.5),
-             |  percentile_approx(col, 0.75d),
-             |  percentile_approx(col, 0.0),
-             |  percentile_approx(col, 1.0),
-             |  percentile_approx(col, 0),
-             |  percentile_approx(col, 1)
-             |FROM $table
-           """.stripMargin),
+             SELECT
+               percentile_approx(col, 0.25),
+               percentile_approx(col, 0.5),
+               percentile_approx(col, 0.75d),
+               percentile_approx(col, 0.0),
+               percentile_approx(col, 1.0),
+               percentile_approx(col, 0),
+               percentile_approx(col, 1)
+             FROM $table
+           """),
         Row(250D, 500D, 750D, 1D, 1000D, 1D, 1000D)
       )
     }
@@ -61,10 +61,10 @@ class ApproximatePercentileQuerySuite extends QueryTest with SharedSparkSession 
       checkAnswer(
         spark.sql(
           s"""
-             |SELECT
-             |  percentile_approx(col, array(0.01, 0.1, 0.11))
-             |FROM $table
-           """.stripMargin),
+             SELECT
+               percentile_approx(col, array(0.01, 0.1, 0.11))
+             FROM $table
+           """),
         Row(Seq(1, 1, 2))
       )
     }
@@ -76,12 +76,12 @@ class ApproximatePercentileQuerySuite extends QueryTest with SharedSparkSession 
       checkAnswer(
         spark.sql(
           s"""SELECT
-             |  percentile_approx(col, array(0.25, 0.5, 0.75D)),
-             |  count(col),
-             |  percentile_approx(col, array(0.0, 1.0)),
-             |  sum(col)
-             |FROM $table
-           """.stripMargin),
+               percentile_approx(col, array(0.25, 0.5, 0.75D)),
+               count(col),
+               percentile_approx(col, array(0.0, 1.0)),
+               sum(col)
+             FROM $table
+           """),
         Row(Seq(250D, 500D, 750D), 1000, Seq(1D, 1000D), 500500)
       )
     }
@@ -98,12 +98,12 @@ class ApproximatePercentileQuerySuite extends QueryTest with SharedSparkSession 
       checkAnswer(
         spark.sql(
           s"""SELECT
-             |  percentile_approx(cdecimal, array(0.25, 0.5, 0.75D)),
-             |  percentile_approx(cdate, array(0.25, 0.5, 0.75D)),
-             |  percentile_approx(ctimestamp, array(0.25, 0.5, 0.75D)),
-             |  percentile_approx(ctimestampntz, array(0.25, 0.5, 0.75D))
-             |FROM $table
-           """.stripMargin),
+               percentile_approx(cdecimal, array(0.25, 0.5, 0.75D)),
+               percentile_approx(cdate, array(0.25, 0.5, 0.75D)),
+               percentile_approx(ctimestamp, array(0.25, 0.5, 0.75D)),
+               percentile_approx(ctimestampntz, array(0.25, 0.5, 0.75D))
+             FROM $table
+           """),
         Row(
           Seq("250.000000000000000000", "500.000000000000000000", "750.000000000000000000")
               .map(i => new java.math.BigDecimal(i)),
@@ -138,9 +138,9 @@ class ApproximatePercentileQuerySuite extends QueryTest with SharedSparkSession 
         for (expectedPercentile <- expectedPercentiles) {
           val df = spark.sql(
             s"""SELECT
-               | percentile_approx(col, $expectedPercentile/$tableCount, $accuracy)
-               |FROM $table
-             """.stripMargin)
+                percentile_approx(col, $expectedPercentile/$tableCount, $accuracy)
+               FROM $table
+             """)
           val approximatePercentile = df.collect().head.getInt(0)
           val error = Math.abs(approximatePercentile - expectedPercentile)
           assert(error <= math.floor(tableCount.toDouble / accuracy.toDouble))
@@ -185,11 +185,11 @@ class ApproximatePercentileQuerySuite extends QueryTest with SharedSparkSession 
       checkAnswer(
         spark.sql(
           s"""SELECT
-             |  key,
-             |  percentile_approx(null, 0.5)
-             |FROM $table
-             |GROUP BY key
-           """.stripMargin),
+               key,
+               percentile_approx(null, 0.5)
+             FROM $table
+             GROUP BY key
+           """),
         Seq(
           Row(0, null),
           Row(1, null),
@@ -204,11 +204,11 @@ class ApproximatePercentileQuerySuite extends QueryTest with SharedSparkSession 
       checkAnswer(
         spark.sql(
           s"""SELECT
-              |  percentile_approx(null, 0.5),
-              |  sum(null),
-              |  percentile_approx(null, 0.5)
-              |FROM $table
-           """.stripMargin),
+                percentile_approx(null, 0.5),
+                sum(null),
+                percentile_approx(null, 0.5)
+              FROM $table
+           """),
          Row(null, null, null)
       )
     }
@@ -221,11 +221,11 @@ class ApproximatePercentileQuerySuite extends QueryTest with SharedSparkSession 
       checkAnswer(
         spark.sql(
           s"""SELECT
-              |  percentile_approx(col, 0.5),
-              |  sum(null),
-              |  percentile_approx(col, 0.5)
-              |FROM $table
-           """.stripMargin),
+                percentile_approx(col, 0.5),
+                sum(null),
+                percentile_approx(col, 0.5)
+              FROM $table
+           """),
         Row(500D, null, 500D))
     }
   }
@@ -242,12 +242,12 @@ class ApproximatePercentileQuerySuite extends QueryTest with SharedSparkSession 
       checkAnswer(
         spark.sql(
           s"""SELECT
-              |  percentile_approx(value, 0.5),
-              |  sum(value),
-              |  percentile_approx(value, 0.5)
-              |FROM $table
-              |GROUP BY key
-           """.stripMargin),
+                percentile_approx(value, 0.5),
+                sum(value),
+                percentile_approx(value, 0.5)
+              FROM $table
+              GROUP BY key
+           """),
         Seq(
           Row(499.0D, 250000, 499.0D),
           Row(500.0D, 250500, 500.0D),
@@ -263,12 +263,12 @@ class ApproximatePercentileQuerySuite extends QueryTest with SharedSparkSession 
 
       val query = spark.sql(
         s"""
-           |SElECT percentile_approx(value, 0.5)
-           |OVER
-           |  (PARTITION BY key ORDER BY value ROWS BETWEEN UNBOUNDED PRECEDING AND CURRENT ROW)
-           |    AS percentile
-           |FROM $table
-           """.stripMargin)
+           SElECT percentile_approx(value, 0.5)
+           OVER
+             (PARTITION BY key ORDER BY value ROWS BETWEEN UNBOUNDED PRECEDING AND CURRENT ROW)
+               AS percentile
+           FROM $table
+           """)
 
       val expected = data.groupBy(_._1).toSeq.flatMap { group =>
         val (key, values) = group
@@ -311,11 +311,11 @@ class ApproximatePercentileQuerySuite extends QueryTest with SharedSparkSession 
       checkAnswer(
         spark.sql(
           s"""SELECT
-             |  percentile_approx(col, 0.77, 1000),
-             |  percentile_approx(col, 0.77, 10000),
-             |  percentile_approx(col, 0.77, 100000),
-             |  percentile_approx(col, 0.77, 1000000)
-             |FROM $table""".stripMargin),
+               percentile_approx(col, 0.77, 1000),
+               percentile_approx(col, 0.77, 10000),
+               percentile_approx(col, 0.77, 100000),
+               percentile_approx(col, 0.77, 1000000)
+             FROM $table"""),
         Row(18, 17, 17, 17))
     }
   }
@@ -329,11 +329,11 @@ class ApproximatePercentileQuerySuite extends QueryTest with SharedSparkSession 
         checkAnswer(
           spark.sql(
             s"""SELECT
-               |  percentile_approx(col1, 0.5),
-               |  SUM(null),
-               |  percentile_approx(col2, 0.5)
-               |FROM $table
-           """.stripMargin),
+                 percentile_approx(col1, 0.5),
+                 SUM(null),
+                 percentile_approx(col2, 0.5)
+               FROM $table
+           """),
           Row(Period.ofMonths(200).normalized(), null, Duration.ofSeconds(200L)))
     }
   }

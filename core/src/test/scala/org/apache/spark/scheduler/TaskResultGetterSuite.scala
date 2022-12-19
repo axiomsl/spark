@@ -209,10 +209,10 @@ class TaskResultGetterSuite extends SparkFunSuite with BeforeAndAfter with Local
     srcDir.mkdirs()
     val excSource = new JavaSourceFromString(new File(srcDir, "MyException").toURI.getPath,
       """package repro;
-        |
-        |public class MyException extends Exception {
-        |}
-      """.stripMargin)
+
+        public class MyException extends Exception {
+        }
+      """)
     val excFile = TestUtils.createCompiledClass("MyException", srcDir, excSource, Seq.empty)
     val jarFile = new File(tempDir, "testJar-%s.jar".format(System.currentTimeMillis()))
     TestUtils.createJar(Seq(excFile), jarFile, directoryPrefix = Some("repro"))

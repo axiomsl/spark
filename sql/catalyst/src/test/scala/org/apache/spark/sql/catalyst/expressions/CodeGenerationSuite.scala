@@ -572,45 +572,45 @@ class CodeGenerationSuite extends SparkFunSuite with ExpressionEvalHelper {
   test("SPARK-35578: final local variable bug in janino") {
     val code =
       """
-        |public Object generate(Object[] references) {
-        |  return new MyClass(references == null);
-        |}
-        |
-        |class MyClass {
-        |  private boolean b1;
-        |
-        |  public MyClass(boolean b1) {
-        |    this.b1 = b1;
-        |  }
-        |
-        |   public UnsafeRow apply(InternalRow i) {
-        |     final int value_0;
-        |     // The bug still exist if the if condition is 'true'. Here we use a variable
-        |     // to make the test more robust, in case the compiler can eliminate the else branch.
-        |     if (b1) {
-        |     } else {
-        |       int field_0 = 1;
-        |     }
-        |     // The second if-else is necessary to trigger the bug.
-        |     if (b1) {
-        |     } else {
-        |       // The bug disappear if it's an int variable.
-        |       long field_1 = 2;
-        |     }
-        |     value_0 = 1;
-        |
-        |     // The second final variable is necessary to trigger the bug.
-        |     final int value_2;
-        |     if (b1) {
-        |     } else {
-        |       int field_2 = 3;
-        |     }
-        |     value_2 = 2;
-        |
-        |     return null;
-        |   }
-        |}
-        |""".stripMargin
+        public Object generate(Object[] references) {
+          return new MyClass(references == null);
+        }
+
+        class MyClass {
+          private boolean b1;
+
+          public MyClass(boolean b1) {
+            this.b1 = b1;
+          }
+
+           public UnsafeRow apply(InternalRow i) {
+             final int value_0;
+             // The bug still exist if the if condition is 'true'. Here we use a variable
+             // to make the test more robust, in case the compiler can eliminate the else branch.
+             if (b1) {
+             } else {
+               int field_0 = 1;
+             }
+             // The second if-else is necessary to trigger the bug.
+             if (b1) {
+             } else {
+               // The bug disappear if it's an int variable.
+               long field_1 = 2;
+             }
+             value_0 = 1;
+
+             // The second final variable is necessary to trigger the bug.
+             final int value_2;
+             if (b1) {
+             } else {
+               int field_2 = 3;
+             }
+             value_2 = 2;
+
+             return null;
+           }
+        }
+        """
 
     CodeGenerator.compile(new CodeAndComment(code, Map.empty))
   }
@@ -632,11 +632,11 @@ case class HugeCodeIntExpression(value: Int) extends LeafExpression {
     val hugeCode = (0 until (HugeMethodLimit / 2)).map(i => s"int dummy$i = 0;").mkString("\n")
     val code =
       code"""{
-         |  $hugeCode
-         |}
-         |boolean ${ev.isNull} = false;
-         |int ${ev.value} = $value;
-       """.stripMargin
+           $hugeCode
+         }
+         boolean ${ev.isNull} = false;
+         int ${ev.value} = $value;
+       """
     ev.copy(code = code)
   }
 }

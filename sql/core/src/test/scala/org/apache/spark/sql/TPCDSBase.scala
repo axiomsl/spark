@@ -70,11 +70,11 @@ trait TPCDSBase extends TPCBase with TPCDSSchema {
       options: Seq[String] = Nil): Unit = {
     spark.sql(
       s"""
-         |CREATE TABLE `$tableName` (${tableColumns(tableName)})
-         |USING $format
-         |${partitionedByClause(tableName)}
-         |${options.mkString("\n")}
-       """.stripMargin)
+         CREATE TABLE `$tableName` (${tableColumns(tableName)})
+         USING $format
+         ${partitionedByClause(tableName)}
+         ${options.mkString("\n")}
+       """)
   }
 
   override def createTables(): Unit = {

@@ -93,8 +93,8 @@ object IntegralAverage extends UnboundFunction {
 
   override def description(): String =
     """iavg: produces an average using integer division
-      |  iavg(int not null) -> int
-      |  iavg(bigint not null) -> bigint""".stripMargin
+        iavg(int not null) -> int
+        iavg(bigint not null) -> bigint"""
 }
 
 object IntAverage extends AggregateFunction[(Int, Int), Int] {

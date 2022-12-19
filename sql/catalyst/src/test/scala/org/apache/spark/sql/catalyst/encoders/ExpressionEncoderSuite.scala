@@ -659,14 +659,14 @@ class ExpressionEncoderSuite extends CodegenInterpretedPlanTest with AnalysisTes
         case e: Exception =>
           fail(
            s"""Exception thrown while decoding
-              |Converted: $row
-              |Schema: ${schema.mkString(",")}
-              |${encoder.schema.treeString}
-              |
-              |Encoder:
-              |$boundEncoder
-              |
-            """.stripMargin, e)
+              Converted: $row
+              Schema: ${schema.mkString(",")}
+              ${encoder.schema.treeString}
+
+              Encoder:
+              $boundEncoder
+
+            """, e)
       }
 
       // Test the correct resolution of serialization / deserialization.
@@ -704,18 +704,18 @@ class ExpressionEncoderSuite extends CodegenInterpretedPlanTest with AnalysisTes
 
         fail(
           s"""Encoded/Decoded data does not match input data
-             |
-             |in:  $input
-             |out: $convertedBack
-             |types: $types
-             |
-             |Encoded Data: $encodedData
-             |Schema: ${schema.mkString(",")}
-             |${encoder.schema.treeString}
-             |
-             |fromRow Expressions:
-             |${boundEncoder.deserializer.treeString}
-         """.stripMargin)
+
+             in:  $input
+             out: $convertedBack
+             types: $types
+
+             Encoded Data: $encodedData
+             Schema: ${schema.mkString(",")}
+             ${encoder.schema.treeString}
+
+             fromRow Expressions:
+             ${boundEncoder.deserializer.treeString}
+         """)
       }
     }
   }

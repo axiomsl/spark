@@ -188,10 +188,10 @@ private[streaming] object ExecutorAllocationManager extends Logging {
     if (Utils.isDynamicAllocationEnabled(conf) && streamingDynamicAllocationEnabled) {
       throw new IllegalArgumentException(
         """
-          |Dynamic Allocation cannot be enabled for both streaming and core at the same time.
-          |Please disable core Dynamic Allocation by setting spark.dynamicAllocation.enabled to
-          |false to use Dynamic Allocation in streaming.
-        """.stripMargin)
+          Dynamic Allocation cannot be enabled for both streaming and core at the same time.
+          Please disable core Dynamic Allocation by setting spark.dynamicAllocation.enabled to
+          false to use Dynamic Allocation in streaming.
+        """)
     }
     streamingDynamicAllocationEnabled
   }

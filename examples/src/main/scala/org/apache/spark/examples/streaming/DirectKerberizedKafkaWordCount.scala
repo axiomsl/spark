@@ -79,12 +79,12 @@ object DirectKerberizedKafkaWordCount {
   def main(args: Array[String]): Unit = {
     if (args.length < 3) {
       System.err.println(s"""
-        |Usage: DirectKerberizedKafkaWordCount <brokers> <groupId> <topics>
-        |  <brokers> is a list of one or more Kafka brokers
-        |  <groupId> is a consumer group name to consume from topics
-        |  <topics> is a list of one or more kafka topics to consume from
-        |
-        """.stripMargin)
+        Usage: DirectKerberizedKafkaWordCount <brokers> <groupId> <topics>
+          <brokers> is a list of one or more Kafka brokers
+          <groupId> is a consumer group name to consume from topics
+          <topics> is a list of one or more kafka topics to consume from
+
+        """)
       System.exit(1)
     }
 

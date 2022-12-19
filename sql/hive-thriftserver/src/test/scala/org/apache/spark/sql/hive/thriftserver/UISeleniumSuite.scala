@@ -75,13 +75,13 @@ class UISeleniumSuite
 
       Files.write(
         """rootLogger.level = info
-          |rootLogger.appenderRef.file.ref = console
-          |appender.console.type = Console
-          |appender.console.name = console
-          |appender.console.target = SYSTEM_ERR
-          |appender.console.layout.type = PatternLayout
-          |appender.console.layout.pattern = %d{yy/MM/dd HH:mm:ss} %p %c{1}: %m%n%ex
-        """.stripMargin,
+          rootLogger.appenderRef.file.ref = console
+          appender.console.type = Console
+          appender.console.name = console
+          appender.console.target = SYSTEM_ERR
+          appender.console.layout.type = PatternLayout
+          appender.console.layout.pattern = %d{yy/MM/dd HH:mm:ss} %p %c{1}: %m%n%ex
+        """,
         new File(s"$tempLog4jConf/log4j2.properties"),
         StandardCharsets.UTF_8)
 
@@ -89,16 +89,16 @@ class UISeleniumSuite
     }
 
     s"""$startScript
-        |  --master local
-        |  --hiveconf ${ConfVars.METASTORECONNECTURLKEY}=$metastoreJdbcUri
-        |  --hiveconf ${ConfVars.METASTOREWAREHOUSE}=$warehousePath
-        |  --hiveconf ${ConfVars.HIVE_SERVER2_THRIFT_BIND_HOST}=localhost
-        |  --hiveconf ${ConfVars.HIVE_SERVER2_TRANSPORT_MODE}=$mode
-        |  --hiveconf $portConf=0
-        |  --driver-class-path $driverClassPath
-        |  --conf spark.ui.enabled=true
-        |  --conf spark.ui.port=$uiPort
-     """.stripMargin.split("\\s+").toSeq
+          --master local
+          --hiveconf ${ConfVars.METASTORECONNECTURLKEY}=$metastoreJdbcUri
+          --hiveconf ${ConfVars.METASTOREWAREHOUSE}=$warehousePath
+          --hiveconf ${ConfVars.HIVE_SERVER2_THRIFT_BIND_HOST}=localhost
+          --hiveconf ${ConfVars.HIVE_SERVER2_TRANSPORT_MODE}=$mode
+          --hiveconf $portConf=0
+          --driver-class-path $driverClassPath
+          --conf spark.ui.enabled=true
+          --conf spark.ui.port=$uiPort
+     """.split("\\s+").toSeq
   }
 
   test("thrift server ui test") {

@@ -38,17 +38,17 @@ class DeprecatedAvroFunctionsSuite extends QueryTest with SharedSparkSession {
 
     val avroDF = df.select(to_avro('id).as("a"), to_avro('str).as("b"))
     val avroTypeLong = s"""
-      |{
-      |  "type": "int",
-      |  "name": "id"
-      |}
-    """.stripMargin
+      {
+        "type": "int",
+        "name": "id"
+      }
+    """
     val avroTypeStr = s"""
-      |{
-      |  "type": "string",
-      |  "name": "str"
-      |}
-    """.stripMargin
+      {
+        "type": "string",
+        "name": "str"
+      }
+    """
     checkAnswer(avroDF.select(from_avro('a, avroTypeLong), from_avro('b, avroTypeStr)), df)
   }
 
@@ -56,33 +56,33 @@ class DeprecatedAvroFunctionsSuite extends QueryTest with SharedSparkSession {
     val df = spark.range(10).select(struct('id, 'id.cast("string").as("str")).as("struct"))
     val avroStructDF = df.select(to_avro('struct).as("avro"))
     val avroTypeStruct = s"""
-      |{
-      |  "type": "record",
-      |  "name": "struct",
-      |  "fields": [
-      |    {"name": "col1", "type": "long"},
-      |    {"name": "col2", "type": "string"}
-      |  ]
-      |}
-    """.stripMargin
+      {
+        "type": "record",
+        "name": "struct",
+        "fields": [
+          {"name": "col1", "type": "long"},
+          {"name": "col2", "type": "string"}
+        ]
+      }
+    """
     checkAnswer(avroStructDF.select(from_avro('avro, avroTypeStruct)), df)
   }
 
   test("roundtrip in to_avro and from_avro - array with null") {
     val dfOne = Seq(Tuple1(Tuple1(1) :: Nil), Tuple1(null :: Nil)).toDF("array")
     val avroTypeArrStruct = s"""
-      |[ {
-      |  "type" : "array",
-      |  "items" : [ {
-      |    "type" : "record",
-      |    "name" : "x",
-      |    "fields" : [ {
-      |      "name" : "y",
-      |      "type" : "int"
-      |    } ]
-      |  }, "null" ]
-      |}, "null" ]
-    """.stripMargin
+      [ {
+        "type" : "array",
+        "items" : [ {
+          "type" : "record",
+          "name" : "x",
+          "fields" : [ {
+            "name" : "y",
+            "type" : "int"
+          } ]
+        }, "null" ]
+      }, "null" ]
+    """
     val readBackOne = dfOne.select(to_avro($"array").as("avro"))
       .select(from_avro($"avro", avroTypeArrStruct).as("array"))
     checkAnswer(dfOne, readBackOne)
@@ -91,12 +91,12 @@ class DeprecatedAvroFunctionsSuite extends QueryTest with SharedSparkSession {
   test("SPARK-27798: from_avro produces same value when converted to local relation") {
     val simpleSchema =
       """
-        |{
-        |  "type": "record",
-        |  "name" : "Payload",
-        |  "fields" : [ {"name" : "message", "type" : "string" } ]
-        |}
-      """.stripMargin
+        {
+          "type": "record",
+          "name" : "Payload",
+          "fields" : [ {"name" : "message", "type" : "string" } ]
+        }
+      """
 
     def generateBinary(message: String, avroSchema: String): Array[Byte] = {
       val schema = new Schema.Parser().parse(avroSchema)

@@ -119,10 +119,10 @@ private[streaming] class PIDRateEstimator(
                                     integral * historicalError -
                                     derivative * dError).max(minRate)
         logTrace(s"""
-            | latestRate = $latestRate, error = $error
-            | latestError = $latestError, historicalError = $historicalError
-            | delaySinceUpdate = $delaySinceUpdate, dError = $dError
-            """.stripMargin)
+             latestRate = $latestRate, error = $error
+             latestError = $latestError, historicalError = $historicalError
+             delaySinceUpdate = $delaySinceUpdate, dError = $dError
+            """)
 
         latestTime = time
         if (firstRun) {

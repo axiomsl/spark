@@ -135,50 +135,50 @@ class ErrorParserSuite extends AnalysisTest {
     intercept("CREATE DATABASE IF NOT EXISTS my-database", 1, 32, 33, msg + " my-database")
     intercept(
       """
-        |ALTER DATABASE my-database
-        |SET DBPROPERTIES ('p1'='v1')""".stripMargin, 2, 17, 18, msg + " my-database")
+        ALTER DATABASE my-database
+        SET DBPROPERTIES ('p1'='v1')""", 2, 17, 18, msg + " my-database")
     intercept("DROP DATABASE my-database", 1, 16, 17, msg + " my-database")
     intercept(
       """
-        |ALTER TABLE t
-        |CHANGE COLUMN
-        |test-col TYPE BIGINT
-      """.stripMargin, 4, 4, 5, msg + " test-col")
+        ALTER TABLE t
+        CHANGE COLUMN
+        test-col TYPE BIGINT
+      """, 4, 4, 5, msg + " test-col")
     intercept(
       """
-        |ALTER TABLE t
-        |RENAME COLUMN
-        |test-col TO test
-      """.stripMargin, 4, 4, 5, msg + " test-col")
+        ALTER TABLE t
+        RENAME COLUMN
+        test-col TO test
+      """, 4, 4, 5, msg + " test-col")
     intercept(
       """
-        |ALTER TABLE t
-        |RENAME COLUMN
-        |test TO test-col
-      """.stripMargin, 4, 12, 13, msg + " test-col")
+        ALTER TABLE t
+        RENAME COLUMN
+        test TO test-col
+      """, 4, 12, 13, msg + " test-col")
     intercept(
       """
-        |ALTER TABLE t
-        |DROP COLUMN
-        |test-col, test
-      """.stripMargin, 4, 4, 5, msg + " test-col")
+        ALTER TABLE t
+        DROP COLUMN
+        test-col, test
+      """, 4, 4, 5, msg + " test-col")
     intercept("CREATE TABLE test (attri-bute INT)", 1, 24, 25, msg + " attri-bute")
     intercept("CREATE FUNCTION test-func as org.test.func", 1, 20, 21, msg + " test-func")
     intercept("DROP FUNCTION test-func as org.test.func", 1, 18, 19, msg + " test-func")
     intercept("SHOW FUNCTIONS LIKE test-func", 1, 24, 25, msg + " test-func")
     intercept(
       """
-        |CREATE TABLE IF NOT EXISTS mydb.page-view
-        |USING parquet
-        |COMMENT 'This is the staging page view table'
-        |LOCATION '/user/external/page_view'
-        |TBLPROPERTIES ('p1'='v1', 'p2'='v2')
-        |AS SELECT * FROM src""".stripMargin, 2, 36, 37, msg + " page-view")
+        CREATE TABLE IF NOT EXISTS mydb.page-view
+        USING parquet
+        COMMENT 'This is the staging page view table'
+        LOCATION '/user/external/page_view'
+        TBLPROPERTIES ('p1'='v1', 'p2'='v2')
+        AS SELECT * FROM src""", 2, 36, 37, msg + " page-view")
     intercept(
       """
-        |CREATE TABLE IF NOT EXISTS tab
-        |USING test-provider
-        |AS SELECT * FROM src""".stripMargin, 3, 10, 11, msg + " test-provider")
+        CREATE TABLE IF NOT EXISTS tab
+        USING test-provider
+        AS SELECT * FROM src""", 3, 10, 11, msg + " test-provider")
     intercept("SHOW TABLES IN hyphen-database", 1, 21, 22, msg + " hyphen-database")
     intercept("SHOW TABLE EXTENDED IN hyphen-db LIKE \"str\"", 1, 29, 30, msg + " hyphen-db")
     intercept("SHOW COLUMNS IN t FROM test-db", 1, 27, 28, msg + " test-db")
@@ -199,61 +199,61 @@ class ErrorParserSuite extends AnalysisTest {
     intercept("WITH a-b AS (SELECT 1 FROM s) SELECT * FROM s;", 1, 6, 7, msg + " a-b")
     intercept(
       """
-        |SELECT a, b
-        |FROM t1 JOIN t2
-        |USING (a, b, at-tr)
-      """.stripMargin, 4, 15, 16, msg + " at-tr"
+        SELECT a, b
+        FROM t1 JOIN t2
+        USING (a, b, at-tr)
+      """, 4, 15, 16, msg + " at-tr"
     )
     intercept(
       """
-        |SELECT product, category, dense_rank()
-        |OVER (PARTITION BY category ORDER BY revenue DESC) as hyphen-rank
-        |FROM productRevenue
-      """.stripMargin, 3, 60, 61, msg + " hyphen-rank"
+        SELECT product, category, dense_rank()
+        OVER (PARTITION BY category ORDER BY revenue DESC) as hyphen-rank
+        FROM productRevenue
+      """, 3, 60, 61, msg + " hyphen-rank"
     )
     intercept(
       """
-        |SELECT a, b
-        |FROM grammar-breaker
-        |WHERE a-b > 10
-        |GROUP BY fake-breaker
-        |ORDER BY c
-      """.stripMargin, 3, 12, 13, msg + " grammar-breaker")
+        SELECT a, b
+        FROM grammar-breaker
+        WHERE a-b > 10
+        GROUP BY fake-breaker
+        ORDER BY c
+      """, 3, 12, 13, msg + " grammar-breaker")
     assertEqual(
       """
-        |SELECT a, b
-        |FROM t
-        |WHERE a-b > 10
-        |GROUP BY fake-breaker
-        |ORDER BY c
-      """.stripMargin,
+        SELECT a, b
+        FROM t
+        WHERE a-b > 10
+        GROUP BY fake-breaker
+        ORDER BY c
+      """,
       table("t")
         .where('a - 'b > 10)
         .groupBy('fake - 'breaker)('a, 'b)
         .orderBy('c.asc))
     intercept(
       """
-        |SELECT * FROM tab
-        |WINDOW hyphen-window AS
-        |  (PARTITION BY a, b ORDER BY c rows BETWEEN 1 PRECEDING AND 1 FOLLOWING)
-      """.stripMargin, 3, 13, 14, msg + " hyphen-window")
+        SELECT * FROM tab
+        WINDOW hyphen-window AS
+          (PARTITION BY a, b ORDER BY c rows BETWEEN 1 PRECEDING AND 1 FOLLOWING)
+      """, 3, 13, 14, msg + " hyphen-window")
     intercept(
       """
-        |SELECT * FROM tab
-        |WINDOW window_ref AS window-ref
-      """.stripMargin, 3, 27, 28, msg + " window-ref")
+        SELECT * FROM tab
+        WINDOW window_ref AS window-ref
+      """, 3, 27, 28, msg + " window-ref")
     intercept(
       """
-        |SELECT tb.*
-        |FROM t-a INNER JOIN tb
-        |ON ta.a = tb.a AND ta.tag = tb.tag
-      """.stripMargin, 3, 6, 7, msg + " t-a")
+        SELECT tb.*
+        FROM t-a INNER JOIN tb
+        ON ta.a = tb.a AND ta.tag = tb.tag
+      """, 3, 6, 7, msg + " t-a")
     intercept(
       """
-        |FROM test-table
-        |SELECT a
-        |SELECT b
-      """.stripMargin, 2, 9, 10, msg + " test-table")
+        FROM test-table
+        SELECT a
+        SELECT b
+      """, 2, 9, 10, msg + " test-table")
   }
 
   test("datatype not supported") {

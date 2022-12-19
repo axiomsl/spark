@@ -75,141 +75,141 @@ class PlanParserSuite extends AnalysisTest {
     val plan = table("a").select(star())
     assertEqual(
       """
-        |/* This is an example of SQL which should not execute:
-        | * select 'multi-line';
-        | */
-        |SELECT * FROM a
-      """.stripMargin, plan)
+        /* This is an example of SQL which should not execute:
+         * select 'multi-line';
+         */
+        SELECT * FROM a
+      """, plan)
   }
 
   test("bracketed comment case two") {
     val plan = table("a").select(star())
     assertEqual(
       """
-        |/*
-        |SELECT 'trailing' as x1; -- inside block comment
-        |*/
-        |SELECT * FROM a
-      """.stripMargin, plan)
+        /*
+        SELECT 'trailing' as x1; -- inside block comment
+        */
+        SELECT * FROM a
+      """, plan)
   }
 
   test("nested bracketed comment case one") {
     val plan = table("a").select(star())
     assertEqual(
       """
-        |/* This block comment surrounds a query which itself has a block comment...
-        |SELECT /* embedded single line */ 'embedded' AS x2;
-        |*/
-        |SELECT * FROM a
-      """.stripMargin, plan)
+        /* This block comment surrounds a query which itself has a block comment...
+        SELECT /* embedded single line */ 'embedded' AS x2;
+        */
+        SELECT * FROM a
+      """, plan)
   }
 
   test("nested bracketed comment case two") {
     val plan = table("a").select(star())
     assertEqual(
       """
-        |SELECT -- continued after the following block comments...
-        |/* Deeply nested comment.
-        |   This includes a single apostrophe to make sure we aren't decoding this part as a string.
-        |SELECT 'deep nest' AS n1;
-        |/* Second level of nesting...
-        |SELECT 'deeper nest' as n2;
-        |/* Third level of nesting...
-        |SELECT 'deepest nest' as n3;
-        |*/
-        |Hoo boy. Still two deep...
-        |*/
-        |Now just one deep...
-        |*/
-        |* FROM a
-      """.stripMargin, plan)
+        SELECT -- continued after the following block comments...
+        /* Deeply nested comment.
+           This includes a single apostrophe to make sure we aren't decoding this part as a string.
+        SELECT 'deep nest' AS n1;
+        /* Second level of nesting...
+        SELECT 'deeper nest' as n2;
+        /* Third level of nesting...
+        SELECT 'deepest nest' as n3;
+        */
+        Hoo boy. Still two deep...
+        */
+        Now just one deep...
+        */
+        * FROM a
+      """, plan)
   }
 
   test("nested bracketed comment case three") {
     val plan = table("a").select(star())
     assertEqual(
       """
-        |/* This block comment surrounds a query which itself has a block comment...
-        |//* I am a nested bracketed comment.
-        |*/
-        |*/
-        |SELECT * FROM a
-      """.stripMargin, plan)
+        /* This block comment surrounds a query which itself has a block comment...
+        //* I am a nested bracketed comment.
+        */
+        */
+        SELECT * FROM a
+      """, plan)
   }
 
   test("nested bracketed comment case four") {
     val plan = table("a").select(star())
     assertEqual(
       """
-        |/*/**/*/
-        |SELECT * FROM a
-      """.stripMargin, plan)
+        /*/**/*/
+        SELECT * FROM a
+      """, plan)
   }
 
   test("nested bracketed comment case five") {
     val plan = table("a").select(star())
     assertEqual(
       """
-        |/*/*abc*/*/
-        |SELECT * FROM a
-      """.stripMargin, plan)
+        /*/*abc*/*/
+        SELECT * FROM a
+      """, plan)
   }
 
   test("nested bracketed comment case six") {
     val plan = table("a").select(star())
     assertEqual(
       """
-        |/*/*foo*//*bar*/*/
-        |SELECT * FROM a
-      """.stripMargin, plan)
+        /*/*foo*//*bar*/*/
+        SELECT * FROM a
+      """, plan)
   }
 
   test("nested bracketed comment case seven") {
     val plan = OneRowRelation().select(Literal(1).as("a"))
     assertEqual(
       """
-        |/*abc*/
-        |select 1 as a
-        |/*
-        |
-        |2 as b
-        |/*abc */
-        |, 3 as c
-        |
-        |/**/
-        |*/
-      """.stripMargin, plan)
+        /*abc*/
+        select 1 as a
+        /*
+
+        2 as b
+        /*abc */
+        , 3 as c
+
+        /**/
+        */
+      """, plan)
   }
 
   test("unclosed bracketed comment one") {
     val query = """
-                  |/*abc*/
-                  |select 1 as a
-                  |/*
-                  |
-                  |2 as b
-                  |/*abc */
-                  |, 3 as c
-                  |
-                  |/**/
-                  |""".stripMargin
+                  /*abc*/
+                  select 1 as a
+                  /*
+
+                  2 as b
+                  /*abc */
+                  , 3 as c
+
+                  /**/
+                  """
     val e = intercept[ParseException](parsePlan(query))
     assert(e.getMessage.contains(s"Unclosed bracketed comment"))
   }
 
   test("unclosed bracketed comment two") {
     val query = """
-                  |/*abc*/
-                  |select 1 as a
-                  |/*
-                  |
-                  |2 as b
-                  |/*abc */
-                  |, 3 as c
-                  |
-                  |/**/
-                  |select 4 as d
-                  |""".stripMargin
+                  /*abc*/
+                  select 1 as a
+                  /*
+
+                  2 as b
+                  /*abc */
+                  , 3 as c
+
+                  /**/
+                  select 4 as d
+                  """
     val e = intercept[ParseException](parsePlan(query))
     assert(e.getMessage.contains(s"Unclosed bracketed comment"))
   }
@@ -426,9 +426,9 @@ class PlanParserSuite extends AnalysisTest {
     val ws1 = Map("w1" -> spec, "w2" -> spec, "w3" -> spec)
     assertEqual(
       s"""$sql
-         |window w1 as (partition by a, b order by c rows between 1 preceding and 1 following),
-         |       w2 as w1,
-         |       w3 as w1""".stripMargin,
+         window w1 as (partition by a, b order by c rows between 1 preceding and 1 following),
+                w2 as w1,
+                w3 as w1""",
       WithWindowDefinition(ws1, plan))
   }
 
@@ -446,9 +446,9 @@ class PlanParserSuite extends AnalysisTest {
     // Multiple lateral views
     assertEqual(
       """select *
-        |from t
-        |lateral view explode(x) expl
-        |lateral view outer json_tuple(x, y) jtup q, z""".stripMargin,
+        from t
+        lateral view explode(x) expl
+        lateral view outer json_tuple(x, y) jtup q, z""",
       table("t")
         .generate(explode, alias = Some("expl"))
         .generate(jsonTuple, outer = true, alias = Some("jtup"), outputNames = Seq("q", "z"))
@@ -458,14 +458,14 @@ class PlanParserSuite extends AnalysisTest {
     val from = table("t1").generate(explode, alias = Some("expl"), outputNames = Seq("x"))
     assertEqual(
       """from t1
-        |lateral view explode(x) expl as x
-        |insert into t2
-        |select *
-        |lateral view json_tuple(x, y) jtup q, z
-        |insert into t3
-        |select *
-        |where s < 10
-      """.stripMargin,
+        lateral view explode(x) expl as x
+        insert into t2
+        select *
+        lateral view json_tuple(x, y) jtup q, z
+        insert into t3
+        select *
+        where s < 10
+      """,
       Union(from
         .generate(jsonTuple, alias = Some("jtup"), outputNames = Seq("q", "z"))
         .select(star())
@@ -485,12 +485,12 @@ class PlanParserSuite extends AnalysisTest {
 
     intercept(
       """select *
-        |from t
-        |lateral view explode(x) expl
-        |pivot (
-        |  sum(x)
-        |  FOR y IN ('a', 'b')
-        |)""".stripMargin,
+        from t
+        lateral view explode(x) expl
+        pivot (
+          sum(x)
+          FOR y IN ('a', 'b')
+        )""",
       "LATERAL cannot be used together with PIVOT in FROM clause")
   }
 
@@ -647,12 +647,12 @@ class PlanParserSuite extends AnalysisTest {
         table("t1").select(star()).union(table("t2").select(star()))).as("t").select(star()))
     assertEqual(
       """select  id
-        |from (((select id from t0)
-        |       union all
-        |       (select  id from t0))
-        |      union all
-        |      (select id from t0)) as u_1
-      """.stripMargin,
+        from (((select id from t0)
+               union all
+               (select  id from t0))
+              union all
+              (select id from t0)) as u_1
+      """,
       plan.union(plan).union(plan).as("u_1").select('id))
   }
 
@@ -860,10 +860,10 @@ class PlanParserSuite extends AnalysisTest {
     comparePlans(
       parsePlan(
         """
-          |SELECT
-          |/*+ REPARTITION(100, c), BROADCASTJOIN(u), COALESCE(50), REPARTITION(300, c) */
-          |* FROM t
-        """.stripMargin),
+          SELECT
+          /*+ REPARTITION(100, c), BROADCASTJOIN(u), COALESCE(50), REPARTITION(300, c) */
+          * FROM t
+        """),
       UnresolvedHint("REPARTITION", Seq(Literal(100), UnresolvedAttribute("c")),
         UnresolvedHint("BROADCASTJOIN", Seq($"u"),
           UnresolvedHint("COALESCE", Seq(Literal(50)),
@@ -1030,25 +1030,25 @@ class PlanParserSuite extends AnalysisTest {
 
     val query1 =
       """
-        |SELECT * FROM a
-        |UNION
-        |SELECT * FROM b
-        |EXCEPT
-        |SELECT * FROM c
-        |INTERSECT
-        |SELECT * FROM d
-      """.stripMargin
+        SELECT * FROM a
+        UNION
+        SELECT * FROM b
+        EXCEPT
+        SELECT * FROM c
+        INTERSECT
+        SELECT * FROM d
+      """
 
     val query2 =
       """
-        |SELECT * FROM a
-        |UNION
-        |SELECT * FROM b
-        |EXCEPT ALL
-        |SELECT * FROM c
-        |INTERSECT ALL
-        |SELECT * FROM d
-      """.stripMargin
+        SELECT * FROM a
+        UNION
+        SELECT * FROM b
+        EXCEPT ALL
+        SELECT * FROM c
+        INTERSECT ALL
+        SELECT * FROM d
+      """
 
     assertEqual(query1, Distinct(a.union(b)).except(c.intersect(d, isAll = false), isAll = false))
     assertEqual(query2, Distinct(a.union(b)).except(c.intersect(d, isAll = true), isAll = true))
@@ -1077,10 +1077,10 @@ class PlanParserSuite extends AnalysisTest {
     val m2 = intercept[ParseException] {
       parsePlan(
         """
-          |CREATE VIEW testView AS FROM jt
-          |INSERT INTO tbl1 SELECT * WHERE jt.id < 5
-          |INSERT INTO tbl2 SELECT * WHERE jt.id > 4
-        """.stripMargin)
+          CREATE VIEW testView AS FROM jt
+          INSERT INTO tbl1 SELECT * WHERE jt.id < 5
+          INSERT INTO tbl2 SELECT * WHERE jt.id > 4
+        """)
     }.getMessage
     assert(m2.contains("Syntax error at or near 'INSERT'"))
     val m3 = intercept[ParseException] {
@@ -1091,10 +1091,10 @@ class PlanParserSuite extends AnalysisTest {
     val m4 = intercept[ParseException] {
       parsePlan(
         """
-          |ALTER VIEW testView AS FROM jt
-          |INSERT INTO tbl1 SELECT * WHERE jt.id < 5
-          |INSERT INTO tbl2 SELECT * WHERE jt.id > 4
-        """.stripMargin
+          ALTER VIEW testView AS FROM jt
+          INSERT INTO tbl1 SELECT * WHERE jt.id < 5
+          INSERT INTO tbl2 SELECT * WHERE jt.id > 4
+        """
       )
     }.getMessage
     assert(m4.contains("Syntax error at or near 'INSERT'"))
@@ -1117,9 +1117,9 @@ class PlanParserSuite extends AnalysisTest {
 
     assertEqual(
       """
-        |WITH cte1 AS (SELECT * FROM testcat.db.tab)
-        |SELECT * FROM cte1
-      """.stripMargin,
+        WITH cte1 AS (SELECT * FROM testcat.db.tab)
+        SELECT * FROM cte1
+      """,
       cte(table("cte1").select(star()),
         "cte1" -> ((table("testcat", "db", "tab").select(star()), Seq.empty))))
 
@@ -1145,10 +1145,10 @@ class PlanParserSuite extends AnalysisTest {
     // verify schema less
     assertEqual(
       """
-        |SELECT TRANSFORM(a, b, c)
-        |USING 'cat'
-        |FROM testData
-      """.stripMargin,
+        SELECT TRANSFORM(a, b, c)
+        USING 'cat'
+        FROM testData
+      """,
       ScriptTransformation(
         "cat",
         Seq(AttributeReference("key", StringType)(),
@@ -1161,10 +1161,10 @@ class PlanParserSuite extends AnalysisTest {
     // verify without output schema
     assertEqual(
       """
-        |SELECT TRANSFORM(a, b, c)
-        |USING 'cat' AS (a, b, c)
-        |FROM testData
-      """.stripMargin,
+        SELECT TRANSFORM(a, b, c)
+        USING 'cat' AS (a, b, c)
+        FROM testData
+      """,
       ScriptTransformation(
         "cat",
         Seq(AttributeReference("a", StringType)(),
@@ -1177,10 +1177,10 @@ class PlanParserSuite extends AnalysisTest {
     // verify with output schema
     assertEqual(
       """
-        |SELECT TRANSFORM(a, b, c)
-        |USING 'cat' AS (a int, b string, c long)
-        |FROM testData
-      """.stripMargin,
+        SELECT TRANSFORM(a, b, c)
+        USING 'cat' AS (a int, b string, c long)
+        FROM testData
+      """,
       ScriptTransformation(
         "cat",
         Seq(AttributeReference("a", IntegerType)(),
@@ -1193,22 +1193,22 @@ class PlanParserSuite extends AnalysisTest {
     // verify with ROW FORMAT DELIMETED
     assertEqual(
       """
-        |SELECT TRANSFORM(a, b, c)
-        |  ROW FORMAT DELIMITED
-        |  FIELDS TERMINATED BY '\t'
-        |  COLLECTION ITEMS TERMINATED BY '\u0002'
-        |  MAP KEYS TERMINATED BY '\u0003'
-        |  LINES TERMINATED BY '\n'
-        |  NULL DEFINED AS 'null'
-        |  USING 'cat' AS (a, b, c)
-        |  ROW FORMAT DELIMITED
-        |  FIELDS TERMINATED BY '\t'
-        |  COLLECTION ITEMS TERMINATED BY '\u0004'
-        |  MAP KEYS TERMINATED BY '\u0005'
-        |  LINES TERMINATED BY '\n'
-        |  NULL DEFINED AS 'NULL'
-        |FROM testData
-      """.stripMargin,
+        SELECT TRANSFORM(a, b, c)
+          ROW FORMAT DELIMITED
+          FIELDS TERMINATED BY '\t'
+          COLLECTION ITEMS TERMINATED BY '\u0002'
+          MAP KEYS TERMINATED BY '\u0003'
+          LINES TERMINATED BY '\n'
+          NULL DEFINED AS 'null'
+          USING 'cat' AS (a, b, c)
+          ROW FORMAT DELIMITED
+          FIELDS TERMINATED BY '\t'
+          COLLECTION ITEMS TERMINATED BY '\u0004'
+          MAP KEYS TERMINATED BY '\u0005'
+          LINES TERMINATED BY '\n'
+          NULL DEFINED AS 'NULL'
+        FROM testData
+      """,
       ScriptTransformation(
         "cat",
         Seq(AttributeReference("a", StringType)(),
@@ -1231,20 +1231,20 @@ class PlanParserSuite extends AnalysisTest {
     // verify with ROW FORMAT SERDE
     intercept(
       """
-        |SELECT TRANSFORM(a, b, c)
-        |  ROW FORMAT SERDE 'org.apache.hadoop.hive.serde2.OpenCSVSerde'
-        |  WITH SERDEPROPERTIES(
-        |    "separatorChar" = "\t",
-        |    "quoteChar" = "'",
-        |    "escapeChar" = "\\")
-        |  USING 'cat' AS (a, b, c)
-        |  ROW FORMAT SERDE 'org.apache.hadoop.hive.serde2.OpenCSVSerde'
-        |  WITH SERDEPROPERTIES(
-        |    "separatorChar" = "\t",
-        |    "quoteChar" = "'",
-        |    "escapeChar" = "\\")
-        |FROM testData
-      """.stripMargin,
+        SELECT TRANSFORM(a, b, c)
+          ROW FORMAT SERDE 'org.apache.hadoop.hive.serde2.OpenCSVSerde'
+          WITH SERDEPROPERTIES(
+            "separatorChar" = "\t",
+            "quoteChar" = "'",
+            "escapeChar" = "\\")
+          USING 'cat' AS (a, b, c)
+          ROW FORMAT SERDE 'org.apache.hadoop.hive.serde2.OpenCSVSerde'
+          WITH SERDEPROPERTIES(
+            "separatorChar" = "\t",
+            "quoteChar" = "'",
+            "escapeChar" = "\\")
+        FROM testData
+      """,
       "TRANSFORM with serde is only supported in hive mode")
   }
 

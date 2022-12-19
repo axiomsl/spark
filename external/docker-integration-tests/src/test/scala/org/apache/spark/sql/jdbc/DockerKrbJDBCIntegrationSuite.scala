@@ -134,10 +134,10 @@ abstract class DockerKrbJDBCIntegrationSuite extends DockerJDBCIntegrationSuite 
     // query option in the create table path.
     sql(
       s"""
-         |CREATE OR REPLACE TEMPORARY VIEW queryOption
-         |USING org.apache.spark.sql.jdbc
-         |OPTIONS (url '$jdbcUrl', query '$query', keytab '$keytabFullPath', principal '$principal')
-       """.stripMargin.replaceAll("\n", " "))
+         CREATE OR REPLACE TEMPORARY VIEW queryOption
+         USING org.apache.spark.sql.jdbc
+         OPTIONS (url '$jdbcUrl', query '$query', keytab '$keytabFullPath', principal '$principal')
+       """.replaceAll("\n", " "))
     assert(sql("select c0 from queryOption").collect().toSet === expectedResult)
   }
 

@@ -30,46 +30,46 @@ class SSBQuerySuite extends BenchmarkQueryTest {
 
     sql(
       """
-        |CREATE TABLE `part` (`p_partkey` INT, `p_name` STRING, `p_mfgr` STRING,
-        |`p_category` STRING, `p_brand1` STRING, `p_color` STRING, `p_type` STRING, `p_size` INT,
-        |`p_container` STRING)
-        |USING parquet
-      """.stripMargin)
+        CREATE TABLE `part` (`p_partkey` INT, `p_name` STRING, `p_mfgr` STRING,
+        `p_category` STRING, `p_brand1` STRING, `p_color` STRING, `p_type` STRING, `p_size` INT,
+        `p_container` STRING)
+        USING parquet
+      """)
 
     sql(
       """
-        |CREATE TABLE `supplier` (`s_suppkey` INT, `s_name` STRING, `s_address` STRING,
-        |`s_city` STRING, `s_nation` STRING, `s_region` STRING, `s_phone` STRING)
-        |USING parquet
-      """.stripMargin)
+        CREATE TABLE `supplier` (`s_suppkey` INT, `s_name` STRING, `s_address` STRING,
+        `s_city` STRING, `s_nation` STRING, `s_region` STRING, `s_phone` STRING)
+        USING parquet
+      """)
 
     sql(
       """
-        |CREATE TABLE `customer` (`c_custkey` INT, `c_name` STRING, `c_address` STRING,
-        |`c_city` STRING, `c_nation` STRING, `c_region` STRING, `c_phone` STRING,
-        |`c_mktsegment` STRING)
-        |USING parquet
-      """.stripMargin)
+        CREATE TABLE `customer` (`c_custkey` INT, `c_name` STRING, `c_address` STRING,
+        `c_city` STRING, `c_nation` STRING, `c_region` STRING, `c_phone` STRING,
+        `c_mktsegment` STRING)
+        USING parquet
+      """)
 
     sql(
       """
-        |CREATE TABLE `date` (`d_datekey` INT, `d_date` STRING, `d_dayofweek` STRING,
-        |`d_month` STRING, `d_year` INT, `d_yearmonthnum` INT, `d_yearmonth` STRING,
-        |`d_daynuminweek` INT, `d_daynuminmonth` INT, `d_daynuminyear` INT, `d_monthnuminyear` INT,
-        |`d_weeknuminyear` INT, `d_sellingseason` STRING, `d_lastdayinweekfl` STRING,
-        |`d_lastdayinmonthfl` STRING, `d_holidayfl` STRING, `d_weekdayfl` STRING)
-        |USING parquet
-      """.stripMargin)
+        CREATE TABLE `date` (`d_datekey` INT, `d_date` STRING, `d_dayofweek` STRING,
+        `d_month` STRING, `d_year` INT, `d_yearmonthnum` INT, `d_yearmonth` STRING,
+        `d_daynuminweek` INT, `d_daynuminmonth` INT, `d_daynuminyear` INT, `d_monthnuminyear` INT,
+        `d_weeknuminyear` INT, `d_sellingseason` STRING, `d_lastdayinweekfl` STRING,
+        `d_lastdayinmonthfl` STRING, `d_holidayfl` STRING, `d_weekdayfl` STRING)
+        USING parquet
+      """)
 
     sql(
       """
-        |CREATE TABLE `lineorder` (`lo_orderkey` INT, `lo_linenumber` INT, `lo_custkey` INT,
-        |`lo_partkey` INT, `lo_suppkey` INT, `lo_orderdate` INT, `lo_orderpriority` STRING,
-        |`lo_shippriority` STRING, `lo_quantity` INT, `lo_extendedprice` INT,
-        |`lo_ordertotalprice` INT, `lo_discount` INT, `lo_revenue` INT, `lo_supplycost` INT,
-        |`lo_tax` INT, `lo_commitdate` INT, `lo_shipmode` STRING)
-        |USING parquet
-      """.stripMargin)
+        CREATE TABLE `lineorder` (`lo_orderkey` INT, `lo_linenumber` INT, `lo_custkey` INT,
+        `lo_partkey` INT, `lo_suppkey` INT, `lo_orderdate` INT, `lo_orderpriority` STRING,
+        `lo_shippriority` STRING, `lo_quantity` INT, `lo_extendedprice` INT,
+        `lo_ordertotalprice` INT, `lo_discount` INT, `lo_revenue` INT, `lo_supplycost` INT,
+        `lo_tax` INT, `lo_commitdate` INT, `lo_shipmode` STRING)
+        USING parquet
+      """)
   }
 
   val ssbQueries = Seq(

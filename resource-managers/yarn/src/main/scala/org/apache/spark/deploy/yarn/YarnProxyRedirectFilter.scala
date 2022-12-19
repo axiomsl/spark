@@ -57,16 +57,16 @@ class YarnProxyRedirectFilter extends Filter with Logging {
     // Need a client-side redirect instead of an HTTP one, otherwise the YARN proxy itself
     // will handle the redirect and get into an infinite loop.
     val content = s"""
-      |<html xmlns="http://www.w3.org/1999/xhtml">
-      |<head>
-      |  <title>Spark History Server Redirect</title>
-      |  <meta http-equiv="refresh" content="0;URL='$redirect'" />
-      |</head>
-      |<body>
-      |  <p>The requested page can be found at: <a href="$redirect">$redirect</a>.</p>
-      |</body>
-      |</html>
-      """.stripMargin
+      <html xmlns="http://www.w3.org/1999/xhtml">
+      <head>
+        <title>Spark History Server Redirect</title>
+        <meta http-equiv="refresh" content="0;URL='$redirect'" />
+      </head>
+      <body>
+        <p>The requested page can be found at: <a href="$redirect">$redirect</a>.</p>
+      </body>
+      </html>
+      """
 
     logDebug(s"Redirecting YARN proxy request to $redirect.")
     res.setStatus(HttpServletResponse.SC_OK)

@@ -228,14 +228,14 @@ private[spark] class ExecutorPodsLifecycleManager(
 
 
     s"""
-       |${exitMsg}
-       |${reasonStr.getOrElse("")}
-       |${msgStr.getOrElse("")}
-       |
-       |The API gave the following container statuses:
-       |
-       |${containersDescription(pod)}
-      """.stripMargin
+       ${exitMsg}
+       ${reasonStr.getOrElse("")}
+       ${msgStr.getOrElse("")}
+
+       The API gave the following container statuses:
+
+       ${containersDescription(pod)}
+      """
   }
 
   private def findExitCode(podState: FinalPodState): Int = {

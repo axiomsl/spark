@@ -512,10 +512,10 @@ class CleanerTester(
       toBeCleanedBroadcastIds.toSeq.sorted.mkString("[", ", ", "]")
     }
     s"""
-       |\tRDDs = $s1
-       |\tShuffles = $s2
-       |\tBroadcasts = $s3
-    """.stripMargin
+       \tRDDs = $s1
+       \tShuffles = $s2
+       \tBroadcasts = $s3
+    """
   }
 
   private def isAllCleanedUp =

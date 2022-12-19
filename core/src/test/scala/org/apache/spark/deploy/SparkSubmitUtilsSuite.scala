@@ -233,19 +233,19 @@ class SparkSubmitUtilsSuite extends SparkFunSuite with BeforeAndAfterAll {
     val dummyIvyLocal = new File(tempIvyPath, "local" + File.separator)
     val settingsText =
       s"""
-         |<ivysettings>
-         |  <caches defaultCacheDir="$tempIvyPath/cache"/>
-         |  <settings defaultResolver="local-ivy-settings-file-test"/>
-         |  <resolvers>
-         |    <filesystem name="local-ivy-settings-file-test">
-         |      <ivy pattern=
-         |        "$dummyIvyLocal/[organisation]/[module]/[revision]/[type]s/[artifact].[ext]"/>
-         |      <artifact pattern=
-         |        "$dummyIvyLocal/[organisation]/[module]/[revision]/[type]s/[artifact].[ext]"/>
-         |    </filesystem>
-         |  </resolvers>
-         |</ivysettings>
-         |""".stripMargin
+         <ivysettings>
+           <caches defaultCacheDir="$tempIvyPath/cache"/>
+           <settings defaultResolver="local-ivy-settings-file-test"/>
+           <resolvers>
+             <filesystem name="local-ivy-settings-file-test">
+               <ivy pattern=
+                 "$dummyIvyLocal/[organisation]/[module]/[revision]/[type]s/[artifact].[ext]"/>
+               <artifact pattern=
+                 "$dummyIvyLocal/[organisation]/[module]/[revision]/[type]s/[artifact].[ext]"/>
+             </filesystem>
+           </resolvers>
+         </ivysettings>
+         """
 
     val settingsFile = Paths.get(tempIvyPath, "ivysettings.xml")
     Files.write(settingsFile, settingsText.getBytes(StandardCharsets.UTF_8))

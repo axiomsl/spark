@@ -110,9 +110,9 @@ trait AggregateCodegenSupport
         val ev = e.genCode(ctx)
         val initVars =
           code"""
-                |$isNull = ${ev.isNull};
-                |$value = ${ev.value};
-              """.stripMargin
+                $isNull = ${ev.isNull};
+                $value = ${ev.value};
+              """
         ExprCode(
           ev.code + initVars,
           JavaCode.isNullGlobal(isNull),
@@ -135,9 +135,9 @@ trait AggregateCodegenSupport
       val resultVars = bindReferences(resultExpressions, aggregateAttributes).map(_.genCode(ctx))
       (resultVars,
         s"""
-           |$evaluateAggResults
-           |${evaluateVariables(resultVars)}
-         """.stripMargin)
+           $evaluateAggResults
+           ${evaluateVariables(resultVars)}
+         """)
     } else if (modes.contains(Partial) || modes.contains(PartialMerge)) {
       // output the aggregate buffer directly
       (flatBufVars, "")
@@ -150,13 +150,13 @@ trait AggregateCodegenSupport
     val doAgg = ctx.freshName("doAggregateWithoutKey")
     val doAggFuncName = ctx.addNewFunction(doAgg,
       s"""
-         |private void $doAgg() throws java.io.IOException {
-         |  // initialize aggregation buffer
-         |  $initBufVar
-         |
-         |  ${child.asInstanceOf[CodegenSupport].produce(ctx, this)}
-         |}
-       """.stripMargin)
+         private void $doAgg() throws java.io.IOException {
+           // initialize aggregation buffer
+           $initBufVar
+
+           ${child.asInstanceOf[CodegenSupport].produce(ctx, this)}
+         }
+       """)
 
     val numOutput = metricTerm(ctx, "numOutputRows")
     val doAggWithRecordMetric =
@@ -164,26 +164,26 @@ trait AggregateCodegenSupport
         val aggTime = metricTerm(ctx, "aggTime")
         val beforeAgg = ctx.freshName("beforeAgg")
         s"""
-           |long $beforeAgg = System.nanoTime();
-           |$doAggFuncName();
-           |$aggTime.add((System.nanoTime() - $beforeAgg) / $NANOS_PER_MILLIS);
-         """.stripMargin
+           long $beforeAgg = System.nanoTime();
+           $doAggFuncName();
+           $aggTime.add((System.nanoTime() - $beforeAgg) / $NANOS_PER_MILLIS);
+         """
       } else {
         s"$doAggFuncName();"
       }
 
     s"""
-       |while (!$initAgg) {
-       |  $initAgg = true;
-       |  $doAggWithRecordMetric
-       |
-       |  // output the result
-       |  ${genResult.trim}
-       |
-       |  $numOutput.add(1);
-       |  ${consume(ctx, resultVars).trim}
-       |}
-     """.stripMargin
+       while (!$initAgg) {
+         $initAgg = true;
+         $doAggWithRecordMetric
+
+         // output the result
+         ${genResult.trim}
+
+         $numOutput.add(1);
+         ${consume(ctx, resultVars).trim}
+       }
+     """
   }
 
   /**
@@ -222,28 +222,28 @@ trait AggregateCodegenSupport
       // of each aggregation function code.
       val updates = bufferEvalsForOneFunc.zip(bufVarsForOneFunc).map { case (ev, bufVar) =>
         s"""
-           |${bufVar.isNull} = ${ev.isNull};
-           |${bufVar.value} = ${ev.value};
-         """.stripMargin
+           ${bufVar.isNull} = ${ev.isNull};
+           ${bufVar.value} = ${ev.value};
+         """
       }
       code"""
-            |${ctx.registerComment(s"do aggregate for ${aggNames(i)}")}
-            |${ctx.registerComment("evaluate aggregate function")}
-            |${evaluateVariables(bufferEvalsForOneFunc)}
-            |${ctx.registerComment("update aggregation buffers")}
-            |${updates.mkString("\n").trim}
-       """.stripMargin
+            ${ctx.registerComment(s"do aggregate for ${aggNames(i)}")}
+            ${ctx.registerComment("evaluate aggregate function")}
+            ${evaluateVariables(bufferEvalsForOneFunc)}
+            ${ctx.registerComment("update aggregation buffers")}
+            ${updates.mkString("\n").trim}
+       """
     }
 
     val codeToEvalAggFuncs = generateEvalCodeForAggFuncs(
       ctx, input, inputAttrs, boundUpdateExprs, aggNames, aggCodeBlocks, subExprs)
     s"""
-       |// do aggregate
-       |// common sub-expressions
-       |$effectiveCodes
-       |// evaluate aggregate functions and update aggregation buffers
-       |$codeToEvalAggFuncs
-     """.stripMargin
+       // do aggregate
+       // common sub-expressions
+       $effectiveCodes
+       // evaluate aggregate functions and update aggregation buffers
+       $codeToEvalAggFuncs
+     """
   }
 
   /**
@@ -272,11 +272,11 @@ trait AggregateCodegenSupport
         // Note: wrap in "do { } while(false);", so the generated checks can jump out
         // with "continue;"
         s"""
-           |do {
-           |  ${generatePredicateCode(ctx, condition, inputAttrs, input)}
-           |  $aggCode
-           |} while(false);
-         """.stripMargin
+           do {
+             ${generatePredicateCode(ctx, condition, inputAttrs, input)}
+             $aggCode
+           } while(false);
+         """
       case (aggCode, _) =>
         aggCode
     }.mkString("\n")
@@ -329,10 +329,10 @@ trait AggregateCodegenSupport
           }.mkString(", ")
           val doAggFuncName = ctx.addNewFunction(doAggFunc,
             s"""
-               |private void $doAggFunc($argList) throws java.io.IOException {
-               |  ${aggCodeBlocks(i)}
-               |}
-             """.stripMargin)
+               private void $doAggFunc($argList) throws java.io.IOException {
+                 ${aggCodeBlocks(i)}
+               }
+             """)
 
           val inputVariables = args.map(_.variableName).mkString(", ")
           s"$doAggFuncName($inputVariables);"

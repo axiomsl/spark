@@ -36,11 +36,11 @@ abstract class CTEInlineSuiteBase
       Seq((0, 1), (1, 2)).toDF("c1", "c2").createOrReplaceTempView("t")
       val df = sql(
         s"""with
-           |v as (
-           |  select c1, c2, rand() from t
-           |)
-           |select * from v except select * from v
-         """.stripMargin)
+           v as (
+             select c1, c2, rand() from t
+           )
+           select * from v except select * from v
+         """)
       checkAnswer(df, Nil)
       assert(
         df.queryExecution.optimizedPlan.exists(_.isInstanceOf[RepartitionOperation]),
@@ -53,11 +53,11 @@ abstract class CTEInlineSuiteBase
       Seq((0, 1), (1, 2)).toDF("c1", "c2").createOrReplaceTempView("t")
       val df = sql(
         s"""with
-           |v as (
-           |  select c1, c2, rand() c3 from t
-           |)
-           |select * from v where c3 not in (select c3 from v)
-         """.stripMargin)
+           v as (
+             select c1, c2, rand() c3 from t
+           )
+           select * from v where c3 not in (select c3 from v)
+         """)
       checkAnswer(df, Nil)
       assert(
         df.queryExecution.optimizedPlan.exists(_.isInstanceOf[RepartitionOperation]),
@@ -70,11 +70,11 @@ abstract class CTEInlineSuiteBase
       Seq((0, 1), (1, 2)).toDF("c1", "c2").createOrReplaceTempView("t")
       val df = sql(
         s"""with
-           |v as (
-           |  select c1, c2, rand() c3 from t
-           |)
-           |select c1, c2 from v where c3 > 0
-         """.stripMargin)
+           v as (
+             select c1, c2, rand() c3 from t
+           )
+           select c1, c2 from v where c3 > 0
+         """)
       checkAnswer(df, Row(0, 1) :: Row(1, 2) :: Nil)
       assert(
         df.queryExecution.analyzed.exists(_.isInstanceOf[WithCTE]),
@@ -90,16 +90,16 @@ abstract class CTEInlineSuiteBase
       Seq((0, 1), (1, 2)).toDF("c1", "c2").createOrReplaceTempView("t")
       val df = sql(
         s"""with
-           |v1 as (
-           |  select c1, c2, rand() c3 from t
-           |),
-           |v2 as (
-           |  select c1, c2, rand() c4 from v1 where c3 in (select c3 from v1)
-           |)
-           |select count(*) from (
-           |  select * from v2 where c1 > 0 union select * from v2 where c2 > 0
-           |)
-         """.stripMargin)
+           v1 as (
+             select c1, c2, rand() c3 from t
+           ),
+           v2 as (
+             select c1, c2, rand() c4 from v1 where c3 in (select c3 from v1)
+           )
+           select count(*) from (
+             select * from v2 where c1 > 0 union select * from v2 where c2 > 0
+           )
+         """)
       checkAnswer(df, Row(2) :: Nil)
       assert(
         df.queryExecution.analyzed.collect {
@@ -119,16 +119,16 @@ abstract class CTEInlineSuiteBase
       Seq((0, 1), (1, 2)).toDF("c1", "c2").createOrReplaceTempView("t")
       val df = sql(
         s"""with
-           |v1 as (
-           |  select c1, c2, rand() c3 from t
-           |),
-           |v2 as (
-           |  select * from v1 where c3 in (select c3 from v1)
-           |)
-           |select count(*) from (
-           |  select * from v2 where c1 > 0 union select * from v2 where c2 > 0
-           |)
-         """.stripMargin)
+           v1 as (
+             select c1, c2, rand() c3 from t
+           ),
+           v2 as (
+             select * from v1 where c3 in (select c3 from v1)
+           )
+           select count(*) from (
+             select * from v2 where c1 > 0 union select * from v2 where c2 > 0
+           )
+         """)
       checkAnswer(df, Row(2) :: Nil)
       assert(
         df.queryExecution.analyzed.collect {
@@ -148,14 +148,14 @@ abstract class CTEInlineSuiteBase
       Seq((0, 1), (1, 2)).toDF("c1", "c2").createOrReplaceTempView("t")
       val df = sql(
         s"""with
-           |v1 as (
-           |  select c1, c2, rand() c3 from t
-           |),
-           |v2 as (
-           |  select c1, c2, c3, rand() c4 from v1
-           |)
-           |select c1, c2 from v2 where c3 > 0 and c4 > 0
-         """.stripMargin)
+           v1 as (
+             select c1, c2, rand() c3 from t
+           ),
+           v2 as (
+             select c1, c2, c3, rand() c4 from v1
+           )
+           select c1, c2 from v2 where c3 > 0 and c4 > 0
+         """)
       checkAnswer(df, Row(0, 1) :: Row(1, 2) :: Nil)
       assert(
         df.queryExecution.analyzed.collect {
@@ -177,18 +177,18 @@ abstract class CTEInlineSuiteBase
         Seq((2, 1), (2, 2)).toDF("c1", "c2").createOrReplaceTempView("t")
         val df = sql(
           s"""with v as (
-             |  select c1, c2, rand() c3 from t
-             |)
-             |select * from v except
-             |select * from v where c1 = (
-             |  with v2 as (
-             |    select c1, c2, rand() c3 from t
-             |  )
-             |  select count(*) from v where c2 not in (
-             |    select c2 from v2 where c3 not in (select c3 from v2)
-             |  )
-             |)
-           """.stripMargin)
+               select c1, c2, rand() c3 from t
+             )
+             select * from v except
+             select * from v where c1 = (
+               with v2 as (
+                 select c1, c2, rand() c3 from t
+               )
+               select count(*) from v where c2 not in (
+                 select c2 from v2 where c3 not in (select c3 from v2)
+               )
+             )
+           """)
         checkAnswer(df, Nil)
         assert(
           collectWithSubqueries(df.queryExecution.executedPlan) {
@@ -204,19 +204,19 @@ abstract class CTEInlineSuiteBase
       Seq((2, 1), (2, 2)).toDF("c1", "c2").createOrReplaceTempView("t")
       val df = sql(
         s"""with v as (
-           |  select c1, c2, rand() c3 from t where c1 = (
-           |    with v2 as (
-           |      select c1, c2, rand() c3 from t
-           |    )
-           |    select count(*) from (
-           |      select * from v2 where c1 > 0 union select * from v2 where c2 > 0
-           |    )
-           |  )
-           |)
-           |select count(*) from (
-           |  select * from v where c1 > 0 union select * from v where c2 > 0
-           |)
-         """.stripMargin)
+             select c1, c2, rand() c3 from t where c1 = (
+               with v2 as (
+                 select c1, c2, rand() c3 from t
+               )
+               select count(*) from (
+                 select * from v2 where c1 > 0 union select * from v2 where c2 > 0
+               )
+             )
+           )
+           select count(*) from (
+             select * from v where c1 > 0 union select * from v where c2 > 0
+           )
+         """)
       checkAnswer(df, Row(2) :: Nil)
       assert(
         collectWithSubqueries(df.queryExecution.executedPlan) {
@@ -231,16 +231,16 @@ abstract class CTEInlineSuiteBase
       Seq((0, 1), (1, 2)).toDF("c1", "c2").createOrReplaceTempView("t")
       val df = sql(
         s"""with
-           |v1 as (
-           |  select c1, c2, c1 + c2 c3 from t
-           |),
-           |v2 as (
-           |  select * from v1 where c3 in (select c3 from v1)
-           |)
-           |select count(*) from (
-           |  select * from v2 where c1 > 0 union select * from v2 where c2 > 0
-           |)
-         """.stripMargin)
+           v1 as (
+             select c1, c2, c1 + c2 c3 from t
+           ),
+           v2 as (
+             select * from v1 where c3 in (select c3 from v1)
+           )
+           select count(*) from (
+             select * from v2 where c1 > 0 union select * from v2 where c2 > 0
+           )
+         """)
       checkAnswer(df, Row(2) :: Nil)
       assert(
         df.queryExecution.analyzed.collect {
@@ -260,16 +260,16 @@ abstract class CTEInlineSuiteBase
       Seq((0, 1), (1, 2)).toDF("c1", "c2").createOrReplaceTempView("t")
       val ex = intercept[AnalysisException](sql(
         s"""with
-           |v2 as (
-           |  select * from v1 where c3 in (select c3 from v1)
-           |),
-           |v1 as (
-           |  select c1, c2, rand() c3 from t
-           |)
-           |select count(*) from (
-           |  select * from v2 where c1 > 0 union select * from v2 where c2 > 0
-           |)
-         """.stripMargin))
+           v2 as (
+             select * from v1 where c3 in (select c3 from v1)
+           ),
+           v1 as (
+             select c1, c2, rand() c3 from t
+           )
+           select count(*) from (
+             select * from v2 where c1 > 0 union select * from v2 where c2 > 0
+           )
+         """))
       assert(ex.message.contains("Table or view not found: v1"))
     }
   }
@@ -279,16 +279,16 @@ abstract class CTEInlineSuiteBase
       Seq((0, 1), (1, 2)).toDF("c1", "c2").createOrReplaceTempView("t")
       val df = sql(
         s"""with
-           |v as (
-           |  select c1, c2, 's' c3, rand() c4 from t
-           |),
-           |vv as (
-           |  select v1.c1, v1.c2, rand() c5 from v v1, v v2
-           |  where v1.c1 > 0 and v1.c3 = 's' and v1.c2 = v2.c2
-           |)
-           |select vv1.c1, vv1.c2, vv2.c1, vv2.c2 from vv vv1, vv vv2
-           |where vv1.c2 > 0 and vv2.c2 > 0 and vv1.c1 = vv2.c1
-         """.stripMargin)
+           v as (
+             select c1, c2, 's' c3, rand() c4 from t
+           ),
+           vv as (
+             select v1.c1, v1.c2, rand() c5 from v v1, v v2
+             where v1.c1 > 0 and v1.c3 = 's' and v1.c2 = v2.c2
+           )
+           select vv1.c1, vv1.c2, vv2.c1, vv2.c2 from vv vv1, vv vv2
+           where vv1.c2 > 0 and vv2.c2 > 0 and vv1.c1 = vv2.c1
+         """)
       checkAnswer(df, Row(1, 2, 1, 2) :: Nil)
       assert(
         df.queryExecution.analyzed.collect {
@@ -329,16 +329,16 @@ abstract class CTEInlineSuiteBase
       Seq((0, 1, 2), (1, 2, 3)).toDF("c1", "c2", "c3").createOrReplaceTempView("t")
       val df = sql(
         s"""with
-           |v as (
-           |  select c1, c2, c3, rand() c4 from t
-           |),
-           |vv as (
-           |  select v1.c1, v1.c2, rand() c5 from v v1, v v2
-           |  where v1.c1 > 0 and v2.c3 < 5 and v1.c2 = v2.c2
-           |)
-           |select vv1.c1, vv1.c2, vv2.c1, vv2.c2 from vv vv1, vv vv2
-           |where vv1.c2 > 0 and vv2.c2 > 0 and vv1.c1 = vv2.c1
-         """.stripMargin)
+           v as (
+             select c1, c2, c3, rand() c4 from t
+           ),
+           vv as (
+             select v1.c1, v1.c2, rand() c5 from v v1, v v2
+             where v1.c1 > 0 and v2.c3 < 5 and v1.c2 = v2.c2
+           )
+           select vv1.c1, vv1.c2, vv2.c1, vv2.c2 from vv vv1, vv vv2
+           where vv1.c2 > 0 and vv2.c2 > 0 and vv1.c1 = vv2.c1
+         """)
       checkAnswer(df, Row(1, 2, 1, 2) :: Nil)
       assert(
         df.queryExecution.analyzed.collect {
@@ -382,18 +382,18 @@ abstract class CTEInlineSuiteBase
       Seq((0, 1), (1, 2)).toDF("c1", "c2").createOrReplaceTempView("t")
       sql(
         s"""with
-           |v as (
-           |  select c1 + c2 c3 from t
-           |)
-           |select sum(c3) s from v
-         """.stripMargin).createOrReplaceTempView("t2")
+           v as (
+             select c1 + c2 c3 from t
+           )
+           select sum(c3) s from v
+         """).createOrReplaceTempView("t2")
       val df = sql(
         s"""with
-           |v as (
-           |  select c1 * c2 c3 from t
-           |)
-           |select sum(c3) from v except select s from t2
-         """.stripMargin)
+           v as (
+             select c1 * c2 c3 from t
+           )
+           select sum(c3) from v except select s from t2
+         """)
       checkAnswer(df, Row(2) :: Nil)
     }
   }
@@ -403,18 +403,18 @@ abstract class CTEInlineSuiteBase
       Seq((0, 1), (1, 2)).toDF("c1", "c2").createOrReplaceTempView("t")
       sql(
         s"""with
-           |v as (
-           |  select c1 + c2 c3 from t
-           |)
-           |select sum(c3) s from v
-         """.stripMargin).createOrReplaceTempView("t2")
+           v as (
+             select c1 + c2 c3 from t
+           )
+           select sum(c3) s from v
+         """).createOrReplaceTempView("t2")
       sql(
         s"""with
-           |v as (
-           |  select c1 * c2 c3 from t
-           |)
-           |select sum(c3) s from v
-         """.stripMargin).createOrReplaceTempView("t3")
+           v as (
+             select c1 * c2 c3 from t
+           )
+           select sum(c3) s from v
+         """).createOrReplaceTempView("t3")
       val df = sql("select s from t3 except select s from t2")
       checkAnswer(df, Row(2) :: Nil)
     }
@@ -426,19 +426,19 @@ abstract class CTEInlineSuiteBase
         Seq((0, 1), (1, 2)).toDF("c1", "c2").write.saveAsTable("t")
         sql(
           s"""with
-             |v as (
-             |  select c1 + c2 c3 from t
-             |)
-             |select sum(c3) s from v
-           """.stripMargin).createOrReplaceTempView("t2")
+             v as (
+               select c1 + c2 c3 from t
+             )
+             select sum(c3) s from v
+           """).createOrReplaceTempView("t2")
         sql(
           s"""create view t3 as
-             |with
-             |v as (
-             |  select c1 * c2 c3 from t
-             |)
-             |select sum(c3) s from v
-           """.stripMargin)
+             with
+             v as (
+               select c1 * c2 c3 from t
+             )
+             select sum(c3) s from v
+           """)
         val df = sql("select s from t3 except select s from t2")
         checkAnswer(df, Row(2) :: Nil)
       }
@@ -460,23 +460,23 @@ abstract class CTEInlineSuiteBase
           "org.apache.spark.sql.catalyst.optimizer.InlineCTE") {
         val df = sql(
           """
-            |WITH cte_0 AS (
-            |  SELECT workspace_id, issue_id, shard_id, field_id FROM issue_current
-            |),
-            |cte_1 AS (
-            |  WITH filtered_source_table AS (
-            |    SELECT * FROM cte_0 WHERE shard_id in ( 10 )
-            |  )
-            |  SELECT source_table.workspace_id, field_id FROM cte_0 source_table
-            |  INNER JOIN (
-            |    SELECT workspace_id, issue_id FROM filtered_source_table GROUP BY 1, 2
-            |  ) target_table
-            |  ON source_table.issue_id = target_table.issue_id
-            |  AND source_table.workspace_id = target_table.workspace_id
-            |  WHERE source_table.shard_id IN ( 10 )
-            |)
-            |SELECT * FROM cte_1
-        """.stripMargin)
+            WITH cte_0 AS (
+              SELECT workspace_id, issue_id, shard_id, field_id FROM issue_current
+            ),
+            cte_1 AS (
+              WITH filtered_source_table AS (
+                SELECT * FROM cte_0 WHERE shard_id in ( 10 )
+              )
+              SELECT source_table.workspace_id, field_id FROM cte_0 source_table
+              INNER JOIN (
+                SELECT workspace_id, issue_id FROM filtered_source_table GROUP BY 1, 2
+              ) target_table
+              ON source_table.issue_id = target_table.issue_id
+              AND source_table.workspace_id = target_table.workspace_id
+              WHERE source_table.shard_id IN ( 10 )
+            )
+            SELECT * FROM cte_1
+        """)
         checkAnswer(df, Row(1, 100) :: Nil)
       }
     }
@@ -489,20 +489,20 @@ abstract class CTEInlineSuiteBase
       // CTE on both sides of join - WithCTE placed over first common parent, i.e., the join.
       val df1 = sql(
         s"""
-           |select count(v1.c3), count(v2.c3) from (
-           |  with
-           |  v1 as (
-           |    select c1, c2, rand() c3 from t
-           |  )
-           |  select * from v1
-           |) v1 join (
-           |  with
-           |  v2 as (
-           |    select c1, c2, rand() c3 from t
-           |  )
-           |  select * from v2
-           |) v2 on v1.c1 = v2.c1
-         """.stripMargin)
+           select count(v1.c3), count(v2.c3) from (
+             with
+             v1 as (
+               select c1, c2, rand() c3 from t
+             )
+             select * from v1
+           ) v1 join (
+             with
+             v2 as (
+               select c1, c2, rand() c3 from t
+             )
+             select * from v2
+           ) v2 on v1.c1 = v2.c1
+         """)
       checkAnswer(df1, Row(2, 2) :: Nil)
       df1.queryExecution.analyzed match {
         case Aggregate(_, _, WithCTE(_, cteDefs)) => assert(cteDefs.length == 2)
@@ -512,16 +512,16 @@ abstract class CTEInlineSuiteBase
       // CTE on one side of join - WithCTE placed back where it was.
       val df2 = sql(
         s"""
-           |select count(v1.c3), count(v2.c3) from (
-           |  select c1, c2, rand() c3 from t
-           |) v1 join (
-           |  with
-           |  v2 as (
-           |    select c1, c2, rand() c3 from t
-           |  )
-           |  select * from v2
-           |) v2 on v1.c1 = v2.c1
-         """.stripMargin)
+           select count(v1.c3), count(v2.c3) from (
+             select c1, c2, rand() c3 from t
+           ) v1 join (
+             with
+             v2 as (
+               select c1, c2, rand() c3 from t
+             )
+             select * from v2
+           ) v2 on v1.c1 = v2.c1
+         """)
       checkAnswer(df2, Row(2, 2) :: Nil)
       df2.queryExecution.analyzed match {
         case Aggregate(_, _, Join(_, SubqueryAlias(_, WithCTE(_, cteDefs)), _, _, _)) =>
@@ -532,26 +532,26 @@ abstract class CTEInlineSuiteBase
       // CTE on one side of join and both sides of union - WithCTE placed on first common parent.
       val df3 = sql(
         s"""
-           |select count(v1.c3), count(v2.c3) from (
-           |  select c1, c2, rand() c3 from t
-           |) v1 join (
-           |  select * from (
-           |    with
-           |    v1 as (
-           |      select c1, c2, rand() c3 from t
-           |    )
-           |    select * from v1
-           |  )
-           |  union all
-           |  select * from (
-           |    with
-           |    v2 as (
-           |      select c1, c2, rand() c3 from t
-           |    )
-           |    select * from v2
-           |  )
-           |) v2 on v1.c1 = v2.c1
-         """.stripMargin)
+           select count(v1.c3), count(v2.c3) from (
+             select c1, c2, rand() c3 from t
+           ) v1 join (
+             select * from (
+               with
+               v1 as (
+                 select c1, c2, rand() c3 from t
+               )
+               select * from v1
+             )
+             union all
+             select * from (
+               with
+               v2 as (
+                 select c1, c2, rand() c3 from t
+               )
+               select * from v2
+             )
+           ) v2 on v1.c1 = v2.c1
+         """)
       checkAnswer(df3, Row(4, 4) :: Nil)
       df3.queryExecution.analyzed match {
         case Aggregate(_, _, Join(_, SubqueryAlias(_, WithCTE(_: Union, cteDefs)), _, _, _)) =>
@@ -563,20 +563,20 @@ abstract class CTEInlineSuiteBase
       // CTE on one side of join and one side of union - WithCTE placed back where it was.
       val df4 = sql(
         s"""
-           |select count(v1.c3), count(v2.c3) from (
-           |  select c1, c2, rand() c3 from t
-           |) v1 join (
-           |  select * from (
-           |    with
-           |    v1 as (
-           |      select c1, c2, rand() c3 from t
-           |    )
-           |    select * from v1
-           |  )
-           |  union all
-           |  select c1, c2, rand() c3 from t
-           |) v2 on v1.c1 = v2.c1
-         """.stripMargin)
+           select count(v1.c3), count(v2.c3) from (
+             select c1, c2, rand() c3 from t
+           ) v1 join (
+             select * from (
+               with
+               v1 as (
+                 select c1, c2, rand() c3 from t
+               )
+               select * from v1
+             )
+             union all
+             select c1, c2, rand() c3 from t
+           ) v2 on v1.c1 = v2.c1
+         """)
       checkAnswer(df4, Row(4, 4) :: Nil)
       df4.queryExecution.analyzed match {
         case Aggregate(_, _, Join(_, SubqueryAlias(_, Union(children, _, _)), _, _, _))
@@ -592,24 +592,24 @@ abstract class CTEInlineSuiteBase
       // CTE on both sides of join and one side of union - WithCTE placed on first common parent.
       val df5 = sql(
         s"""
-           |select count(v1.c3), count(v2.c3) from (
-           |  with
-           |  v1 as (
-           |    select c1, c2, rand() c3 from t
-           |  )
-           |  select * from v1
-           |) v1 join (
-           |  select c1, c2, rand() c3 from t
-           |  union all
-           |  select * from (
-           |    with
-           |    v2 as (
-           |      select c1, c2, rand() c3 from t
-           |    )
-           |    select * from v2
-           |  )
-           |) v2 on v1.c1 = v2.c1
-         """.stripMargin)
+           select count(v1.c3), count(v2.c3) from (
+             with
+             v1 as (
+               select c1, c2, rand() c3 from t
+             )
+             select * from v1
+           ) v1 join (
+             select c1, c2, rand() c3 from t
+             union all
+             select * from (
+               with
+               v2 as (
+                 select c1, c2, rand() c3 from t
+               )
+               select * from v2
+             )
+           ) v2 on v1.c1 = v2.c1
+         """)
       checkAnswer(df5, Row(4, 4) :: Nil)
       df5.queryExecution.analyzed match {
         case Aggregate(_, _, WithCTE(_, cteDefs)) => assert(cteDefs.length == 2)
@@ -619,19 +619,19 @@ abstract class CTEInlineSuiteBase
       // CTE as root node - WithCTE placed back where it was.
       val df6 = sql(
         s"""
-           |with
-           |v1 as (
-           |  select c1, c2, rand() c3 from t
-           |)
-           |select count(v1.c3), count(v2.c3) from
-           |v1 join (
-           |  with
-           |  v2 as (
-           |    select c1, c2, rand() c3 from t
-           |  )
-           |  select * from v2
-           |) v2 on v1.c1 = v2.c1
-         """.stripMargin)
+           with
+           v1 as (
+             select c1, c2, rand() c3 from t
+           )
+           select count(v1.c3), count(v2.c3) from
+           v1 join (
+             with
+             v2 as (
+               select c1, c2, rand() c3 from t
+             )
+             select * from v2
+           ) v2 on v1.c1 = v2.c1
+         """)
       checkAnswer(df6, Row(2, 2) :: Nil)
       df6.queryExecution.analyzed match {
         case WithCTE(_, cteDefs) => assert(cteDefs.length == 2)

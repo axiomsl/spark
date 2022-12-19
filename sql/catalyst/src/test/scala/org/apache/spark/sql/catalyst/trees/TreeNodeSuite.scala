@@ -367,12 +367,12 @@ class TreeNodeSuite extends SparkFunSuite with SQLHelper {
     def assertJSON(input: Any, json: JValue): Unit = {
       val expected =
         s"""
-           |[{
-           |  "class": "${classOf[JsonTestTreeNode].getName}",
-           |  "num-children": 0,
-           |  "arg": ${compact(render(json))}
-           |}]
-         """.stripMargin
+           [{
+             "class": "${classOf[JsonTestTreeNode].getName}",
+             "num-children": 0,
+             "arg": ${compact(render(json))}
+           }]
+         """
       compareJSON(JsonTestTreeNode(input).toJSON, expected)
     }
 
@@ -389,12 +389,12 @@ class TreeNodeSuite extends SparkFunSuite with SQLHelper {
     assertJSON(Some("text"), "text")
     compareJSON(JsonTestTreeNode(None).toJSON,
       s"""[
-         |  {
-         |    "class": "${classOf[JsonTestTreeNode].getName}",
-         |    "num-children": 0
-         |  }
-         |]
-       """.stripMargin)
+           {
+             "class": "${classOf[JsonTestTreeNode].getName}",
+             "num-children": 0
+           }
+         ]
+       """)
 
     val uuid = UUID.randomUUID()
     assertJSON(uuid, uuid.toString)
@@ -860,13 +860,13 @@ class TreeNodeSuite extends SparkFunSuite with SQLHelper {
   test("SPARK-38676: truncate before/after sql text if too long") {
     val text =
       """
-        |
-        |SELECT
-        |1234567890 + 1234567890 + 1234567890, cast('a'
-        |as /* comment */
-        |int), 1234567890 + 1234567890 + 1234567890
-        |as foo
-        |""".stripMargin
+
+        SELECT
+        1234567890 + 1234567890 + 1234567890, cast('a'
+        as /* comment */
+        int), 1234567890 + 1234567890 + 1234567890
+        as foo
+        """
     val origin = Origin(
       line = Some(3),
       startPosition = Some(38),
@@ -877,13 +877,13 @@ class TreeNodeSuite extends SparkFunSuite with SQLHelper {
       objectName = Some("some_view"))
     val expected =
       """== SQL of VIEW some_view(line 3, position 39) ==
-        |...7890 + 1234567890 + 1234567890, cast('a'
-        |                                   ^^^^^^^^
-        |as /* comment */
-        |^^^^^^^^^^^^^^^^
-        |int), 1234567890 + 1234567890 + 12345...
-        |^^^^^
-        |""".stripMargin
+        ...7890 + 1234567890 + 1234567890, cast('a'
+                                           ^^^^^^^^
+        as /* comment */
+        ^^^^^^^^^^^^^^^^
+        int), 1234567890 + 1234567890 + 12345...
+        ^^^^^
+        """
 
     assert(origin.context == expected)
   }

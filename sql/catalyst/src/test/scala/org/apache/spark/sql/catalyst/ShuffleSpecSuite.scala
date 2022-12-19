@@ -32,13 +32,13 @@ class ShuffleSpecSuite extends SparkFunSuite with SQLHelper {
     if (actual != expected) {
       fail(
         s"""
-           |== Left ShuffleSpec
-           |$left
-           |== Right ShuffleSpec
-           |$right
-           |== Is left compatible with right? ==
-           |Expected $expected but got $actual
-           |""".stripMargin
+           == Left ShuffleSpec
+           $left
+           == Right ShuffleSpec
+           $right
+           == Is left compatible with right? ==
+           Expected $expected but got $actual
+           """
       )
     }
   }
@@ -51,13 +51,13 @@ class ShuffleSpecSuite extends SparkFunSuite with SQLHelper {
     if (actual != expected) {
       fail(
         s"""
-           |== ShuffleSpec
-           |$spec
-           |== Distribution
-           |$dist
-           |== Result ==
-           |Expected $expected but got $actual
-           |""".stripMargin
+           == ShuffleSpec
+           $spec
+           == Distribution
+           $dist
+           == Result ==
+           Expected $expected but got $actual
+           """
       )
     }
   }

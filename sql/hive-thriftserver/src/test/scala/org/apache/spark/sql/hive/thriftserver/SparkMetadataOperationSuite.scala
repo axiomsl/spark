@@ -289,10 +289,10 @@ class SparkMetadataOperationSuite extends HiveThriftServer2TestBase {
 
     val ddl =
       s"""
-         |CREATE TABLE $schemaName.$tableName (
-         |  ${schema.toDDL}
-         |)
-         |using parquet""".stripMargin
+         CREATE TABLE $schemaName.$tableName (
+           ${schema.toDDL}
+         )
+         using parquet"""
 
     withJdbcStatement(tableName) { statement =>
       statement.execute(ddl)

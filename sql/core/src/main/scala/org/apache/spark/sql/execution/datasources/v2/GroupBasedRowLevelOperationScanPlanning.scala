@@ -54,11 +54,11 @@ object GroupBasedRowLevelOperationScanPlanning extends Rule[LogicalPlan] with Pr
 
       logInfo(
         s"""
-           |Pushing operators to ${relation.name}
-           |Pushed filters: $pushedFiltersStr
-           |Filters that were not pushed: ${remainingFilters.mkString(", ")}
-           |Output: ${output.mkString(", ")}
-         """.stripMargin)
+           Pushing operators to ${relation.name}
+           Pushed filters: $pushedFiltersStr
+           Filters that were not pushed: ${remainingFilters.mkString(", ")}
+           Output: ${output.mkString(", ")}
+         """)
 
       // replace DataSourceV2Relation with DataSourceV2ScanRelation for the row operation table
       rd transform {

@@ -94,11 +94,11 @@ class TPCDSQueryTestSuite extends QueryTest with TPCDSBase with SQLQueryTestHelp
       options: Seq[String] = Nil): Unit = {
     spark.sql(
       s"""
-         |CREATE TABLE `$tableName` (${tableColumns(tableName)})
-         |USING $format
-         |LOCATION '${tpcdsDataPath.get}/$tableName'
-         |${options.mkString("\n")}
-       """.stripMargin)
+         CREATE TABLE `$tableName` (${tableColumns(tableName)})
+         USING $format
+         LOCATION '${tpcdsDataPath.get}/$tableName'
+         ${options.mkString("\n")}
+       """)
   }
 
   private def runQuery(

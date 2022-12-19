@@ -586,11 +586,11 @@ class JsonProtocolSuite extends SparkFunSuite {
     val expected = TestListenerEvent("foo", 123)
     val unknownFieldsJson =
       """{
-        |  "Event" : "org.apache.spark.util.TestListenerEvent",
-        |  "foo" : "foo",
-        |  "bar" : 123,
-        |  "unknown" : "unknown"
-        |}""".stripMargin
+          "Event" : "org.apache.spark.util.TestListenerEvent",
+          "foo" : "foo",
+          "bar" : 123,
+          "unknown" : "unknown"
+        }"""
     assert(JsonProtocol.sparkEventFromJson(parse(unknownFieldsJson)) === expected)
   }
 
@@ -598,9 +598,9 @@ class JsonProtocolSuite extends SparkFunSuite {
     val expected = TestListenerEvent("foo", 0)
     val unknownFieldsJson =
       """{
-        |  "Event" : "org.apache.spark.util.TestListenerEvent",
-        |  "foo" : "foo"
-        |}""".stripMargin
+          "Event" : "org.apache.spark.util.TestListenerEvent",
+          "foo" : "foo"
+        |}"""
     assert(JsonProtocol.sparkEventFromJson(parse(unknownFieldsJson)) === expected)
   }
 }
@@ -684,7 +684,7 @@ private[spark] object JsonProtocolSuite extends Assertions {
   }
 
   /** -------------------------------- *
-   | Util methods for comparing events |
+   | Util methods for comparing events 
    * --------------------------------- */
 
   private[spark] def assertEquals(event1: SparkListenerEvent, event2: SparkListenerEvent): Unit = {
@@ -1125,1437 +1125,1437 @@ private[spark] object JsonProtocolSuite extends Assertions {
 
   private val stageSubmittedJsonString =
     """
-      |{
-      |  "Event": "SparkListenerStageSubmitted",
-      |  "Stage Info": {
-      |    "Stage ID": 100,
-      |    "Stage Attempt ID": 0,
-      |    "Stage Name": "greetings",
-      |    "Number of Tasks": 200,
-      |    "RDD Info": [],
-      |    "Parent IDs" : [100, 200, 300],
-      |    "Details": "details",
-      |    "Accumulables": [
-      |      {
-      |        "ID": 1,
-      |        "Name": "Accumulable1",
-      |        "Update": "delta1",
-      |        "Value": "val1",
-      |        "Internal": false,
-      |        "Count Failed Values": false
-      |      },
-      |      {
-      |        "ID": 2,
-      |        "Name": "Accumulable2",
-      |        "Update": "delta2",
-      |        "Value": "val2",
-      |        "Internal": false,
-      |        "Count Failed Values": false
-      |      }
-      |    ],
-      |    "Resource Profile Id" : 0
-      |  },
-      |  "Properties": {
-      |    "France": "Paris",
-      |    "Germany": "Berlin",
-      |    "Russia": "Moscow",
-      |    "Ukraine": "Kiev"
-      |  }
-      |}
-    """.stripMargin
+      {
+        "Event": "SparkListenerStageSubmitted",
+        "Stage Info": {
+          "Stage ID": 100,
+          "Stage Attempt ID": 0,
+          "Stage Name": "greetings",
+          "Number of Tasks": 200,
+          "RDD Info": [],
+          "Parent IDs" : [100, 200, 300],
+          "Details": "details",
+          "Accumulables": [
+            {
+              "ID": 1,
+              "Name": "Accumulable1",
+              "Update": "delta1",
+              "Value": "val1",
+              "Internal": false,
+              "Count Failed Values": false
+            },
+            {
+              "ID": 2,
+              "Name": "Accumulable2",
+              "Update": "delta2",
+              "Value": "val2",
+              "Internal": false,
+              "Count Failed Values": false
+            }
+          ],
+          "Resource Profile Id" : 0
+        },
+        "Properties": {
+          "France": "Paris",
+          "Germany": "Berlin",
+          "Russia": "Moscow",
+          "Ukraine": "Kiev"
+        }
+      }
+    """
 
   private val stageCompletedJsonString =
     """
-      |{
-      |  "Event": "SparkListenerStageCompleted",
-      |  "Stage Info": {
-      |    "Stage ID": 101,
-      |    "Stage Attempt ID": 0,
-      |    "Stage Name": "greetings",
-      |    "Number of Tasks": 201,
-      |    "RDD Info": [
-      |      {
-      |        "RDD ID": 101,
-      |        "Name": "mayor",
-      |        "Callsite": "101",
-      |        "Parent IDs": [1, 4, 7],
-      |        "Storage Level": {
-      |          "Use Disk": true,
-      |          "Use Memory": true,
-      |          "Deserialized": true,
-      |          "Replication": 1
-      |        },
-      |        "Barrier" : false,
-      |        "DeterministicLevel" : "INDETERMINATE",
-      |        "Number of Partitions": 201,
-      |        "Number of Cached Partitions": 301,
-      |        "Memory Size": 401,
-      |        "Disk Size": 501
-      |      }
-      |    ],
-      |    "Parent IDs" : [100, 200, 300],
-      |    "Details": "details",
-      |    "Accumulables": [
-      |      {
-      |        "ID": 1,
-      |        "Name": "Accumulable1",
-      |        "Update": "delta1",
-      |        "Value": "val1",
-      |        "Internal": false,
-      |        "Count Failed Values": false
-      |      },
-      |      {
-      |        "ID": 2,
-      |        "Name": "Accumulable2",
-      |        "Update": "delta2",
-      |        "Value": "val2",
-      |        "Internal": false,
-      |        "Count Failed Values": false
-      |      }
-      |    ],
-      |    "Resource Profile Id" : 0
-      |  }
-      |}
-    """.stripMargin
+      {
+        "Event": "SparkListenerStageCompleted",
+        "Stage Info": {
+          "Stage ID": 101,
+          "Stage Attempt ID": 0,
+          "Stage Name": "greetings",
+          "Number of Tasks": 201,
+          "RDD Info": [
+            {
+              "RDD ID": 101,
+              "Name": "mayor",
+              "Callsite": "101",
+              "Parent IDs": [1, 4, 7],
+              "Storage Level": {
+                "Use Disk": true,
+                "Use Memory": true,
+                "Deserialized": true,
+                "Replication": 1
+              },
+              "Barrier" : false,
+              "DeterministicLevel" : "INDETERMINATE",
+              "Number of Partitions": 201,
+              "Number of Cached Partitions": 301,
+              "Memory Size": 401,
+              "Disk Size": 501
+            }
+          ],
+          "Parent IDs" : [100, 200, 300],
+          "Details": "details",
+          "Accumulables": [
+            {
+              "ID": 1,
+              "Name": "Accumulable1",
+              "Update": "delta1",
+              "Value": "val1",
+              "Internal": false,
+              "Count Failed Values": false
+            },
+            {
+              "ID": 2,
+              "Name": "Accumulable2",
+              "Update": "delta2",
+              "Value": "val2",
+              "Internal": false,
+              "Count Failed Values": false
+            }
+          ],
+          "Resource Profile Id" : 0
+        }
+      }
+    """
 
   private val taskStartJsonString =
     """
-      |{
-      |  "Event": "SparkListenerTaskStart",
-      |  "Stage ID": 111,
-      |  "Stage Attempt ID": 0,
-      |  "Task Info": {
-      |    "Task ID": 222,
-      |    "Index": 333,
-      |    "Attempt": 1,
-      |    "Partition ID": 333,
-      |    "Launch Time": 444,
-      |    "Executor ID": "executor",
-      |    "Host": "your kind sir",
-      |    "Locality": "NODE_LOCAL",
-      |    "Speculative": false,
-      |    "Getting Result Time": 0,
-      |    "Finish Time": 0,
-      |    "Failed": false,
-      |    "Killed": false,
-      |    "Accumulables": [
-      |      {
-      |        "ID": 1,
-      |        "Name": "Accumulable1",
-      |        "Update": "delta1",
-      |        "Value": "val1",
-      |        "Internal": false,
-      |        "Count Failed Values": false
-      |      },
-      |      {
-      |        "ID": 2,
-      |        "Name": "Accumulable2",
-      |        "Update": "delta2",
-      |        "Value": "val2",
-      |        "Internal": false,
-      |        "Count Failed Values": false
-      |      },
-      |      {
-      |        "ID": 3,
-      |        "Name": "Accumulable3",
-      |        "Update": "delta3",
-      |        "Value": "val3",
-      |        "Internal": true,
-      |        "Count Failed Values": false
-      |      }
-      |    ]
-      |  }
-      |}
-    """.stripMargin
+      {
+        "Event": "SparkListenerTaskStart",
+        "Stage ID": 111,
+        "Stage Attempt ID": 0,
+        "Task Info": {
+          "Task ID": 222,
+          "Index": 333,
+          "Attempt": 1,
+          "Partition ID": 333,
+          "Launch Time": 444,
+          "Executor ID": "executor",
+          "Host": "your kind sir",
+          "Locality": "NODE_LOCAL",
+          "Speculative": false,
+          "Getting Result Time": 0,
+          "Finish Time": 0,
+          "Failed": false,
+          "Killed": false,
+          "Accumulables": [
+            {
+              "ID": 1,
+              "Name": "Accumulable1",
+              "Update": "delta1",
+              "Value": "val1",
+              "Internal": false,
+              "Count Failed Values": false
+            },
+            {
+              "ID": 2,
+              "Name": "Accumulable2",
+              "Update": "delta2",
+              "Value": "val2",
+              "Internal": false,
+              "Count Failed Values": false
+            },
+            {
+              "ID": 3,
+              "Name": "Accumulable3",
+              "Update": "delta3",
+              "Value": "val3",
+              "Internal": true,
+              "Count Failed Values": false
+            }
+          ]
+        }
+      }
+    """
 
   private val taskGettingResultJsonString =
     """
-      |{
-      |  "Event": "SparkListenerTaskGettingResult",
-      |  "Task Info": {
-      |    "Task ID": 1000,
-      |    "Index": 2000,
-      |    "Attempt": 5,
-      |    "Partition ID": 2000,
-      |    "Launch Time": 3000,
-      |    "Executor ID": "executor",
-      |    "Host": "your kind sir",
-      |    "Locality": "NODE_LOCAL",
-      |    "Speculative": true,
-      |    "Getting Result Time": 0,
-      |    "Finish Time": 0,
-      |    "Failed": false,
-      |    "Killed": false,
-      |    "Accumulables": [
-      |      {
-      |        "ID": 1,
-      |        "Name": "Accumulable1",
-      |        "Update": "delta1",
-      |        "Value": "val1",
-      |        "Internal": false,
-      |        "Count Failed Values": false
-      |      },
-      |      {
-      |        "ID": 2,
-      |        "Name": "Accumulable2",
-      |        "Update": "delta2",
-      |        "Value": "val2",
-      |        "Internal": false,
-      |        "Count Failed Values": false
-      |      },
-      |      {
-      |        "ID": 3,
-      |        "Name": "Accumulable3",
-      |        "Update": "delta3",
-      |        "Value": "val3",
-      |        "Internal": true,
-      |        "Count Failed Values": false
-      |      }
-      |    ]
-      |  }
-      |}
-    """.stripMargin
+      {
+        "Event": "SparkListenerTaskGettingResult",
+        "Task Info": {
+          "Task ID": 1000,
+          "Index": 2000,
+          "Attempt": 5,
+          "Partition ID": 2000,
+          "Launch Time": 3000,
+          "Executor ID": "executor",
+          "Host": "your kind sir",
+          "Locality": "NODE_LOCAL",
+          "Speculative": true,
+          "Getting Result Time": 0,
+          "Finish Time": 0,
+          "Failed": false,
+          "Killed": false,
+          "Accumulables": [
+            {
+              "ID": 1,
+              "Name": "Accumulable1",
+              "Update": "delta1",
+              "Value": "val1",
+              "Internal": false,
+              "Count Failed Values": false
+            },
+            {
+              "ID": 2,
+              "Name": "Accumulable2",
+              "Update": "delta2",
+              "Value": "val2",
+              "Internal": false,
+              "Count Failed Values": false
+            },
+            {
+              "ID": 3,
+              "Name": "Accumulable3",
+              "Update": "delta3",
+              "Value": "val3",
+              "Internal": true,
+              "Count Failed Values": false
+            }
+          ]
+        }
+      }
+    """
 
   private val taskEndJsonString =
     """
-      |{
-      |  "Event": "SparkListenerTaskEnd",
-      |  "Stage ID": 1,
-      |  "Stage Attempt ID": 0,
-      |  "Task Type": "ShuffleMapTask",
-      |  "Task End Reason": {
-      |    "Reason": "Success"
-      |  },
-      |  "Task Info": {
-      |    "Task ID": 123,
-      |    "Index": 234,
-      |    "Attempt": 67,
-      |    "Partition ID": 234,
-      |    "Launch Time": 345,
-      |    "Executor ID": "executor",
-      |    "Host": "your kind sir",
-      |    "Locality": "NODE_LOCAL",
-      |    "Speculative": false,
-      |    "Getting Result Time": 0,
-      |    "Finish Time": 0,
-      |    "Failed": false,
-      |    "Killed": false,
-      |    "Accumulables": [
-      |      {
-      |        "ID": 1,
-      |        "Name": "Accumulable1",
-      |        "Update": "delta1",
-      |        "Value": "val1",
-      |        "Internal": false,
-      |        "Count Failed Values": false
-      |      },
-      |      {
-      |        "ID": 2,
-      |        "Name": "Accumulable2",
-      |        "Update": "delta2",
-      |        "Value": "val2",
-      |        "Internal": false,
-      |        "Count Failed Values": false
-      |      },
-      |      {
-      |        "ID": 3,
-      |        "Name": "Accumulable3",
-      |        "Update": "delta3",
-      |        "Value": "val3",
-      |        "Internal": true,
-      |        "Count Failed Values": false
-      |      }
-      |    ]
-      |  },
-      |  "Task Executor Metrics" : {
-      |    "JVMHeapMemory" : 543,
-      |    "JVMOffHeapMemory" : 123456,
-      |    "OnHeapExecutionMemory" : 12345,
-      |    "OffHeapExecutionMemory" : 1234,
-      |    "OnHeapStorageMemory" : 123,
-      |    "OffHeapStorageMemory" : 12,
-      |    "OnHeapUnifiedMemory" : 432,
-      |    "OffHeapUnifiedMemory" : 321,
-      |    "DirectPoolMemory" : 654,
-      |    "MappedPoolMemory" : 765,
-      |    "ProcessTreeJVMVMemory": 256912,
-      |    "ProcessTreeJVMRSSMemory": 123456,
-      |    "ProcessTreePythonVMemory": 123456,
-      |    "ProcessTreePythonRSSMemory": 61728,
-      |    "ProcessTreeOtherVMemory": 30364,
-      |    "ProcessTreeOtherRSSMemory": 15182,
-      |    "MinorGCCount" : 0,
-      |    "MinorGCTime" : 0,
-      |    "MajorGCCount" : 0,
-      |    "MajorGCTime" : 0,
-      |    "TotalGCTime" : 80001
-      |  },
-      |  "Task Metrics": {
-      |    "Executor Deserialize Time": 300,
-      |    "Executor Deserialize CPU Time": 300,
-      |    "Executor Run Time": 400,
-      |    "Executor CPU Time": 400,
-      |    "Peak Execution Memory": 500,
-      |    "Result Size": 500,
-      |    "JVM GC Time": 600,
-      |    "Result Serialization Time": 700,
-      |    "Memory Bytes Spilled": 800,
-      |    "Disk Bytes Spilled": 0,
-      |    "Shuffle Read Metrics": {
-      |      "Remote Blocks Fetched": 800,
-      |      "Local Blocks Fetched": 700,
-      |      "Fetch Wait Time": 900,
-      |      "Remote Bytes Read": 1000,
-      |      "Remote Bytes Read To Disk": 400,
-      |      "Local Bytes Read": 1100,
-      |      "Total Records Read": 10
-      |    },
-      |    "Shuffle Write Metrics": {
-      |      "Shuffle Bytes Written": 1200,
-      |      "Shuffle Write Time": 1500,
-      |      "Shuffle Records Written": 12
-      |    },
-      |    "Input Metrics" : {
-      |      "Bytes Read" : 0,
-      |      "Records Read" : 0
-      |    },
-      |    "Output Metrics" : {
-      |      "Bytes Written" : 0,
-      |      "Records Written" : 0
-      |    },
-      |    "Updated Blocks": [
-      |      {
-      |        "Block ID": "rdd_0_0",
-      |        "Status": {
-      |          "Storage Level": {
-      |            "Use Disk": true,
-      |            "Use Memory": true,
-      |            "Deserialized": false,
-      |            "Replication": 2
-      |          },
-      |          "Memory Size": 0,
-      |          "Disk Size": 0
-      |        }
-      |      }
-      |    ]
-      |  }
-      |}
-    """.stripMargin
+      {
+        "Event": "SparkListenerTaskEnd",
+        "Stage ID": 1,
+        "Stage Attempt ID": 0,
+        "Task Type": "ShuffleMapTask",
+        "Task End Reason": {
+          "Reason": "Success"
+        },
+        "Task Info": {
+          "Task ID": 123,
+          "Index": 234,
+          "Attempt": 67,
+          "Partition ID": 234,
+          "Launch Time": 345,
+          "Executor ID": "executor",
+          "Host": "your kind sir",
+          "Locality": "NODE_LOCAL",
+          "Speculative": false,
+          "Getting Result Time": 0,
+          "Finish Time": 0,
+          "Failed": false,
+          "Killed": false,
+          "Accumulables": [
+            {
+              "ID": 1,
+              "Name": "Accumulable1",
+              "Update": "delta1",
+              "Value": "val1",
+              "Internal": false,
+              "Count Failed Values": false
+            },
+            {
+              "ID": 2,
+              "Name": "Accumulable2",
+              "Update": "delta2",
+              "Value": "val2",
+              "Internal": false,
+              "Count Failed Values": false
+            },
+            {
+              "ID": 3,
+              "Name": "Accumulable3",
+              "Update": "delta3",
+              "Value": "val3",
+              "Internal": true,
+              "Count Failed Values": false
+            }
+          ]
+        },
+        "Task Executor Metrics" : {
+          "JVMHeapMemory" : 543,
+          "JVMOffHeapMemory" : 123456,
+          "OnHeapExecutionMemory" : 12345,
+          "OffHeapExecutionMemory" : 1234,
+          "OnHeapStorageMemory" : 123,
+          "OffHeapStorageMemory" : 12,
+          "OnHeapUnifiedMemory" : 432,
+          "OffHeapUnifiedMemory" : 321,
+          "DirectPoolMemory" : 654,
+          "MappedPoolMemory" : 765,
+          "ProcessTreeJVMVMemory": 256912,
+          "ProcessTreeJVMRSSMemory": 123456,
+          "ProcessTreePythonVMemory": 123456,
+          "ProcessTreePythonRSSMemory": 61728,
+          "ProcessTreeOtherVMemory": 30364,
+          "ProcessTreeOtherRSSMemory": 15182,
+          "MinorGCCount" : 0,
+          "MinorGCTime" : 0,
+          "MajorGCCount" : 0,
+          "MajorGCTime" : 0,
+          "TotalGCTime" : 80001
+        },
+        "Task Metrics": {
+          "Executor Deserialize Time": 300,
+          "Executor Deserialize CPU Time": 300,
+          "Executor Run Time": 400,
+          "Executor CPU Time": 400,
+          "Peak Execution Memory": 500,
+          "Result Size": 500,
+          "JVM GC Time": 600,
+          "Result Serialization Time": 700,
+          "Memory Bytes Spilled": 800,
+          "Disk Bytes Spilled": 0,
+          "Shuffle Read Metrics": {
+            "Remote Blocks Fetched": 800,
+            "Local Blocks Fetched": 700,
+            "Fetch Wait Time": 900,
+            "Remote Bytes Read": 1000,
+            "Remote Bytes Read To Disk": 400,
+            "Local Bytes Read": 1100,
+            "Total Records Read": 10
+          },
+          "Shuffle Write Metrics": {
+            "Shuffle Bytes Written": 1200,
+            "Shuffle Write Time": 1500,
+            "Shuffle Records Written": 12
+          },
+          "Input Metrics" : {
+            "Bytes Read" : 0,
+            "Records Read" : 0
+          },
+          "Output Metrics" : {
+            "Bytes Written" : 0,
+            "Records Written" : 0
+          },
+          "Updated Blocks": [
+            {
+              "Block ID": "rdd_0_0",
+              "Status": {
+                "Storage Level": {
+                  "Use Disk": true,
+                  "Use Memory": true,
+                  "Deserialized": false,
+                  "Replication": 2
+                },
+                "Memory Size": 0,
+                "Disk Size": 0
+              }
+            }
+          ]
+        }
+      }
+    """
 
   private val taskEndWithHadoopInputJsonString =
     """
-      |{
-      |  "Event": "SparkListenerTaskEnd",
-      |  "Stage ID": 1,
-      |  "Stage Attempt ID": 0,
-      |  "Task Type": "ShuffleMapTask",
-      |  "Task End Reason": {
-      |    "Reason": "Success"
-      |  },
-      |  "Task Info": {
-      |    "Task ID": 123,
-      |    "Index": 234,
-      |    "Attempt": 67,
-      |    "Partition ID": 234,
-      |    "Launch Time": 345,
-      |    "Executor ID": "executor",
-      |    "Host": "your kind sir",
-      |    "Locality": "NODE_LOCAL",
-      |    "Speculative": false,
-      |    "Getting Result Time": 0,
-      |    "Finish Time": 0,
-      |    "Failed": false,
-      |    "Killed": false,
-      |    "Accumulables": [
-      |      {
-      |        "ID": 1,
-      |        "Name": "Accumulable1",
-      |        "Update": "delta1",
-      |        "Value": "val1",
-      |        "Internal": false,
-      |        "Count Failed Values": false
-      |      },
-      |      {
-      |        "ID": 2,
-      |        "Name": "Accumulable2",
-      |        "Update": "delta2",
-      |        "Value": "val2",
-      |        "Internal": false,
-      |        "Count Failed Values": false
-      |      },
-      |      {
-      |        "ID": 3,
-      |        "Name": "Accumulable3",
-      |        "Update": "delta3",
-      |        "Value": "val3",
-      |        "Internal": true,
-      |        "Count Failed Values": false
-      |      }
-      |    ]
-      |  },
-      |  "Task Executor Metrics" : {
-      |    "JVMHeapMemory" : 543,
-      |    "JVMOffHeapMemory" : 123456,
-      |    "OnHeapExecutionMemory" : 12345,
-      |    "OffHeapExecutionMemory" : 1234,
-      |    "OnHeapStorageMemory" : 123,
-      |    "OffHeapStorageMemory" : 12,
-      |    "OnHeapUnifiedMemory" : 432,
-      |    "OffHeapUnifiedMemory" : 321,
-      |    "DirectPoolMemory" : 654,
-      |    "MappedPoolMemory" : 765,
-      |    "ProcessTreeJVMVMemory": 256912,
-      |    "ProcessTreeJVMRSSMemory": 123456,
-      |    "ProcessTreePythonVMemory": 123456,
-      |    "ProcessTreePythonRSSMemory": 61728,
-      |    "ProcessTreeOtherVMemory": 30364,
-      |    "ProcessTreeOtherRSSMemory": 15182,
-      |    "MinorGCCount" : 0,
-      |    "MinorGCTime" : 0,
-      |    "MajorGCCount" : 0,
-      |    "MajorGCTime" : 0,
-      |    "TotalGCTime" : 80001
-      |  },
-      |  "Task Metrics": {
-      |    "Executor Deserialize Time": 300,
-      |    "Executor Deserialize CPU Time": 300,
-      |    "Executor Run Time": 400,
-      |    "Executor CPU Time": 400,
-      |    "Peak Execution Memory": 500,
-      |    "Result Size": 500,
-      |    "JVM GC Time": 600,
-      |    "Result Serialization Time": 700,
-      |    "Memory Bytes Spilled": 800,
-      |    "Disk Bytes Spilled": 0,
-      |    "Shuffle Read Metrics" : {
-      |      "Remote Blocks Fetched" : 0,
-      |      "Local Blocks Fetched" : 0,
-      |      "Fetch Wait Time" : 0,
-      |      "Remote Bytes Read" : 0,
-      |      "Remote Bytes Read To Disk" : 0,
-      |      "Local Bytes Read" : 0,
-      |      "Total Records Read" : 0
-      |    },
-      |    "Shuffle Write Metrics": {
-      |      "Shuffle Bytes Written": 1200,
-      |      "Shuffle Write Time": 1500,
-      |      "Shuffle Records Written": 12
-      |    },
-      |    "Input Metrics": {
-      |      "Bytes Read": 2100,
-      |      "Records Read": 21
-      |    },
-      |     "Output Metrics" : {
-      |      "Bytes Written" : 0,
-      |      "Records Written" : 0
-      |    },
-      |    "Updated Blocks": [
-      |      {
-      |        "Block ID": "rdd_0_0",
-      |        "Status": {
-      |          "Storage Level": {
-      |            "Use Disk": true,
-      |            "Use Memory": true,
-      |            "Deserialized": false,
-      |            "Replication": 2
-      |          },
-      |          "Memory Size": 0,
-      |          "Disk Size": 0
-      |        }
-      |      }
-      |    ]
-      |  }
-      |}
-    """.stripMargin
+      {
+        "Event": "SparkListenerTaskEnd",
+        "Stage ID": 1,
+        "Stage Attempt ID": 0,
+        "Task Type": "ShuffleMapTask",
+        "Task End Reason": {
+          "Reason": "Success"
+        },
+        "Task Info": {
+          "Task ID": 123,
+          "Index": 234,
+          "Attempt": 67,
+          "Partition ID": 234,
+          "Launch Time": 345,
+          "Executor ID": "executor",
+          "Host": "your kind sir",
+          "Locality": "NODE_LOCAL",
+          "Speculative": false,
+          "Getting Result Time": 0,
+          "Finish Time": 0,
+          "Failed": false,
+          "Killed": false,
+          "Accumulables": [
+            {
+              "ID": 1,
+              "Name": "Accumulable1",
+              "Update": "delta1",
+              "Value": "val1",
+              "Internal": false,
+              "Count Failed Values": false
+            },
+            {
+              "ID": 2,
+              "Name": "Accumulable2",
+              "Update": "delta2",
+              "Value": "val2",
+              "Internal": false,
+              "Count Failed Values": false
+            },
+            {
+              "ID": 3,
+              "Name": "Accumulable3",
+              "Update": "delta3",
+              "Value": "val3",
+              "Internal": true,
+              "Count Failed Values": false
+            }
+          ]
+        },
+        "Task Executor Metrics" : {
+          "JVMHeapMemory" : 543,
+          "JVMOffHeapMemory" : 123456,
+          "OnHeapExecutionMemory" : 12345,
+          "OffHeapExecutionMemory" : 1234,
+          "OnHeapStorageMemory" : 123,
+          "OffHeapStorageMemory" : 12,
+          "OnHeapUnifiedMemory" : 432,
+          "OffHeapUnifiedMemory" : 321,
+          "DirectPoolMemory" : 654,
+          "MappedPoolMemory" : 765,
+          "ProcessTreeJVMVMemory": 256912,
+          "ProcessTreeJVMRSSMemory": 123456,
+          "ProcessTreePythonVMemory": 123456,
+          "ProcessTreePythonRSSMemory": 61728,
+          "ProcessTreeOtherVMemory": 30364,
+          "ProcessTreeOtherRSSMemory": 15182,
+          "MinorGCCount" : 0,
+          "MinorGCTime" : 0,
+          "MajorGCCount" : 0,
+          "MajorGCTime" : 0,
+          "TotalGCTime" : 80001
+        },
+        "Task Metrics": {
+          "Executor Deserialize Time": 300,
+          "Executor Deserialize CPU Time": 300,
+          "Executor Run Time": 400,
+          "Executor CPU Time": 400,
+          "Peak Execution Memory": 500,
+          "Result Size": 500,
+          "JVM GC Time": 600,
+          "Result Serialization Time": 700,
+          "Memory Bytes Spilled": 800,
+          "Disk Bytes Spilled": 0,
+          "Shuffle Read Metrics" : {
+            "Remote Blocks Fetched" : 0,
+            "Local Blocks Fetched" : 0,
+            "Fetch Wait Time" : 0,
+            "Remote Bytes Read" : 0,
+            "Remote Bytes Read To Disk" : 0,
+            "Local Bytes Read" : 0,
+            "Total Records Read" : 0
+          },
+          "Shuffle Write Metrics": {
+            "Shuffle Bytes Written": 1200,
+            "Shuffle Write Time": 1500,
+            "Shuffle Records Written": 12
+          },
+          "Input Metrics": {
+            "Bytes Read": 2100,
+            "Records Read": 21
+          },
+           "Output Metrics" : {
+            "Bytes Written" : 0,
+            "Records Written" : 0
+          },
+          "Updated Blocks": [
+            {
+              "Block ID": "rdd_0_0",
+              "Status": {
+                "Storage Level": {
+                  "Use Disk": true,
+                  "Use Memory": true,
+                  "Deserialized": false,
+                  "Replication": 2
+                },
+                "Memory Size": 0,
+                "Disk Size": 0
+              }
+            }
+          ]
+        }
+      }
+    """
 
   private val taskEndWithOutputJsonString =
     """
-      |{
-      |  "Event": "SparkListenerTaskEnd",
-      |  "Stage ID": 1,
-      |  "Stage Attempt ID": 0,
-      |  "Task Type": "ResultTask",
-      |  "Task End Reason": {
-      |    "Reason": "Success"
-      |  },
-      |  "Task Info": {
-      |    "Task ID": 123,
-      |    "Index": 234,
-      |    "Attempt": 67,
-      |    "Partition ID": 234,
-      |    "Launch Time": 345,
-      |    "Executor ID": "executor",
-      |    "Host": "your kind sir",
-      |    "Locality": "NODE_LOCAL",
-      |    "Speculative": false,
-      |    "Getting Result Time": 0,
-      |    "Finish Time": 0,
-      |    "Failed": false,
-      |    "Killed": false,
-      |    "Accumulables": [
-      |      {
-      |        "ID": 1,
-      |        "Name": "Accumulable1",
-      |        "Update": "delta1",
-      |        "Value": "val1",
-      |        "Internal": false,
-      |        "Count Failed Values": false
-      |      },
-      |      {
-      |        "ID": 2,
-      |        "Name": "Accumulable2",
-      |        "Update": "delta2",
-      |        "Value": "val2",
-      |        "Internal": false,
-      |        "Count Failed Values": false
-      |      },
-      |      {
-      |        "ID": 3,
-      |        "Name": "Accumulable3",
-      |        "Update": "delta3",
-      |        "Value": "val3",
-      |        "Internal": true,
-      |        "Count Failed Values": false
-      |      }
-      |    ]
-      |  },
-      |  "Task Executor Metrics" : {
-      |    "JVMHeapMemory" : 543,
-      |    "JVMOffHeapMemory" : 123456,
-      |    "OnHeapExecutionMemory" : 12345,
-      |    "OffHeapExecutionMemory" : 1234,
-      |    "OnHeapStorageMemory" : 123,
-      |    "OffHeapStorageMemory" : 12,
-      |    "OnHeapUnifiedMemory" : 432,
-      |    "OffHeapUnifiedMemory" : 321,
-      |    "DirectPoolMemory" : 654,
-      |    "MappedPoolMemory" : 765,
-      |    "ProcessTreeJVMVMemory": 256912,
-      |    "ProcessTreeJVMRSSMemory": 123456,
-      |    "ProcessTreePythonVMemory": 123456,
-      |    "ProcessTreePythonRSSMemory": 61728,
-      |    "ProcessTreeOtherVMemory": 30364,
-      |    "ProcessTreeOtherRSSMemory": 15182,
-      |    "MinorGCCount" : 0,
-      |    "MinorGCTime" : 0,
-      |    "MajorGCCount" : 0,
-      |    "MajorGCTime" : 0,
-      |    "TotalGCTime" : 80001
-      |  },
-      |  "Task Metrics": {
-      |    "Executor Deserialize Time": 300,
-      |    "Executor Deserialize CPU Time": 300,
-      |    "Executor Run Time": 400,
-      |    "Executor CPU Time": 400,
-      |    "Peak Execution Memory": 500,
-      |    "Result Size": 500,
-      |    "JVM GC Time": 600,
-      |    "Result Serialization Time": 700,
-      |    "Memory Bytes Spilled": 800,
-      |    "Disk Bytes Spilled": 0,
-      |    "Shuffle Read Metrics" : {
-      |      "Remote Blocks Fetched" : 0,
-      |      "Local Blocks Fetched" : 0,
-      |      "Fetch Wait Time" : 0,
-      |      "Remote Bytes Read" : 0,
-      |      "Remote Bytes Read To Disk" : 0,
-      |      "Local Bytes Read" : 0,
-      |      "Total Records Read" : 0
-      |    },
-      |    "Shuffle Write Metrics": {
-      |      "Shuffle Bytes Written" : 0,
-      |      "Shuffle Write Time" : 0,
-      |      "Shuffle Records Written" : 0
-      |    },
-      |    "Input Metrics": {
-      |      "Bytes Read": 2100,
-      |      "Records Read": 21
-      |    },
-      |    "Output Metrics": {
-      |      "Bytes Written": 1200,
-      |      "Records Written": 12
-      |    },
-      |    "Updated Blocks": [
-      |      {
-      |        "Block ID": "rdd_0_0",
-      |        "Status": {
-      |          "Storage Level": {
-      |            "Use Disk": true,
-      |            "Use Memory": true,
-      |            "Deserialized": false,
-      |            "Replication": 2
-      |          },
-      |          "Memory Size": 0,
-      |          "Disk Size": 0
-      |        }
-      |      }
-      |    ]
-      |  }
-      |}
-    """.stripMargin
+      {
+        "Event": "SparkListenerTaskEnd",
+        "Stage ID": 1,
+        "Stage Attempt ID": 0,
+        "Task Type": "ResultTask",
+        "Task End Reason": {
+          "Reason": "Success"
+        },
+        "Task Info": {
+          "Task ID": 123,
+          "Index": 234,
+          "Attempt": 67,
+          "Partition ID": 234,
+          "Launch Time": 345,
+          "Executor ID": "executor",
+          "Host": "your kind sir",
+          "Locality": "NODE_LOCAL",
+          "Speculative": false,
+          "Getting Result Time": 0,
+          "Finish Time": 0,
+          "Failed": false,
+          "Killed": false,
+          "Accumulables": [
+            {
+              "ID": 1,
+              "Name": "Accumulable1",
+              "Update": "delta1",
+              "Value": "val1",
+              "Internal": false,
+              "Count Failed Values": false
+            },
+            {
+              "ID": 2,
+              "Name": "Accumulable2",
+              "Update": "delta2",
+              "Value": "val2",
+              "Internal": false,
+              "Count Failed Values": false
+            },
+            {
+              "ID": 3,
+              "Name": "Accumulable3",
+              "Update": "delta3",
+              "Value": "val3",
+              "Internal": true,
+              "Count Failed Values": false
+            }
+          ]
+        },
+        "Task Executor Metrics" : {
+          "JVMHeapMemory" : 543,
+          "JVMOffHeapMemory" : 123456,
+          "OnHeapExecutionMemory" : 12345,
+          "OffHeapExecutionMemory" : 1234,
+          "OnHeapStorageMemory" : 123,
+          "OffHeapStorageMemory" : 12,
+          "OnHeapUnifiedMemory" : 432,
+          "OffHeapUnifiedMemory" : 321,
+          "DirectPoolMemory" : 654,
+          "MappedPoolMemory" : 765,
+          "ProcessTreeJVMVMemory": 256912,
+          "ProcessTreeJVMRSSMemory": 123456,
+          "ProcessTreePythonVMemory": 123456,
+          "ProcessTreePythonRSSMemory": 61728,
+          "ProcessTreeOtherVMemory": 30364,
+          "ProcessTreeOtherRSSMemory": 15182,
+          "MinorGCCount" : 0,
+          "MinorGCTime" : 0,
+          "MajorGCCount" : 0,
+          "MajorGCTime" : 0,
+          "TotalGCTime" : 80001
+        },
+        "Task Metrics": {
+          "Executor Deserialize Time": 300,
+          "Executor Deserialize CPU Time": 300,
+          "Executor Run Time": 400,
+          "Executor CPU Time": 400,
+          "Peak Execution Memory": 500,
+          "Result Size": 500,
+          "JVM GC Time": 600,
+          "Result Serialization Time": 700,
+          "Memory Bytes Spilled": 800,
+          "Disk Bytes Spilled": 0,
+          "Shuffle Read Metrics" : {
+            "Remote Blocks Fetched" : 0,
+            "Local Blocks Fetched" : 0,
+            "Fetch Wait Time" : 0,
+            "Remote Bytes Read" : 0,
+            "Remote Bytes Read To Disk" : 0,
+            "Local Bytes Read" : 0,
+            "Total Records Read" : 0
+          },
+          "Shuffle Write Metrics": {
+            "Shuffle Bytes Written" : 0,
+            "Shuffle Write Time" : 0,
+            "Shuffle Records Written" : 0
+          },
+          "Input Metrics": {
+            "Bytes Read": 2100,
+            "Records Read": 21
+          },
+          "Output Metrics": {
+            "Bytes Written": 1200,
+            "Records Written": 12
+          },
+          "Updated Blocks": [
+            {
+              "Block ID": "rdd_0_0",
+              "Status": {
+                "Storage Level": {
+                  "Use Disk": true,
+                  "Use Memory": true,
+                  "Deserialized": false,
+                  "Replication": 2
+                },
+                "Memory Size": 0,
+                "Disk Size": 0
+              }
+            }
+          ]
+        }
+      }
+    """
 
   private val jobStartJsonString =
     """
-      |{
-      |  "Event": "SparkListenerJobStart",
-      |  "Job ID": 10,
-      |  "Submission Time": 1421191042750,
-      |  "Stage Infos": [
-      |    {
-      |      "Stage ID": 1,
-      |      "Stage Attempt ID": 0,
-      |      "Stage Name": "greetings",
-      |      "Number of Tasks": 200,
-      |      "RDD Info": [
-      |        {
-      |          "RDD ID": 1,
-      |          "Name": "mayor",
-      |          "Callsite": "1",
-      |          "Parent IDs": [1, 4, 7],
-      |          "Storage Level": {
-      |            "Use Disk": true,
-      |            "Use Memory": true,
-      |            "Deserialized": true,
-      |            "Replication": 1
-      |          },
-      |          "Barrier" : false,
-      |          "DeterministicLevel" : "INDETERMINATE",
-      |          "Number of Partitions": 200,
-      |          "Number of Cached Partitions": 300,
-      |          "Memory Size": 400,
-      |          "Disk Size": 500
-      |        }
-      |      ],
-      |      "Parent IDs" : [100, 200, 300],
-      |      "Details": "details",
-      |      "Accumulables": [
-      |        {
-      |          "ID": 1,
-      |          "Name": "Accumulable1",
-      |          "Update": "delta1",
-      |          "Value": "val1",
-      |          "Internal": false,
-      |          "Count Failed Values": false
-      |        },
-      |        {
-      |          "ID": 2,
-      |          "Name": "Accumulable2",
-      |          "Update": "delta2",
-      |          "Value": "val2",
-      |          "Internal": false,
-      |          "Count Failed Values": false
-      |        }
-      |      ],
-      |      "Resource Profile Id" : 0
-      |    },
-      |    {
-      |      "Stage ID": 2,
-      |      "Stage Attempt ID": 0,
-      |      "Stage Name": "greetings",
-      |      "Number of Tasks": 400,
-      |      "RDD Info": [
-      |        {
-      |          "RDD ID": 2,
-      |          "Name": "mayor",
-      |          "Callsite": "2",
-      |          "Parent IDs": [1, 4, 7],
-      |          "Storage Level": {
-      |            "Use Disk": true,
-      |            "Use Memory": true,
-      |            "Deserialized": true,
-      |            "Replication": 1
-      |          },
-      |          "Barrier" : false,
-      |          "DeterministicLevel" : "DETERMINATE",
-      |          "Number of Partitions": 400,
-      |          "Number of Cached Partitions": 600,
-      |          "Memory Size": 800,
-      |          "Disk Size": 1000
-      |        },
-      |        {
-      |          "RDD ID": 3,
-      |          "Name": "mayor",
-      |          "Callsite": "3",
-      |          "Parent IDs": [1, 4, 7],
-      |          "Storage Level": {
-      |            "Use Disk": true,
-      |            "Use Memory": true,
-      |            "Deserialized": true,
-      |            "Replication": 1
-      |          },
-      |          "Barrier" : false,
-      |          "DeterministicLevel" : "INDETERMINATE",
-      |          "Number of Partitions": 401,
-      |          "Number of Cached Partitions": 601,
-      |          "Memory Size": 801,
-      |          "Disk Size": 1001
-      |        }
-      |      ],
-      |      "Parent IDs" : [100, 200, 300],
-      |      "Details": "details",
-      |      "Accumulables": [
-      |        {
-      |          "ID": 1,
-      |          "Name": "Accumulable1",
-      |          "Update": "delta1",
-      |          "Value": "val1",
-      |          "Internal": false,
-      |          "Count Failed Values": false
-      |        },
-      |        {
-      |          "ID": 2,
-      |          "Name": "Accumulable2",
-      |          "Update": "delta2",
-      |          "Value": "val2",
-      |          "Internal": false,
-      |          "Count Failed Values": false
-      |        }
-      |      ],
-      |      "Resource Profile Id" : 0
-      |    },
-      |    {
-      |      "Stage ID": 3,
-      |      "Stage Attempt ID": 0,
-      |      "Stage Name": "greetings",
-      |      "Number of Tasks": 600,
-      |      "RDD Info": [
-      |        {
-      |          "RDD ID": 3,
-      |          "Name": "mayor",
-      |          "Callsite": "3",
-      |          "Parent IDs": [1, 4, 7],
-      |          "Storage Level": {
-      |            "Use Disk": true,
-      |            "Use Memory": true,
-      |            "Deserialized": true,
-      |            "Replication": 1
-      |          },
-      |          "Barrier" : false,
-      |          "DeterministicLevel" : "DETERMINATE",
-      |          "Number of Partitions": 600,
-      |          "Number of Cached Partitions": 900,
-      |          "Memory Size": 1200,
-      |          "Disk Size": 1500
-      |        },
-      |        {
-      |          "RDD ID": 4,
-      |          "Name": "mayor",
-      |          "Callsite": "4",
-      |          "Parent IDs": [1, 4, 7],
-      |          "Storage Level": {
-      |            "Use Disk": true,
-      |            "Use Memory": true,
-      |            "Deserialized": true,
-      |            "Replication": 1
-      |          },
-      |          "Barrier" : false,
-      |          "DeterministicLevel" : "DETERMINATE",
-      |          "Number of Partitions": 601,
-      |          "Number of Cached Partitions": 901,
-      |          "Memory Size": 1201,
-      |          "Disk Size": 1501
-      |        },
-      |        {
-      |          "RDD ID": 5,
-      |          "Name": "mayor",
-      |          "Callsite": "5",
-      |          "Parent IDs": [1, 4, 7],
-      |          "Storage Level": {
-      |            "Use Disk": true,
-      |            "Use Memory": true,
-      |            "Deserialized": true,
-      |            "Replication": 1
-      |          },
-      |          "Barrier" : false,
-      |          "DeterministicLevel" : "INDETERMINATE",
-      |          "Number of Partitions": 602,
-      |          "Number of Cached Partitions": 902,
-      |          "Memory Size": 1202,
-      |          "Disk Size": 1502
-      |        }
-      |      ],
-      |      "Parent IDs" : [100, 200, 300],
-      |      "Details": "details",
-      |      "Accumulables": [
-      |        {
-      |          "ID": 1,
-      |          "Name": "Accumulable1",
-      |          "Update": "delta1",
-      |          "Value": "val1",
-      |          "Internal": false,
-      |          "Count Failed Values": false
-      |        },
-      |        {
-      |          "ID": 2,
-      |          "Name": "Accumulable2",
-      |          "Update": "delta2",
-      |          "Value": "val2",
-      |          "Internal": false,
-      |          "Count Failed Values": false
-      |        }
-      |      ],
-      |      "Resource Profile Id" : 0
-      |    },
-      |    {
-      |      "Stage ID": 4,
-      |      "Stage Attempt ID": 0,
-      |      "Stage Name": "greetings",
-      |      "Number of Tasks": 800,
-      |      "RDD Info": [
-      |        {
-      |          "RDD ID": 4,
-      |          "Name": "mayor",
-      |          "Callsite": "4",
-      |          "Parent IDs": [1, 4, 7],
-      |          "Storage Level": {
-      |            "Use Disk": true,
-      |            "Use Memory": true,
-      |            "Deserialized": true,
-      |            "Replication": 1
-      |          },
-      |          "Barrier" : false,
-      |          "DeterministicLevel" : "DETERMINATE",
-      |          "Number of Partitions": 800,
-      |          "Number of Cached Partitions": 1200,
-      |          "Memory Size": 1600,
-      |          "Disk Size": 2000
-      |        },
-      |        {
-      |          "RDD ID": 5,
-      |          "Name": "mayor",
-      |          "Callsite": "5",
-      |          "Parent IDs": [1, 4, 7],
-      |          "Storage Level": {
-      |            "Use Disk": true,
-      |            "Use Memory": true,
-      |            "Deserialized": true,
-      |            "Replication": 1
-      |          },
-      |          "Barrier" : false,
-      |          "DeterministicLevel" : "DETERMINATE",
-      |          "Number of Partitions": 801,
-      |          "Number of Cached Partitions": 1201,
-      |          "Memory Size": 1601,
-      |          "Disk Size": 2001
-      |        },
-      |        {
-      |          "RDD ID": 6,
-      |          "Name": "mayor",
-      |          "Callsite": "6",
-      |          "Parent IDs": [1, 4, 7],
-      |          "Storage Level": {
-      |            "Use Disk": true,
-      |            "Use Memory": true,
-      |            "Deserialized": true,
-      |            "Replication": 1
-      |          },
-      |          "Barrier" : false,
-      |          "DeterministicLevel" : "DETERMINATE",
-      |          "Number of Partitions": 802,
-      |          "Number of Cached Partitions": 1202,
-      |          "Memory Size": 1602,
-      |          "Disk Size": 2002
-      |        },
-      |        {
-      |          "RDD ID": 7,
-      |          "Name": "mayor",
-      |          "Callsite": "7",
-      |          "Parent IDs": [1, 4, 7],
-      |          "Storage Level": {
-      |            "Use Disk": true,
-      |            "Use Memory": true,
-      |            "Deserialized": true,
-      |            "Replication": 1
-      |          },
-      |          "Barrier" : false,
-      |          "DeterministicLevel" : "INDETERMINATE",
-      |          "Number of Partitions": 803,
-      |          "Number of Cached Partitions": 1203,
-      |          "Memory Size": 1603,
-      |          "Disk Size": 2003
-      |        }
-      |      ],
-      |      "Parent IDs" : [100, 200, 300],
-      |      "Details": "details",
-      |      "Accumulables": [
-      |        {
-      |          "ID": 1,
-      |          "Name": "Accumulable1",
-      |          "Update": "delta1",
-      |          "Value": "val1",
-      |          "Internal": false,
-      |          "Count Failed Values": false
-      |        },
-      |        {
-      |          "ID": 2,
-      |          "Name": "Accumulable2",
-      |          "Update": "delta2",
-      |          "Value": "val2",
-      |          "Internal": false,
-      |          "Count Failed Values": false
-      |        }
-      |      ],
-      |      "Resource Profile Id" : 0
-      |    }
-      |  ],
-      |  "Stage IDs": [
-      |    1,
-      |    2,
-      |    3,
-      |    4
-      |  ],
-      |  "Properties": {
-      |    "France": "Paris",
-      |    "Germany": "Berlin",
-      |    "Russia": "Moscow",
-      |    "Ukraine": "Kiev"
-      |  }
-      |}
-    """.stripMargin
+      {
+        "Event": "SparkListenerJobStart",
+        "Job ID": 10,
+        "Submission Time": 1421191042750,
+        "Stage Infos": [
+          {
+            "Stage ID": 1,
+            "Stage Attempt ID": 0,
+            "Stage Name": "greetings",
+            "Number of Tasks": 200,
+            "RDD Info": [
+              {
+                "RDD ID": 1,
+                "Name": "mayor",
+                "Callsite": "1",
+                "Parent IDs": [1, 4, 7],
+                "Storage Level": {
+                  "Use Disk": true,
+                  "Use Memory": true,
+                  "Deserialized": true,
+                  "Replication": 1
+                },
+                "Barrier" : false,
+                "DeterministicLevel" : "INDETERMINATE",
+                "Number of Partitions": 200,
+                "Number of Cached Partitions": 300,
+                "Memory Size": 400,
+                "Disk Size": 500
+              }
+            ],
+            "Parent IDs" : [100, 200, 300],
+            "Details": "details",
+            "Accumulables": [
+              {
+                "ID": 1,
+                "Name": "Accumulable1",
+                "Update": "delta1",
+                "Value": "val1",
+                "Internal": false,
+                "Count Failed Values": false
+              },
+              {
+                "ID": 2,
+                "Name": "Accumulable2",
+                "Update": "delta2",
+                "Value": "val2",
+                "Internal": false,
+                "Count Failed Values": false
+              }
+            ],
+            "Resource Profile Id" : 0
+          },
+          {
+            "Stage ID": 2,
+            "Stage Attempt ID": 0,
+            "Stage Name": "greetings",
+            "Number of Tasks": 400,
+            "RDD Info": [
+              {
+                "RDD ID": 2,
+                "Name": "mayor",
+                "Callsite": "2",
+                "Parent IDs": [1, 4, 7],
+                "Storage Level": {
+                  "Use Disk": true,
+                  "Use Memory": true,
+                  "Deserialized": true,
+                  "Replication": 1
+                },
+                "Barrier" : false,
+                "DeterministicLevel" : "DETERMINATE",
+                "Number of Partitions": 400,
+                "Number of Cached Partitions": 600,
+                "Memory Size": 800,
+                "Disk Size": 1000
+              },
+              {
+                "RDD ID": 3,
+                "Name": "mayor",
+                "Callsite": "3",
+                "Parent IDs": [1, 4, 7],
+                "Storage Level": {
+                  "Use Disk": true,
+                  "Use Memory": true,
+                  "Deserialized": true,
+                  "Replication": 1
+                },
+                "Barrier" : false,
+                "DeterministicLevel" : "INDETERMINATE",
+                "Number of Partitions": 401,
+                "Number of Cached Partitions": 601,
+                "Memory Size": 801,
+                "Disk Size": 1001
+              }
+            ],
+            "Parent IDs" : [100, 200, 300],
+            "Details": "details",
+            "Accumulables": [
+              {
+                "ID": 1,
+                "Name": "Accumulable1",
+                "Update": "delta1",
+                "Value": "val1",
+                "Internal": false,
+                "Count Failed Values": false
+              },
+              {
+                "ID": 2,
+                "Name": "Accumulable2",
+                "Update": "delta2",
+                "Value": "val2",
+                "Internal": false,
+                "Count Failed Values": false
+              }
+            ],
+            "Resource Profile Id" : 0
+          },
+          {
+            "Stage ID": 3,
+            "Stage Attempt ID": 0,
+            "Stage Name": "greetings",
+            "Number of Tasks": 600,
+            "RDD Info": [
+              {
+                "RDD ID": 3,
+                "Name": "mayor",
+                "Callsite": "3",
+                "Parent IDs": [1, 4, 7],
+                "Storage Level": {
+                  "Use Disk": true,
+                  "Use Memory": true,
+                  "Deserialized": true,
+                  "Replication": 1
+                },
+                "Barrier" : false,
+                "DeterministicLevel" : "DETERMINATE",
+                "Number of Partitions": 600,
+                "Number of Cached Partitions": 900,
+                "Memory Size": 1200,
+                "Disk Size": 1500
+              },
+              {
+                "RDD ID": 4,
+                "Name": "mayor",
+                "Callsite": "4",
+                "Parent IDs": [1, 4, 7],
+                "Storage Level": {
+                  "Use Disk": true,
+                  "Use Memory": true,
+                  "Deserialized": true,
+                  "Replication": 1
+                },
+                "Barrier" : false,
+                "DeterministicLevel" : "DETERMINATE",
+                "Number of Partitions": 601,
+                "Number of Cached Partitions": 901,
+                "Memory Size": 1201,
+                "Disk Size": 1501
+              },
+              {
+                "RDD ID": 5,
+                "Name": "mayor",
+                "Callsite": "5",
+                "Parent IDs": [1, 4, 7],
+                "Storage Level": {
+                  "Use Disk": true,
+                  "Use Memory": true,
+                  "Deserialized": true,
+                  "Replication": 1
+                },
+                "Barrier" : false,
+                "DeterministicLevel" : "INDETERMINATE",
+                "Number of Partitions": 602,
+                "Number of Cached Partitions": 902,
+                "Memory Size": 1202,
+                "Disk Size": 1502
+              }
+            ],
+            "Parent IDs" : [100, 200, 300],
+            "Details": "details",
+            "Accumulables": [
+              {
+                "ID": 1,
+                "Name": "Accumulable1",
+                "Update": "delta1",
+                "Value": "val1",
+                "Internal": false,
+                "Count Failed Values": false
+              },
+              {
+                "ID": 2,
+                "Name": "Accumulable2",
+                "Update": "delta2",
+                "Value": "val2",
+                "Internal": false,
+                "Count Failed Values": false
+              }
+            ],
+            "Resource Profile Id" : 0
+          },
+          {
+            "Stage ID": 4,
+            "Stage Attempt ID": 0,
+            "Stage Name": "greetings",
+            "Number of Tasks": 800,
+            "RDD Info": [
+              {
+                "RDD ID": 4,
+                "Name": "mayor",
+                "Callsite": "4",
+                "Parent IDs": [1, 4, 7],
+                "Storage Level": {
+                  "Use Disk": true,
+                  "Use Memory": true,
+                  "Deserialized": true,
+                  "Replication": 1
+                },
+                "Barrier" : false,
+                "DeterministicLevel" : "DETERMINATE",
+                "Number of Partitions": 800,
+                "Number of Cached Partitions": 1200,
+                "Memory Size": 1600,
+                "Disk Size": 2000
+              },
+              {
+                "RDD ID": 5,
+                "Name": "mayor",
+                "Callsite": "5",
+                "Parent IDs": [1, 4, 7],
+                "Storage Level": {
+                  "Use Disk": true,
+                  "Use Memory": true,
+                  "Deserialized": true,
+                  "Replication": 1
+                },
+                "Barrier" : false,
+                "DeterministicLevel" : "DETERMINATE",
+                "Number of Partitions": 801,
+                "Number of Cached Partitions": 1201,
+                "Memory Size": 1601,
+                "Disk Size": 2001
+              },
+              {
+                "RDD ID": 6,
+                "Name": "mayor",
+                "Callsite": "6",
+                "Parent IDs": [1, 4, 7],
+                "Storage Level": {
+                  "Use Disk": true,
+                  "Use Memory": true,
+                  "Deserialized": true,
+                  "Replication": 1
+                },
+                "Barrier" : false,
+                "DeterministicLevel" : "DETERMINATE",
+                "Number of Partitions": 802,
+                "Number of Cached Partitions": 1202,
+                "Memory Size": 1602,
+                "Disk Size": 2002
+              },
+              {
+                "RDD ID": 7,
+                "Name": "mayor",
+                "Callsite": "7",
+                "Parent IDs": [1, 4, 7],
+                "Storage Level": {
+                  "Use Disk": true,
+                  "Use Memory": true,
+                  "Deserialized": true,
+                  "Replication": 1
+                },
+                "Barrier" : false,
+                "DeterministicLevel" : "INDETERMINATE",
+                "Number of Partitions": 803,
+                "Number of Cached Partitions": 1203,
+                "Memory Size": 1603,
+                "Disk Size": 2003
+              }
+            ],
+            "Parent IDs" : [100, 200, 300],
+            "Details": "details",
+            "Accumulables": [
+              {
+                "ID": 1,
+                "Name": "Accumulable1",
+                "Update": "delta1",
+                "Value": "val1",
+                "Internal": false,
+                "Count Failed Values": false
+              },
+              {
+                "ID": 2,
+                "Name": "Accumulable2",
+                "Update": "delta2",
+                "Value": "val2",
+                "Internal": false,
+                "Count Failed Values": false
+              }
+            ],
+            "Resource Profile Id" : 0
+          }
+        ],
+        "Stage IDs": [
+          1,
+          2,
+          3,
+          4
+        ],
+        "Properties": {
+          "France": "Paris",
+          "Germany": "Berlin",
+          "Russia": "Moscow",
+          "Ukraine": "Kiev"
+        }
+      }
+    """
 
   private val jobEndJsonString =
     """
-      |{
-      |  "Event": "SparkListenerJobEnd",
-      |  "Job ID": 20,
-      |  "Completion Time": 1421191296660,
-      |  "Job Result": {
-      |    "Result": "JobSucceeded"
-      |  }
-      |}
-    """.stripMargin
+      {
+        "Event": "SparkListenerJobEnd",
+        "Job ID": 20,
+        "Completion Time": 1421191296660,
+        "Job Result": {
+          "Result": "JobSucceeded"
+        }
+      }
+    """
 
   private val environmentUpdateJsonString =
     """
-      |{
-      |  "Event": "SparkListenerEnvironmentUpdate",
-      |  "JVM Information": {
-      |    "GC speed": "9999 objects/s",
-      |    "Java home": "Land of coffee"
-      |  },
-      |  "Spark Properties": {
-      |    "Job throughput": "80000 jobs/s, regardless of job type"
-      |  },
-      |  "Hadoop Properties": {
-      |    "hadoop.tmp.dir": "/usr/local/hadoop/tmp"
-      |  },
-      |  "System Properties": {
-      |    "Username": "guest",
-      |    "Password": "guest"
-      |  },
-      |  "Classpath Entries": {
-      |    "Super library": "/tmp/super_library"
-      |  }
-      |}
-    """.stripMargin
+      {
+        "Event": "SparkListenerEnvironmentUpdate",
+        "JVM Information": {
+          "GC speed": "9999 objects/s",
+          "Java home": "Land of coffee"
+        },
+        "Spark Properties": {
+          "Job throughput": "80000 jobs/s, regardless of job type"
+        },
+        "Hadoop Properties": {
+          "hadoop.tmp.dir": "/usr/local/hadoop/tmp"
+        },
+        "System Properties": {
+          "Username": "guest",
+          "Password": "guest"
+        },
+        "Classpath Entries": {
+          "Super library": "/tmp/super_library"
+        }
+      }
+    """
 
   private val blockManagerAddedJsonString =
     """
-      |{
-      |  "Event": "SparkListenerBlockManagerAdded",
-      |  "Block Manager ID": {
-      |    "Executor ID": "Stars",
-      |    "Host": "In your multitude...",
-      |    "Port": 300
-      |  },
-      |  "Maximum Memory": 500,
-      |  "Timestamp": 1
-      |}
-    """.stripMargin
+      {
+        "Event": "SparkListenerBlockManagerAdded",
+        "Block Manager ID": {
+          "Executor ID": "Stars",
+          "Host": "In your multitude...",
+          "Port": 300
+        },
+        "Maximum Memory": 500,
+        "Timestamp": 1
+      }
+    """
 
   private val blockManagerRemovedJsonString =
     """
-      |{
-      |  "Event": "SparkListenerBlockManagerRemoved",
-      |  "Block Manager ID": {
-      |    "Executor ID": "Scarce",
-      |    "Host": "to be counted...",
-      |    "Port": 100
-      |  },
-      |  "Timestamp": 2
-      |}
-    """.stripMargin
+      {
+        "Event": "SparkListenerBlockManagerRemoved",
+        "Block Manager ID": {
+          "Executor ID": "Scarce",
+          "Host": "to be counted...",
+          "Port": 100
+        },
+        "Timestamp": 2
+      }
+    """
 
   private val unpersistRDDJsonString =
     """
-      |{
-      |  "Event": "SparkListenerUnpersistRDD",
-      |  "RDD ID": 12345
-      |}
-    """.stripMargin
+      {
+        "Event": "SparkListenerUnpersistRDD",
+        "RDD ID": 12345
+      }
+    """
 
   private val applicationStartJsonString =
     """
-      |{
-      |  "Event": "SparkListenerApplicationStart",
-      |  "App Name": "The winner of all",
-      |  "App ID": "appId",
-      |  "Timestamp": 42,
-      |  "User": "Garfield",
-      |  "App Attempt ID": "appAttempt"
-      |}
-    """.stripMargin
+      {
+        "Event": "SparkListenerApplicationStart",
+        "App Name": "The winner of all",
+        "App ID": "appId",
+        "Timestamp": 42,
+        "User": "Garfield",
+        "App Attempt ID": "appAttempt"
+      }
+    """
 
   private val applicationStartJsonWithLogUrlsString =
     """
-      |{
-      |  "Event": "SparkListenerApplicationStart",
-      |  "App Name": "The winner of all",
-      |  "App ID": "appId",
-      |  "Timestamp": 42,
-      |  "User": "Garfield",
-      |  "App Attempt ID": "appAttempt",
-      |  "Driver Logs" : {
-      |      "stderr" : "mystderr",
-      |      "stdout" : "mystdout"
-      |  }
-      |}
-    """.stripMargin
+      {
+        "Event": "SparkListenerApplicationStart",
+        "App Name": "The winner of all",
+        "App ID": "appId",
+        "Timestamp": 42,
+        "User": "Garfield",
+        "App Attempt ID": "appAttempt",
+        "Driver Logs" : {
+            "stderr" : "mystderr",
+            "stdout" : "mystdout"
+        }
+      }
+    """
 
   private val applicationEndJsonString =
     """
-      |{
-      |  "Event": "SparkListenerApplicationEnd",
-      |  "Timestamp": 42
-      |}
-    """.stripMargin
+      {
+        "Event": "SparkListenerApplicationEnd",
+        "Timestamp": 42
+      }
+    """
 
   private val executorAddedJsonString =
     s"""
-      |{
-      |  "Event": "SparkListenerExecutorAdded",
-      |  "Timestamp": ${executorAddedTime},
-      |  "Executor ID": "exec1",
-      |  "Executor Info": {
-      |    "Host": "Hostee.awesome.com",
-      |    "Total Cores": 11,
-      |    "Log Urls" : {
-      |      "stderr" : "mystderr",
-      |      "stdout" : "mystdout"
-      |    },
-      |    "Attributes" : {
-      |      "ContainerId" : "ct1",
-      |      "User" : "spark"
-      |    },
-      |    "Resources" : {
-      |      "gpu" : {
-      |        "name" : "gpu",
-      |        "addresses" : [ "0", "1" ]
-      |      }
-      |    },
-      |    "Resource Profile Id": 4
-      |  }
-      |}
-    """.stripMargin
+      {
+        "Event": "SparkListenerExecutorAdded",
+        "Timestamp": ${executorAddedTime},
+        "Executor ID": "exec1",
+        "Executor Info": {
+          "Host": "Hostee.awesome.com",
+          "Total Cores": 11,
+          "Log Urls" : {
+            "stderr" : "mystderr",
+            "stdout" : "mystdout"
+          },
+          "Attributes" : {
+            "ContainerId" : "ct1",
+            "User" : "spark"
+          },
+          "Resources" : {
+            "gpu" : {
+              "name" : "gpu",
+              "addresses" : [ "0", "1" ]
+            }
+          },
+          "Resource Profile Id": 4
+        }
+      }
+    """
 
   private val executorRemovedJsonString =
     s"""
-      |{
-      |  "Event": "SparkListenerExecutorRemoved",
-      |  "Timestamp": ${executorRemovedTime},
-      |  "Executor ID": "exec2",
-      |  "Removed Reason": "test reason"
-      |}
-    """.stripMargin
+      {
+        "Event": "SparkListenerExecutorRemoved",
+        "Timestamp": ${executorRemovedTime},
+        "Executor ID": "exec2",
+        "Removed Reason": "test reason"
+      }
+    """
 
   private val executorMetricsUpdateJsonString =
     s"""
-      |{
-      |  "Event": "SparkListenerExecutorMetricsUpdate",
-      |  "Executor ID": "exec3",
-      |  "Metrics Updated": [
-      |    {
-      |      "Task ID": 1,
-      |      "Stage ID": 2,
-      |      "Stage Attempt ID": 3,
-      |      "Accumulator Updates": [
-      |        {
-      |          "ID": 0,
-      |          "Name": "$EXECUTOR_DESERIALIZE_TIME",
-      |          "Update": 300,
-      |          "Internal": true,
-      |          "Count Failed Values": true
-      |        },
-      |        {
-      |          "ID": 1,
-      |          "Name": "$EXECUTOR_DESERIALIZE_CPU_TIME",
-      |          "Update": 300,
-      |          "Internal": true,
-      |          "Count Failed Values": true
-      |        },
-      |
-      |        {
-      |          "ID": 2,
-      |          "Name": "$EXECUTOR_RUN_TIME",
-      |          "Update": 400,
-      |          "Internal": true,
-      |          "Count Failed Values": true
-      |        },
-      |        {
-      |          "ID": 3,
-      |          "Name": "$EXECUTOR_CPU_TIME",
-      |          "Update": 400,
-      |          "Internal": true,
-      |          "Count Failed Values": true
-      |        },
-      |        {
-      |          "ID": 4,
-      |          "Name": "$RESULT_SIZE",
-      |          "Update": 500,
-      |          "Internal": true,
-      |          "Count Failed Values": true
-      |        },
-      |        {
-      |          "ID": 5,
-      |          "Name": "$JVM_GC_TIME",
-      |          "Update": 600,
-      |          "Internal": true,
-      |          "Count Failed Values": true
-      |        },
-      |        {
-      |          "ID": 6,
-      |          "Name": "$RESULT_SERIALIZATION_TIME",
-      |          "Update": 700,
-      |          "Internal": true,
-      |          "Count Failed Values": true
-      |        },
-      |        {
-      |          "ID": 7,
-      |          "Name": "$MEMORY_BYTES_SPILLED",
-      |          "Update": 800,
-      |          "Internal": true,
-      |          "Count Failed Values": true
-      |        },
-      |        {
-      |          "ID": 8,
-      |          "Name": "$DISK_BYTES_SPILLED",
-      |          "Update": 0,
-      |          "Internal": true,
-      |          "Count Failed Values": true
-      |        },
-      |        {
-      |          "ID": 9,
-      |          "Name": "$PEAK_EXECUTION_MEMORY",
-      |          "Update": 500,
-      |          "Internal": true,
-      |          "Count Failed Values": true
-      |        },
-      |        {
-      |          "ID": 10,
-      |          "Name": "$UPDATED_BLOCK_STATUSES",
-      |          "Update": [
-      |            {
-      |              "Block ID": "rdd_0_0",
-      |              "Status": {
-      |                "Storage Level": {
-      |                  "Use Disk": true,
-      |                  "Use Memory": true,
-      |                  "Deserialized": false,
-      |                  "Replication": 2
-      |                },
-      |                "Memory Size": 0,
-      |                "Disk Size": 0
-      |              }
-      |            }
-      |          ],
-      |          "Internal": true,
-      |          "Count Failed Values": true
-      |        },
-      |        {
-      |          "ID": 11,
-      |          "Name": "${shuffleRead.REMOTE_BLOCKS_FETCHED}",
-      |          "Update": 0,
-      |          "Internal": true,
-      |          "Count Failed Values": true
-      |        },
-      |        {
-      |          "ID": 12,
-      |          "Name": "${shuffleRead.LOCAL_BLOCKS_FETCHED}",
-      |          "Update": 0,
-      |          "Internal": true,
-      |          "Count Failed Values": true
-      |        },
-      |        {
-      |          "ID": 13,
-      |          "Name": "${shuffleRead.REMOTE_BYTES_READ}",
-      |          "Update": 0,
-      |          "Internal": true,
-      |          "Count Failed Values": true
-      |        },
-      |        {
-      |          "ID": 14,
-      |          "Name": "${shuffleRead.REMOTE_BYTES_READ_TO_DISK}",
-      |          "Update": 0,
-      |          "Internal": true,
-      |          "Count Failed Values": true
-      |        },
-      |        {
-      |          "ID": 15,
-      |          "Name": "${shuffleRead.LOCAL_BYTES_READ}",
-      |          "Update": 0,
-      |          "Internal": true,
-      |          "Count Failed Values": true
-      |        },
-      |        {
-      |          "ID": 16,
-      |          "Name": "${shuffleRead.FETCH_WAIT_TIME}",
-      |          "Update": 0,
-      |          "Internal": true,
-      |          "Count Failed Values": true
-      |        },
-      |        {
-      |          "ID": 17,
-      |          "Name": "${shuffleRead.RECORDS_READ}",
-      |          "Update": 0,
-      |          "Internal": true,
-      |          "Count Failed Values": true
-      |        },
-      |        {
-      |          "ID": 18,
-      |          "Name": "${shuffleWrite.BYTES_WRITTEN}",
-      |          "Update": 0,
-      |          "Internal": true,
-      |          "Count Failed Values": true
-      |        },
-      |        {
-      |          "ID": 19,
-      |          "Name": "${shuffleWrite.RECORDS_WRITTEN}",
-      |          "Update": 0,
-      |          "Internal": true,
-      |          "Count Failed Values": true
-      |        },
-      |        {
-      |          "ID": 20,
-      |          "Name": "${shuffleWrite.WRITE_TIME}",
-      |          "Update": 0,
-      |          "Internal": true,
-      |          "Count Failed Values": true
-      |        },
-      |        {
-      |          "ID": 21,
-      |          "Name": "${input.BYTES_READ}",
-      |          "Update": 2100,
-      |          "Internal": true,
-      |          "Count Failed Values": true
-      |        },
-      |        {
-      |          "ID": 22,
-      |          "Name": "${input.RECORDS_READ}",
-      |          "Update": 21,
-      |          "Internal": true,
-      |          "Count Failed Values": true
-      |        },
-      |        {
-      |          "ID": 23,
-      |          "Name": "${output.BYTES_WRITTEN}",
-      |          "Update": 1200,
-      |          "Internal": true,
-      |          "Count Failed Values": true
-      |        },
-      |        {
-      |          "ID": 24,
-      |          "Name": "${output.RECORDS_WRITTEN}",
-      |          "Update": 12,
-      |          "Internal": true,
-      |          "Count Failed Values": true
-      |        },
-      |        {
-      |          "ID": 25,
-      |          "Name": "$TEST_ACCUM",
-      |          "Update": 0,
-      |          "Internal": true,
-      |          "Count Failed Values": true
-      |        }
-      |      ]
-      |    }
-      |  ],
-      |  "Executor Metrics Updated" : [
-      |    {
-      |      "Stage ID" : 0,
-      |      "Stage Attempt ID" : 0,
-      |      "Executor Metrics" : {
-      |        "JVMHeapMemory" : 543,
-      |        "JVMOffHeapMemory" : 123456,
-      |        "OnHeapExecutionMemory" : 12345,
-      |        "OffHeapExecutionMemory" : 1234,
-      |        "OnHeapStorageMemory" : 123,
-      |        "OffHeapStorageMemory" : 12,
-      |        "OnHeapUnifiedMemory" : 432,
-      |        "OffHeapUnifiedMemory" : 321,
-      |        "DirectPoolMemory" : 654,
-      |        "MappedPoolMemory" : 765,
-      |        "ProcessTreeJVMVMemory": 256912,
-      |        "ProcessTreeJVMRSSMemory": 123456,
-      |        "ProcessTreePythonVMemory": 123456,
-      |        "ProcessTreePythonRSSMemory": 61728,
-      |        "ProcessTreeOtherVMemory": 30364,
-      |        "ProcessTreeOtherRSSMemory": 15182,
-      |        "MinorGCCount": 10,
-      |        "MinorGCTime": 90,
-      |        "MajorGCCount": 2,
-      |        "MajorGCTime": 20,
-      |        "TotalGCTime" : 80001
-      |      }
-      |    }
-      |  ]
-      |}
-    """.stripMargin
+      {
+        "Event": "SparkListenerExecutorMetricsUpdate",
+        "Executor ID": "exec3",
+        "Metrics Updated": [
+          {
+            "Task ID": 1,
+            "Stage ID": 2,
+            "Stage Attempt ID": 3,
+            "Accumulator Updates": [
+              {
+                "ID": 0,
+                "Name": "$EXECUTOR_DESERIALIZE_TIME",
+                "Update": 300,
+                "Internal": true,
+                "Count Failed Values": true
+              },
+              {
+                "ID": 1,
+                "Name": "$EXECUTOR_DESERIALIZE_CPU_TIME",
+                "Update": 300,
+                "Internal": true,
+                "Count Failed Values": true
+              },
+      
+              {
+                "ID": 2,
+                "Name": "$EXECUTOR_RUN_TIME",
+                "Update": 400,
+                "Internal": true,
+                "Count Failed Values": true
+              },
+              {
+                "ID": 3,
+                "Name": "$EXECUTOR_CPU_TIME",
+                "Update": 400,
+                "Internal": true,
+                "Count Failed Values": true
+              },
+              {
+                "ID": 4,
+                "Name": "$RESULT_SIZE",
+                "Update": 500,
+                "Internal": true,
+                "Count Failed Values": true
+              },
+              {
+                "ID": 5,
+                "Name": "$JVM_GC_TIME",
+                "Update": 600,
+                "Internal": true,
+                "Count Failed Values": true
+              },
+              {
+                "ID": 6,
+                "Name": "$RESULT_SERIALIZATION_TIME",
+                "Update": 700,
+                "Internal": true,
+                "Count Failed Values": true
+              },
+              {
+                "ID": 7,
+                "Name": "$MEMORY_BYTES_SPILLED",
+                "Update": 800,
+                "Internal": true,
+                "Count Failed Values": true
+              },
+              {
+                "ID": 8,
+                "Name": "$DISK_BYTES_SPILLED",
+                "Update": 0,
+                "Internal": true,
+                "Count Failed Values": true
+              },
+              {
+                "ID": 9,
+                "Name": "$PEAK_EXECUTION_MEMORY",
+                "Update": 500,
+                "Internal": true,
+                "Count Failed Values": true
+              },
+              {
+                "ID": 10,
+                "Name": "$UPDATED_BLOCK_STATUSES",
+                "Update": [
+                  {
+                    "Block ID": "rdd_0_0",
+                    "Status": {
+                      "Storage Level": {
+                        "Use Disk": true,
+                        "Use Memory": true,
+                        "Deserialized": false,
+                        "Replication": 2
+                      },
+                      "Memory Size": 0,
+                      "Disk Size": 0
+                    }
+                  }
+                ],
+                "Internal": true,
+                "Count Failed Values": true
+              },
+              {
+                "ID": 11,
+                "Name": "${shuffleRead.REMOTE_BLOCKS_FETCHED}",
+                "Update": 0,
+                "Internal": true,
+                "Count Failed Values": true
+              },
+              {
+                "ID": 12,
+                "Name": "${shuffleRead.LOCAL_BLOCKS_FETCHED}",
+                "Update": 0,
+                "Internal": true,
+                "Count Failed Values": true
+              },
+              {
+                "ID": 13,
+                "Name": "${shuffleRead.REMOTE_BYTES_READ}",
+                "Update": 0,
+                "Internal": true,
+                "Count Failed Values": true
+              },
+              {
+                "ID": 14,
+                "Name": "${shuffleRead.REMOTE_BYTES_READ_TO_DISK}",
+                "Update": 0,
+                "Internal": true,
+                "Count Failed Values": true
+              },
+              {
+                "ID": 15,
+                "Name": "${shuffleRead.LOCAL_BYTES_READ}",
+                "Update": 0,
+                "Internal": true,
+                "Count Failed Values": true
+              },
+              {
+                "ID": 16,
+                "Name": "${shuffleRead.FETCH_WAIT_TIME}",
+                "Update": 0,
+                "Internal": true,
+                "Count Failed Values": true
+              },
+              {
+                "ID": 17,
+                "Name": "${shuffleRead.RECORDS_READ}",
+                "Update": 0,
+                "Internal": true,
+                "Count Failed Values": true
+              },
+              {
+                "ID": 18,
+                "Name": "${shuffleWrite.BYTES_WRITTEN}",
+                "Update": 0,
+                "Internal": true,
+                "Count Failed Values": true
+              },
+              {
+                "ID": 19,
+                "Name": "${shuffleWrite.RECORDS_WRITTEN}",
+                "Update": 0,
+                "Internal": true,
+                "Count Failed Values": true
+              },
+              {
+                "ID": 20,
+                "Name": "${shuffleWrite.WRITE_TIME}",
+                "Update": 0,
+                "Internal": true,
+                "Count Failed Values": true
+              },
+              {
+                "ID": 21,
+                "Name": "${input.BYTES_READ}",
+                "Update": 2100,
+                "Internal": true,
+                "Count Failed Values": true
+              },
+              {
+                "ID": 22,
+                "Name": "${input.RECORDS_READ}",
+                "Update": 21,
+                "Internal": true,
+                "Count Failed Values": true
+              },
+              {
+                "ID": 23,
+                "Name": "${output.BYTES_WRITTEN}",
+                "Update": 1200,
+                "Internal": true,
+                "Count Failed Values": true
+              },
+              {
+                "ID": 24,
+                "Name": "${output.RECORDS_WRITTEN}",
+                "Update": 12,
+                "Internal": true,
+                "Count Failed Values": true
+              },
+              {
+                "ID": 25,
+                "Name": "$TEST_ACCUM",
+                "Update": 0,
+                "Internal": true,
+                "Count Failed Values": true
+              }
+            ]
+          }
+        ],
+        "Executor Metrics Updated" : [
+          {
+            "Stage ID" : 0,
+            "Stage Attempt ID" : 0,
+            "Executor Metrics" : {
+              "JVMHeapMemory" : 543,
+              "JVMOffHeapMemory" : 123456,
+              "OnHeapExecutionMemory" : 12345,
+              "OffHeapExecutionMemory" : 1234,
+              "OnHeapStorageMemory" : 123,
+              "OffHeapStorageMemory" : 12,
+              "OnHeapUnifiedMemory" : 432,
+              "OffHeapUnifiedMemory" : 321,
+              "DirectPoolMemory" : 654,
+              "MappedPoolMemory" : 765,
+              "ProcessTreeJVMVMemory": 256912,
+              "ProcessTreeJVMRSSMemory": 123456,
+              "ProcessTreePythonVMemory": 123456,
+              "ProcessTreePythonRSSMemory": 61728,
+              "ProcessTreeOtherVMemory": 30364,
+              "ProcessTreeOtherRSSMemory": 15182,
+              "MinorGCCount": 10,
+              "MinorGCTime": 90,
+              "MajorGCCount": 2,
+              "MajorGCTime": 20,
+              "TotalGCTime" : 80001
+            }
+          }
+        ]
+      }
+    """
 
   private val stageExecutorMetricsJsonString =
     """
-      |{
-      |  "Event": "SparkListenerStageExecutorMetrics",
-      |  "Executor ID": "1",
-      |  "Stage ID": 2,
-      |  "Stage Attempt ID": 3,
-      |  "Executor Metrics" : {
-      |    "JVMHeapMemory" : 543,
-      |    "JVMOffHeapMemory" : 123456,
-      |    "OnHeapExecutionMemory" : 12345,
-      |    "OffHeapExecutionMemory" : 1234,
-      |    "OnHeapStorageMemory" : 123,
-      |    "OffHeapStorageMemory" : 12,
-      |    "OnHeapUnifiedMemory" : 432,
-      |    "OffHeapUnifiedMemory" : 321,
-      |    "DirectPoolMemory" : 654,
-      |    "MappedPoolMemory" : 765,
-      |    "ProcessTreeJVMVMemory": 256912,
-      |    "ProcessTreeJVMRSSMemory": 123456,
-      |    "ProcessTreePythonVMemory": 123456,
-      |    "ProcessTreePythonRSSMemory": 61728,
-      |    "ProcessTreeOtherVMemory": 30364,
-      |    "ProcessTreeOtherRSSMemory": 15182,
-      |    "MinorGCCount": 10,
-      |    "MinorGCTime": 90,
-      |    "MajorGCCount": 2,
-      |    "MajorGCTime": 20,
-      |    "TotalGCTime" : 80001
-      |  }
-      |}
-    """.stripMargin
+      {
+        "Event": "SparkListenerStageExecutorMetrics",
+        "Executor ID": "1",
+        "Stage ID": 2,
+        "Stage Attempt ID": 3,
+        "Executor Metrics" : {
+          "JVMHeapMemory" : 543,
+          "JVMOffHeapMemory" : 123456,
+          "OnHeapExecutionMemory" : 12345,
+          "OffHeapExecutionMemory" : 1234,
+          "OnHeapStorageMemory" : 123,
+          "OffHeapStorageMemory" : 12,
+          "OnHeapUnifiedMemory" : 432,
+          "OffHeapUnifiedMemory" : 321,
+          "DirectPoolMemory" : 654,
+          "MappedPoolMemory" : 765,
+          "ProcessTreeJVMVMemory": 256912,
+          "ProcessTreeJVMRSSMemory": 123456,
+          "ProcessTreePythonVMemory": 123456,
+          "ProcessTreePythonRSSMemory": 61728,
+          "ProcessTreeOtherVMemory": 30364,
+          "ProcessTreeOtherRSSMemory": 15182,
+          "MinorGCCount": 10,
+          "MinorGCTime": 90,
+          "MajorGCCount": 2,
+          "MajorGCTime": 20,
+          "TotalGCTime" : 80001
+        }
+      }
+    """
 
   private val blockUpdatedJsonString =
     """
-      |{
-      |  "Event": "SparkListenerBlockUpdated",
-      |  "Block Updated Info": {
-      |    "Block Manager ID": {
-      |      "Executor ID": "Stars",
-      |      "Host": "In your multitude...",
-      |      "Port": 300
-      |    },
-      |    "Block ID": "rdd_0_0",
-      |    "Storage Level": {
-      |      "Use Disk": false,
-      |      "Use Memory": true,
-      |      "Deserialized": true,
-      |      "Replication": 1
-      |    },
-      |    "Memory Size": 100,
-      |    "Disk Size": 0
-      |  }
-      |}
-    """.stripMargin
+      {
+        "Event": "SparkListenerBlockUpdated",
+        "Block Updated Info": {
+          "Block Manager ID": {
+            "Executor ID": "Stars",
+            "Host": "In your multitude...",
+            "Port": 300
+          },
+          "Block ID": "rdd_0_0",
+          "Storage Level": {
+            "Use Disk": false,
+            "Use Memory": true,
+            "Deserialized": true,
+            "Replication": 1
+          },
+          "Memory Size": 100,
+          "Disk Size": 0
+        }
+      }
+    """
 
   private val executorBlacklistedJsonString =
     s"""
-      |{
-      |  "Event" : "org.apache.spark.scheduler.SparkListenerExecutorBlacklisted",
-      |  "time" : ${executorExcludedTime},
-      |  "executorId" : "exec1",
-      |  "taskFailures" : 22
-      |}
-    """.stripMargin
+      {
+        "Event" : "org.apache.spark.scheduler.SparkListenerExecutorBlacklisted",
+        "time" : ${executorExcludedTime},
+        "executorId" : "exec1",
+        "taskFailures" : 22
+      }
+    """
   private val executorExcludedJsonString =
     s"""
-       |{
-       |  "Event" : "org.apache.spark.scheduler.SparkListenerExecutorExcluded",
-       |  "time" : ${executorExcludedTime},
-       |  "executorId" : "exec1",
-       |  "taskFailures" : 22
-       |}
-    """.stripMargin
+       {
+         "Event" : "org.apache.spark.scheduler.SparkListenerExecutorExcluded",
+         "time" : ${executorExcludedTime},
+         "executorId" : "exec1",
+         "taskFailures" : 22
+       }
+    """
   private val executorUnblacklistedJsonString =
     s"""
-      |{
-      |  "Event" : "org.apache.spark.scheduler.SparkListenerExecutorUnblacklisted",
-      |  "time" : ${executorUnexcludedTime},
-      |  "executorId" : "exec1"
-      |}
-    """.stripMargin
+      {
+        "Event" : "org.apache.spark.scheduler.SparkListenerExecutorUnblacklisted",
+        "time" : ${executorUnexcludedTime},
+        "executorId" : "exec1"
+      }
+    """
   private val executorUnexcludedJsonString =
     s"""
-       |{
-       |  "Event" : "org.apache.spark.scheduler.SparkListenerExecutorUnexcluded",
-       |  "time" : ${executorUnexcludedTime},
-       |  "executorId" : "exec1"
-       |}
-    """.stripMargin
+       {
+         "Event" : "org.apache.spark.scheduler.SparkListenerExecutorUnexcluded",
+         "time" : ${executorUnexcludedTime},
+         "executorId" : "exec1"
+       }
+    """
   private val nodeBlacklistedJsonString =
     s"""
-      |{
-      |  "Event" : "org.apache.spark.scheduler.SparkListenerNodeBlacklisted",
-      |  "time" : ${nodeExcludedTime},
-      |  "hostId" : "node1",
-      |  "executorFailures" : 33
-      |}
-    """.stripMargin
+      {
+        "Event" : "org.apache.spark.scheduler.SparkListenerNodeBlacklisted",
+        "time" : ${nodeExcludedTime},
+        "hostId" : "node1",
+        "executorFailures" : 33
+      }
+    """
   private val nodeExcludedJsonString =
     s"""
-       |{
-       |  "Event" : "org.apache.spark.scheduler.SparkListenerNodeExcluded",
-       |  "time" : ${nodeExcludedTime},
-       |  "hostId" : "node1",
-       |  "executorFailures" : 33
-       |}
-    """.stripMargin
+       {
+         "Event" : "org.apache.spark.scheduler.SparkListenerNodeExcluded",
+         "time" : ${nodeExcludedTime},
+         "hostId" : "node1",
+         "executorFailures" : 33
+       }
+    """
   private val nodeUnblacklistedJsonString =
     s"""
-      |{
-      |  "Event" : "org.apache.spark.scheduler.SparkListenerNodeUnblacklisted",
-      |  "time" : ${nodeUnexcludedTime},
-      |  "hostId" : "node1"
-      |}
-    """.stripMargin
+      {
+        "Event" : "org.apache.spark.scheduler.SparkListenerNodeUnblacklisted",
+        "time" : ${nodeUnexcludedTime},
+        "hostId" : "node1"
+      }
+    """
   private val nodeUnexcludedJsonString =
     s"""
-       |{
-       |  "Event" : "org.apache.spark.scheduler.SparkListenerNodeUnexcluded",
-       |  "time" : ${nodeUnexcludedTime},
-       |  "hostId" : "node1"
-       |}
-    """.stripMargin
+       {
+         "Event" : "org.apache.spark.scheduler.SparkListenerNodeUnexcluded",
+         "time" : ${nodeUnexcludedTime},
+         "hostId" : "node1"
+       }
+    """
   private val resourceProfileJsonString =
     """
-      |{
-      |  "Event":"SparkListenerResourceProfileAdded",
-      |  "Resource Profile Id":21,
-      |  "Executor Resource Requests":{
-      |    "cores" : {
-      |      "Resource Name":"cores",
-      |      "Amount":2,
-      |      "Discovery Script":"",
-      |      "Vendor":""
-      |    },
-      |    "gpu":{
-      |      "Resource Name":"gpu",
-      |      "Amount":2,
-      |      "Discovery Script":"myscript",
-      |      "Vendor":""
-      |    }
-      |  },
-      |  "Task Resource Requests":{
-      |    "cpus":{
-      |      "Resource Name":"cpus",
-      |      "Amount":1.0
-      |    },
-      |    "gpu":{
-      |      "Resource Name":"gpu",
-      |      "Amount":1.0
-      |    }
-      |  }
-      |}
-    """.stripMargin
+      {
+        "Event":"SparkListenerResourceProfileAdded",
+        "Resource Profile Id":21,
+        "Executor Resource Requests":{
+          "cores" : {
+            "Resource Name":"cores",
+            "Amount":2,
+            "Discovery Script":"",
+            "Vendor":""
+          },
+          "gpu":{
+            "Resource Name":"gpu",
+            "Amount":2,
+            "Discovery Script":"myscript",
+            "Vendor":""
+          }
+        },
+        "Task Resource Requests":{
+          "cpus":{
+            "Resource Name":"cpus",
+            "Amount":1.0
+          },
+          "gpu":{
+            "Resource Name":"gpu",
+            "Amount":1.0
+          }
+        }
+      }
+    """
 
 }
 

@@ -50,12 +50,12 @@ class TableSchemaParserSuite extends SparkFunSuite {
   test("complex hive type") {
     val tableSchemaString =
       """
-        |complexStructCol struct<
-        |struct:struct<deciMal:DECimal, anotherDecimal:decimAL(5,2)>,
-        |MAP:Map<timestamp, varchar(10)>,
-        |arrAy:Array<double>,
-        |anotherArray:Array<char(9)>>
-      """.stripMargin.replace("\n", "")
+        complexStructCol struct<
+        struct:struct<deciMal:DECimal, anotherDecimal:decimAL(5,2)>,
+        MAP:Map<timestamp, varchar(10)>,
+        arrAy:Array<double>,
+        anotherArray:Array<char(9)>>
+      """.replace("\n", "")
 
     val expectedDataType =
       StructType(

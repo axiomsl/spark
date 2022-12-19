@@ -664,15 +664,15 @@ private[hive] class HiveClientImpl(
           val remainingParts = matchingParts.toBuffer --= droppedParts
           logError(
             s"""
-               |======================
-               |Attempt to drop the partition specs in table '$table' database '$db':
-               |${specs.mkString("\n")}
-               |In this attempt, the following partitions have been dropped successfully:
-               |${droppedParts.mkString("\n")}
-               |The remaining partitions have not been dropped:
-               |${remainingParts.mkString("\n")}
-               |======================
-             """.stripMargin)
+               ======================
+               Attempt to drop the partition specs in table '$table' database '$db':
+               ${specs.mkString("\n")}
+               In this attempt, the following partitions have been dropped successfully:
+               ${droppedParts.mkString("\n")}
+               The remaining partitions have not been dropped:
+               ${remainingParts.mkString("\n")}
+               ======================
+             """)
           throw e
       }
       droppedParts += partition
@@ -880,14 +880,14 @@ private[hive] class HiveClientImpl(
       case e: Exception =>
         logError(
           s"""
-            |======================
-            |HIVE FAILURE OUTPUT
-            |======================
-            |${outputBuffer.toString}
-            |======================
-            |END HIVE FAILURE OUTPUT
-            |======================
-          """.stripMargin)
+            ======================
+            HIVE FAILURE OUTPUT
+            ======================
+            ${outputBuffer.toString}
+            ======================
+            END HIVE FAILURE OUTPUT
+            ======================
+          """)
         throw e
     } finally {
       if (state != null) {

@@ -134,11 +134,11 @@ class GenerateUnsafeRowJoinerBitsetSuite extends SparkFunSuite {
       val out = Seq.tabulate(numFields1 + numFields2) { i => if (output.isNullAt(i)) "1" else "0" }
 
       s"""
-         |input1: ${set1.mkString}
-         |input2: ${set2.mkString}
-         |output: ${out.mkString}
-         |expect: ${set1.mkString}${set2.mkString}
-       """.stripMargin
+         input1: ${set1.mkString}
+         input2: ${set2.mkString}
+         output: ${out.mkString}
+         expect: ${set1.mkString}${set2.mkString}
+       """
     }
 
     for (i <- 0 until (numFields1 + numFields2)) {

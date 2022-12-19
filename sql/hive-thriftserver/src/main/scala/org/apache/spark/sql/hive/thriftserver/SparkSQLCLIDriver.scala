@@ -392,8 +392,8 @@ private[hive] class SparkSQLCLIDriver extends CliDriver with Logging {
                 case Some(_) if !sessionState.getIsSilent =>
                   err.println(
                     s"""Error in query: ${e.getMessage}
-                       |${org.apache.hadoop.util.StringUtils.stringifyException(e)}
-                     """.stripMargin)
+                       ${org.apache.hadoop.util.StringUtils.stringifyException(e)}
+                     """)
                 // For analysis exceptions in silent mode or simple ones that only related to the
                 // query itself, such as `NoSuchDatabaseException`, only the error is printed out
                 // to the console.
@@ -428,8 +428,8 @@ private[hive] class SparkSQLCLIDriver extends CliDriver with Logging {
             case e: IOException =>
               console.printError(
                 s"""Failed with exception ${e.getClass.getName}: ${e.getMessage}
-                   |${org.apache.hadoop.util.StringUtils.stringifyException(e)}
-                 """.stripMargin)
+                   ${org.apache.hadoop.util.StringUtils.stringifyException(e)}
+                 """)
               ret = 1
           }
 

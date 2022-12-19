@@ -36,16 +36,16 @@ import org.apache.spark.unsafe.types.{CalendarInterval, UTF8String}
 class JsonExpressionsSuite extends SparkFunSuite with ExpressionEvalHelper with PlanTestBase {
   val json =
     """
-      |{"store":{"fruit":[{"weight":8,"type":"apple"},{"weight":9,"type":"pear"}],
-      |"basket":[[1,2,{"b":"y","a":"x"}],[3,4],[5,6]],"book":[{"author":"Nigel Rees",
-      |"title":"Sayings of the Century","category":"reference","price":8.95},
-      |{"author":"Herman Melville","title":"Moby Dick","category":"fiction","price":8.99,
-      |"isbn":"0-553-21311-3"},{"author":"J. R. R. Tolkien","title":"The Lord of the Rings",
-      |"category":"fiction","reader":[{"age":25,"name":"bob"},{"age":26,"name":"jack"}],
-      |"price":22.99,"isbn":"0-395-19395-8"}],"bicycle":{"price":19.95,"color":"red"}},
-      |"email":"amy@only_for_json_udf_test.net","owner":"amy","zip code":"94025",
-      |"fb:testid":"1234"}
-      |""".stripMargin
+      {"store":{"fruit":[{"weight":8,"type":"apple"},{"weight":9,"type":"pear"}],
+      "basket":[[1,2,{"b":"y","a":"x"}],[3,4],[5,6]],"book":[{"author":"Nigel Rees",
+      "title":"Sayings of the Century","category":"reference","price":8.95},
+      {"author":"Herman Melville","title":"Moby Dick","category":"fiction","price":8.99,
+      "isbn":"0-553-21311-3"},{"author":"J. R. R. Tolkien","title":"The Lord of the Rings",
+      "category":"fiction","reader":[{"age":25,"name":"bob"},{"age":26,"name":"jack"}],
+      "price":22.99,"isbn":"0-395-19395-8"}],"bicycle":{"price":19.95,"color":"red"}},
+      "email":"amy@only_for_json_udf_test.net","owner":"amy","zip code":"94025",
+      "fb:testid":"1234"}
+      """
 
   /* invalid json with leading nulls would trigger java.io.CharConversionException
    in Jackson's JsonFactory.createParser(byte[]) due to RFC-4627 encoding detection */
@@ -89,29 +89,29 @@ class JsonExpressionsSuite extends SparkFunSuite with ExpressionEvalHelper with 
     checkEvaluation(
       GetJsonObject(Literal(json), Literal("$.store.book")),
       """[{"author":"Nigel Rees","title":"Sayings of the Century","category":"reference",
-        |"price":8.95},{"author":"Herman Melville","title":"Moby Dick","category":"fiction",
-        |"price":8.99,"isbn":"0-553-21311-3"},{"author":"J. R. R. Tolkien","title":
-        |"The Lord of the Rings","category":"fiction","reader":[{"age":25,"name":"bob"},
-        |{"age":26,"name":"jack"}],"price":22.99,"isbn":"0-395-19395-8"}]
-        |""".stripMargin.replace("\n", ""))
+        "price":8.95},{"author":"Herman Melville","title":"Moby Dick","category":"fiction",
+        "price":8.99,"isbn":"0-553-21311-3"},{"author":"J. R. R. Tolkien","title":
+        "The Lord of the Rings","category":"fiction","reader":[{"age":25,"name":"bob"},
+        {"age":26,"name":"jack"}],"price":22.99,"isbn":"0-395-19395-8"}]
+        """.replace("\n", ""))
   }
 
   test("$.store.book[0]") {
     checkEvaluation(
       GetJsonObject(Literal(json), Literal("$.store.book[0]")),
       """{"author":"Nigel Rees","title":"Sayings of the Century",
-        |"category":"reference","price":8.95}""".stripMargin.replace("\n", ""))
+        "category":"reference","price":8.95}""".replace("\n", ""))
   }
 
   test("$.store.book[*]") {
     checkEvaluation(
       GetJsonObject(Literal(json), Literal("$.store.book[*]")),
       """[{"author":"Nigel Rees","title":"Sayings of the Century","category":"reference",
-        |"price":8.95},{"author":"Herman Melville","title":"Moby Dick","category":"fiction",
-        |"price":8.99,"isbn":"0-553-21311-3"},{"author":"J. R. R. Tolkien","title":
-        |"The Lord of the Rings","category":"fiction","reader":[{"age":25,"name":"bob"},
-        |{"age":26,"name":"jack"}],"price":22.99,"isbn":"0-395-19395-8"}]
-        |""".stripMargin.replace("\n", ""))
+        "price":8.95},{"author":"Herman Melville","title":"Moby Dick","category":"fiction",
+        "price":8.99,"isbn":"0-553-21311-3"},{"author":"J. R. R. Tolkien","title":
+        "The Lord of the Rings","category":"fiction","reader":[{"age":25,"name":"bob"},
+        {"age":26,"name":"jack"}],"price":22.99,"isbn":"0-395-19395-8"}]
+        """.replace("\n", ""))
   }
 
   test("$") {
@@ -318,7 +318,7 @@ class JsonExpressionsSuite extends SparkFunSuite with ExpressionEvalHelper with 
       JsonTuple(
         NonFoldableLiteral(
           """{"f1": "value13", "f4": "value44",
-            | "f3": "value33", "f2": 2, "f5": 5.01}""".stripMargin)
+             "f3": "value33", "f2": 2, "f5": 5.01}""")
           :: jsonTupleQuery),
       InternalRow.fromSeq(
         Seq("value13", "2", "value33", "value44", "5.01").map(UTF8String.fromString)))
@@ -328,7 +328,7 @@ class JsonExpressionsSuite extends SparkFunSuite with ExpressionEvalHelper with 
     checkJsonTuple(
       JsonTuple(Literal(
         """{"f1": "value13", "f4": "value44",
-          | "f3": "value33", "f2": 2, "f5": 5.01}""".stripMargin) ::
+           "f3": "value33", "f2": 2, "f5": 5.01}""") ::
         NonFoldableLiteral("f1") ::
         NonFoldableLiteral("f2") ::
         NonFoldableLiteral("f3") ::
@@ -718,10 +718,10 @@ class JsonExpressionsSuite extends SparkFunSuite with ExpressionEvalHelper with 
   test("from_json missing fields") {
     val input =
       """{
-      |  "a": 1,
-      |  "c": "foo"
-      |}
-      |""".stripMargin
+        "a": 1,
+        "c": "foo"
+      }
+      """
     val jsonSchema = new StructType()
       .add("a", LongType, nullable = false)
       .add("b", StringType, nullable = false)

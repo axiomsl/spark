@@ -33,13 +33,13 @@ class DistributionSuite extends SparkFunSuite {
     if (inputPartitioning.satisfies(requiredDistribution) != satisfied) {
       fail(
         s"""
-        |== Input Partitioning ==
-        |$inputPartitioning
-        |== Required Distribution ==
-        |$requiredDistribution
-        |== Does input partitioning satisfy required distribution? ==
-        |Expected $satisfied got ${inputPartitioning.satisfies(requiredDistribution)}
-        """.stripMargin)
+        == Input Partitioning ==
+        $inputPartitioning
+        == Required Distribution ==
+        $requiredDistribution
+        == Does input partitioning satisfy required distribution? ==
+        Expected $satisfied got ${inputPartitioning.satisfies(requiredDistribution)}
+        """)
     }
   }
 

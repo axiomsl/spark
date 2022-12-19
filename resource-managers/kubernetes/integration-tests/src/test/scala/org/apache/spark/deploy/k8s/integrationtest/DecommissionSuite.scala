@@ -42,17 +42,16 @@ private[spark] trait DecommissionSuite { k8sSuite: KubernetesSuite =>
     try {
       Files.write(
         """rootLogger.level = info
-          |rootLogger.appenderRef.stdout.ref = console
-          |appender.console.type = Console
-          |appender.console.name = console
-          |appender.console.target = SYSTEM_OUT
-          |appender.console.layout.type = PatternLayout
-          |appender.console.layout.pattern = %d{yy/MM/dd HH:mm:ss} %p %c{1}: %m%n%ex
-          |
-          |logger.spark.name = org.apache.spark
-          |logger.spark.level = debug
-      """.stripMargin,
-        new File(logConfFilePath),
+          rootLogger.appenderRef.stdout.ref = console
+          appender.console.type = Console
+          appender.console.name = console
+          appender.console.target = SYSTEM_OUT
+          appender.console.layout.type = PatternLayout
+          appender.console.layout.pattern = %d{yy/MM/dd HH:mm:ss} %p %c{1}: %m%n%ex
+
+          logger.spark.name = org.apache.spark
+          logger.spark.level = debug
+      """),
         StandardCharsets.UTF_8)
 
       f()

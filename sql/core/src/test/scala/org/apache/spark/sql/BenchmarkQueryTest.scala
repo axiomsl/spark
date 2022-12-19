@@ -43,10 +43,10 @@ abstract class BenchmarkQueryTest extends QueryTest with SharedSparkSession {
       val compileTime = CodeGenerator.compileTime.toDouble / NANOS_PER_SECOND
       val codegenInfo =
         s"""
-           |=== Metrics of Whole-stage Codegen ===
-           |Total code generation time: $codeGenTime seconds
-           |Total compile time: $compileTime seconds
-         """.stripMargin
+           === Metrics of Whole-stage Codegen ===
+           Total code generation time: $codeGenTime seconds
+           Total compile time: $compileTime seconds
+         """
       logWarning(codegenInfo)
       spark.sessionState.catalog.reset()
     } finally {
@@ -83,12 +83,12 @@ abstract class BenchmarkQueryTest extends QueryTest with SharedSparkSession {
         case e: Exception =>
           val msg =
             s"""
-               |failed to compile:
-               |Subtree:
-               |$subtree
-               |Generated code:
-               |${CodeFormatter.format(code)}
-             """.stripMargin
+               failed to compile:
+               Subtree:
+               $subtree
+               Generated code:
+               ${CodeFormatter.format(code)}
+             """
           throw new Exception(msg, e)
       }
 

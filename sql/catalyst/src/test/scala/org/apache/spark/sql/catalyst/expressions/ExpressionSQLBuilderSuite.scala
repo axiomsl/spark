@@ -38,10 +38,10 @@ class ExpressionSQLBuilderSuite extends SparkFunSuite {
       case cause: Throwable =>
         fail(
           s"""Wrong SQL generated for the following expression:
-             |
-             |${e.prettyName}
-             |
-             |$cause
+
+             ${e.prettyName}
+
+             $cause
            """.stripMargin)
     }
 

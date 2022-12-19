@@ -455,13 +455,13 @@ class AnalysisSuite extends AnalysisTest with Matchers {
     if (!afterAnalyze.dataType.equals(expectedDataType)) {
       fail(
         s"""
-           |data type of expression $expression doesn't match expected:
-           |Actual data type:
-           |${afterAnalyze.dataType}
-           |
-           |Expected data type:
-           |${expectedDataType}
-         """.stripMargin)
+           data type of expression $expression doesn't match expected:
+           Actual data type:
+           ${afterAnalyze.dataType}
+           
+           Expected data type:
+           ${expectedDataType}
+         """)
     }
   }
 
@@ -1060,67 +1060,67 @@ class AnalysisSuite extends AnalysisTest with Matchers {
   test("SPARK-22748: Analyze __grouping__id as a literal function") {
     assertAnalysisSuccess(parsePlan(
       """
-        |SELECT grouping__id FROM (
-        |  SELECT grouping__id FROM (
-        |    SELECT a, b, count(1), grouping__id FROM TaBlE2
-        |      GROUP BY a, b WITH ROLLUP
-        |  )
-        |)
-      """.stripMargin), false)
+        SELECT grouping__id FROM (
+          SELECT grouping__id FROM (
+            SELECT a, b, count(1), grouping__id FROM TaBlE2
+              GROUP BY a, b WITH ROLLUP
+          )
+        )
+      """), false)
 
 
     assertAnalysisSuccess(parsePlan(
       """
-        |SELECT grouping__id FROM (
-        |  SELECT a, b, count(1), grouping__id FROM TaBlE2
-        |   GROUP BY a, b WITH CUBE
-        |)
-      """.stripMargin), false)
+        SELECT grouping__id FROM (
+          SELECT a, b, count(1), grouping__id FROM TaBlE2
+           GROUP BY a, b WITH CUBE
+        )
+      """), false)
 
     assertAnalysisSuccess(parsePlan(
       """
-        |SELECT grouping__id FROM (
-        |  SELECT a, b, count(1), grouping__id FROM TaBlE2
-        |    GROUP BY a, b GROUPING SETS ((a, b), ())
-        |)
-      """.stripMargin), false)
+        SELECT grouping__id FROM (
+          SELECT a, b, count(1), grouping__id FROM TaBlE2
+            GROUP BY a, b GROUPING SETS ((a, b), ())
+        )
+      """), false)
 
     assertAnalysisSuccess(parsePlan(
       """
-        |SELECT a, b, count(1) FROM TaBlE2
-        |  GROUP BY CUBE(a, b) HAVING grouping__id > 0
-      """.stripMargin), false)
+        SELECT a, b, count(1) FROM TaBlE2
+          GROUP BY CUBE(a, b) HAVING grouping__id > 0
+      """), false)
 
     assertAnalysisSuccess(parsePlan(
       """
-        |SELECT * FROM (
-        |  SELECT a, b, count(1), grouping__id FROM TaBlE2
-        |    GROUP BY a, b GROUPING SETS ((a, b), ())
-        |) WHERE grouping__id > 0
-      """.stripMargin), false)
+        SELECT * FROM (
+          SELECT a, b, count(1), grouping__id FROM TaBlE2
+            GROUP BY a, b GROUPING SETS ((a, b), ())
+        ) WHERE grouping__id > 0
+      """), false)
 
     assertAnalysisSuccess(parsePlan(
       """
-        |SELECT * FROM (
-        |  SELECT a, b, count(1), grouping__id FROM TaBlE2
-        |    GROUP BY a, b GROUPING SETS ((a, b), ())
-        |) ORDER BY grouping__id > 0
-      """.stripMargin), false)
+        SELECT * FROM (
+          SELECT a, b, count(1), grouping__id FROM TaBlE2
+            GROUP BY a, b GROUPING SETS ((a, b), ())
+        ) ORDER BY grouping__id > 0
+      """), false)
 
     assertAnalysisSuccess(parsePlan(
       """
-        |SELECT a, b, count(1) FROM TaBlE2
-        |  GROUP BY a, b GROUPING SETS ((a, b), ())
-        |    ORDER BY grouping__id > 0
-      """.stripMargin), false)
+        SELECT a, b, count(1) FROM TaBlE2
+          GROUP BY a, b GROUPING SETS ((a, b), ())
+            ORDER BY grouping__id > 0
+      """), false)
 
     assertAnalysisError(parsePlan(
       """
-        |SELECT grouping__id FROM (
-        |  SELECT a, b, count(1), grouping__id FROM TaBlE2
-        |    GROUP BY a, b
-        |)
-      """.stripMargin),
+        SELECT grouping__id FROM (
+          SELECT a, b, count(1), grouping__id FROM TaBlE2
+            GROUP BY a, b
+        )
+      """),
       Seq("grouping_id() can only be used with GroupingSets/Cube/Rollup"),
       false)
   }
@@ -1128,27 +1128,27 @@ class AnalysisSuite extends AnalysisTest with Matchers {
   test("SPARK-36275: Resolve aggregate functions should work with nested fields") {
     assertAnalysisSuccess(parsePlan(
       """
-        |SELECT c.x, SUM(c.y)
-        |FROM VALUES NAMED_STRUCT('x', 'A', 'y', 1), NAMED_STRUCT('x', 'A', 'y', 2) AS t(c)
-        |GROUP BY c.x
-        |HAVING c.x > 1
-        |""".stripMargin))
+        SELECT c.x, SUM(c.y)
+        FROM VALUES NAMED_STRUCT('x', 'A', 'y', 1), NAMED_STRUCT('x', 'A', 'y', 2) AS t(c)
+        GROUP BY c.x
+        HAVING c.x > 1
+        """))
 
     assertAnalysisSuccess(parsePlan(
       """
-        |SELECT c.x, SUM(c.y)
-        |FROM VALUES NAMED_STRUCT('x', 'A', 'y', 1), NAMED_STRUCT('x', 'A', 'y', 2) AS t(c)
-        |GROUP BY c.x
-        |ORDER BY c.x
-        |""".stripMargin))
+        SELECT c.x, SUM(c.y)
+        FROM VALUES NAMED_STRUCT('x', 'A', 'y', 1), NAMED_STRUCT('x', 'A', 'y', 2) AS t(c)
+        GROUP BY c.x
+        ORDER BY c.x
+        """))
 
     assertAnalysisErrorClass(parsePlan(
      """
-        |SELECT c.x
-        |FROM VALUES NAMED_STRUCT('x', 'A', 'y', 1), NAMED_STRUCT('x', 'A', 'y', 2) AS t(c)
-        |GROUP BY c.x
-        |ORDER BY c.x + c.y
-        |""".stripMargin),
+        SELECT c.x
+        FROM VALUES NAMED_STRUCT('x', 'A', 'y', 1), NAMED_STRUCT('x', 'A', 'y', 2) AS t(c)
+        GROUP BY c.x
+        ORDER BY c.x + c.y
+        """),
       "MISSING_COLUMN",
       Array("c.y", "x"))
   }
@@ -1157,21 +1157,21 @@ class AnalysisSuite extends AnalysisTest with Matchers {
     Seq("mean", "abs").foreach { func =>
       assertAnalysisError(parsePlan(
         s"""
-           |WITH t as (SELECT true c)
-           |SELECT t.c
-           |FROM t
-           |GROUP BY t.c
-           |HAVING ${func}(t.c) > 0d""".stripMargin),
+           WITH t as (SELECT true c)
+           SELECT t.c
+           FROM t
+           GROUP BY t.c
+           HAVING ${func}(t.c) > 0d"""),
         Seq(s"cannot resolve '$func(t.c)' due to data type mismatch"),
         false)
 
       assertAnalysisError(parsePlan(
         s"""
-           |WITH t as (SELECT true c, false d)
-           |SELECT (t.c AND t.d) c
-           |FROM t
-           |GROUP BY t.c, t.d
-           |HAVING ${func}(c) > 0d""".stripMargin),
+           WITH t as (SELECT true c, false d)
+           SELECT (t.c AND t.d) c
+           FROM t
+           GROUP BY t.c, t.d
+           HAVING ${func}(c) > 0d"""),
         Seq(s"cannot resolve '$func(c)' due to data type mismatch"),
         false)
     }
@@ -1180,11 +1180,11 @@ class AnalysisSuite extends AnalysisTest with Matchers {
   test("SPARK-39354: should be `Table or view not found`") {
     assertAnalysisError(parsePlan(
       s"""
-         |WITH t1 as (SELECT 1 user_id, CAST("2022-06-02" AS DATE) dt)
-         |SELECT *
-         |FROM t1
-         |JOIN t2 ON t1.user_id = t2.user_id
-         |WHERE t1.dt >= DATE_SUB('2020-12-27', 90)""".stripMargin),
+         WITH t1 as (SELECT 1 user_id, CAST("2022-06-02" AS DATE) dt)
+         SELECT *
+         FROM t1
+         JOIN t2 ON t1.user_id = t2.user_id
+         WHERE t1.dt >= DATE_SUB('2020-12-27', 90)"""),
       Seq(s"Table or view not found: t2"),
       false)
   }

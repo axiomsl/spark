@@ -79,17 +79,17 @@ object KinesisWordCountASL extends Logging {
     if (args.length != 3) {
       System.err.println(
         """
-          |Usage: KinesisWordCountASL <app-name> <stream-name> <endpoint-url>
-          |
-          |    <app-name> is the name of the consumer app, used to track the read data in DynamoDB
-          |    <stream-name> is the name of the Kinesis stream
-          |    <endpoint-url> is the endpoint of the Kinesis service
-          |                   (e.g. https://kinesis.us-east-1.amazonaws.com)
-          |
-          |Generate input data for Kinesis stream using the example KinesisWordProducerASL.
-          |See https://spark.apache.org/docs/latest/streaming-kinesis-integration.html for more
-          |details.
-        """.stripMargin)
+          Usage: KinesisWordCountASL <app-name> <stream-name> <endpoint-url>
+
+              <app-name> is the name of the consumer app, used to track the read data in DynamoDB
+              <stream-name> is the name of the Kinesis stream
+              <endpoint-url> is the endpoint of the Kinesis service
+                             (e.g. https://kinesis.us-east-1.amazonaws.com)
+
+          Generate input data for Kinesis stream using the example KinesisWordProducerASL.
+          See https://spark.apache.org/docs/latest/streaming-kinesis-integration.html for more
+          details.
+        """.)
       System.exit(1)
     }
 
@@ -183,16 +183,16 @@ object KinesisWordProducerASL {
     if (args.length != 4) {
       System.err.println(
         """
-          |Usage: KinesisWordProducerASL <stream-name> <endpoint-url> <records-per-sec>
-          |                              <words-per-record>
-          |
-          |    <stream-name> is the name of the Kinesis stream
-          |    <endpoint-url> is the endpoint of the Kinesis service
-          |                   (e.g. https://kinesis.us-east-1.amazonaws.com)
-          |    <records-per-sec> is the rate of records per second to put onto the stream
-          |    <words-per-record> is the number of words per record
-          |
-        """.stripMargin)
+          Usage: KinesisWordProducerASL <stream-name> <endpoint-url> <records-per-sec>
+                                        <words-per-record>
+
+              <stream-name> is the name of the Kinesis stream
+              <endpoint-url> is the endpoint of the Kinesis service
+                             (e.g. https://kinesis.us-east-1.amazonaws.com)
+              <records-per-sec> is the rate of records per second to put onto the stream
+              <words-per-record> is the number of words per record
+
+        """)
 
       System.exit(1)
     }

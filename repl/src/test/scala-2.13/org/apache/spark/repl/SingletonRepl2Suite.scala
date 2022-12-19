@@ -123,15 +123,15 @@ class SingletonRepl2Suite extends SparkFunSuite {
     //         - closure: the starting closure, captures the enclosing REPL line object.
     val output = runInterpreter(
       """
-        |class NotSerializableClass(val x: Int)
-        |val ns = new NotSerializableClass(42); val topLevelValue = "someValue"; val closure =
-        |(j: Int) => {
-        |  (1 to j).flatMap { x =>
-        |    (1 to x).map { y => y + topLevelValue }
-        |  }
-        |}
-        |val r = sc.parallelize(0 to 2).map(closure).collect
-      """.stripMargin)
+        class NotSerializableClass(val x: Int)
+        val ns = new NotSerializableClass(42); val topLevelValue = "someValue"; val closure =
+        (j: Int) => {
+          (1 to j).flatMap { x =>
+            (1 to x).map { y => y + topLevelValue }
+          }
+        }
+        val r = sc.parallelize(0 to 2).map(closure).collect
+      """)
 //    assertContains("r: Array[scala.collection.immutable.IndexedSeq[String]] = " +
 //      "Array(Vector(), Vector(1someValue), Vector(1someValue, 1someValue, 2someValue))", output)
     assertContains("r: Array[IndexedSeq[String]] = " +
@@ -150,17 +150,17 @@ class SingletonRepl2Suite extends SparkFunSuite {
 
     val output = runInterpreter(
       """
-        |class NotSerializableClass(val x: Int)
-        |val ns = new NotSerializableClass(42); val topLevelValue = "someValue"; val closure =
-        |(j: Int) => {
-        |  class InnerFoo {
-        |    val innerClosure = (x: Int) => (1 to x).map { y => y + topLevelValue }
-        |  }
-        |  val innerFoo = new InnerFoo
-        |  (1 to j).flatMap(innerFoo.innerClosure)
-        |}
-        |val r = sc.parallelize(0 to 2).map(closure).collect
-      """.stripMargin)
+        class NotSerializableClass(val x: Int)
+        val ns = new NotSerializableClass(42); val topLevelValue = "someValue"; val closure =
+        (j: Int) => {
+          class InnerFoo {
+            val innerClosure = (x: Int) => (1 to x).map { y => y + topLevelValue }
+          }
+          val innerFoo = new InnerFoo
+          (1 to j).flatMap(innerFoo.innerClosure)
+        }
+        val r = sc.parallelize(0 to 2).map(closure).collect
+      """)
 //    assertContains("r: Array[scala.collection.immutable.IndexedSeq[String]] = " +
 //       "Array(Vector(), Vector(1someValue), Vector(1someValue, 1someValue, 2someValue))", output)
     assertContains("r: Array[IndexedSeq[String]] = " +

@@ -48,12 +48,12 @@ object Correlations {
         .action((x, c) => c.copy(input = x))
       note(
         """
-        |For example, the following command runs this app on a synthetic dataset:
-        |
-        | bin/spark-submit --class org.apache.spark.examples.mllib.Correlations \
-        |  examples/target/scala-*/spark-examples-*.jar \
-        |  --input data/mllib/sample_linear_regression_data.txt
-        """.stripMargin)
+        For example, the following command runs this app on a synthetic dataset:
+
+         bin/spark-submit --class org.apache.spark.examples.mllib.Correlations \
+          examples/target/scala-*/spark-examples-*.jar \
+          --input data/mllib/sample_linear_regression_data.txt
+        """)
     }
 
     parser.parse(args, defaultParams) match {

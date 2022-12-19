@@ -42,13 +42,13 @@ class ConstraintPropagationSuite extends SparkFunSuite with PlanTest {
     if (missing.nonEmpty || extra.nonEmpty) {
       fail(
         s"""
-           |== FAIL: Constraints do not match ===
-           |Found: ${found.mkString(",")}
-           |Expected: ${expected.mkString(",")}
-           |== Result ==
-           |Missing: ${if (missing.isEmpty) "N/A" else missing.mkString(",")}
-           |Found but not expected: ${if (extra.isEmpty) "N/A" else extra.mkString(",")}
-         """.stripMargin)
+           == FAIL: Constraints do not match ===
+           Found: ${found.mkString(",")}
+           Expected: ${expected.mkString(",")}
+           == Result ==
+           Missing: ${if (missing.isEmpty) "N/A" else missing.mkString(",")}
+           Found but not expected: ${if (extra.isEmpty) "N/A" else extra.mkString(",")}
+         """)
     }
   }
 

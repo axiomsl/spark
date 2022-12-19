@@ -427,9 +427,9 @@ class RowEncoderSuite extends CodegenInterpretedPlanTest {
             case e: Exception =>
               fail(
                 s"""
-                   |schema: ${schema.simpleString}
-                   |input: ${input}
-                 """.stripMargin, e)
+                   schema: ${schema.simpleString}
+                   input: ${input}
+                 """, e)
           }
         }
       }
