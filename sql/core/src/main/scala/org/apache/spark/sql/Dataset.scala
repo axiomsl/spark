@@ -705,6 +705,7 @@ class Dataset[T] private[sql](
         LogicalRDD(
           logicalPlan.output,
           internalRdd,
+          Some(logicalPlan.stats),
           outputPartitioning,
           physicalPlan.outputOrdering,
           isStreaming
@@ -827,7 +828,7 @@ class Dataset[T] private[sql](
   def show(numRows: Int, truncate: Boolean, out: String => Unit): Unit = if (truncate) {
     out(showString(numRows))
   } else {
-    println(showString(numRows, truncate = 0))
+    out(showString(numRows, truncate = 0))
   }
 
   /**

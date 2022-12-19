@@ -87,6 +87,7 @@ case class ExternalRDDScanExec[T](
 case class LogicalRDD(
     output: Seq[Attribute],
     rdd: RDD[InternalRow],
+    statsFromChild: Option[Statistics] = None,
     outputPartitioning: Partitioning = UnknownPartitioning(0),
     override val outputOrdering: Seq[SortOrder] = Nil,
     override val isStreaming: Boolean = false)(session: SparkSession)
@@ -113,6 +114,7 @@ case class LogicalRDD(
     LogicalRDD(
       output.map(rewrite),
       rdd,
+      statsFromChild,
       rewrittenPartitioning,
       rewrittenOrdering,
       isStreaming
@@ -121,11 +123,15 @@ case class LogicalRDD(
 
   override protected def stringArgs: Iterator[Any] = Iterator(output, isStreaming)
 
-  override def computeStats(): Statistics = Statistics(
-    // TODO: Instead of returning a default value here, find a way to return a meaningful size
-    // estimate for RDDs. See PR 1238 for more discussions.
-    sizeInBytes = BigInt(session.sessionState.conf.defaultSizeInBytes)
-  )
+  override def computeStats(): Statistics = {
+    statsFromChild.getOrElse(
+      Statistics(
+        // TODO: Instead of returning a default value here, find a way to return a meaningful size
+        // estimate for RDDs. See PR 1238 for more discussions.
+        sizeInBytes = BigInt(session.sessionState.conf.defaultSizeInBytes)
+      )
+    )
+  }
 }
 
 /** Physical plan node for scanning data from an RDD of InternalRow. */
