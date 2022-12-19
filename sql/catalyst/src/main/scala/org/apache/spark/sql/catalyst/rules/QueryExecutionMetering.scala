@@ -21,8 +21,6 @@ import scala.collection.JavaConverters._
 
 import com.google.common.util.concurrent.AtomicLongMap
 
-import org.apache.spark.sql.catalyst.util.DateTimeConstants.NANOS_PER_SECOND
-
 case class QueryExecutionMetering() {
   private val timeMap = AtomicLongMap.create[String]()
   private val numRunsMap = AtomicLongMap.create[String]()

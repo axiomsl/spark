@@ -89,7 +89,7 @@ object KinesisWordCountASL extends Logging {
           Generate input data for Kinesis stream using the example KinesisWordProducerASL.
           See https://spark.apache.org/docs/latest/streaming-kinesis-integration.html for more
           details.
-        """.)
+        """)
       System.exit(1)
     }
 

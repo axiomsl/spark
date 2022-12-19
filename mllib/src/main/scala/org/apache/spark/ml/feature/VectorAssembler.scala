@@ -210,11 +210,11 @@ object VectorAssembler extends DefaultParamsReadable[VectorAssembler] {
       case e: NullPointerException => throw new NullPointerException(
         s"""Encountered null value while inferring lengths from the first row. Consider using
            VectorSizeHint to add metadata for columns: ${columns.mkString("[", ", ", "]")}. """
-          stripMargin.replaceAll("\n", " ") + e.toString)
+          .replaceAll("\n", " ") + e.toString)
       case e: NoSuchElementException => throw new NoSuchElementException(
         s"""Encountered empty dataframe while inferring lengths from the first row. Consider using
            VectorSizeHint to add metadata for columns: ${columns.mkString("[", ", ", "]")}. """
-          stripMargin.replaceAll("\n", " ") + e.toString)
+          .replaceAll("\n", " ") + e.toString)
     }
   }
 
@@ -234,7 +234,7 @@ object VectorAssembler extends DefaultParamsReadable[VectorAssembler] {
       case (true, VectorAssembler.KEEP_INVALID) => throw new RuntimeException(
         s"""Can not infer column lengths with handleInvalid = "keep". Consider using VectorSizeHint
            to add metadata for columns: ${missingColumns.mkString("[", ", ", "]")}."""
-          stripMargin.replaceAll("\n", " "))
+          .replaceAll("\n", " "))
       case (_, _) => Map.empty
     }
     groupSizes ++ firstSizes
