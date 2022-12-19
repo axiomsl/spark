@@ -72,11 +72,11 @@ private[spark] object SparkCoreErrors {
   def checkpointRDDBlockIdNotFoundError(rddBlockId: RDDBlockId): Throwable = {
     new SparkException(
       s"""
-         |Checkpoint block $rddBlockId not found! Either the executor
-         |that originally checkpointed this partition is no longer alive, or the original RDD is
-         |unpersisted. If this problem persists, you may consider using `rdd.checkpoint()`
-         |instead, which is slower than local checkpointing but more fault-tolerant.
-       """.stripMargin.replaceAll("\n", " "))
+         Checkpoint block $rddBlockId not found! Either the executor
+         that originally checkpointed this partition is no longer alive, or the original RDD is
+         unpersisted. If this problem persists, you may consider using `rdd.checkpoint()`
+         instead, which is slower than local checkpointing but more fault-tolerant.
+       """.replaceAll("\n", " "))
   }
 
   def endOfStreamError(): Throwable = {
@@ -142,10 +142,10 @@ private[spark] object SparkCoreErrors {
       newRDDLength: Int): Throwable = {
     new SparkException(
       s"""
-         |Checkpoint RDD has a different number of partitions from original RDD. Original
-         |RDD [ID: $originalRDDId, num of partitions: $originalRDDLength];
-         |Checkpoint RDD [ID: $newRDDId, num of partitions: $newRDDLength].
-       """.stripMargin.replaceAll("\n", " "))
+         Checkpoint RDD has a different number of partitions from original RDD. Original
+         RDD [ID: $originalRDDId, num of partitions: $originalRDDLength];
+         Checkpoint RDD [ID: $newRDDId, num of partitions: $newRDDLength].
+       """.replaceAll("\n", " "))
   }
 
   def checkpointFailedToSaveError(task: Int, path: Path): Throwable = {

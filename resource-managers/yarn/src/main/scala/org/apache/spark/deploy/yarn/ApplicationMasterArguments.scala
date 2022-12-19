@@ -88,16 +88,16 @@ class ApplicationMasterArguments(val args: Array[String]) {
       System.err.println("Unknown/unsupported param " + unknownParam)
     }
     System.err.println("""
-      |Usage: org.apache.spark.deploy.yarn.ApplicationMaster [options]
-      |Options:
-      |  --jar JAR_PATH       Path to your application's JAR file
-      |  --class CLASS_NAME   Name of your application's main class
-      |  --primary-py-file    A main Python file
-      |  --primary-r-file     A main R file
-      |  --arg ARG            Argument to be passed to your application's main class.
-      |                       Multiple invocations are possible, each will be passed in order.
-      |  --properties-file FILE Path to a custom Spark properties file.
-      """.stripMargin)
+      Usage: org.apache.spark.deploy.yarn.ApplicationMaster [options]
+      Options:
+        --jar JAR_PATH       Path to your application's JAR file
+        --class CLASS_NAME   Name of your application's main class
+        --primary-py-file    A main Python file
+        --primary-r-file     A main R file
+        --arg ARG            Argument to be passed to your application's main class.
+                             Multiple invocations are possible, each will be passed in order.
+        --properties-file FILE Path to a custom Spark properties file.
+      """)
     // scalastyle:on println
     System.exit(exitCode)
   }

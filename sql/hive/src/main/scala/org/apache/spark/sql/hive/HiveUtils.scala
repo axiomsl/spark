@@ -80,39 +80,39 @@ private[spark] object HiveUtils extends Logging {
 
   val HIVE_METASTORE_JARS = buildStaticConf("spark.sql.hive.metastore.jars")
     .doc(s"""
-      | Location of the jars that should be used to instantiate the HiveMetastoreClient.
-      | This property can be one of four options:
-      | 1. "builtin"
-      |   Use Hive ${builtinHiveVersion}, which is bundled with the Spark assembly when
-      |   <code>-Phive</code> is enabled. When this option is chosen,
-      |   <code>spark.sql.hive.metastore.version</code> must be either
-      |   <code>${builtinHiveVersion}</code> or not defined.
-      | 2. "maven"
-      |   Use Hive jars of specified version downloaded from Maven repositories.
-      | 3. "path"
-      |   Use Hive jars configured by `spark.sql.hive.metastore.jars.path`
-      |   in comma separated format. Support both local or remote paths.The provided jars
-      |   should be the same version as `${HIVE_METASTORE_VERSION.key}`.
-      | 4. A classpath in the standard format for both Hive and Hadoop. The provided jars
-      |   should be the same version as `${HIVE_METASTORE_VERSION.key}`.
-      """.stripMargin)
+       Location of the jars that should be used to instantiate the HiveMetastoreClient.
+       This property can be one of four options:
+       1. "builtin"
+         Use Hive $builtinHiveVersion, which is bundled with the Spark assembly when
+         <code>-Phive</code> is enabled. When this option is chosen,
+         <code>spark.sql.hive.metastore.version</code> must be either
+         <code>$builtinHiveVersion</code> or not defined.
+       2. "maven"
+         Use Hive jars of specified version downloaded from Maven repositories.
+       3. "path"
+         Use Hive jars configured by `spark.sql.hive.metastore.jars.path`
+         in comma separated format. Support both local or remote paths.The provided jars
+         should be the same version as `${HIVE_METASTORE_VERSION.key}`.
+       4. A classpath in the standard format for both Hive and Hadoop. The provided jars
+         should be the same version as `${HIVE_METASTORE_VERSION.key}`.
+      """)
     .version("1.4.0")
     .stringConf
     .createWithDefault("builtin")
 
   val HIVE_METASTORE_JARS_PATH = buildStaticConf("spark.sql.hive.metastore.jars.path")
     .doc(s"""
-      | Comma-separated paths of the jars that used to instantiate the HiveMetastoreClient.
-      | This configuration is useful only when `${HIVE_METASTORE_JARS.key}` is set as `path`.
-      | The paths can be any of the following format:
-      | 1. file://path/to/jar/foo.jar
-      | 2. hdfs://nameservice/path/to/jar/foo.jar
-      | 3. /path/to/jar/ (path without URI scheme follow conf `fs.defaultFS`'s URI schema)
-      | 4. [http/https/ftp]://path/to/jar/foo.jar
-      | Note that 1, 2, and 3 support wildcard. For example:
-      | 1. file://path/to/jar/*,file://path2/to/jar/*/*.jar
-      | 2. hdfs://nameservice/path/to/jar/*,hdfs://nameservice2/path/to/jar/*/*.jar
-      """.stripMargin)
+       Comma-separated paths of the jars that used to instantiate the HiveMetastoreClient.
+       This configuration is useful only when `${HIVE_METASTORE_JARS.key}` is set as `path`.
+       The paths can be any of the following format:
+       1. file://path/to/jar/foo.jar
+       2. hdfs://nameservice/path/to/jar/foo.jar
+       3. /path/to/jar/ (path without URI scheme follow conf `fs.defaultFS`'s URI schema)
+       4. [http/https/ftp]://path/to/jar/foo.jar
+       Note that 1, 2, and 3 support wildcard. For example:
+       1. file://path/to/jar/*,file://path2/to/jar/*/*.jar
+       2. hdfs://nameservice/path/to/jar/*,hdfs://nameservice2/path/to/jar/*/*.jar
+      """)
     .version("3.1.0")
     .stringConf
     .toSequence

@@ -460,11 +460,11 @@ private[spark] object Utils extends Logging {
       val expectedPos = initialPos + bytesToCopy
       assert(finalPos == expectedPos,
         s"""
-           |Current position $finalPos do not equal to expected position $expectedPos
-           |after transferTo, please check your kernel version to see if it is 2.6.32,
-           |this is a kernel bug which will lead to unexpected behavior when using transferTo.
-           |You can set spark.file.transferTo = false to disable this NIO feature.
-         """.stripMargin)
+           Current position $finalPos do not equal to expected position $expectedPos
+           after transferTo, please check your kernel version to see if it is 2.6.32,
+           this is a kernel bug which will lead to unexpected behavior when using transferTo.
+           You can set spark.file.transferTo = false to disable this NIO feature.
+         """)
     }
   }
 

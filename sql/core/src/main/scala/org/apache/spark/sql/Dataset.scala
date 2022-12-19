@@ -3180,8 +3180,8 @@ class Dataset[T] private[sql](
     val sortOrders = partitionExprs.filter(_.expr.isInstanceOf[SortOrder])
     if (sortOrders.nonEmpty) throw new IllegalArgumentException(
       s"""Invalid partitionExprs specified: $sortOrders
-         |For range partitioning use repartitionByRange(...) instead.
-       """.stripMargin)
+         For range partitioning use repartitionByRange(...) instead.
+       """)
     withTypedPlan {
       RepartitionByExpression(partitionExprs.map(_.expr), logicalPlan, numPartitions)
     }

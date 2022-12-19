@@ -1172,10 +1172,10 @@ private[history] class FsHistoryProvider(conf: SparkConf, clock: Clock)
    */
   override def toString: String = {
     val count = listing.count(classOf[ApplicationInfoWrapper])
-    s"""|FsHistoryProvider{logdir=$logDir,
-        |  storedir=$storePath,
-        |  last scan time=$lastScanTime
-        |  application count=$count}""".stripMargin
+    s"""FsHistoryProvider{logdir=$logDir,
+          storedir=$storePath,
+          last scan time=$lastScanTime
+          application count=$count}"""
   }
 
   private def load(appId: String): ApplicationInfoWrapper = {

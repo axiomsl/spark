@@ -195,10 +195,10 @@ case class ConcatWs(children: Seq[Expression])
         returnType = "int",
         makeSplitFunction = body =>
           s"""
-             |int $varargNum = 0;
-             |$body
-             |return $varargNum;
-           """.stripMargin,
+             int $varargNum = 0;
+             $body
+             return $varargNum;
+           """,
         foldFunctions = _.map(funcCall => s"$varargNum += $funcCall;").mkString("\n"))
 
       val varargBuilds = ctx.splitExpressionsWithCurrentInputs(
@@ -209,9 +209,9 @@ case class ConcatWs(children: Seq[Expression])
         returnType = "int",
         makeSplitFunction = body =>
           s"""
-             |$body
-             |return $idxVararg;
-           """.stripMargin,
+             $body
+             return $idxVararg;
+           """,
         foldFunctions = _.map(funcCall => s"$idxVararg = $funcCall;").mkString("\n"))
 
       ev.copy(
@@ -317,13 +317,13 @@ case class Elt(
 
     val assignInputValue = inputs.zipWithIndex.map { case (eval, index) =>
       s"""
-         |if ($indexVal == ${index + 1}) {
-         |  ${eval.code}
-         |  $inputVal = ${eval.isNull} ? null : ${eval.value};
-         |  $indexMatched = true;
-         |  continue;
-         |}
-      """.stripMargin
+         if ($indexVal == ${index + 1}) {
+           ${eval.code}
+           $inputVal = ${eval.isNull} ? null : ${eval.value};
+           $indexMatched = true;
+           continue;
+         }
+      """
     }
 
     val codes = ctx.splitExpressionsWithCurrentInputs(
@@ -333,28 +333,28 @@ case class Elt(
       returnType = CodeGenerator.JAVA_BOOLEAN,
       makeSplitFunction = body =>
         s"""
-           |${CodeGenerator.JAVA_BOOLEAN} $indexMatched = false;
-           |do {
-           |  $body
-           |} while (false);
-           |return $indexMatched;
-         """.stripMargin,
+           ${CodeGenerator.JAVA_BOOLEAN} $indexMatched = false;
+           do {
+             $body
+           } while (false);
+           return $indexMatched;
+         """,
       foldFunctions = _.map { funcCall =>
         s"""
-           |$indexMatched = $funcCall;
-           |if ($indexMatched) {
-           |  continue;
-           |}
-         """.stripMargin
+           $indexMatched = $funcCall;
+           if ($indexMatched) {
+             continue;
+           }
+         """
       }.mkString)
 
     val indexOutOfBoundBranch = if (failOnError) {
       // scalastyle:off line.size.limit
       s"""
-         |if (!$indexMatched) {
-         |  throw QueryExecutionErrors.invalidInputIndexError(${index.value}, ${inputExprs.length});
-         |}
-       """.stripMargin
+         if (!$indexMatched) {
+           throw QueryExecutionErrors.invalidInputIndexError(${index.value}, ${inputExprs.length});
+         }
+       """
       // scalastyle:on line.size.limit
     } else {
       ""
@@ -362,21 +362,21 @@ case class Elt(
 
     ev.copy(
       code"""
-         |${index.code}
-         |boolean ${ev.isNull} = ${index.isNull};
-         |${CodeGenerator.javaType(dataType)} ${ev.value} = null;
-         |if (!${index.isNull}) {
-         |  final int $indexVal = ${index.value};
-         |  ${CodeGenerator.JAVA_BOOLEAN} $indexMatched = false;
-         |  $inputVal = null;
-         |  do {
-         |    $codes
-         |  } while (false);
-         |  $indexOutOfBoundBranch
-         |  ${ev.value} = $inputVal;
-         |  ${ev.isNull} = ${ev.value} == null;
-         |}
-       """.stripMargin)
+         ${index.code}
+         boolean ${ev.isNull} = ${index.isNull};
+         ${CodeGenerator.javaType(dataType)} ${ev.value} = null;
+         if (!${index.isNull}) {
+           final int $indexVal = ${index.value};
+           ${CodeGenerator.JAVA_BOOLEAN} $indexMatched = false;
+           $inputVal = null;
+           do {
+             $codes
+           } while (false);
+           $indexOutOfBoundBranch
+           ${ev.value} = $inputVal;
+           ${ev.isNull} = ${ev.value} == null;
+         }
+       """)
   }
 
   override protected def withNewChildrenInternal(newChildren: IndexedSeq[Expression]): Elt =
@@ -974,30 +974,30 @@ trait String2TrimExpression extends Expression with ImplicitCastInputTypes {
 
     if (evals.length == 1) {
       ev.copy(code = code"""
-         |${srcString.code}
-         |boolean ${ev.isNull} = false;
-         |UTF8String ${ev.value} = null;
-         |if (${srcString.isNull}) {
-         |  ${ev.isNull} = true;
-         |} else {
-         |  ${ev.value} = ${srcString.value}.$trimMethod();
-         |}""".stripMargin)
+         ${srcString.code}
+         boolean ${ev.isNull} = false;
+         UTF8String ${ev.value} = null;
+         if (${srcString.isNull}) {
+           ${ev.isNull} = true;
+         } else {
+           ${ev.value} = ${srcString.value}.$trimMethod();
+         }""")
     } else {
       val trimString = evals(1)
       ev.copy(code = code"""
-         |${srcString.code}
-         |boolean ${ev.isNull} = false;
-         |UTF8String ${ev.value} = null;
-         |if (${srcString.isNull}) {
-         |  ${ev.isNull} = true;
-         |} else {
-         |  ${trimString.code}
-         |  if (${trimString.isNull}) {
-         |    ${ev.isNull} = true;
-         |  } else {
-         |    ${ev.value} = ${srcString.value}.$trimMethod(${trimString.value});
-         |  }
-         |}""".stripMargin)
+         ${srcString.code}
+         boolean ${ev.isNull} = false;
+         UTF8String ${ev.value} = null;
+         if (${srcString.isNull}) {
+           ${ev.isNull} = true;
+         } else {
+           ${trimString.code}
+           if (${trimString.isNull}) {
+             ${ev.isNull} = true;
+           } else {
+             ${ev.value} = ${srcString.value}.$trimMethod(${trimString.value});
+           }
+         }""")
     }
   }
 

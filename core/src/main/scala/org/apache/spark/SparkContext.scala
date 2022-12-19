@@ -111,14 +111,14 @@ class SparkContext(config: SparkConf) extends Logging {
         }
       throw new IllegalStateException(
         s"""Cannot call methods on a stopped SparkContext.
-           |This stopped SparkContext was created at:
-           |
-           |${creationSite.longForm}
-           |
-           |The currently active SparkContext was created at:
-           |
-           |$activeCreationSite
-         """.stripMargin)
+           This stopped SparkContext was created at:
+
+           ${creationSite.longForm}
+
+           The currently active SparkContext was created at:
+
+           $activeCreationSite
+         """)
     }
   }
 

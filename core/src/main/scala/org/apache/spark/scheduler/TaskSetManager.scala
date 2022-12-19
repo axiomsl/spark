@@ -730,13 +730,13 @@ private[spark] class TaskSetManager(
     taskSetExcludelistHelperOpt.foreach { taskSetExcludelist =>
       val partition = tasks(indexInTaskSet).partitionId
       abort(s"""
-         |Aborting $taskSet because task $indexInTaskSet (partition $partition)
-         |cannot run anywhere due to node and executor excludeOnFailure.
-         |Most recent failure:
-         |${taskSetExcludelist.getLatestFailureReason}
-         |
-         |ExcludeOnFailure behavior can be configured via spark.excludeOnFailure.*.
-         |""".stripMargin)
+         Aborting $taskSet because task $indexInTaskSet (partition $partition)
+         cannot run anywhere due to node and executor excludeOnFailure.
+         Most recent failure:
+         ${taskSetExcludelist.getLatestFailureReason}
+
+         ExcludeOnFailure behavior can be configured via spark.excludeOnFailure.*.
+         """)
     }
   }
 

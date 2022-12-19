@@ -64,9 +64,9 @@ private[sql] object AvroUtils extends Logging {
       case t: StructType => Some(t)
       case _ => throw new RuntimeException(
         s"""Avro schema cannot be converted to a Spark SQL StructType:
-           |
-           |${avroSchema.toString(true)}
-           |""".stripMargin)
+
+           ${avroSchema.toString(true)}
+           """)
     }
   }
 

@@ -44,25 +44,25 @@ private[deploy] object RPackageUtils extends Logging {
   /** Documentation on how the R source file layout should be in the jar. */
   private[deploy] final val RJarDoc =
     s"""In order for Spark to build R packages that are parts of Spark Packages, there are a few
-      |requirements. The R source code must be shipped in a jar, with additional Java/Scala
-      |classes. The jar must be in the following format:
-      |  1- The Manifest (META-INF/MANIFEST.mf) must contain the key-value: $hasRPackage: true
-      |  2- The standard R package layout must be preserved under R/pkg/ inside the jar. More
-      |  information on the standard R package layout can be found in:
-      |  http://cran.r-project.org/doc/contrib/Leisch-CreatingPackages.pdf
-      |  An example layout is given below. After running `jar tf $$JAR_FILE | sort`:
-      |
-      |META-INF/MANIFEST.MF
-      |R/
-      |R/pkg/
-      |R/pkg/DESCRIPTION
-      |R/pkg/NAMESPACE
-      |R/pkg/R/
-      |R/pkg/R/myRcode.R
-      |org/
-      |org/apache/
-      |...
-    """.stripMargin.trim
+      requirements. The R source code must be shipped in a jar, with additional Java/Scala
+      classes. The jar must be in the following format:
+        1- The Manifest (META-INF/MANIFEST.mf) must contain the key-value: $hasRPackage: true
+        2- The standard R package layout must be preserved under R/pkg/ inside the jar. More
+        information on the standard R package layout can be found in:
+        http://cran.r-project.org/doc/contrib/Leisch-CreatingPackages.pdf
+        An example layout is given below. After running `jar tf $$JAR_FILE | sort`:
+
+      META-INF/MANIFEST.MF
+      R/
+      R/pkg/
+      R/pkg/DESCRIPTION
+      R/pkg/NAMESPACE
+      R/pkg/R/
+      R/pkg/R/myRcode.R
+      org/
+      org/apache/
+      ...
+    """.trim
 
   /** Internal method for logging. We log to a printStream in tests, for debugging purposes. */
   private def print(

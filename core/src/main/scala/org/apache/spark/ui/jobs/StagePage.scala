@@ -325,58 +325,58 @@ private[ui] class StagePage(parent: StagesTab, store: AppStatusStore) extends We
             """<svg class="task-assignment-timeline-duration-bar"></svg>"""
           } else {
            s"""<svg class="task-assignment-timeline-duration-bar">
-                 |<rect class="scheduler-delay-proportion"
-                   |x="$schedulerDelayProportionPos%" y="0px" height="26px"
-                   |width="$schedulerDelayProportion%"></rect>
-                 |<rect class="deserialization-time-proportion"
-                   |x="$deserializationTimeProportionPos%" y="0px" height="26px"
-                   |width="$deserializationTimeProportion%"></rect>
-                 |<rect class="shuffle-read-time-proportion"
-                   |x="$shuffleReadTimeProportionPos%" y="0px" height="26px"
-                   |width="$shuffleReadTimeProportion%"></rect>
-                 |<rect class="executor-runtime-proportion"
-                   |x="$executorRuntimeProportionPos%" y="0px" height="26px"
-                   |width="$executorComputingTimeProportion%"></rect>
-                 |<rect class="shuffle-write-time-proportion"
-                   |x="$shuffleWriteTimeProportionPos%" y="0px" height="26px"
-                   |width="$shuffleWriteTimeProportion%"></rect>
-                 |<rect class="serialization-time-proportion"
-                   |x="$serializationTimeProportionPos%" y="0px" height="26px"
-                   |width="$serializationTimeProportion%"></rect>
-                 |<rect class="getting-result-time-proportion"
-                   |x="$gettingResultTimeProportionPos%" y="0px" height="26px"
-                   |width="$gettingResultTimeProportion%"></rect></svg>""".stripMargin
+                 <rect class="scheduler-delay-proportion"
+                   x="$schedulerDelayProportionPos%" y="0px" height="26px"
+                   width="$schedulerDelayProportion%"></rect>
+                 <rect class="deserialization-time-proportion"
+                   x="$deserializationTimeProportionPos%" y="0px" height="26px"
+                   width="$deserializationTimeProportion%"></rect>
+                 <rect class="shuffle-read-time-proportion"
+                   x="$shuffleReadTimeProportionPos%" y="0px" height="26px"
+                   width="$shuffleReadTimeProportion%"></rect>
+                 <rect class="executor-runtime-proportion"
+                   x="$executorRuntimeProportionPos%" y="0px" height="26px"
+                   width="$executorComputingTimeProportion%"></rect>
+                 <rect class="shuffle-write-time-proportion"
+                   x="$shuffleWriteTimeProportionPos%" y="0px" height="26px"
+                   width="$shuffleWriteTimeProportion%"></rect>
+                 <rect class="serialization-time-proportion"
+                   x="$serializationTimeProportionPos%" y="0px" height="26px"
+                   width="$serializationTimeProportion%"></rect>
+                 <rect class="getting-result-time-proportion"
+                   x="$gettingResultTimeProportionPos%" y="0px" height="26px"
+                   width="$gettingResultTimeProportion%"></rect></svg>"""
           }
         val timelineObject =
           s"""
-             |{
-               |'className': 'task task-assignment-timeline-object',
-               |'group': '$executorId',
-               |'content': '<div class="task-assignment-timeline-content"
-                 |data-toggle="tooltip" data-placement="top"
-                 |data-html="true" data-container="body"
-                 |data-title="${s"Task " + index + " (attempt " + attempt + ")"}<br>
-                 |Status: ${taskInfo.status}<br>
-                 |Launch Time: ${UIUtils.formatDate(new Date(launchTime))}
-                 |${
+             {
+               'className': 'task task-assignment-timeline-object',
+               'group': '$executorId',
+               'content': '<div class="task-assignment-timeline-content"
+                 data-toggle="tooltip" data-placement="top"
+                 data-html="true" data-container="body"
+                 data-title="${s"Task " + index + " (attempt " + attempt + ")"}<br>
+                 Status: ${taskInfo.status}<br>
+                 Launch Time: ${UIUtils.formatDate(new Date(launchTime))}
+                 ${
                      if (!taskInfo.duration.isDefined) {
                        s"""<br>Finish Time: ${UIUtils.formatDate(new Date(finishTime))}"""
                      } else {
                         ""
                       }
                    }
-                 |<br>Scheduler Delay: $schedulerDelay ms
-                 |<br>Task Deserialization Time: ${UIUtils.formatDuration(deserializationTime)}
-                 |<br>Shuffle Read Time: ${UIUtils.formatDuration(shuffleReadTime)}
-                 |<br>Executor Computing Time: ${UIUtils.formatDuration(executorComputingTime)}
-                 |<br>Shuffle Write Time: ${UIUtils.formatDuration(shuffleWriteTime)}
-                 |<br>Result Serialization Time: ${UIUtils.formatDuration(serializationTime)}
-                 |<br>Getting Result Time: ${UIUtils.formatDuration(gettingResultTime)}">
-                 |$svgTag',
-               |'start': new Date($launchTime),
-               |'end': new Date($finishTime)
-             |}
-           |""".stripMargin.replaceAll("""[\r\n]+""", " ")
+                 <br>Scheduler Delay: $schedulerDelay ms
+                 <br>Task Deserialization Time: ${UIUtils.formatDuration(deserializationTime)}
+                 <br>Shuffle Read Time: ${UIUtils.formatDuration(shuffleReadTime)}
+                 <br>Executor Computing Time: ${UIUtils.formatDuration(executorComputingTime)}
+                 <br>Shuffle Write Time: ${UIUtils.formatDuration(shuffleWriteTime)}
+                 <br>Result Serialization Time: ${UIUtils.formatDuration(serializationTime)}
+                 <br>Getting Result Time: ${UIUtils.formatDuration(gettingResultTime)}">
+                 $svgTag',
+               'start': new Date($launchTime),
+               'end': new Date($finishTime)
+             }
+           """.replaceAll("""[\r\n]+""", " ")
         timelineObject
       }.mkString("[", ",", "]")
 
