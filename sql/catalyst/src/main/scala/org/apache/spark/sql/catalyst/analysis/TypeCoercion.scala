@@ -448,10 +448,26 @@ abstract class TypeCoercionBase {
           case None => g
         }
 
+      case g @ GreatestNullIntolerant(children) if !haveSameType(g.inputTypesForMerging) =>
+        val types = g.inputTypesForMerging
+        findWiderTypeWithoutStringPromotion(types) match {
+          case Some(finalDataType) =>
+            GreatestNullIntolerant(children.map(castIfNotSameType(_, finalDataType)))
+          case None => g
+        }
+
       case l @ Least(children) if !haveSameType(l.inputTypesForMerging) =>
         val types = children.map(_.dataType)
         findWiderTypeWithoutStringPromotion(types) match {
           case Some(finalDataType) => Least(children.map(castIfNotSameType(_, finalDataType)))
+          case None => l
+        }
+
+      case l @ LeastNullIntolerant(children) if !haveSameType(l.inputTypesForMerging) =>
+        val types = l.inputTypesForMerging
+        findWiderTypeWithoutStringPromotion(types) match {
+          case Some(finalDataType) =>
+            LeastNullIntolerant(children.map(castIfNotSameType(_, finalDataType)))
           case None => l
         }
 

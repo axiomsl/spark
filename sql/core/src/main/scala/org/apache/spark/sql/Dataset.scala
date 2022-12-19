@@ -2513,9 +2513,9 @@ class Dataset[T] private[sql](
    * the same names.
    */
   private[spark] def withColumns(colNames: Seq[String], cols: Seq[Column]): DataFrame = {
-    require(colNames.size == cols.size,
-      s"The size of column names: ${colNames.size} isn't equal to " +
-        s"the size of columns: ${cols.size}")
+    require(colNames.length == cols.length,
+      s"The size of column names: ${colNames.length} isn't equal to " +
+        s"the size of columns: ${cols.length}")
     SchemaUtils.checkColumnNameDuplication(
       colNames,
       "in given column names",
@@ -2535,7 +2535,7 @@ class Dataset[T] private[sql](
       }
     }
 
-    val newColumns = columnSeq.filter { case (colName, col) =>
+    val newColumns = columnSeq.filter { case (colName, _) =>
       !output.exists(f => resolver(f.name, colName))
     }.map { case (colName, col) => col.as(colName) }
 

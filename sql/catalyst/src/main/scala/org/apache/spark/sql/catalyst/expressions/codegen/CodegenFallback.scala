@@ -38,7 +38,7 @@ trait CodegenFallback extends Expression {
         childIndex += 1
         ctx.addPartitionInitializationStatement(
           s"""
-             ((Nondeterministic) references[$childIndex])
+             ((Nondeterministic) refs[$childIndex])
                .initialize(partitionIndex);
           """)
       case _ =>
@@ -49,7 +49,7 @@ trait CodegenFallback extends Expression {
     if (nullable) {
       ev.copy(code = code"""
         $placeHolder
-        Object $objectTerm = ((Expression) references[$idx]).eval($input);
+        Object $objectTerm = ((Expression) refs[$idx]).eval($input);
         boolean ${ev.isNull} = $objectTerm == null;
         $javaType ${ev.value} = ${CodeGenerator.defaultValue(this.dataType)};
         if (!${ev.isNull}) {
@@ -58,7 +58,7 @@ trait CodegenFallback extends Expression {
     } else {
       ev.copy(code = code"""
         $placeHolder
-        Object $objectTerm = ((Expression) references[$idx]).eval($input);
+        Object $objectTerm = ((Expression) refs[$idx]).eval($input);
         $javaType ${ev.value} = (${CodeGenerator.boxedType(this.dataType)}) $objectTerm;
         """, isNull = FalseLiteral)
     }

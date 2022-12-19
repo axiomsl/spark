@@ -23,7 +23,7 @@ import java.util.{Map => JavaMap}
 import scala.annotation.tailrec
 import scala.collection.JavaConverters._
 import scala.collection.mutable
-import scala.collection.mutable.ArrayBuffer
+import scala.collection.mutable.{ArrayBuffer, ListBuffer}
 import scala.util.control.NonFatal
 
 import com.google.common.cache.{CacheBuilder, CacheLoader}
@@ -152,7 +152,7 @@ class CodegenContext extends Logging {
     val idx = references.length
     references += obj
     val clsName = Option(className).getOrElse(CodeGenerator.typeName(obj.getClass))
-    s"(($clsName) references[$idx] /* $objName */)"
+    s"(($clsName) refs[$idx] /* $objName */)"
   }
 
   /**
@@ -211,13 +211,13 @@ class CodegenContext extends Logging {
    * states for a certain type, and holds the next available slot of the current compacted array.
    */
   class MutableStateArrays {
-    val arrayNames = mutable.ListBuffer.empty[String]
+    val arrayNames: ListBuffer[String] = mutable.ListBuffer.empty[String]
     createNewArray()
 
     private[this] var currentIndex = 0
 
-    private def createNewArray() = {
-      val newArrayName = freshName("mutableStateArray")
+    private def createNewArray(): Unit = {
+      val newArrayName = freshName("mStArr")
       mutableStateNames += newArrayName
       arrayNames.append(newArrayName)
     }
@@ -655,12 +655,12 @@ class CodegenContext extends Logging {
     case NullType => "0"
     case array: ArrayType =>
       val elementType = array.elementType
-      val elementA = freshName("elementA")
+      val elementA = freshName("elmA")
       val isNullA = freshName("isNullA")
-      val elementB = freshName("elementB")
+      val elementB = freshName("elmB")
       val isNullB = freshName("isNullB")
-      val compareFunc = freshName("compareArray")
-      val minLength = freshName("minLength")
+      val compareFunc = freshName("cmpArr")
+      val minLength = freshName("minLen")
       val jt = javaType(elementType)
       val funcCode: String =
         s"""
@@ -703,7 +703,7 @@ class CodegenContext extends Logging {
       s"${addNewFunction(compareFunc, funcCode)}($c1, $c2)"
     case schema: StructType =>
       val comparisons = GenerateOrdering.genComparisons(this, schema)
-      val compareFunc = freshName("compareStruct")
+      val compareFunc = freshName("cmpStruct")
       val funcCode: String =
         s"""
           public int $compareFunc(InternalRow a, InternalRow b) {
@@ -779,11 +779,17 @@ class CodegenContext extends Logging {
    */
   def nullSafeExec(nullable: Boolean, isNull: String)(execute: String): String = {
     if (nullable) {
-      s"""
-        if (!$isNull) {
-          $execute
-        }
+      if (isNull == "false") {
+        execute
+      } else if (isNull == "true") {
+        ""
+      } else {
+        s"""
+      if (!$isNull) {
+        $execute
+      }
       """
+      }
     } else {
       "\n" + execute
     }
@@ -1382,6 +1388,10 @@ object ByteCodeStats {
 
 object CodeGenerator extends Logging {
 
+  final val JANINO_DEBUG_ENABLED = sys.props
+    .getOrElse("org.codehaus.janino.source_debugging.enable", "false")
+    .toBoolean
+
   // This is the default value of HugeMethodLimit in the OpenJDK HotSpot JVM,
   // beyond which methods will be rejected from JIT compilation
   final val DEFAULT_JVM_HUGE_METHOD_LIMIT = 8000
@@ -1460,7 +1470,9 @@ object CodeGenerator extends Logging {
     val parentClassLoader = new ParentClassLoader(Utils.getContextOrSparkClassLoader)
     evaluator.setParentClassLoader(parentClassLoader)
     // Cannot be under package codegen, or fail with java.lang.InstantiationException
-    evaluator.setClassName("org.apache.spark.sql.catalyst.expressions.GeneratedClass")
+    if (!JANINO_DEBUG_ENABLED) {
+      evaluator.setClassName("org.apache.spark.sql.catalyst.expressions.GeneratedClass")
+    }
     evaluator.setDefaultImports(
       classOf[Platform].getName,
       classOf[InternalRow].getName,
@@ -1482,12 +1494,20 @@ object CodeGenerator extends Logging {
 
     logDebug({
       // Only add extra debugging info to byte code when we are going to print the source code.
-      evaluator.setDebuggingInformation(true, true, false)
+      if (JANINO_DEBUG_ENABLED) {
+        evaluator.setDebuggingInformation(true, true, true)
+      } else {
+        evaluator.setDebuggingInformation(true, true, false)
+      }
       s"\n${CodeFormatter.format(code)}"
     })
 
     val codeStats = try {
-      evaluator.cook("generated.java", code.body)
+      if (JANINO_DEBUG_ENABLED) {
+        evaluator.cook(code.body)
+      } else {
+        evaluator.cook("generated.java", code.body)
+      }
       updateAndGetCompilationStats(evaluator)
     } catch {
       case e: InternalCompilerException =>
@@ -1745,21 +1765,33 @@ object CodeGenerator extends Logging {
       // offset
       if (!isVectorized && (dataType.isInstanceOf[DecimalType] ||
         dataType.isInstanceOf[CalendarIntervalType])) {
-        s"""
-           if (!${ev.isNull}) {
-             ${setColumn(row, dataType, ordinal, ev.value)};
-           } else {
-             ${setColumn(row, dataType, ordinal, "null")};
-           }
-         """
+        if (ev.isNull.toString == "false") {
+          s"""${setColumn(row, dataType, ordinal, ev.value)};"""
+        } else if (ev.isNull.toString == "true") {
+          s"""${setColumn(row, dataType, ordinal, "null")};"""
+        } else {
+          s"""
+        if (!${ev.isNull}) {
+          ${setColumn(row, dataType, ordinal, ev.value)};
+        } else {
+          ${setColumn(row, dataType, ordinal, "null")};
+        }
+        """
+        }
       } else {
-        s"""
-           if (!${ev.isNull}) {
-             ${setColumn(row, dataType, ordinal, ev.value)};
-           } else {
-             $row.setNullAt($ordinal);
-           }
-         """
+        if (ev.isNull.toString == "false") {
+          s"""$row.setNullAt($ordinal);"""
+        } else if (ev.isNull.toString == "true") {
+          s"""$row.setNullAt($ordinal);"""
+        } else {
+          s"""
+        if (!${ev.isNull}) {
+          ${setColumn(row, dataType, ordinal, ev.value)};
+        } else {
+          $row.setNullAt($ordinal);
+        }
+        """
+        }
       }
     } else {
       s"""${setColumn(row, dataType, ordinal, ev.value)};"""
@@ -1798,13 +1830,19 @@ object CodeGenerator extends Logging {
       "update"
     }
     if (isNull.isDefined && isPrimitiveType) {
-      s"""
-         if (${isNull.get}) {
-           $array.setNullAt($i);
-         } else {
-           $array.$setFunc($i, $value);
-         }
-       """
+      if (isNull.get == "false") {
+        s"""$array.$setFunc($i, $value);"""
+      } else if (isNull.get == "true") {
+        s"""$array.setNullAt($i);"""
+      } else {
+        s"""
+      if (${isNull.get}) {
+        $array.setNullAt($i);
+      } else {
+        $array.$setFunc($i, $value);
+      }
+      """
+      }
     } else {
       s"$array.$setFunc($i, $value);"
     }
@@ -1821,13 +1859,19 @@ object CodeGenerator extends Logging {
       ev: ExprCode,
       nullable: Boolean): String = {
     if (nullable) {
-      s"""
-         if (!${ev.isNull}) {
-           ${setValue(vector, rowId, dataType, ev.value)}
-         } else {
-           $vector.putNull($rowId);
-         }
-       """
+      if (ev.isNull.toString == "false") {
+        s"""${setValue(vector, rowId, dataType, ev.value)}"""
+      } else if (ev.isNull.toString == "true") {
+        s"""$vector.putNull($rowId);"""
+      } else {
+        s"""
+      if (!${ev.isNull}) {
+        ${setValue(vector, rowId, dataType, ev.value)}
+      } else {
+        $vector.putNull($rowId);
+      }
+      """
+      }
     } else {
       s"""${setValue(vector, rowId, dataType, ev.value)};"""
     }

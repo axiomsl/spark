@@ -80,7 +80,7 @@ case class Coalesce(children: Seq[Expression])
   override def eval(input: InternalRow): Any = {
     var result: Any = null
     val childIterator = children.iterator
-    while (childIterator.hasNext && result == null) {
+    while (result == null && childIterator.hasNext) {
       result = childIterator.next().eval(input)
     }
     result
@@ -90,16 +90,32 @@ case class Coalesce(children: Seq[Expression])
     ev.isNull = JavaCode.isNullGlobal(ctx.addMutableState(CodeGenerator.JAVA_BOOLEAN, ev.isNull))
 
     // all the evals are meant to be in a do { ... } while (false); loop
-    val evals = children.map { e =>
-      val eval = e.genCode(ctx)
+    var foundNotNull = false
+    val evals = children
+      .map(_.genCode(ctx))
+      .map {
+        case ExprCode(code, FalseLiteral, value) if !foundNotNull =>
+          foundNotNull = true
+          s"""
+    $code
+    ${ev.isNull} = false;
+    ${ev.value} = $value;
+    continue;
+    """
+        case ExprCode(code, TrueLiteral, _) if !foundNotNull =>
+          s"""
+    $code
+    """
+        case ExprCode(code, isNull, value) if !foundNotNull =>
       s"""
-         ${eval.code}
-         if (!${eval.isNull}) {
-           ${ev.isNull} = false;
-           ${ev.value} = ${eval.value};
-           continue;
-         }
-       """
+         $code
+      if (!$isNull) {
+        ${ev.isNull} = false;
+        ${ev.value} = $value;
+        continue;
+      }
+      """
+        case _ => ""
     }
 
     val resultType = CodeGenerator.javaType(dataType)
@@ -433,7 +449,7 @@ case class AtLeastNNonNulls(n: Int, children: Seq[Expression]) extends Predicate
   }
 
   override def doGenCode(ctx: CodegenContext, ev: ExprCode): ExprCode = {
-    val nonnull = ctx.freshName("nonnull")
+    val nonnull = ctx.freshName("nnull")
     // all evals are meant to be inside a do { ... } while (false); loop
     val evals = children.map { e =>
       val eval = e.genCode(ctx)

@@ -276,7 +276,7 @@ case class GetArrayItem(
 
   override def doGenCode(ctx: CodegenContext, ev: ExprCode): ExprCode = {
     nullSafeCodeGen(ctx, ev, (eval1, eval2) => {
-      val index = ctx.freshName("index")
+      val index = ctx.freshName("idx")
       val nullCheck = if (child.dataType.asInstanceOf[ArrayType].containsNull) {
         s"""else if ($eval1.isNullAt($index)) {
                ${ev.isNull} = true;
@@ -382,7 +382,7 @@ trait GetMapValueUtil
       ev: ExprCode,
       mapType: MapType,
       failOnError: Boolean): ExprCode = {
-    val index = ctx.freshName("index")
+    val index = ctx.freshName("idx")
     val length = ctx.freshName("length")
     val keys = ctx.freshName("keys")
     val found = ctx.freshName("found")

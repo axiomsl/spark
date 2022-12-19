@@ -21,9 +21,10 @@ import java.util.Locale
 import java.util.concurrent.atomic.{AtomicInteger, AtomicLong}
 
 import scala.collection.mutable
+import scala.util.{Failure, Success, Try}
 import scala.util.control.NonFatal
 
-import org.apache.spark.broadcast
+import org.apache.spark.{broadcast, SparkContext}
 import org.apache.spark.rdd.RDD
 import org.apache.spark.sql.catalyst.InternalRow
 import org.apache.spark.sql.catalyst.expressions._
@@ -57,7 +58,13 @@ trait CodegenSupport extends SparkPlan {
     case _: DataSourceScanExec => "scan"
     case _: InMemoryTableScanExec => "memoryScan"
     case _: WholeStageCodegenExec => "wholestagecodegen"
-    case _ => nodeName.toLowerCase(Locale.ROOT)
+    case _ =>
+      nodeName.toLowerCase(Locale.ROOT) match {
+        case "project" => "prj"
+        case "inputadapter" => "inadp"
+        case "filter" => "flt"
+        case t => t
+      }
   }
 
   /**
@@ -670,8 +677,8 @@ case class WholeStageCodegenExec(child: SparkPlan)(val codegenStageId: Int)
     val className = generatedClassName()
 
     val source = s"""
-      public Object generate(Object[] references) {
-        return new $className(references);
+      public Object generate(Object[] refs) {
+        return new $className(refs);
       }
 
       ${ctx.registerComment(
@@ -681,12 +688,12 @@ case class WholeStageCodegenExec(child: SparkPlan)(val codegenStageId: Int)
       ${ctx.registerComment(s"codegenStageId=$codegenStageId", "wsc_codegenStageId", force = true)}
       final class $className extends ${classOf[BufferedRowIterator].getName} {
 
-        private Object[] references;
+        private Object[] refs;
         private scala.collection.Iterator[] inputs;
         ${ctx.declareMutableStates()}
 
-        public $className(Object[] references) {
-          this.references = references;
+        public $className(Object[] refs) {
+          this.refs = refs;
         }
 
         public void init(int index, scala.collection.Iterator[] inputs) {
@@ -880,6 +887,7 @@ case class WholeStageCodegenExec(child: SparkPlan)(val codegenStageId: Int)
  * failed to generate/compile code.
  */
 case class CollapseCodegenStages(
+    sparkContext: SparkContext,
     codegenStageCounter: AtomicInteger = new AtomicInteger(0))
   extends Rule[SparkPlan] {
 
@@ -950,7 +958,21 @@ case class CollapseCodegenStages(
   }
 
   def apply(plan: SparkPlan): SparkPlan = {
-    if (conf.wholeStageEnabled) {
+    val localWholeStageEnabled =
+      sparkContext.getLocalProperty("spark.sql.local.codegen.wholeStage") match {
+        case null => true
+        case value => Try(value.toBoolean) match {
+          case Success(b) => b
+          case Failure(_) =>
+            log.warn(
+              "Failed to convert `spark.sql.local.codegen.wholeStage` into Boolean got [{}]," +
+                " using [true]",
+              value)
+            true
+        }
+      }
+    if (conf.wholeStageEnabled && localWholeStageEnabled) {
+      codegenStageCounter.set(0)
       insertWholeStageCodegen(plan)
     } else {
       plan

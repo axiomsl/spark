@@ -288,7 +288,13 @@ private[hive] class SparkExecuteStatementOperation(
       }
 
       sqlContext.sparkContext.setJobGroup(statementId, substitutorStatement, forceCancel)
-      result = sqlContext.sql(statement)
+      result =
+        if (statement.endsWith("LIMIT 0") || statement.endsWith("limit 0")) {
+          val r = sqlContext.sql(statement)
+          sqlContext.createDataFrame(new util.ArrayList[SparkRow](0), r.schema)
+        } else {
+          sqlContext.sql(statement)
+        }
       logDebug(result.queryExecution.toString())
       HiveThriftServer2.eventManager.onStatementParsed(statementId,
         result.queryExecution.toString())

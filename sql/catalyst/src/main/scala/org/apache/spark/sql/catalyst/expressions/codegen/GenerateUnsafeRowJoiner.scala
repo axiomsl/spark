@@ -210,7 +210,7 @@ object GenerateUnsafeRowJoiner extends CodeGenerator[(StructType, StructType), U
 
     // ------------------------ Finally, put everything together  --------------------------- //
     val codeBody = s"""
-       public java.lang.Object generate(Object[] references) {
+       public java.lang.Object generate(Object[] refs) {
          return new SpecificUnsafeRowJoiner();
        }
 

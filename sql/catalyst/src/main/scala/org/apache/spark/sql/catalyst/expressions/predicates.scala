@@ -510,8 +510,8 @@ case class In(value: Expression, list: Seq[Expression]) extends Predicate {
     val NOT_MATCHED = 0
     // 1 means one value in the list is matched
     val MATCHED = 1
-    val tmpResult = ctx.freshName("inTmpResult")
-    val valueArg = ctx.freshName("valueArg")
+    val tmpResult = ctx.freshName("inTmpRes")
+    val valueArg = ctx.freshName("valArg")
     // All the blocks are meant to be inside a do { ... } while (false); loop.
     // The evaluation of variables can be stopped when we find a matching value.
     val listCode = listGen.map { x =>
@@ -701,7 +701,7 @@ case class InSet(child: Expression, hset: Set[Any]) extends UnaryExpression with
           break;
        """)
 
-    val switchCode = if (caseBranches.size > 0) {
+    val switchCode = if (caseBranches.nonEmpty) {
       code"""
         switch (${valueGen.value}) {
           ${caseBranches.mkString("\n")}

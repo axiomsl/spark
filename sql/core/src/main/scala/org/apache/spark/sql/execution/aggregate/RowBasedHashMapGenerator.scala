@@ -75,7 +75,8 @@ class RowBasedHashMapGenerator(
            batch = org.apache.spark.sql.catalyst.expressions.RowBasedKeyValueBatch
              .allocate($keySchema, $valueSchema, taskMemoryManager, capacity);
 
-           final UnsafeProjection valueProjection = UnsafeProjection.create($valueSchema);
+           final org.apache.spark.sql.catalyst.expressions.UnsafeProjection valueProjection =
+              org.apache.spark.sql.catalyst.expressions.UnsafeProjection.create($valueSchema);
            final byte[] emptyBuffer = valueProjection.apply(emptyAggregationBuffer).getBytes();
 
            emptyVBase = emptyBuffer;

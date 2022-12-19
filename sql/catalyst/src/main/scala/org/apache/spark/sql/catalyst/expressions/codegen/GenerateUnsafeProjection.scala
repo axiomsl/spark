@@ -158,7 +158,7 @@ object GenerateUnsafeProjection extends CodeGenerator[Seq[Expression], UnsafePro
     // Puts `input` in a local variable to avoid to re-evaluate it if it's a statement.
     val tmpInput = ctx.freshName("tmpInput")
     val numElements = ctx.freshName("numElements")
-    val index = ctx.freshName("index")
+    val index = ctx.freshName("idx")
 
     val et = UserDefinedType.sqlType(elementType)
 
@@ -339,17 +339,17 @@ object GenerateUnsafeProjection extends CodeGenerator[Seq[Expression], UnsafePro
 
     val codeBody =
       s"""
-         public java.lang.Object generate(Object[] references) {
-           return new SpecificUnsafeProjection(references);
+         public java.lang.Object generate(Object[] refs) {
+           return new SpecificUnsafeProjection(refs);
          }
 
          class SpecificUnsafeProjection extends ${classOf[UnsafeProjection].getName} {
 
-           private Object[] references;
+           private Object[] refs;
            ${ctx.declareMutableStates()}
 
-           public SpecificUnsafeProjection(Object[] references) {
-             this.references = references;
+           public SpecificUnsafeProjection(Object[] refs) {
+             this.refs = refs;
              ${ctx.initMutableStates()}
            }
 

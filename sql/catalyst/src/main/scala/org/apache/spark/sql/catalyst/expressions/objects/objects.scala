@@ -951,7 +951,7 @@ case class MapObjects private(
     // In RowEncoder, we use `Object` to represent Array or Seq, so we need to determine the type
     // of input collection at runtime for this case.
     val seq = ctx.freshName("seq")
-    val array = ctx.freshName("array")
+    val array = ctx.freshName("arr")
     val determineCollectionType = inputData.dataType match {
       case ObjectType(cls) if cls == classOf[Object] =>
         val seqClass = classOf[scala.collection.Seq[_]].getName
@@ -1467,7 +1467,7 @@ case class ExternalMapToCatalyst private(
     val genKeyConverter = keyConverter.genCode(ctx)
     val genValueConverter = valueConverter.genCode(ctx)
     val length = ctx.freshName("length")
-    val index = ctx.freshName("index")
+    val index = ctx.freshName("idx")
     val convertedKeys = ctx.freshName("convertedKeys")
     val convertedValues = ctx.freshName("convertedValues")
     val entry = ctx.freshName("entry")

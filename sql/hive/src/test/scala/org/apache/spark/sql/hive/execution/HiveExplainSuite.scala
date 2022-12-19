@@ -164,8 +164,8 @@ class HiveExplainSuite extends QueryTest with SQLTestUtils with TestHiveSingleto
         checkKeywordsExist(sql("EXPLAIN CODEGEN SELECT 1"),
           "WholeStageCodegen",
           "Generated code:",
-           "/* 001 */ public Object generate(Object[] references) {",
-          s"/* 002 */   return new $expectedClassName(references);",
+           "/* 001 */ public Object generate(Object[] refs) {",
+          s"/* 002 */   return new $expectedClassName(refs);",
            "/* 003 */ }"
         )
       }

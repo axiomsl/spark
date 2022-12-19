@@ -18,7 +18,8 @@
 package org.apache.spark.sql.catalyst.optimizer
 
 import scala.collection.immutable.HashSet
-import scala.collection.mutable.{ArrayBuffer, Stack}
+import scala.collection.mutable
+import scala.collection.mutable.ArrayBuffer
 import scala.util.control.NonFatal
 
 import org.apache.spark.sql.catalyst.analysis._
@@ -1076,7 +1077,7 @@ object SimplifyCaseConversionExpressions extends Rule[LogicalPlan] {
 object CombineConcats extends Rule[LogicalPlan] {
 
   private def flattenConcats(concat: Concat): Concat = {
-    val stack = Stack[Expression](concat)
+    val stack = mutable.Stack[Expression](concat)
     val flattened = ArrayBuffer.empty[Expression]
     while (stack.nonEmpty) {
       stack.pop() match {

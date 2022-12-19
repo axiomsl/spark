@@ -127,7 +127,7 @@ object GenerateOrdering extends CodeGenerator[Seq[SortOrder], BaseOrdering] with
       },
       foldFunctions = { funCalls =>
         funCalls.zipWithIndex.map { case (funCall, i) =>
-          val comp = ctx.freshName("comp")
+          val comp = ctx.freshName("cmp")
           s"""
             int $comp = $funCall;
             if ($comp != 0) {
@@ -145,17 +145,17 @@ object GenerateOrdering extends CodeGenerator[Seq[SortOrder], BaseOrdering] with
     val ctx = newCodeGenContext()
     val comparisons = genComparisons(ctx, ordering)
     val codeBody = s"""
-      public SpecificOrdering generate(Object[] references) {
-        return new SpecificOrdering(references);
+      public SpecificOrdering generate(Object[] refs) {
+        return new SpecificOrdering(refs);
       }
 
       class SpecificOrdering extends ${classOf[BaseOrdering].getName} {
 
-        private Object[] references;
+        private Object[] refs;
         ${ctx.declareMutableStates()}
 
-        public SpecificOrdering(Object[] references) {
-          this.references = references;
+        public SpecificOrdering(Object[] refs) {
+          this.refs = refs;
           ${ctx.initMutableStates()}
         }
 

@@ -940,8 +940,8 @@ object DDLUtils extends Logging {
           } else if (serde == HiveSerDe.sourceToSerDe("orc").get.serde) {
             checkDataColNames("orc", schema)
           } else if (serde == HiveSerDe.sourceToSerDe("parquet").get.serde ||
-            serde == Some("parquet.hive.serde.ParquetHiveSerDe") ||
-            serde == Some("org.apache.hadoop.hive.ql.io.parquet.serde.ParquetHiveSerDe")) {
+            serde.contains("parquet.hive.serde.ParquetHiveSerDe") ||
+            serde.contains("org.apache.hadoop.hive.ql.io.parquet.serde.ParquetHiveSerDe")) {
             checkDataColNames("parquet", schema)
           } else if (serde == HiveSerDe.sourceToSerDe("avro").get.serde) {
             checkDataColNames("avro", schema)

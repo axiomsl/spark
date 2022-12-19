@@ -814,7 +814,7 @@ abstract class TreeNode[BaseType <: TreeNode[BaseType]] extends Product with Tre
     }
 
     // Skip no-arg constructors that are just there for kryo.
-    val ctors = allCtors.filter(allowEmptyArgs || _.getParameterTypes.size != 0)
+    val ctors = allCtors.filter(allowEmptyArgs || _.getParameterTypes.length != 0)
     if (ctors.isEmpty) {
       throw QueryExecutionErrors.constructorNotFoundError(nodeName)
     }
@@ -1006,8 +1006,8 @@ abstract class TreeNode[BaseType <: TreeNode[BaseType]] extends Product with Tre
     } else {
       number.i -= 1
       // Note that this traversal order must be the same as numberedTreeString.
-      innerChildren.map(_.getNodeNumbered(number)).find(_ != None).getOrElse {
-        children.map(_.getNodeNumbered(number)).find(_ != None).flatten
+      innerChildren.map(_.getNodeNumbered(number)).find(_.isDefined).getOrElse {
+        children.map(_.getNodeNumbered(number)).find(_.isDefined).flatten
       }
     }
   }
@@ -1157,10 +1157,10 @@ abstract class TreeNode[BaseType <: TreeNode[BaseType]] extends Product with Tre
       t.forall(_.isInstanceOf[DataType]) ||
       t.forall(_.isInstanceOf[Product]) =>
       JArray(t.map(parseToJson).toList)
-    case t: Seq[_] if t.length > 0 && t.head.isInstanceOf[String] =>
+    case t: Seq[_] if t.nonEmpty && t.head.isInstanceOf[String] =>
       JString(truncatedString(t, "[", ", ", "]", SQLConf.get.maxToStringFields))
-    case t: Seq[_] => JNull
-    case m: Map[_, _] => JNull
+    case _: Seq[_] => JNull
+    case _: Map[_, _] => JNull
     // if it's a scala object, we can simply keep the full class path.
     // TODO: currently if the class name ends with "$", we think it's a scala object, there is
     // probably a better way to check it.
@@ -1195,18 +1195,18 @@ abstract class TreeNode[BaseType <: TreeNode[BaseType]] extends Product with Tre
   }
 
   private def shouldConvertToJson(product: Product): Boolean = product match {
-    case exprId: ExprId => true
-    case field: StructField => true
-    case id: IdentifierWithDatabase => true
-    case alias: AliasIdentifier => true
-    case join: JoinType => true
-    case spec: BucketSpec => true
-    case catalog: CatalogTable => true
-    case partition: Partitioning => true
-    case resource: FunctionResource => true
-    case broadcast: BroadcastMode => true
-    case table: CatalogTableType => true
-    case storage: CatalogStorageFormat => true
+    case _: ExprId => true
+    case _: StructField => true
+    case _: IdentifierWithDatabase => true
+    case _: AliasIdentifier => true
+    case _: JoinType => true
+    case _: BucketSpec => true
+    case _: CatalogTable => true
+    case _: Partitioning => true
+    case _: FunctionResource => true
+    case _: BroadcastMode => true
+    case _: CatalogTableType => true
+    case _: CatalogStorageFormat => true
     // Write out product that contains TreeNode, since there are some Tuples such as cteRelations
     // in With, branches in CaseWhen which are essential to understand the plan.
     case p if p.productIterator.exists(_.isInstanceOf[TreeNode[_]]) => true

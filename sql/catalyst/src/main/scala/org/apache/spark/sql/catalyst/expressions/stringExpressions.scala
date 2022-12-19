@@ -129,7 +129,7 @@ case class ConcatWs(children: Seq[Expression])
       val isNullArgs = ctx.freshName("isNullArgs")
       val valueArgs = ctx.freshName("valueArgs")
 
-      val array = ctx.freshName("array")
+      val array = ctx.freshName("arr")
       val varargNum = ctx.freshName("varargNum")
       val idxVararg = ctx.freshName("idxInVararg")
 
@@ -310,10 +310,10 @@ case class Elt(
   override protected def doGenCode(ctx: CodegenContext, ev: ExprCode): ExprCode = {
     val index = indexExpr.genCode(ctx)
     val inputs = inputExprs.map(_.genCode(ctx))
-    val indexVal = ctx.freshName("index")
-    val indexMatched = ctx.freshName("eltIndexMatched")
+    val indexVal = ctx.freshName("idx")
+    val indexMatched = ctx.freshName("eltIdxMtc")
 
-    val inputVal = ctx.addMutableState(CodeGenerator.javaType(dataType), "inputVal")
+    val inputVal = ctx.addMutableState(CodeGenerator.javaType(dataType), "inVal")
 
     val assignInputValue = inputs.zipWithIndex.map { case (eval, index) =>
       s"""
@@ -1862,7 +1862,7 @@ case class FormatString(children: Expression*) extends Expression with ImplicitC
       funcName = "valueFormatString",
       extraArguments = ("Object[]", argList) :: Nil)
 
-    val form = ctx.freshName("formatter")
+    val form = ctx.freshName("frmt")
     val formatter = classOf[java.util.Formatter].getName
     val sb = ctx.freshName("sb")
     val stringBuffer = classOf[StringBuffer].getName
