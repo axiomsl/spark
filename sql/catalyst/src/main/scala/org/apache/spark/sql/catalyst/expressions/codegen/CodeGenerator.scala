@@ -1494,16 +1494,13 @@ object CodeGenerator extends Logging {
 
     logDebug({
       // Only add extra debugging info to byte code when we are going to print the source code.
-      if (JANINO_DEBUG_ENABLED) {
-        evaluator.setDebuggingInformation(true, true, true)
-      } else {
-        evaluator.setDebuggingInformation(true, true, false)
-      }
+      evaluator.setDebuggingInformation(true, true, false)
       s"\n${CodeFormatter.format(code)}"
     })
 
     val codeStats = try {
       if (JANINO_DEBUG_ENABLED) {
+        evaluator.setDebuggingInformation(true, true, true)
         evaluator.cook(code.body)
       } else {
         evaluator.cook("generated.java", code.body)

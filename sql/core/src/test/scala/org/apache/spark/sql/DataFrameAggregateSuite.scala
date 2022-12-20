@@ -359,11 +359,11 @@ class DataFrameAggregateSuite extends QueryTest
     val emptyTableData = Seq.empty[(Int, Int)].toDF("a", "b")
     checkAnswer(
       emptyTableData.agg(avg($"a")),
-      Row(0))
+      Row(null))
 
     checkAnswer(
       emptyTableData.agg(avg($"a"), sum_distinct($"b")), // non-partial
-      Row(null, 0))
+      Row(null, null))
   }
 
   test("count") {
@@ -426,7 +426,7 @@ class DataFrameAggregateSuite extends QueryTest
     val emptyTableData = Seq.empty[(Int, Int)].toDF("a", "b")
     checkAnswer(
       emptyTableData.agg(count($"a"), sum_distinct($"a")), // non-partial
-      Row(0, 0))
+      Row(0, null))
   }
 
   test("stddev") {
@@ -450,14 +450,14 @@ class DataFrameAggregateSuite extends QueryTest
     val emptyTableData = Seq.empty[(Int, Int)].toDF("a", "b")
     checkAnswer(
       emptyTableData.agg(sum($"a")),
-      Row(0))
+      Row(null))
   }
 
   test("zero sum distinct") {
     val emptyTableData = Seq.empty[(Int, Int)].toDF("a", "b")
     checkAnswer(
       emptyTableData.agg(sum_distinct($"a")),
-      Row(0))
+      Row(null))
   }
 
   test("moments") {
@@ -902,7 +902,7 @@ class DataFrameAggregateSuite extends QueryTest
 
     checkAnswer(
       sql("SELECT max_by(x, y) FROM VALUES (('a', null)), (('b', null)) AS tab(x, y)"),
-      Row(0) :: Nil
+      Row(null) :: Nil
     )
 
     // structs as ordering value.
@@ -963,7 +963,7 @@ class DataFrameAggregateSuite extends QueryTest
 
     checkAnswer(
       sql("SELECT min_by(x, y) FROM VALUES (('a', null)), (('b', null)) AS tab(x, y)"),
-      Row(0) :: Nil
+      Row(null) :: Nil
     )
 
     // structs as ordering value.
@@ -1098,7 +1098,7 @@ class DataFrameAggregateSuite extends QueryTest
       A(Some(B(None))),
       A(Some(B(Some(1.0))))).toDF
     val groupBy = df.groupBy("b").agg(count("*"))
-    checkAnswer(groupBy, Row(null, 1) :: Row(Row(0), 1) :: Row(Row(1.0), 1) :: Nil)
+    checkAnswer(groupBy, Row(null, 1) :: Row(Row(null), 1) :: Row(Row(1.0), 1) :: Nil)
   }
 
   test("SPARK-32344: Unevaluable's set to FIRST/LAST ignoreNullsExpr in distinct aggregates") {
@@ -1421,7 +1421,7 @@ class DataFrameAggregateSuite extends QueryTest
 
     val df3 = intervalData.filter($"class" > 4)
     val avgDF3 = df3.select(avg($"year-month"), avg($"day"))
-    checkAnswer(avgDF3, Row(null, 0) :: Nil)
+    checkAnswer(avgDF3, Row(null, null) :: Nil)
 
     val avgDF4 = df3.groupBy($"class").agg(avg($"year-month"), avg($"day"))
     checkAnswer(avgDF4, Nil)
