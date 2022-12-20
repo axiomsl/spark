@@ -103,7 +103,7 @@ abstract class QueryTest extends PlanTest {
             s"""
                Failed to analyze query: $ae
                ${ae.plan.get}
-               
+
                ${stackTraceToString(ae)}
              """)
         } else {
@@ -138,7 +138,7 @@ abstract class QueryTest extends PlanTest {
             s"""
                Failed to analyze query: $ae
                ${ae.plan.get}
-               
+
                ${stackTraceToString(ae)}
                """)
         } else {
@@ -285,7 +285,7 @@ object QueryTest extends Assertions {
         Results do not match for query:
         Timezone: ${TimeZone.getDefault}
         Timezone Env: ${sys.env.getOrElse("TZ", "")}
-        
+
         ${df.queryExecution}
         == Results ==
         $results

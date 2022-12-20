@@ -204,7 +204,7 @@ class CliSuite extends SparkFunSuite with BeforeAndAfterAll with Logging {
            Spark SQL CLI command line: ${command.mkString(" ")}
            Exception: $cause
            Failed to capture next expected output "${expectedAnswers(next)}" within $timeout.
-           
+
            ${buffer.mkString("\n")}
            ===========================
            End CliSuite failure output

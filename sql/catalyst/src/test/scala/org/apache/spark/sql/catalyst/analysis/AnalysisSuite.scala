@@ -458,7 +458,7 @@ class AnalysisSuite extends AnalysisTest with Matchers {
            data type of expression $expression doesn't match expected:
            Actual data type:
            ${afterAnalyze.dataType}
-           
+
            Expected data type:
            ${expectedDataType}
          """)

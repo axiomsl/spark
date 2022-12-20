@@ -684,7 +684,7 @@ private[spark] object JsonProtocolSuite extends Assertions {
   }
 
   /** -------------------------------- *
-   | Util methods for comparing events 
+   | Util methods for comparing events |
    * --------------------------------- */
 
   private[spark] def assertEquals(event1: SparkListenerEvent, event2: SparkListenerEvent): Unit = {
@@ -2183,7 +2183,7 @@ private[spark] object JsonProtocolSuite extends Assertions {
                 "Internal": true,
                 "Count Failed Values": true
               },
-      
+
               {
                 "ID": 2,
                 "Name": "$EXECUTOR_RUN_TIME",
