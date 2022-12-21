@@ -20,6 +20,7 @@ package org.apache.spark.deploy.history
 import java.io._
 import java.net.URI
 import java.nio.charset.StandardCharsets
+import java.util.concurrent.{ArrayBlockingQueue, BlockingQueue, TimeUnit}
 
 import org.apache.commons.compress.utils.CountingOutputStream
 import org.apache.hadoop.conf.Configuration
@@ -73,6 +74,27 @@ abstract class EventLogFileWriter(
   protected var hadoopDataStream: Option[FSDataOutputStream] = None
   protected var writer: Option[PrintWriter] = None
 
+  private var stopped = false
+
+  trait WithLock {
+    def lock: BlockingQueue[Boolean]
+  }
+
+  private val syncThread = new Thread("event-log-sync") with WithLock {
+    val lock = new ArrayBlockingQueue[Boolean](1)
+    override def run(): Unit = {
+      while (!isInterrupted && !stopped) {
+        lock.take()
+        TimeUnit.MILLISECONDS.sleep(sparkConf.getTimeAsMs("spark.eventLog.sync.interval", "5m"))
+        if (!stopped) {
+          logInfo("Flushing events to disk.")
+          flush()
+        }
+      }
+    }
+  }
+  syncThread.setDaemon(true)
+
   protected def requireLogBaseDirAsDirectory(): Unit = {
     if (!fileSystem.getFileStatus(new Path(logBaseDir)).isDirectory) {
       throw new IllegalArgumentException(s"Log directory $logBaseDir is not a directory.")
@@ -104,6 +126,8 @@ abstract class EventLogFileWriter(
         .getOrElse(dstream)
       val bstream = new BufferedOutputStream(cstream, outputBufferSize)
       fileSystem.setPermission(path, EventLogFileWriter.LOG_FILE_PERMISSIONS)
+
+      syncThread.start()
       logInfo(s"Logging events to $path")
       writer = Some(fnSetupWriter(bstream))
     } catch {
@@ -118,13 +142,15 @@ abstract class EventLogFileWriter(
     writer.foreach(_.println(line))
     // scalastyle:on println
     if (flushLogger) {
-      writer.foreach(_.flush())
-      hadoopDataStream.foreach(_.hflush())
+      flush()
+    } else {
+      syncThread.lock.offer(true)
     }
   }
 
   protected def closeWriter(): Unit = {
-    writer.foreach(_.close())
+    stopped = true
+    flush()
   }
 
   protected def renameFile(src: Path, dest: Path, overwrite: Boolean): Unit = {
@@ -156,6 +182,11 @@ abstract class EventLogFileWriter(
 
   /** stops writer - indicating the application has been completed */
   def stop(): Unit
+
+  def flush(): Unit = {
+    writer.foreach(_.flush())
+    hadoopDataStream.foreach(_.hflush())
+  }
 
   /** returns representative path of log. for tests only. */
   def logPath: String

@@ -387,6 +387,13 @@ class SparkContext(config: SparkConf) extends Logging {
     Utils.setLogLevel(Level.toLevel(upperCased))
   }
 
+  def flushEventLog(): Unit = try {
+    _eventLogger.foreach(_.flush())
+  }
+  catch {
+    case e: Exception => // Do nothing
+  }
+
   try {
     _conf = config.clone()
     _conf.validateSettings()

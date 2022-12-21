@@ -283,6 +283,10 @@ private[spark] class EventLoggingListener(
     logWriter.stop()
   }
 
+  def flush(): Unit = {
+    logWriter.flush()
+  }
+
   private def redactProperties(properties: Properties): Properties = {
     if (properties == null) {
       return properties
