@@ -115,6 +115,8 @@ class CSVOptions(
   }
   val comment = getChar("comment", '\u0000')
 
+  val ignoreEmptyLines = getBool("ignoreEmptyLines", true)
+
   val headerFlag = getBool("header")
   val inferSchemaFlag = getBool("inferSchema")
   val ignoreLeadingWhiteSpaceInRead = getBool("ignoreLeadingWhiteSpace", default = false)

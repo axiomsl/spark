@@ -25,10 +25,11 @@ object CSVExprUtils {
    * This is currently being used in CSV reading path and CSV schema inference.
    */
   def filterCommentAndEmpty(iter: Iterator[String], options: CSVOptions): Iterator[String] = {
+    val shouldIncludeEmptyLine = !options.ignoreEmptyLines
     if (options.isCommentSet) {
       val commentPrefix = options.comment.toString
       iter.filter { line =>
-        line.trim.nonEmpty && !line.startsWith(commentPrefix)
+        !line.startsWith(commentPrefix) && (shouldIncludeEmptyLine || line.trim.nonEmpty)
       }
     } else {
       iter.filter(_.trim.nonEmpty)
