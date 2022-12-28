@@ -291,7 +291,7 @@ private[hive] class SparkExecuteStatementOperation(
       result =
         if (statement.endsWith("LIMIT 0") || statement.endsWith("limit 0")) {
           val r = sqlContext.sql(statement)
-          sqlContext.createDataFrame(new util.ArrayList[SparkRow](0), r.schema)
+          sqlContext.createDataFrame(new java.util.ArrayList[SparkRow](0), r.schema)
         } else {
           sqlContext.sql(statement)
         }

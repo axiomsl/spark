@@ -21,7 +21,7 @@
   <parent>
     <groupId>org.apache.spark</groupId>
     <artifactId>spark-parent_2.12</artifactId>
-    <version>3.3.2-SNAPSHOT</version>
+    <version>3.3.2-AX</version>
     <relativePath>../pom.xml</relativePath>
   </parent>
 
@@ -536,8 +536,8 @@
               <!-- Execute the shell script to generate the spark build information. -->
               <target>
                 <exec executable="bash">
-                  <arg value="${project.basedir}/../build/spark-build-info"/>
-                  <arg value="${project.build.directory}/extra-resources"/>
+                  <arg value="../build/spark-build-info"/>
+                  <arg value="target/extra-resources"/>
                   <arg value="${project.version}"/>
                 </exec>
               </target>
