@@ -263,7 +263,7 @@ object VectorAssembler extends DefaultParamsReadable[VectorAssembler] {
           throw new SparkException(
             s"""Encountered NaN while assembling a row with handleInvalid = "error". Consider
                removing NaNs from dataset or using handleInvalid = "keep" or "skip"."""
-              stripMargin)
+              )
         } else if (v != 0.0) {
           indices += featureIndex
           values += v
@@ -290,7 +290,7 @@ object VectorAssembler extends DefaultParamsReadable[VectorAssembler] {
           throw new SparkException(
             s"""Encountered null while assembling a row with handleInvalid = "error". Consider
                removing nulls from dataset or using handleInvalid = "keep" or "skip"."""
-              stripMargin)
+              )
         }
       case o =>
         throw new SparkException(s"$o of type ${o.getClass.getName} is not supported.")
