@@ -83,14 +83,15 @@ private[spark] object HadoopFSUtils extends Logging {
       parallelismMax: Int): Seq[(Path, Seq[FileStatus])] = {
 
     val awsCliCount = Option(sc.getLocalProperty("awsCliCount")).map(_.toInt).getOrElse(-1)
-    val finalPathList = if (paths.nonEmpty && paths.head.toString.startsWith("s3://") && awsCliCount > 0){
+    val finalPathList = if (paths.nonEmpty && paths.head.toString.startsWith("s3://") && awsCliCount > 0) {
+      val region = sys.props.get("awsRegion").map(r => s"--region $r").getOrElse("")
       import scala.sys.process._
       val originalPath = paths.head.toString.stripSuffix("/") + "/"
-      val command = s"aws s3 --summarize ls $originalPath"
+      val command = s"aws s3 $region --summarize ls $originalPath"
       Try( command.!!) match {
         case Success(s) =>
-          logInfo(s">>> $command")
-          logInfo(s">>> $s")
+          logDebug(s">>> $command")
+          logDebug(s">>> $s")
           val files = s.split("\n").map(_.trim)
 
           val newPaths = files.find(_.startsWith("Total Objects:")).map(_.split(" ").last.toInt).getOrElse(-1) match {
@@ -116,7 +117,7 @@ private[spark] object HadoopFSUtils extends Logging {
 
           newPaths
         case Failure(e) =>
-          logError("aws list filed error: " + e.toString)
+          logError("aws list files error: " + e.toString)
           paths
       }
     } else {

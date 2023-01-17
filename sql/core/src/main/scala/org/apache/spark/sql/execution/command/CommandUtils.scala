@@ -17,25 +17,28 @@
 
 package org.apache.spark.sql.execution.command
 
+import org.apache.hadoop.fs.{FileSystem, Path, PathFilter}
+
 import java.net.URI
 
 import scala.collection.mutable
 import scala.util.control.NonFatal
-
-import org.apache.hadoop.fs.{FileSystem, Path, PathFilter}
+import scala.util.{Failure, Success, Try}
 
 import org.apache.spark.internal.Logging
-import org.apache.spark.sql.{AnalysisException, SparkSession}
-import org.apache.spark.sql.catalyst.{InternalRow, TableIdentifier}
 import org.apache.spark.sql.catalyst.catalog.{CatalogStatistics, CatalogTable}
 import org.apache.spark.sql.catalyst.expressions._
 import org.apache.spark.sql.catalyst.expressions.aggregate._
 import org.apache.spark.sql.catalyst.plans.logical._
 import org.apache.spark.sql.catalyst.util.{ArrayData, GenericArrayData}
+import org.apache.spark.sql.catalyst.{InternalRow, TableIdentifier}
 import org.apache.spark.sql.execution.QueryExecution
 import org.apache.spark.sql.execution.datasources.{DataSourceUtils, InMemoryFileIndex}
-import org.apache.spark.sql.internal.{SessionState, SQLConf}
+import org.apache.spark.sql.internal.{SQLConf, SessionState}
 import org.apache.spark.sql.types._
+import org.apache.spark.sql.{AnalysisException, SparkSession}
+
+
 
 /**
  * For the purpose of calculating total directory sizes, use this filter to
@@ -71,7 +74,7 @@ object CommandUtils extends Logging {
     val sessionState = spark.sessionState
     val startTime = System.nanoTime()
     val totalSize = if (catalogTable.partitionColumnNames.isEmpty) {
-      calculateSingleLocationSize(sessionState, catalogTable.identifier,
+      calculateSingleLocationSize(spark, sessionState, catalogTable.identifier,
         catalogTable.storage.locationUri)
     } else {
       // Calculate table size as a sum of the visible partitions. See SPARK-21079
@@ -86,6 +89,7 @@ object CommandUtils extends Logging {
   }
 
   def calculateSingleLocationSize(
+      sparkSession: SparkSession,
       sessionState: SessionState,
       identifier: TableIdentifier,
       locationUri: Option[URI]): Long = {
@@ -97,7 +101,22 @@ object CommandUtils extends Logging {
     // Can we use fs.getContentSummary in future?
     // Seems fs.getContentSummary returns wrong table size on Jenkins. So we use
     // countFileSize to count the table size.
+    val startTime = System.nanoTime()
     val stagingDir = sessionState.conf.getConfString("hive.exec.stagingdir", ".hive-staging")
+
+    val awsCliCount = Option(sparkSession.sparkContext.getLocalProperty("awsCliCount")).map(_.toInt).getOrElse(-1)
+    val uriString = locationUri.map(_.toString).getOrElse("")
+    if (awsCliCount > 0 && uriString.nonEmpty) {
+      logDebug(s"awsCliCount: [$awsCliCount]; uriString: [$uriString]")
+    }
+    val sizeFromCli = if (uriString.startsWith("s3://") && awsCliCount > 0) {
+      _sizeFromCli(List(uriString)) match {
+        case l if l.nonEmpty => l.sum
+        case _ => -1
+      }
+    } else {
+      -1
+    }
 
     def getPathSize(fs: FileSystem, path: Path): Long = {
       val fileStatus = fs.getFileStatus(path)
@@ -117,34 +136,76 @@ object CommandUtils extends Logging {
       size
     }
 
-    val startTime = System.nanoTime()
-    val size = locationUri.map { p =>
-      val path = new Path(p)
-      try {
-        val fs = path.getFileSystem(sessionState.newHadoopConf())
-        getPathSize(fs, path)
-      } catch {
-        case NonFatal(e) =>
-          logWarning(
-            s"Failed to get the size of table ${identifier.table} in the " +
-              s"database ${identifier.database} because of ${e.toString}", e)
-          0L
-      }
-    }.getOrElse(0L)
+    val size = if (sizeFromCli != -1) {
+      sizeFromCli
+    } else {
+      locationUri.map { p =>
+        val path = new Path(p)
+        try {
+          val fs = path.getFileSystem(sessionState.newHadoopConf())
+          getPathSize(fs, path)
+        } catch {
+          case NonFatal(e) =>
+            logWarning(
+              s"Failed to get the size of table ${identifier.table} in the " +
+                s"database ${identifier.database} because of ${e.toString}", e)
+            0L
+        }
+      }.getOrElse(0L)
+    }
     val durationInMs = (System.nanoTime() - startTime) / (1000 * 1000)
     logDebug(s"It took $durationInMs ms to calculate the total file size under path $locationUri.")
 
     size
   }
 
+  private def _sizeFromCli(paths: Seq[String]): List[Long] = {
+    val region = sys.props.get("awsRegion").map(r => s"--region $r").getOrElse("")
+    import scala.sys.process._
+    val originalPath = paths.head.stripSuffix("/") + "/"
+    val command = s"aws s3 $region --summarize ls $originalPath"
+    Try(command.!!) match {
+      case Success(s) =>
+        logDebug(s">>> $command")
+        logDebug(s">>> $s")
+        val files = s.split("\n").map(_.trim)
+        val r = "^[0-9].*".r
+        val space = "\\s+".r
+        files
+          .filter(f => r.pattern.matcher(f).find())
+          .map(_.trim)
+          .map(space.split(_))
+          .filter(s => DataSourceUtils.isDataFile(s.last.trim))
+          .map(_(2).trim.toLong).toList
+      case Failure(e) =>
+        logWarning("failed to use awsCli to get size.", e)
+        Nil
+    }
+  }
+
   def calculateMultipleLocationSizes(
       sparkSession: SparkSession,
       tid: TableIdentifier,
       paths: Seq[Option[URI]]): Seq[Long] = {
-    if (sparkSession.sessionState.conf.parallelFileListingInStatsComputation) {
-      calculateMultipleLocationSizesInParallel(sparkSession, paths.map(_.map(new Path(_))))
+    val awsCliCount = Option(sparkSession.sparkContext.getLocalProperty("awsCliCount")).map(_.toInt).getOrElse(-1)
+    val flattenPaths = paths.flatten
+    if (awsCliCount > 0 && flattenPaths.nonEmpty) {
+      logDebug(s"awsCliCount: [$awsCliCount]; flattenPaths: [${flattenPaths.map(_.toString).mkString(", ")}]")
+    }
+    val sizeFromCli = if (flattenPaths.nonEmpty && flattenPaths.head.toString.startsWith("s3://") && awsCliCount > 0) {
+      _sizeFromCli(flattenPaths.map(_.toString))
     } else {
-      paths.map(p => calculateSingleLocationSize(sparkSession.sessionState, tid, p))
+      Nil
+    }
+
+    if (sizeFromCli.isEmpty) {
+      if (sparkSession.sessionState.conf.parallelFileListingInStatsComputation) {
+        calculateMultipleLocationSizesInParallel(sparkSession, paths.map(_.map(new Path(_))))
+      } else {
+        paths.map(p => calculateSingleLocationSize(sparkSession, sparkSession.sessionState, tid, p))
+      }
+    } else {
+      sizeFromCli
     }
   }
 
