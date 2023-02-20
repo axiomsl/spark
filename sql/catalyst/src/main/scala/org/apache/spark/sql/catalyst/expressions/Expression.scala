@@ -394,7 +394,7 @@ abstract class UnaryExpression extends Expression with UnaryLike[Expression] {
    * of evaluation process, we should override [[eval]].
    */
   protected def nullSafeEval(input: Any): Any =
-    sys.error(s"UnaryExpressions must override either eval or nullSafeEval")
+    sys.error(s"UnaryExpressions [${this.getClass.getSimpleName}] must override either eval or nullSafeEval")
 
   /**
    * Called by unary expressions to generate a code block that returns null if its parent returns
