@@ -678,10 +678,10 @@ ${ev.value} = (31 * ${ev.value}) + $childHash;
       returnType = CodeGenerator.JAVA_INT,
       makeSplitFunction = body =>
         s"""
-           |${CodeGenerator.JAVA_INT} $childHash = 0;
-           |$body
-           |return ${ev.value};
-         """.stripMargin,
+           ${CodeGenerator.JAVA_INT} $childHash = 0;
+           $body
+           return ${ev.value};
+         """,
       foldFunctions = _.map(funcCall => s"${ev.value} = $funcCall;").mkString("\n"))
 
 
