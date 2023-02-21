@@ -1028,26 +1028,26 @@ case class ScalaUDF(
     val boxedType = CodeGenerator.boxedType(dataType)
     val callFunc =
       s"""
-         |$boxedType $resultTerm = null;
-         |try {
-         |  $resultTerm = ($boxedType)$resultConverter.apply($getFuncResult);
-         |} catch (Exception e) {
-         |  throw new org.apache.spark.SparkException($errorMsgTerm, e);
-         |}
-       """.stripMargin
+         $boxedType $resultTerm = null;
+         try {
+           $resultTerm = ($boxedType)$resultConverter.apply($getFuncResult);
+         } catch (Exception e) {
+           throw new org.apache.spark.SparkException($errorMsgTerm, e);
+         }
+       """
 
     ev.copy(code =
       code"""
-         |$evalCode
-         |${initArgs.mkString("\n")}
-         |$callFunc
-         |
-         |boolean ${ev.isNull} = $resultTerm == null;
-         |${CodeGenerator.javaType(dataType)} ${ev.value} = ${CodeGenerator.defaultValue(dataType)};
-         |if (!${ev.isNull}) {
-         |  ${ev.value} = $resultTerm;
-         |}
-       """.stripMargin)
+         $evalCode
+         ${initArgs.mkString("\n")}
+         $callFunc
+
+         boolean ${ev.isNull} = $resultTerm == null;
+         ${CodeGenerator.javaType(dataType)} ${ev.value} = ${CodeGenerator.defaultValue(dataType)};
+         if (!${ev.isNull}) {
+           ${ev.value} = $resultTerm;
+         }
+       """)
   }
 
   private[this] val resultConverter = CatalystTypeConverters.createToCatalystConverter(dataType)

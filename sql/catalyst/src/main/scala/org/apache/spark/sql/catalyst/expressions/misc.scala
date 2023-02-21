@@ -46,9 +46,9 @@ case class PrintToStderr(child: Expression) extends UnaryExpression {
     val outputPrefixField = ctx.addReferenceObj("outputPrefix", outputPrefix)
     nullSafeCodeGen(ctx, ev, c =>
       s"""
-         | System.err.println($outputPrefixField + $c);
-         | ${ev.value} = $c;
-       """.stripMargin)
+          System.err.println($outputPrefixField + $c);
+          ${ev.value} = $c;
+       """)
   }
 
   override protected def withNewChildInternal(newChild: Expression): PrintToStderr =
@@ -93,9 +93,9 @@ case class AssertTrue(child: Expression) extends UnaryExpression with ImplicitCa
     // because errMsgField is used only when the value is null or false.
     val errMsgField = ctx.addReferenceObj("errMsg", errMsg)
     ExprCode(code = code"""${eval.code}
-       |if (${eval.isNull} || !${eval.value}) {
-       |  throw new RuntimeException($errMsgField);
-       |}""".stripMargin, isNull = TrueLiteral,
+       if (${eval.isNull} || !${eval.value}) {
+         throw new RuntimeException($errMsgField);
+       }""".stripMargin, isNull = TrueLiteral,
       value = JavaCode.defaultLiteral(dataType))
   }
 

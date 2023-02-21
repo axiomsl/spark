@@ -108,16 +108,16 @@ private[sql] trait ColumnarBatchScan extends CodegenSupport {
     val nextBatch = ctx.freshName("nextBatch")
     val nextBatchFuncName = ctx.addNewFunction(nextBatch,
       s"""
-         |private void $nextBatch() throws java.io.IOException {
-         |  long getBatchStart = System.nanoTime();
-         |  if ($input.hasNext()) {
-         |    $batch = ($columnarBatchClz)$input.next();
-         |    $numOutputRows.add($batch.numRows());
-         |    $idx = 0;
-         |    ${columnAssigns.mkString("", "\n", "\n")}
-         |  }
-         |  $scanTimeTotalNs += System.nanoTime() - getBatchStart;
-         |}""".stripMargin)
+         private void $nextBatch() throws java.io.IOException {
+           long getBatchStart = System.nanoTime();
+           if ($input.hasNext()) {
+             $batch = ($columnarBatchClz)$input.next();
+             $numOutputRows.add($batch.numRows());
+             $idx = 0;
+             ${columnAssigns.mkString("", "\n", "\n")}
+           }
+           $scanTimeTotalNs += System.nanoTime() - getBatchStart;
+         }""")
 
     ctx.currentVars = null
     val rowidx = ctx.freshName("rowIdx")
@@ -133,24 +133,24 @@ private[sql] trait ColumnarBatchScan extends CodegenSupport {
       "// shouldStop check is eliminated"
     }
     s"""
-       |if ($batch == null) {
-       |  $nextBatchFuncName();
-       |}
-       |while ($batch != null) {
-       |  int $numRows = $batch.numRows();
-       |  int $localEnd = $numRows - $idx;
-       |  for (int $localIdx = 0; $localIdx < $localEnd; $localIdx++) {
-       |    int $rowidx = $idx + $localIdx;
-       |    ${consume(ctx, columnsBatchInput).trim}
-       |    $shouldStop
-       |  }
-       |  $idx = $numRows;
-       |  $batch = null;
-       |  $nextBatchFuncName();
-       |}
-       |$scanTimeMetric.add($scanTimeTotalNs / (1000 * 1000));
-       |$scanTimeTotalNs = 0;
-     """.stripMargin
+       if ($batch == null) {
+         $nextBatchFuncName();
+       }
+       while ($batch != null) {
+         int $numRows = $batch.numRows();
+         int $localEnd = $numRows - $idx;
+         for (int $localIdx = 0; $localIdx < $localEnd; $localIdx++) {
+           int $rowidx = $idx + $localIdx;
+           ${consume(ctx, columnsBatchInput).trim}
+           $shouldStop
+         }
+         $idx = $numRows;
+         $batch = null;
+         $nextBatchFuncName();
+       }
+       $scanTimeMetric.add($scanTimeTotalNs / (1000 * 1000));
+       $scanTimeTotalNs = 0;
+     """
   }
 
   private def produceRows(ctx: CodegenContext, input: String): String = {
@@ -166,12 +166,12 @@ private[sql] trait ColumnarBatchScan extends CodegenSupport {
     }
     val inputRow = if (needsUnsafeRowConversion) null else row
     s"""
-       |while ($input.hasNext()) {
-       |  InternalRow $row = (InternalRow) $input.next();
-       |  $numOutputRows.add(1);
-       |  ${consume(ctx, outputVars, inputRow).trim}
-       |  if (shouldStop()) return;
-       |}
-     """.stripMargin
+       while ($input.hasNext()) {
+         InternalRow $row = (InternalRow) $input.next();
+         $numOutputRows.add(1);
+         ${consume(ctx, outputVars, inputRow).trim}
+         if (shouldStop()) return;
+       }
+     """
   }
 }

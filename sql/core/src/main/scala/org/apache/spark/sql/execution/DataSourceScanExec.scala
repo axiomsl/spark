@@ -119,13 +119,13 @@ case class RowDataSourceScanExec(
     ctx.currentVars = null
     val columnsRowInput = exprRows.map(_.genCode(ctx))
     s"""
-       |while ($input.hasNext()) {
-       |  InternalRow $row = (InternalRow) $input.next();
-       |  $numOutputRows.add(1);
-       |  ${consume(ctx, columnsRowInput).trim}
-       |  if (shouldStop()) return;
-       |}
-     """.stripMargin
+       while ($input.hasNext()) {
+         InternalRow $row = (InternalRow) $input.next();
+         $numOutputRows.add(1);
+         ${consume(ctx, columnsRowInput).trim}
+         if (shouldStop()) return;
+       }
+     """
   }
 
   override val metadata: Map[String, String] = {

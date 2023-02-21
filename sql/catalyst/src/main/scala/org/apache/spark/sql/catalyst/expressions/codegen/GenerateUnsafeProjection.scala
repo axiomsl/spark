@@ -221,33 +221,33 @@ if ($tmpInput instanceof UnsafeArrayData) {
       ctx, s"$tmpInput.valueArray()", valueType, valueContainsNull, rowWriter)
 
     s"""
-       |final MapData $tmpInput = $input;
-       |if ($tmpInput instanceof UnsafeMapData) {
-       |  $rowWriter.write($index, (UnsafeMapData) $tmpInput);
-       |} else {
-       |  // Remember the current cursor so that we can calculate how many bytes are
-       |  // written later.
-       |  final int $previousCursor = $rowWriter.cursor();
-       |
-       |  // preserve 8 bytes to write the key array numBytes later.
-       |  $rowWriter.grow(8);
-       |  $rowWriter.increaseCursor(8);
-       |
-       |  // Remember the current cursor so that we can write numBytes of key array later.
-       |  final int $tmpCursor = $rowWriter.cursor();
-       |
-       |  $keyArray
-       |
-       |  // Write the numBytes of key array into the first 8 bytes.
-       |  Platform.putLong(
-       |    $rowWriter.getBuffer(),
-       |    $tmpCursor - 8,
-       |    $rowWriter.cursor() - $tmpCursor);
-       |
-       |  $valueArray
-       |  $rowWriter.setOffsetAndSizeFromPreviousCursor($index, $previousCursor);
-       |}
-     """.stripMargin
+       final MapData $tmpInput = $input;
+       if ($tmpInput instanceof UnsafeMapData) {
+         $rowWriter.write($index, (UnsafeMapData) $tmpInput);
+       } else {
+         // Remember the current cursor so that we can calculate how many bytes are
+         // written later.
+         final int $previousCursor = $rowWriter.cursor();
+
+         // preserve 8 bytes to write the key array numBytes later.
+         $rowWriter.grow(8);
+         $rowWriter.increaseCursor(8);
+
+         // Remember the current cursor so that we can write numBytes of key array later.
+         final int $tmpCursor = $rowWriter.cursor();
+
+         $keyArray
+
+         // Write the numBytes of key array into the first 8 bytes.
+         Platform.putLong(
+           $rowWriter.getBuffer(),
+           $tmpCursor - 8,
+           $rowWriter.cursor() - $tmpCursor);
+
+         $valueArray
+         $rowWriter.setOffsetAndSizeFromPreviousCursor($index, $previousCursor);
+       }
+     """
   }
 
   private def writeElement(
@@ -263,12 +263,12 @@ if ($tmpInput instanceof UnsafeArrayData) {
     case ArrayType(et, en) =>
       val previousCursor = ctx.freshName("previousCursor")
       s"""
-         |// Remember the current cursor so that we can calculate how many bytes are
-         |// written later.
-         |final int $previousCursor = $writer.cursor();
-         |${writeArrayToBuffer(ctx, input, et, en, writer)}
-         |$writer.setOffsetAndSizeFromPreviousCursor($index, $previousCursor);
-       """.stripMargin
+         // Remember the current cursor so that we can calculate how many bytes are
+         // written later.
+         final int $previousCursor = $writer.cursor();
+         ${writeArrayToBuffer(ctx, input, et, en, writer)}
+         $writer.setOffsetAndSizeFromPreviousCursor($index, $previousCursor);
+       """
 
     case MapType(kt, vt, vn) =>
       writeMapToBuffer(ctx, input, index, kt, vt, vn, writer)
@@ -305,10 +305,10 @@ if ($tmpInput instanceof UnsafeArrayData) {
 
     val code =
       code"""
-         |$rowWriter.reset();
-         |$evalSubexpr
-         |$writeExpressions
-       """.stripMargin
+         $rowWriter.reset();
+         $evalSubexpr
+         $writeExpressions
+       """
     // `rowWriter` is declared as a class field, so we can access it directly in methods.
     ExprCode(code, FalseLiteral, JavaCode.expression(s"$rowWriter.getRow()", classOf[UnsafeRow]))
   }
@@ -337,37 +337,37 @@ if ($tmpInput instanceof UnsafeArrayData) {
 
     val codeBody =
       s"""
-         |public java.lang.Object generate(Object[] refs) {
-         |  return new SpecificUnsafeProjection(refs);
-         |}
-         |
-         |class SpecificUnsafeProjection extends ${classOf[UnsafeProjection].getName} {
-         |
-         |  private Object[] refs;
-         |  ${ctx.declareMutableStates()}
-         |
-         |  public SpecificUnsafeProjection(Object[] refs) {
-         |    this.refs = refs;
-         |    ${ctx.initMutableStates()}
-         |  }
-         |
-         |  public void initialize(int partitionIndex) {
-         |    ${ctx.initPartition()}
-         |  }
-         |
-         |  // Scala.Function1 need this
-         |  public java.lang.Object apply(java.lang.Object row) {
-         |    return apply((InternalRow) row);
-         |  }
-         |
-         |  public UnsafeRow apply(InternalRow ${ctx.INPUT_ROW}) {
-         |    ${eval.code}
-         |    return ${eval.value};
-         |  }
-         |
-         |  ${ctx.declareAddedFunctions()}
-         |}
-       """.stripMargin
+         public java.lang.Object generate(Object[] refs) {
+           return new SpecificUnsafeProjection(refs);
+         }
+
+         class SpecificUnsafeProjection extends ${classOf[UnsafeProjection].getName} {
+
+           private Object[] refs;
+           ${ctx.declareMutableStates()}
+
+           public SpecificUnsafeProjection(Object[] refs) {
+             this.refs = refs;
+             ${ctx.initMutableStates()}
+           }
+
+           public void initialize(int partitionIndex) {
+             ${ctx.initPartition()}
+           }
+
+           // Scala.Function1 need this
+           public java.lang.Object apply(java.lang.Object row) {
+             return apply((InternalRow) row);
+           }
+
+           public UnsafeRow apply(InternalRow ${ctx.INPUT_ROW}) {
+             ${eval.code}
+             return ${eval.value};
+           }
+
+           ${ctx.declareAddedFunctions()}
+         }
+       """
 
     val code = CodeFormatter.stripOverlappingComments(
       new CodeAndComment(codeBody, ctx.getPlaceHolderToComments()))
