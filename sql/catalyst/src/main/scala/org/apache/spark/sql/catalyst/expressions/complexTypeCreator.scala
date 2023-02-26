@@ -307,20 +307,20 @@ case class MapFromArrays(left: Expression, right: Expression)
       val keyArrayElemNullCheck = if (!leftArrayType.containsNull) "" else {
         val i = ctx.freshName("i")
         s"""
-           |for (int $i = 0; $i < $keyArrayData.numElements(); $i++) {
-           |  if ($keyArrayData.isNullAt($i)) {
-           |    throw new RuntimeException("Cannot use null as map key!");
-           |  }
-           |}
-         """.stripMargin
+           for (int $i = 0; $i < $keyArrayData.numElements(); $i++) {
+             if ($keyArrayData.isNullAt($i)) {
+               throw new RuntimeException("Cannot use null as map key!");
+             }
+           }
+         """
       }
       s"""
-         |if ($keyArrayData.numElements() != $valueArrayData.numElements()) {
-         |  throw new RuntimeException("The given two arrays should have the same length");
-         |}
-         |$keyArrayElemNullCheck
-         |${ev.value} = new $arrayBasedMapData($keyArrayData.copy(), $valueArrayData.copy());
-       """.stripMargin
+         if ($keyArrayData.numElements() != $valueArrayData.numElements()) {
+           throw new RuntimeException("The given two arrays should have the same length");
+         }
+         $keyArrayElemNullCheck
+         ${ev.value} = new $arrayBasedMapData($keyArrayData.copy(), $valueArrayData.copy());
+       """
     })
   }
 
@@ -452,13 +452,13 @@ case class CreateNamedStruct(children: Seq[Expression]) extends CreateNamedStruc
     val valCodes = valExprs.zipWithIndex.map { case (e, i) =>
       val eval = e.genCode(ctx)
       s"""
-         |${eval.code}
-         |if (${eval.isNull}) {
-         |  $values[$i] = null;
-         |} else {
-         |  $values[$i] = ${eval.value};
-         |}
-       """.stripMargin
+         ${eval.code}
+         if (${eval.isNull}) {
+           $values[$i] = null;
+         } else {
+           $values[$i] = ${eval.value};
+         }
+       """
     }
     val valuesCode = ctx.splitExpressionsWithCurrentInputs(
       expressions = valCodes,
@@ -467,11 +467,11 @@ case class CreateNamedStruct(children: Seq[Expression]) extends CreateNamedStruc
 
     ev.copy(code =
       code"""
-         |Object[] $values = new Object[${valExprs.size}];
-         |$valuesCode
-         |final InternalRow ${ev.value} = new $rowClass($values);
-         |$values = null;
-       """.stripMargin, isNull = FalseLiteral)
+         Object[] $values = new Object[${valExprs.size}];
+         $valuesCode
+         final InternalRow ${ev.value} = new $rowClass($values);
+         $values = null;
+       """, isNull = FalseLiteral)
   }
 
   override def prettyName: String = "named_struct"

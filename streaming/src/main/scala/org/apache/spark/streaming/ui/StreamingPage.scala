@@ -585,10 +585,10 @@ private[ui] class JsCollector {
   def toHtml: Seq[Node] = {
     val js =
       s"""
-         |$$(document).ready(function() {
-         |    ${preparedStatements.mkString("\n")}
-         |    ${statements.mkString("\n")}
-         |});""".stripMargin
+         $$(document).ready(function() {
+             ${preparedStatements.mkString("\n")}
+             ${statements.mkString("\n")}
+         });"""
 
    <script>{Unparsed(js)}</script>
   }

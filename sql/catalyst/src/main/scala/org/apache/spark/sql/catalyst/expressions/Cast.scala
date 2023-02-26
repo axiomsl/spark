@@ -1065,7 +1065,7 @@ if ($d.changePrecision(${decimalType.precision}, ${decimalType.scale})) {
            if(${evPrim} == null) {
              ${evNull} = true;
            }
-         """.stripMargin
+         """
 
   }
 

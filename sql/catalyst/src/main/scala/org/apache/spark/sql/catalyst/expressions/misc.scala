@@ -95,7 +95,7 @@ case class AssertTrue(child: Expression) extends UnaryExpression with ImplicitCa
     ExprCode(code = code"""${eval.code}
        if (${eval.isNull} || !${eval.value}) {
          throw new RuntimeException($errMsgField);
-       }""".stripMargin, isNull = TrueLiteral,
+       }""", isNull = TrueLiteral,
       value = JavaCode.defaultLiteral(dataType))
   }
 
