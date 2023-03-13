@@ -96,11 +96,14 @@ object SQLExecution {
         var ex: Option[Throwable] = None
         val startTime = System.nanoTime()
         try {
+          val queryExecutionString =
+            if (sc.conf.getBoolean("spark.ui.debugString.isEnabled", defaultValue = false)) ""
+            else queryExecution.explainString(planDescriptionMode)
           sc.listenerBus.post(SparkListenerSQLExecutionStart(
             executionId = executionId,
             description = desc,
             details = callSite.longForm,
-            physicalPlanDescription = queryExecution.explainString(planDescriptionMode),
+            physicalPlanDescription = queryExecutionString,
             // `queryExecution.executedPlan` triggers query planning. If it fails, the exception
             // will be caught and reported in the `SparkListenerSQLExecutionEnd`
             sparkPlanInfo = SparkPlanInfo.fromSparkPlan(queryExecution.executedPlan),
