@@ -2711,6 +2711,14 @@ object SQLConf {
     .booleanConf
     .createWithDefault(false)
 
+  val ALLOW_CREATING_MANAGED_TABLE_USING_NONEMPTY_LOCATION =
+    buildConf("spark.sql.legacy.allowCreatingManagedTableUsingNonemptyLocation")
+      .internal()
+      .doc("When this option is set to true, creating managed tables with nonempty location " +
+        "is allowed. Otherwise, an analysis exception is thrown. ")
+      .booleanConf
+      .createWithDefault(false)
+
   val VALIDATE_PARTITION_COLUMNS =
     buildConf("spark.sql.sources.validatePartitionColumns")
       .internal()
@@ -3849,9 +3857,6 @@ object SQLConf {
     val configs = Seq(
       RemovedConfig("spark.sql.fromJsonForceNullableSchema", "3.0.0", "true",
         "It was removed to prevent errors like SPARK-23173 for non-default value."),
-      RemovedConfig(
-        "spark.sql.legacy.allowCreatingManagedTableUsingNonemptyLocation", "3.0.0", "false",
-        "It was removed to prevent loss of user data for non-default value."),
       RemovedConfig("spark.sql.legacy.compareDateTimestampInTimestamp", "3.0.0", "true",
         "It was removed to prevent errors like SPARK-23549 for non-default value."),
       RemovedConfig("spark.sql.parquet.int64AsTimestampMillis", "3.0.0", "false",
@@ -4401,6 +4406,9 @@ class SQLConf extends Serializable with Logging {
   def eltOutputAsString: Boolean = getConf(ELT_OUTPUT_AS_STRING)
 
   def validatePartitionColumns: Boolean = getConf(VALIDATE_PARTITION_COLUMNS)
+
+  def allowCreatingManagedTableUsingNonemptyLocation: Boolean =
+    getConf(ALLOW_CREATING_MANAGED_TABLE_USING_NONEMPTY_LOCATION)
 
   def partitionOverwriteMode: PartitionOverwriteMode.Value =
     PartitionOverwriteMode.withName(getConf(PARTITION_OVERWRITE_MODE))
