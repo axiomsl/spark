@@ -63,7 +63,8 @@ private[spark] class HiveExternalCatalog(conf: SparkConf, hadoopConf: Configurat
   // This is to ensure Hive can get the Hadoop version when using the isolated classloader.
   org.apache.hadoop.util.VersionInfo.getVersion()
 
-  private val concurrentHiveConnections: Boolean = conf.getBoolean("spark.sql.catalog.concurrentHiveConnections", sys.env.getOrElse("concurrentHiveConnections",
+  private val concurrentHiveConnections: Boolean = conf.getBoolean(
+    "spark.sql.catalog.concurrentHiveConnections", sys.env.getOrElse("concurrentHiveConnections",
     sys.props.getOrElse("concurrentHiveConnections", "false")).toBoolean)
 
   private lazy val _client: () => HiveClient = {
