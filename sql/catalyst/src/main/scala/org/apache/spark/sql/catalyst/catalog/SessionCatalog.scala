@@ -19,16 +19,13 @@ package org.apache.spark.sql.catalyst.catalog
 
 import java.net.URI
 import java.util.Locale
-import java.util.concurrent.Callable
+import java.util.concurrent.{Callable, ConcurrentHashMap}
 import javax.annotation.concurrent.GuardedBy
-
 import scala.collection.mutable
 import scala.util.{Failure, Success, Try}
-
 import com.google.common.cache.{Cache, CacheBuilder}
 import org.apache.hadoop.conf.Configuration
 import org.apache.hadoop.fs.Path
-
 import org.apache.spark.internal.Logging
 import org.apache.spark.sql.AnalysisException
 import org.apache.spark.sql.catalyst._
@@ -41,6 +38,8 @@ import org.apache.spark.sql.catalyst.util.StringUtils
 import org.apache.spark.sql.internal.SQLConf
 import org.apache.spark.sql.types.StructType
 import org.apache.spark.util.Utils
+
+import scala.collection.JavaConverters.{enumerationAsScalaIteratorConverter, mapAsScalaConcurrentMapConverter}
 
 object SessionCatalog {
   val DEFAULT_DATABASE = "default"
@@ -92,7 +91,8 @@ class SessionCatalog(
 
   /** List of temporary views, mapping from table name to their logical plan. */
   @GuardedBy("this")
-  protected val tempViews = new mutable.HashMap[String, LogicalPlan]
+//  protected val tempViews = new mutable.HashMap[String, LogicalPlan]
+  protected val tempViews = new ConcurrentHashMap[String, LogicalPlan]
 
   // Note: we track current database here because certain operations do not explicitly
   // specify the database (e.g. DROP TABLE my_table). In these cases we must first
@@ -414,7 +414,7 @@ class SessionCatalog(
    * Return whether a table/view with the specified name exists. If no database is specified, check
    * with current database.
    */
-  def tableExists(name: TableIdentifier): Boolean = synchronized {
+  def tableExists(name: TableIdentifier): Boolean = {
     val db = formatDatabaseName(name.database.getOrElse(currentDb))
     val table = formatTableName(name.table)
     externalCatalog.tableExists(db, table)
@@ -489,7 +489,7 @@ class SessionCatalog(
   def createTempView(
       name: String,
       tableDefinition: LogicalPlan,
-      overrideIfExists: Boolean): Unit = synchronized {
+      overrideIfExists: Boolean): Unit = {
     val table = formatTableName(name)
     if (tempViews.contains(table) && !overrideIfExists) {
       throw new TempTableAlreadyExistsException(name)
@@ -513,7 +513,7 @@ class SessionCatalog(
    */
   def alterTempViewDefinition(
       name: TableIdentifier,
-      viewDefinition: LogicalPlan): Boolean = synchronized {
+      viewDefinition: LogicalPlan): Boolean =  {
     val viewName = formatTableName(name.table)
     if (name.database.isEmpty) {
       if (tempViews.contains(viewName)) {
@@ -523,7 +523,9 @@ class SessionCatalog(
         false
       }
     } else if (formatDatabaseName(name.database.get) == globalTempViewManager.database) {
-      globalTempViewManager.update(viewName, viewDefinition)
+      synchronized {
+        globalTempViewManager.update(viewName, viewDefinition)
+      }
     } else {
       false
     }
@@ -532,8 +534,8 @@ class SessionCatalog(
   /**
    * Return a local temporary view exactly as it was stored.
    */
-  def getTempView(name: String): Option[LogicalPlan] = synchronized {
-    tempViews.get(formatTableName(name))
+  def getTempView(name: String): Option[LogicalPlan] = {
+    Option(tempViews.get(formatTableName(name)))
   }
 
   /**
@@ -548,8 +550,8 @@ class SessionCatalog(
    *
    * Returns true if this view is dropped successfully, false otherwise.
    */
-  def dropTempView(name: String): Boolean = synchronized {
-    tempViews.remove(formatTableName(name)).isDefined
+  def dropTempView(name: String): Boolean = {
+    tempViews.remove(formatTableName(name)) != null
   }
 
   /**
@@ -574,24 +576,30 @@ class SessionCatalog(
    * with the same name, then, if that does not exist, return the metadata of table/view in the
    * current database.
    */
-  def getTempViewOrPermanentTableMetadata(name: TableIdentifier): CatalogTable = synchronized {
+  def getTempViewOrPermanentTableMetadata(name: TableIdentifier): CatalogTable = {
     val table = formatTableName(name.table)
-    if (name.database.isEmpty) {
-      getTempView(table).map { plan =>
-        CatalogTable(
-          identifier = TableIdentifier(table),
-          tableType = CatalogTableType.VIEW,
-          storage = CatalogStorageFormat.empty,
-          schema = plan.output.toStructType)
-      }.getOrElse(getTableMetadata(name))
-    } else if (formatDatabaseName(name.database.get) == globalTempViewManager.database) {
-      globalTempViewManager.get(table).map { plan =>
-        CatalogTable(
-          identifier = TableIdentifier(table, Some(globalTempViewManager.database)),
-          tableType = CatalogTableType.VIEW,
-          storage = CatalogStorageFormat.empty,
-          schema = plan.output.toStructType)
-      }.getOrElse(throw new NoSuchTableException(globalTempViewManager.database, table))
+    if (name.table.startsWith("v_")) {
+      synchronized {
+        if (name.database.isEmpty) {
+          getTempView(table).map { plan =>
+            CatalogTable(
+              identifier = TableIdentifier(table),
+              tableType = CatalogTableType.VIEW,
+              storage = CatalogStorageFormat.empty,
+              schema = plan.output.toStructType)
+          }.getOrElse(getTableMetadata(name))
+        } else if (formatDatabaseName(name.database.get) == globalTempViewManager.database) {
+          globalTempViewManager.get(table).map { plan =>
+            CatalogTable(
+              identifier = TableIdentifier(table, Some(globalTempViewManager.database)),
+              tableType = CatalogTableType.VIEW,
+              storage = CatalogStorageFormat.empty,
+              schema = plan.output.toStructType)
+          }.getOrElse(throw new NoSuchTableException(globalTempViewManager.database, table))
+        } else {
+          getTableMetadata(name)
+        }
+      }
     } else {
       getTableMetadata(name)
     }
@@ -606,7 +614,7 @@ class SessionCatalog(
    *
    * This assumes the database specified in `newName` matches the one in `oldName`.
    */
-  def renameTable(oldName: TableIdentifier, newName: TableIdentifier): Unit = synchronized {
+  def renameTable(oldName: TableIdentifier, newName: TableIdentifier): Unit = {
     val db = formatDatabaseName(oldName.database.getOrElse(currentDb))
     newName.database.map(formatDatabaseName).foreach { newDb =>
       if (db != newDb) {
@@ -618,7 +626,9 @@ class SessionCatalog(
     val oldTableName = formatTableName(oldName.table)
     val newTableName = formatTableName(newName.table)
     if (db == globalTempViewManager.database) {
-      globalTempViewManager.rename(oldTableName, newTableName)
+      synchronized {
+        globalTempViewManager.rename(oldTableName, newTableName)
+      }
     } else {
       requireDbExists(db)
       if (oldName.database.isDefined || !tempViews.contains(oldTableName)) {
@@ -637,7 +647,7 @@ class SessionCatalog(
           throw new AnalysisException(s"RENAME TEMPORARY VIEW from '$oldName' to '$newName': " +
             "destination table already exists")
         }
-        val table = tempViews(oldTableName)
+        val table = tempViews.get(oldTableName)
         tempViews.remove(oldTableName)
         tempViews.put(newTableName, table)
       }
@@ -654,13 +664,15 @@ class SessionCatalog(
   def dropTable(
       name: TableIdentifier,
       ignoreIfNotExists: Boolean,
-      purge: Boolean): Unit = synchronized {
+      purge: Boolean): Unit = {
     val db = formatDatabaseName(name.database.getOrElse(currentDb))
     val table = formatTableName(name.table)
     if (db == globalTempViewManager.database) {
-      val viewExists = globalTempViewManager.remove(table)
-      if (!viewExists && !ignoreIfNotExists) {
-        throw new NoSuchTableException(globalTempViewManager.database, table)
+      synchronized {
+        val viewExists = globalTempViewManager.remove(table)
+        if (!viewExists && !ignoreIfNotExists) {
+          throw new NoSuchTableException(globalTempViewManager.database, table)
+        }
       }
     } else {
       if (name.database.isDefined || !tempViews.contains(table)) {
@@ -695,13 +707,15 @@ class SessionCatalog(
    * @param name The name of the table/view that we look up.
    */
   def lookupRelation(name: TableIdentifier): LogicalPlan = {
-    synchronized {
+     {
       val db = formatDatabaseName(name.database.getOrElse(currentDb))
       val table = formatTableName(name.table)
       if (db == globalTempViewManager.database) {
-        globalTempViewManager.get(table).map { viewDef =>
-          SubqueryAlias(table, db, viewDef)
-        }.getOrElse(throw new NoSuchTableException(db, table))
+        synchronized {
+          globalTempViewManager.get(table).map { viewDef =>
+            SubqueryAlias(table, db, viewDef)
+          }.getOrElse(throw new NoSuchTableException(db, table))
+        }
       } else if (name.database.isDefined || !tempViews.contains(table)) {
         val metadata = externalCatalog.getTable(db, table)
         if (metadata.tableType == CatalogTableType.VIEW) {
@@ -718,7 +732,7 @@ class SessionCatalog(
           SubqueryAlias(table, db, UnresolvedCatalogRelation(metadata))
         }
       } else {
-        SubqueryAlias(table, tempViews(table))
+        SubqueryAlias(table, tempViews.get(table))
       }
     }
   }
@@ -729,12 +743,14 @@ class SessionCatalog(
    * Note: The temporary view cache is checked only when database is not
    * explicitly specified.
    */
-  def isTemporaryTable(name: TableIdentifier): Boolean = synchronized {
+  def isTemporaryTable(name: TableIdentifier): Boolean =  {
     val table = formatTableName(name.table)
     if (name.database.isEmpty) {
       tempViews.contains(table)
     } else if (formatDatabaseName(name.database.get) == globalTempViewManager.database) {
-      globalTempViewManager.get(table).isDefined
+      synchronized {
+        globalTempViewManager.get(table).isDefined
+      }
     } else {
       false
     }
@@ -766,8 +782,8 @@ class SessionCatalog(
         TableIdentifier(name, Some(dbName))
       }
     }
-    val localTempViews = synchronized {
-      StringUtils.filterPattern(tempViews.keys.toSeq, pattern).map { name =>
+    val localTempViews =  {
+      StringUtils.filterPattern(tempViews.keys.asScala.toSeq, pattern).map { name =>
         TableIdentifier(name)
       }
     }
@@ -777,29 +793,32 @@ class SessionCatalog(
   /**
    * Refresh the cache entry for a metastore table, if any.
    */
-  def refreshTable(name: TableIdentifier): Unit = synchronized {
+  def refreshTable(name: TableIdentifier): Unit = {
     val dbName = formatDatabaseName(name.database.getOrElse(currentDb))
     val tableName = formatTableName(name.table)
-
-    // Go through temporary views and invalidate them.
-    // If the database is defined, this may be a global temporary view.
-    // If the database is not defined, there is a good chance this is a temp view.
-    if (name.database.isEmpty) {
-      tempViews.get(tableName).foreach(_.refresh())
-    } else if (dbName == globalTempViewManager.database) {
-      globalTempViewManager.get(tableName).foreach(_.refresh())
+    if (tableName.startsWith("v_")) {
+      synchronized {
+        // Go through temporary views and invalidate them.
+        // If the database is defined, this may be a global temporary view.
+        // If the database is not defined, there is a good chance this is a temp view.
+        if (name.database.isEmpty) {
+          tempViews.get(tableName).foreach(_.refresh())
+        } else if (dbName == globalTempViewManager.database) {
+          globalTempViewManager.get(tableName).foreach(_.refresh())
+        }
+      }
     }
 
-    // Also invalidate the table relation cache.
-    val qualifiedTableName = QualifiedTableName(dbName, tableName)
-    tableRelationCache.invalidate(qualifiedTableName)
+      // Also invalidate the table relation cache.
+      val qualifiedTableName = QualifiedTableName(dbName, tableName)
+      tableRelationCache.invalidate(qualifiedTableName)
   }
 
   /**
    * Drop all existing temporary views.
    * For testing only.
    */
-  def clearTempTables(): Unit = synchronized {
+  def clearTempTables(): Unit = {
     tempViews.clear()
   }
 
@@ -1394,10 +1413,10 @@ class SessionCatalog(
    * because the target [[SessionCatalog]] should not be published at this point. The caller must
    * synchronize on the target if this assumption does not hold.
    */
-  private[sql] def copyStateTo(target: SessionCatalog): Unit = synchronized {
+  private[sql] def copyStateTo(target: SessionCatalog): Unit = {
     target.currentDb = currentDb
     // copy over temporary views
-    tempViews.foreach(kv => target.tempViews.put(kv._1, kv._2))
+    tempViews.asScala.foreach(kv => target.tempViews.put(kv._1, kv._2))
   }
 
   /**
