@@ -68,6 +68,7 @@ private[spark] class HiveExternalCatalog(conf: SparkConf, hadoopConf: Configurat
     sys.props.getOrElse("concurrentHiveConnections", "false")).toBoolean)
 
   private lazy val _client: () => HiveClient = {
+    logInfo(s"spark.sql.catalog.concurrentHiveConnections = $concurrentHiveConnections")
     if (concurrentHiveConnections) {
       () => clientThreadLocal.get()
     } else {
