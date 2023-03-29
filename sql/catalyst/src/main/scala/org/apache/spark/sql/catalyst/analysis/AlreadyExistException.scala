@@ -30,6 +30,9 @@ class DatabaseAlreadyExistsException(db: String)
 class TableAlreadyExistsException(db: String, table: String)
   extends AnalysisException(s"Table or view '$table' already exists in database '$db'")
 
+class TableNameNotPermittedException(db: String, table: String)
+  extends AnalysisException(s"Table name is not permitted '$table'. Must not start with 'v_'")
+
 class TempTableAlreadyExistsException(table: String)
   extends AnalysisException(s"Temporary view '$table' already exists")
 

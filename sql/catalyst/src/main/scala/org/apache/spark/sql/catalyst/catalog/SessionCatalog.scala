@@ -90,16 +90,16 @@ class SessionCatalog(
   lazy val globalTempViewManager = globalTempViewManagerBuilder()
 
   /** List of temporary views, mapping from table name to their logical plan. */
-  @GuardedBy("this")
+  // @GuardedBy("this")
 //  protected val tempViews = new mutable.HashMap[String, LogicalPlan]
-  protected val tempViews = new ConcurrentHashMap[String, LogicalPlan]
+  private val tempViews = new ConcurrentHashMap[String, LogicalPlan]
 
   // Note: we track current database here because certain operations do not explicitly
   // specify the database (e.g. DROP TABLE my_table). In these cases we must first
   // check whether the temporary view or function exists, then, if not, operate on
   // the corresponding item in the current database.
-  @GuardedBy("this")
-  protected var currentDb: String = formatDatabaseName(DEFAULT_DATABASE)
+  // @GuardedBy("this")
+  protected val currentDb: String = formatDatabaseName(DEFAULT_DATABASE)
 
   private val validNameFormat = "([\\w_]+)".r
 
@@ -251,19 +251,20 @@ class SessionCatalog(
     externalCatalog.listDatabases(pattern)
   }
 
-  def getCurrentDatabase: String = synchronized { currentDb }
+  def getCurrentDatabase: String = currentDb
 
   def setCurrentDatabase(db: String): Unit = {
-    val dbName = formatDatabaseName(db)
-    if (dbName == globalTempViewManager.database) {
-      throw new AnalysisException(
-        s"${globalTempViewManager.database} is a system preserved database, " +
-          "you cannot use it as current database. To access global temporary views, you should " +
-          "use qualified name with the GLOBAL_TEMP_DATABASE, e.g. SELECT * FROM " +
-          s"${globalTempViewManager.database}.viewName.")
-    }
-    requireDbExists(dbName)
-    synchronized { currentDb = dbName }
+    throw new Exception("Setting current Database is not supported.")
+//    val dbName = formatDatabaseName(db)
+//    if (dbName == globalTempViewManager.database) {
+//      throw new AnalysisException(
+//        s"${globalTempViewManager.database} is a system preserved database, " +
+//          "you cannot use it as current database. To access global temporary views, you should " +
+//          "use qualified name with the GLOBAL_TEMP_DATABASE, e.g. SELECT * FROM " +
+//          s"${globalTempViewManager.database}.viewName.")
+//    }
+//    requireDbExists(dbName)
+//    synchronized { currentDb = dbName }
   }
 
   /**
@@ -298,6 +299,9 @@ class SessionCatalog(
       validateLocation: Boolean = true): Unit = {
     val db = formatDatabaseName(tableDefinition.identifier.database.getOrElse(getCurrentDatabase))
     val table = formatTableName(tableDefinition.identifier.table)
+    if (isView(table)){
+      throw new TableNameNotPermittedException(db = db, table = table)
+    }
     val tableIdentifier = TableIdentifier(table, Some(db))
     validateName(table)
 
@@ -578,7 +582,7 @@ class SessionCatalog(
    */
   def getTempViewOrPermanentTableMetadata(name: TableIdentifier): CatalogTable = {
     val table = formatTableName(name.table)
-    if (name.table.startsWith("v_")) {
+    if (isView(name.table)) {
       synchronized {
         if (name.database.isEmpty) {
           getTempView(table).map { plan =>
@@ -603,6 +607,10 @@ class SessionCatalog(
     } else {
       getTableMetadata(name)
     }
+  }
+
+  private def isView(name: String): Boolean = {
+    name.startsWith("v_") || name.startsWith("V_")
   }
 
   /**
@@ -631,7 +639,7 @@ class SessionCatalog(
       }
     } else {
       requireDbExists(db)
-      if (oldName.database.isDefined || !tempViews.contains(oldTableName)) {
+      if (oldName.database.isDefined || !isView(oldTableName)) {
         requireTableExists(TableIdentifier(oldTableName, Some(db)))
         requireTableNotExists(TableIdentifier(newTableName, Some(db)))
         validateName(newTableName)
@@ -675,7 +683,7 @@ class SessionCatalog(
         }
       }
     } else {
-      if (name.database.isDefined || !tempViews.contains(table)) {
+      if (name.database.isDefined || !isView(table)) {
         requireDbExists(db)
         // When ignoreIfNotExists is false, no exception is issued when the table does not exist.
         // Instead, log it as an error message.
@@ -716,7 +724,7 @@ class SessionCatalog(
             SubqueryAlias(table, db, viewDef)
           }.getOrElse(throw new NoSuchTableException(db, table))
         }
-      } else if (name.database.isDefined || !tempViews.contains(table)) {
+      } else if (name.database.isDefined || !isView(table)) {
         val metadata = externalCatalog.getTable(db, table)
         if (metadata.tableType == CatalogTableType.VIEW) {
           val viewText = metadata.viewText.getOrElse(sys.error("Invalid view without text."))
@@ -796,7 +804,7 @@ class SessionCatalog(
   def refreshTable(name: TableIdentifier): Unit = {
     val dbName = formatDatabaseName(name.database.getOrElse(currentDb))
     val tableName = formatTableName(name.table)
-    if (tableName.startsWith("v_")) {
+    if (isView(tableName)) {
       synchronized {
         // Go through temporary views and invalidate them.
         // If the database is defined, this may be a global temporary view.
@@ -1414,9 +1422,10 @@ class SessionCatalog(
    * synchronize on the target if this assumption does not hold.
    */
   private[sql] def copyStateTo(target: SessionCatalog): Unit = {
-    target.currentDb = currentDb
+    // target.currentDb = currentDb
     // copy over temporary views
-    tempViews.asScala.foreach(kv => target.tempViews.put(kv._1, kv._2))
+//    tempViews.asScala.foreach(kv => target.tempViews.put(kv._1, kv._2))
+    target.tempViews.putAll(tempViews)
   }
 
   /**
