@@ -88,19 +88,21 @@ class CacheManager extends Logging {
   def cacheQuery(
       query: Dataset[_],
       tableName: Option[String] = None,
-      storageLevel: StorageLevel = MEMORY_AND_DISK): Unit = writeLock {
-    val planToCache = query.logicalPlan
-    if (lookupCachedData(planToCache).nonEmpty) {
-      logWarning("Asked to cache already cached data.")
-    } else {
-      val sparkSession = query.sparkSession
-      val inMemoryRelation = InMemoryRelation(
-        sparkSession.sessionState.conf.useCompression,
-        sparkSession.sessionState.conf.columnBatchSize, storageLevel,
-        sparkSession.sessionState.executePlan(planToCache).executedPlan,
-        tableName,
-        planToCache)
-      cachedData.add(CachedData(planToCache, inMemoryRelation))
+      storageLevel: StorageLevel = MEMORY_AND_DISK): Unit = {
+      val planToCache = query.logicalPlan
+      writeLock {
+        if (lookupCachedData(planToCache).nonEmpty) {
+          logWarning("Asked to cache already cached data.")
+        } else {
+          val sparkSession = query.sparkSession
+          val inMemoryRelation = InMemoryRelation(
+            sparkSession.sessionState.conf.useCompression,
+            sparkSession.sessionState.conf.columnBatchSize, storageLevel,
+            sparkSession.sessionState.executePlan(planToCache).executedPlan,
+            tableName,
+            planToCache)
+          cachedData.add(CachedData(planToCache, inMemoryRelation))
+        }
     }
   }
 
@@ -114,9 +116,8 @@ class CacheManager extends Logging {
   def uncacheQuery(
       query: Dataset[_],
       cascade: Boolean,
-      blocking: Boolean = true): Unit = writeLock {
-    uncacheQuery(query.sparkSession, query.logicalPlan, cascade, blocking)
-  }
+      blocking: Boolean = true): Unit = uncacheQuery(query.sparkSession, query.logicalPlan, cascade, blocking)
+
 
   /**
    * Un-cache the given plan or all the cache entries that refer to the given plan.
@@ -203,9 +204,9 @@ class CacheManager extends Logging {
   }
 
   /** Optionally returns cached data for the given [[Dataset]] */
-  def lookupCachedData(query: Dataset[_]): Option[CachedData] = readLock {
+  def lookupCachedData(query: Dataset[_]): Option[CachedData] =
     lookupCachedData(query.logicalPlan)
-  }
+
 
   /** Optionally returns cached data for the given [[LogicalPlan]]. */
   def lookupCachedData(plan: LogicalPlan): Option[CachedData] = readLock {
