@@ -25,6 +25,10 @@ case class KnownNotNull(child: Expression) extends UnaryExpression {
   override def nullable: Boolean = false
   override def dataType: DataType = child.dataType
 
+  override def nullSafeEval(input: Any): Any = {
+    input
+  }
+
   override protected def doGenCode(ctx: CodegenContext, ev: ExprCode): ExprCode = {
     child.genCode(ctx).copy(isNull = FalseLiteral)
   }
