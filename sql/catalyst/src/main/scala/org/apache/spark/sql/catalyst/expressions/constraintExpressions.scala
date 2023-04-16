@@ -17,13 +17,34 @@
 
 package org.apache.spark.sql.catalyst.expressions
 
-import org.apache.spark.sql.catalyst.InternalRow
+import org.apache.spark.sql.catalyst.analysis.TypeCheckResult
 import org.apache.spark.sql.catalyst.expressions.codegen.{CodegenContext, ExprCode, FalseLiteral}
 import org.apache.spark.sql.types.DataType
 
 case class KnownNotNull(child: Expression) extends UnaryExpression {
   override def nullable: Boolean = false
   override def dataType: DataType = child.dataType
+
+  /**
+   * Checks the input data types, returns `TypeCheckResult.success` if it's valid,
+   * or returns a `TypeCheckResult` with an error message if invalid.
+   * Note: it's not valid to call this method until `childrenResolved == true`.
+   */
+  override def checkInputDataTypes(): TypeCheckResult = child.checkInputDataTypes()
+
+  /**
+   * Returns true if  all the children of this expression have been resolved to a specific schema
+   * and false if any still contains any unresolved placeholders.
+   */
+  override def childrenResolved: Boolean = child.childrenResolved
+
+  override def toString: String = child.toString
+
+  /**
+   * Returns SQL representation of this expression.  For expressions extending [[NonSQLExpression]],
+   * this method may return an arbitrary user facing string.
+   */
+  override def sql: String = child.sql
 
   override def nullSafeEval(input: Any): Any = {
     input
