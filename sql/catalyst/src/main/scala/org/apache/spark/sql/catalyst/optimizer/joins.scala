@@ -20,6 +20,7 @@ package org.apache.spark.sql.catalyst.optimizer
 import scala.annotation.tailrec
 import scala.util.control.NonFatal
 
+import org.apache.spark.internal.Logging
 import org.apache.spark.sql.catalyst.expressions._
 import org.apache.spark.sql.catalyst.planning.ExtractFiltersAndInnerJoins
 import org.apache.spark.sql.catalyst.plans._
@@ -246,7 +247,7 @@ case object BuildRight extends BuildSide
 
 case object BuildLeft extends BuildSide
 
-trait JoinSelectionHelper {
+trait JoinSelectionHelper extends Logging {
 
   def getBroadcastBuildSide(
       left: LogicalPlan,
@@ -318,7 +319,11 @@ trait JoinSelectionHelper {
     } else {
       conf.autoBroadcastJoinThreshold
     }
-    plan.stats.sizeInBytes >= 0 && plan.stats.sizeInBytes <= autoBroadcastJoinThreshold
+    val r = plan.stats.sizeInBytes >= 0 && plan.stats.sizeInBytes <= autoBroadcastJoinThreshold
+
+    logInfo(s"plan stats: ${plan.stats}")
+
+    r
   }
 
   def canBuildBroadcastLeft(joinType: JoinType): Boolean = {

@@ -158,6 +158,7 @@ case class BroadcastExchangeExec(
             }
 
             longMetric("dataSize") += dataSize
+            logInfo(s"dataSize in bytes: ${dataSize >> 30} GB")
             if (dataSize >= MAX_BROADCAST_TABLE_BYTES) {
               throw QueryExecutionErrors.cannotBroadcastTableOverMaxTableBytesError(
                 MAX_BROADCAST_TABLE_BYTES, dataSize)
