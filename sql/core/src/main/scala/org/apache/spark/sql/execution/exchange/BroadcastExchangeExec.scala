@@ -158,7 +158,11 @@ case class BroadcastExchangeExec(
             }
 
             longMetric("dataSize") += dataSize
-            logInfo(s"dataSize in bytes: ${dataSize >> 30} GB")
+            val sizeInGB = dataSize >> 30
+            if (sizeInGB > 0) {
+              val fields = child.schema.fields.mkString("[", ", ", "]")
+              logInfo(s"dataSize in bytes: $sizeInGB GB; fields: $fields")
+            }
             if (dataSize >= MAX_BROADCAST_TABLE_BYTES) {
               throw QueryExecutionErrors.cannotBroadcastTableOverMaxTableBytesError(
                 MAX_BROADCAST_TABLE_BYTES, dataSize)
