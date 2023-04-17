@@ -31,7 +31,7 @@ object BasicStatsPlanVisitor extends LogicalPlanVisitor[Statistics] with Logging
   override def default(p: LogicalPlan): Statistics = p match {
     case p: LeafNode =>
       val statistics = p.computeStats()
-      logDebug(s"default - LeafNode : $statistics; " +
+      logDebug(s"default - LeafNode (${p.nodeName}) : $statistics; " +
         s"${p.schema.fields.map(_.name).mkString("[", ", ", "]")}")
       statistics
     case _: LogicalPlan =>
@@ -43,7 +43,7 @@ object BasicStatsPlanVisitor extends LogicalPlanVisitor[Statistics] with Logging
       }
       val statistics = Statistics(sizeInBytes = stats.map(_.sizeInBytes).filter(_ > 0L).product,
         rowCount = rowCount)
-      logDebug(s"default - LogicalPlan : $statistics; " +
+      logDebug(s"default - LogicalPlan  (${p.nodeName}) : $statistics; " +
         s"${p.schema.fields.map(_.name).mkString("[", ", ", "]")}")
       statistics
   }
