@@ -34,18 +34,29 @@ object SizeInBytesOnlyStatsPlanVisitor extends LogicalPlanVisitor[Statistics] wi
   private def visitUnaryNode(p: UnaryNode): Statistics = {
     // There should be some overhead in Row object, the size should not be zero when there is
     // no columns, this help to prevent divide-by-zero error.
-    val childRowSize = EstimationUtils.getSizePerRow(p.child.output)
     val outputRowSize = EstimationUtils.getSizePerRow(p.output)
-    // Assume there will be the same number of rows as child has.
-    var sizeInBytes = (p.child.stats.sizeInBytes * outputRowSize) / childRowSize
-    if (sizeInBytes == 0) {
-      // sizeInBytes can't be zero, or sizeInBytes of BinaryNode will also be zero
-      // (product of children).
-      sizeInBytes = 1
+    logDebug("--- visitUnaryNode ---")
+    val sizeInBytes = if (p.child.stats.rowCount.isEmpty) {
+      val childRowSize = EstimationUtils.getSizePerRow(p.child.output)
+      // Assume there will be the same number of rows as child has.
+      val estimatedChildRowCount = p.child.stats.sizeInBytes / childRowSize
+      var estimatedParentTotalSize = estimatedChildRowCount * outputRowSize
+      if (estimatedParentTotalSize == 0) {
+        // sizeInBytes can't be zero, or sizeInBytes of BinaryNode will also be zero
+        // (product of children).
+        estimatedParentTotalSize = 1
+      }
+      logDebug(s"visitUnaryNode - noRowCount : $estimatedParentTotalSize; " +
+        s"childRowSize: $childRowSize; parentRowSize: $outputRowSize; sizeInBytes: ${p.child.stats.sizeInBytes}")
+      estimatedParentTotalSize
+    } else {
+      val estimatedParentTotalSize = p.child.stats.rowCount.get * outputRowSize
+      logDebug(s"visitUnaryNode - RowCount : $estimatedParentTotalSize; parentRowSize: $outputRowSize; sizeInBytes: ${p.child.stats.sizeInBytes}")
+      estimatedParentTotalSize
     }
 
     // Don't propagate rowCount and attributeStats, since they are not estimated here.
-    val statistics = Statistics(sizeInBytes = sizeInBytes)
+    val statistics = Statistics(sizeInBytes = sizeInBytes, rowCount = p.child.stats.rowCount)
     logDebug(s"visitUnaryNode : $statistics; " +
       s"${p.schema.fields.map(_.name).mkString("[", ", ", "]")}")
     statistics
