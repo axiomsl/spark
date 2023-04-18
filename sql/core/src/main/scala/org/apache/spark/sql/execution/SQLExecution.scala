@@ -74,8 +74,8 @@ object SQLExecution {
 
       withSQLConfPropagated(sparkSession) {
         val queryExecutionString =
-          if (sc.conf.getBoolean("spark.ui.debugString.isEnabled", defaultValue = false)) ""
-          else queryExecution.toString
+          if (sc.conf.getBoolean("spark.ui.debugString.isEnabled", defaultValue = false)) queryExecution.toString
+          else ""
         sc.listenerBus.post(SparkListenerSQLExecutionStart(
           executionId, callSite.shortForm, callSite.longForm, queryExecutionString,
           SparkPlanInfo.fromSparkPlan(queryExecution.executedPlan), System.currentTimeMillis()))
