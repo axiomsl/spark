@@ -47,11 +47,13 @@ object SizeInBytesOnlyStatsPlanVisitor extends LogicalPlanVisitor[Statistics] wi
         estimatedParentTotalSize = 1
       }
       logDebug(s"visitUnaryNode - noRowCount : $estimatedParentTotalSize; " +
-        s"childRowSize: $childRowSize; parentRowSize: $outputRowSize; sizeInBytes: ${p.child.stats.sizeInBytes}")
+        s"childRowSize: $childRowSize; parentRowSize: $outputRowSize;" +
+        s" sizeInBytes: ${p.child.stats.sizeInBytes}")
       estimatedParentTotalSize
     } else {
       val estimatedParentTotalSize = p.child.stats.rowCount.get * outputRowSize
-      logDebug(s"visitUnaryNode - RowCount : $estimatedParentTotalSize; parentRowSize: $outputRowSize; sizeInBytes: ${p.child.stats.sizeInBytes}")
+      logDebug(s"visitUnaryNode - RowCount : $estimatedParentTotalSize; " +
+        s"parentRowSize: $outputRowSize; sizeInBytes: ${p.child.stats.sizeInBytes}")
       estimatedParentTotalSize
     }
 
