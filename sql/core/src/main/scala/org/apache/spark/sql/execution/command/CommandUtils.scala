@@ -18,14 +18,16 @@
 package org.apache.spark.sql.execution.command
 
 import java.net.URI
+import java.util.concurrent.TimeUnit
 
 import scala.collection.mutable
 import scala.util.control.NonFatal
 
+import com.google.common.cache.{Cache, CacheBuilder}
 import org.apache.hadoop.fs.{FileSystem, Path, PathFilter}
 
 import org.apache.spark.internal.Logging
-import org.apache.spark.sql.{SparkSession}
+import org.apache.spark.sql.SparkSession
 import org.apache.spark.sql.catalyst.{InternalRow, TableIdentifier}
 import org.apache.spark.sql.catalyst.catalog.{CatalogStatistics, CatalogTable, CatalogTableType}
 import org.apache.spark.sql.catalyst.expressions._
@@ -71,22 +73,31 @@ object CommandUtils extends Logging {
     }
   }
 
+  private val tableCacheTotalSize: Cache[TableIdentifier, BigInt] = {
+    var builder = CacheBuilder.newBuilder()
+      .maximumSize(100)
+    builder = builder.expireAfterWrite(2, TimeUnit.MINUTES)
+    builder.build[TableIdentifier, BigInt]()
+  }
+
   def calculateTotalSize(spark: SparkSession, catalogTable: CatalogTable): BigInt = {
-    val sessionState = spark.sessionState
-    val startTime = System.nanoTime()
-    val totalSize = if (catalogTable.partitionColumnNames.isEmpty) {
-      calculateSingleLocationSize(sessionState, catalogTable.identifier,
-        catalogTable.storage.locationUri)
-    } else {
-      // Calculate table size as a sum of the visible partitions. See SPARK-21079
-      val partitions = sessionState.catalog.listPartitions(catalogTable.identifier)
-      logInfo(s"Starting to calculate sizes for ${partitions.length} partitions.")
-      val paths = partitions.map(_.storage.locationUri)
-      calculateMultipleLocationSizes(spark, catalogTable.identifier, paths).sum
-    }
-    logInfo(s"It took ${(System.nanoTime() - startTime) / (1000 * 1000)} ms to calculate" +
-      s" the total size for table ${catalogTable.identifier}.")
-    totalSize
+    tableCacheTotalSize.get(catalogTable.identifier, () => {
+      val sessionState = spark.sessionState
+      val startTime = System.nanoTime()
+      val totalSize = if (catalogTable.partitionColumnNames.isEmpty) {
+        calculateSingleLocationSize(sessionState, catalogTable.identifier,
+          catalogTable.storage.locationUri)
+      } else {
+        // Calculate table size as a sum of the visible partitions. See SPARK-21079
+        val partitions = sessionState.catalog.listPartitions(catalogTable.identifier)
+        logInfo(s"Starting to calculate sizes for ${partitions.length} partitions.")
+        val paths = partitions.map(_.storage.locationUri)
+        calculateMultipleLocationSizes(spark, catalogTable.identifier, paths).sum
+      }
+      logInfo(s"It took ${(System.nanoTime() - startTime) / (1000 * 1000)} ms to calculate" +
+        s" the total size for table ${catalogTable.identifier}.")
+      totalSize
+    })
   }
 
   def calculateSingleLocationSize(

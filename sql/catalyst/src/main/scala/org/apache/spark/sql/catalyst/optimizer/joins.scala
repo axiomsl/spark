@@ -321,8 +321,10 @@ trait JoinSelectionHelper extends Logging {
     }
     val r = plan.stats.sizeInBytes >= 0 && plan.stats.sizeInBytes <= autoBroadcastJoinThreshold
     if (r) {
-      val fields = plan.schema.fields.map(_.name).mkString("[", ", ", "]")
-      logInfo(s"plan stats: ${plan.stats}; canBroadcastBySize: $r; fields: $fields")
+      if (log.isDebugEnabled){
+        val fields = plan.schema.fields.map(_.name).mkString("[", ", ", "]")
+        logInfo(s"plan stats: ${plan.stats}; canBroadcastBySize: $r; fields: $fields")
+      }
     }
     r
   }
