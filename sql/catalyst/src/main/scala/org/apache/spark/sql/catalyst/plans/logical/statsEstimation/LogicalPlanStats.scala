@@ -24,6 +24,23 @@ import org.apache.spark.sql.catalyst.plans.logical._
  */
 trait LogicalPlanStats { self: LogicalPlan =>
 
+  def updateStatsCache(sizeInBytes: BigInt, rowCount: Option[BigInt]): Unit = {
+    if (statsCache.isDefined) {
+      statsCache = Some(statsCache.get.copy(sizeInBytes = sizeInBytes, rowCount = rowCount))
+    } else {
+      statsCache = Some(Statistics(sizeInBytes = sizeInBytes, rowCount = rowCount))
+    }
+  }
+
+  def updateStatsCache(stats: Statistics): Unit = {
+    statsCache = Some(stats)
+  }
+
+  def updateStatsCache(rowCount: BigInt): Unit = {
+    val outputRowSize = EstimationUtils.getSizePerRow(this.output)
+    updateStatsCache(outputRowSize * rowCount, Some(rowCount))
+  }
+
   /**
    * Returns the estimated statistics for the current logical plan node. Under the hood, this
    * method caches the return value, which is computed based on the configuration passed in the

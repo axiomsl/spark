@@ -63,7 +63,7 @@ class InMemoryFileIndex(
   @volatile private var cachedLeafDirToChildrenFiles: Map[Path, Array[FileStatus]] = _
   @volatile private var cachedPartitionSpec: PartitionSpec = _
 
-  refresh0()
+  refresh0("construction ")
 
   override def partitionSpec(): PartitionSpec = {
     if (cachedPartitionSpec == null) {
@@ -90,8 +90,8 @@ class InMemoryFileIndex(
     refresh0()
   }
 
-  private def refresh0(): Unit = {
-    val files = listLeafFiles(rootPaths)
+  private def refresh0(logPrefix: String = ""): Unit = {
+    val files = listLeafFiles(rootPaths, logPrefix)
     cachedLeafFiles =
       new mutable.LinkedHashMap[Path, FileStatus]() ++= files.map(f => f.getPath -> f)
     cachedLeafDirToChildrenFiles = files.toArray.groupBy(_.getPath.getParent)
@@ -112,7 +112,7 @@ class InMemoryFileIndex(
    *
    * This is publicly visible for testing.
    */
-  def listLeafFiles(paths: Seq[Path]): mutable.LinkedHashSet[FileStatus] = {
+  def listLeafFiles(paths: Seq[Path], logPrefix: String = ""): mutable.LinkedHashSet[FileStatus] = {
     val startTime = System.nanoTime()
     val output = mutable.LinkedHashSet[FileStatus]()
     val pathsToFetch = mutable.ArrayBuffer[Path]()
@@ -134,8 +134,9 @@ class InMemoryFileIndex(
       fileStatusCache.putLeafFiles(path, leafFiles.toArray)
       output ++= leafFiles
     }
-    logInfo(s"It took ${(System.nanoTime() - startTime) / (1000 * 1000)} ms to list leaf files" +
-      s" for ${paths.length} paths.")
+    logInfo(s"${logPrefix}It took ${(System.nanoTime() - startTime) / (1000 * 1000)} " +
+      s"ms to list leaf files for ${paths.length} paths. " +
+      s"[incrementFileCacheHits] ${HiveCatalogMetrics.METRIC_FILE_CACHE_HITS.getCount}")
     output
   }
 }
