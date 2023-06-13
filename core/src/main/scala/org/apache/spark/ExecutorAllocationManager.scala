@@ -708,7 +708,10 @@ private[spark] class ExecutorAllocationManager(
         // Update the executor placement hints
         updateExecutorPlacementHints()
 
-        logInfo(s"numTasksPending: [$numTasksPending] after stageSubmitted: [${stageSubmitted.stageInfo.stageId}]")
+        logInfo(
+          s"numTasksPending: [$numTasksPending] " +
+            s"after stageSubmitted: [${stageSubmitted.stageInfo.stageId}]"
+        )
 
         if (!numExecutorsTargetPerResourceProfileId.contains(profId)) {
           numExecutorsTargetPerResourceProfileId.put(profId, initialNumExecutors)
