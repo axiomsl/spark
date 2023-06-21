@@ -128,7 +128,7 @@ case class QueryExecutionMetering() {
     s"""
        $header
        Total number of runs: $totalNumRuns
-       Total time: ${totalTime / 1000000000D} seconds
+       Total time: ${totalTime / NANOS_PER_SECOND.toDouble} seconds
 
        $colRuleName $colRunTime $colNumRuns
        $ruleMetrics
