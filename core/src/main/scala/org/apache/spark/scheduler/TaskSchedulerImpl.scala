@@ -394,13 +394,14 @@ private[spark] class TaskSchedulerImpl(
     // nodes and executors that are excluded for the entire application have already been
     // filtered out by this point
     for (i <- shuffledOffers.indices) {
-      val execId = shuffledOffers(i).executorId
-      val host = shuffledOffers(i).host
+      val offer = shuffledOffers(i)
+      val execId = offer.executorId
+      val host = offer.host
       val taskSetRpID = taskSet.taskSet.resourceProfileId
 
       // check whether the task can be scheduled to the executor base on resource profile.
       if (sc.resourceProfileManager
-        .canBeScheduled(taskSetRpID, shuffledOffers(i).resourceProfileId)) {
+        .canBeScheduled(taskSetRpID, offer.resourceProfileId)) {
         val taskResAssignmentsOpt = resourcesMeetTaskRequirements(taskSet, availableCpus(i),
           availableResources(i))
         taskResAssignmentsOpt.foreach { taskResAssignments =>

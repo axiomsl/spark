@@ -480,13 +480,13 @@ class AnalysisSuite extends AnalysisTest with Matchers {
     if (!afterAnalyze.dataType.equals(expectedDataType)) {
       fail(
         s"""
-           |data type of expression $expression doesn't match expected:
-           |Actual data type:
-           |${afterAnalyze.dataType}
-           |
-           |Expected data type:
-           |${expectedDataType}
-         """.stripMargin)
+           data type of expression $expression doesn't match expected:
+           Actual data type:
+           ${afterAnalyze.dataType}
+
+           Expected data type:
+           ${expectedDataType}
+         """)
     }
   }
 
@@ -1121,13 +1121,13 @@ class AnalysisSuite extends AnalysisTest with Matchers {
   test("SPARK-22748: Analyze __grouping__id as a literal function") {
     assertAnalysisSuccess(parsePlan(
       """
-        |SELECT grouping__id FROM (
-        |  SELECT grouping__id FROM (
-        |    SELECT a, b, count(1), grouping__id FROM TaBlE2
-        |      GROUP BY a, b WITH ROLLUP
-        |  )
-        |)
-      """.stripMargin), false)
+        SELECT grouping__id FROM (
+          SELECT grouping__id FROM (
+            SELECT a, b, count(1), grouping__id FROM TaBlE2
+              GROUP BY a, b WITH ROLLUP
+          )
+        )
+      """), false)
 
 
     assertAnalysisSuccess(parsePlan(

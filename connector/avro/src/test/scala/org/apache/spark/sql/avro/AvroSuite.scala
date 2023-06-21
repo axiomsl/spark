@@ -592,10 +592,10 @@ abstract class AvroSuite
   test("sql test") {
     spark.sql(
       s"""
-         |CREATE TEMPORARY VIEW avroTable
-         |USING avro
-         |OPTIONS (path "${episodesAvro}")
-      """.stripMargin.replaceAll("\n", " "))
+         CREATE TEMPORARY VIEW avroTable
+         USING avro
+         OPTIONS (path "${episodesAvro}")
+      """.replaceAll("\n", " "))
 
     assert(spark.sql("SELECT * FROM avroTable").collect().length === 8)
   }
@@ -732,16 +732,16 @@ abstract class AvroSuite
   test("support user provided avro schema") {
     val avroSchema =
       """
-        |{
-        |  "type" : "record",
-        |  "name" : "test_schema",
-        |  "fields" : [{
-        |    "name" : "string",
-        |    "type" : "string",
-        |    "doc"  : "Meaningless string of characters"
-        |  }]
-        |}
-      """.stripMargin
+        {
+          "type" : "record",
+          "name" : "test_schema",
+          "fields" : [{
+            "name" : "string",
+            "type" : "string",
+            "doc"  : "Meaningless string of characters"
+          }]
+        }
+      """
     val result = spark
       .read
       .option("avroSchema", avroSchema)
@@ -766,15 +766,15 @@ abstract class AvroSuite
     val avroSchemaUrl = testFile("test_sub.avsc")
     val avroSchema =
       """
-        |{
-        |  "type" : "record",
-        |  "name" : "test_schema",
-        |  "fields" : [{
-        |    "name" : "union_int_long_null",
-        |    "type" : ["int", "long", "null"]
-        |  }]
-        |}
-      """.stripMargin
+        {
+          "type" : "record",
+          "name" : "test_schema",
+          "fields" : [{
+            "name" : "union_int_long_null",
+            "type" : ["int", "long", "null"]
+          }]
+        }
+      """
 
     val result = spark.read
       .option("avroSchema", avroSchema)
@@ -801,16 +801,16 @@ abstract class AvroSuite
   test("support user provided avro schema with defaults for missing fields") {
     val avroSchema =
       """
-        |{
-        |  "type" : "record",
-        |  "name" : "test_schema",
-        |  "fields" : [{
-        |    "name"    : "missingField",
-        |    "type"    : "string",
-        |    "default" : "foo"
-        |  }]
-        |}
-      """.stripMargin
+        {
+          "type" : "record",
+          "name" : "test_schema",
+          "fields" : [{
+            "name"    : "missingField",
+            "type"    : "string",
+            "default" : "foo"
+          }]
+        }
+      """
     val result = spark
       .read
       .option("avroSchema", avroSchema)
@@ -822,18 +822,18 @@ abstract class AvroSuite
     withTempPath { tempDir =>
       val avroSchema =
         """
-          |{
-          |  "type" : "record",
-          |  "name" : "test_schema",
-          |  "fields" : [{
-          |    "name": "Suit",
-          |    "type": [{ "type": "enum",
-          |              "name": "SuitEnumType",
-          |              "symbols" : ["SPADES", "HEARTS", "DIAMONDS", "CLUBS"]
-          |            }, "null"]
-          |  }]
-          |}
-        """.stripMargin
+          {
+            "type" : "record",
+            "name" : "test_schema",
+            "fields" : [{
+              "name": "Suit",
+              "type": [{ "type": "enum",
+                        "name": "SuitEnumType",
+                        "symbols" : ["SPADES", "HEARTS", "DIAMONDS", "CLUBS"]
+                      }, "null"]
+            }]
+          }
+        """
 
       val df = spark.createDataFrame(spark.sparkContext.parallelize(Seq(
         Row("SPADES"), Row(null), Row("HEARTS"), Row("DIAMONDS"),
@@ -864,18 +864,18 @@ abstract class AvroSuite
     withTempPath { tempDir =>
       val avroSchema =
         """
-          |{
-          |  "type" : "record",
-          |  "name" : "test_schema",
-          |  "fields" : [{
-          |    "name": "Suit",
-          |    "type": { "type": "enum",
-          |              "name": "SuitEnumType",
-          |              "symbols" : ["SPADES", "HEARTS", "DIAMONDS", "CLUBS"]
-          |            }
-          |  }]
-          |}
-        """.stripMargin
+          {
+            "type" : "record",
+            "name" : "test_schema",
+            "fields" : [{
+              "name": "Suit",
+              "type": { "type": "enum",
+                        "name": "SuitEnumType",
+                        "symbols" : ["SPADES", "HEARTS", "DIAMONDS", "CLUBS"]
+                      }
+            }]
+          }
+        """
 
       val dfWithNull = spark.createDataFrame(spark.sparkContext.parallelize(Seq(
         Row("SPADES"), Row(null), Row("HEARTS"), Row("DIAMONDS"),
@@ -917,18 +917,18 @@ abstract class AvroSuite
     withTempPath { tempDir =>
       val avroSchema =
         """
-          |{
-          |  "type" : "record",
-          |  "name" : "test_schema",
-          |  "fields" : [{
-          |    "name": "fixed2",
-          |    "type": [{ "type": "fixed",
-          |               "size": 2,
-          |               "name": "fixed2"
-          |            }, "null"]
-          |  }]
-          |}
-        """.stripMargin
+          {
+            "type" : "record",
+            "name" : "test_schema",
+            "fields" : [{
+              "name": "fixed2",
+              "type": [{ "type": "fixed",
+                         "size": 2,
+                         "name": "fixed2"
+                      }, "null"]
+            }]
+          }
+        """
 
       val df = spark.createDataFrame(spark.sparkContext.parallelize(Seq(
         Row(Array(192, 168).map(_.toByte)), Row(null))),
@@ -969,18 +969,18 @@ abstract class AvroSuite
     withTempPath { tempDir =>
       val avroSchema =
         """
-          |{
-          |  "type" : "record",
-          |  "name" : "test_schema",
-          |  "fields" : [{
-          |    "name": "fixed2",
-          |    "type": { "type": "fixed",
-          |               "size": 2,
-          |               "name": "fixed2"
-          |            }
-          |  }]
-          |}
-        """.stripMargin
+          {
+            "type" : "record",
+            "name" : "test_schema",
+            "fields" : [{
+              "name": "fixed2",
+              "type": { "type": "fixed",
+                         "size": 2,
+                         "name": "fixed2"
+                      }
+            }]
+          }
+        """
 
       val df = spark.createDataFrame(spark.sparkContext.parallelize(Seq(
         Row(Array(192, 168).map(_.toByte)), Row(Array(1, 1).map(_.toByte)))),
@@ -1021,27 +1021,27 @@ abstract class AvroSuite
     withTempPath { tempDir =>
       val avroSchema =
         """
-          |{
-          |  "type" : "record",
-          |  "name" : "test_schema",
-          |  "fields" : [
-          |    {"name": "Age", "type": "int"},
-          |    {"name": "Name", "type": "string"}
-          |  ]
-          |}
-        """.stripMargin
+          {
+            "type" : "record",
+            "name" : "test_schema",
+            "fields" : [
+              {"name": "Age", "type": "int"},
+              {"name": "Name", "type": "string"}
+            ]
+          }
+        """
 
       val avroSchemaReversed =
         """
-          |{
-          |  "type" : "record",
-          |  "name" : "test_schema",
-          |  "fields" : [
-          |    {"name": "Name", "type": "string"},
-          |    {"name": "Age", "type": "int"}
-          |  ]
-          |}
-        """.stripMargin
+          {
+            "type" : "record",
+            "name" : "test_schema",
+            "fields" : [
+              {"name": "Name", "type": "string"},
+              {"name": "Age", "type": "int"}
+            ]
+          }
+        """
 
       val df = spark.createDataFrame(spark.sparkContext.parallelize(Seq(Row(2, "Aurora"))),
         StructType(Seq(
@@ -1074,15 +1074,15 @@ abstract class AvroSuite
 
       val avroSchema =
         """
-          |{
-          |  "type" : "record",
-          |  "name" : "test_schema",
-          |  "fields" : [
-          |    {"name": "Age", "type": "int"},
-          |    {"name": "Name", "type": "string"}
-          |  ]
-          |}
-        """.stripMargin
+          {
+            "type" : "record",
+            "name" : "test_schema",
+            "fields" : [
+              {"name": "Age", "type": "int"},
+              {"name": "Name", "type": "string"}
+            ]
+          }
+        """
 
       val df = spark.createDataFrame(
         spark.sparkContext.parallelize(Seq(Row(2, "Aurora"))), catalystSchema)
@@ -1110,15 +1110,15 @@ abstract class AvroSuite
         StructField("Name", StringType, nullable = false)))
 
     val avroSchema = """
-      |{
-      |  "type" : "record",
-      |  "name" : "test_schema",
-      |  "fields" : [
-      |    {"name": "Age", "type": ["null", "int"]},
-      |    {"name": "Name", "type": ["null", "string"]}
-      |  ]
-      |}
-    """.stripMargin
+      {
+        "type" : "record",
+        "name" : "test_schema",
+        "fields" : [
+          {"name": "Age", "type": ["null", "int"]},
+          {"name": "Name", "type": ["null", "string"]}
+        ]
+      }
+    """
 
     val df = spark.createDataFrame(
       spark.sparkContext.parallelize(Seq(Row(2, "Aurora"))), catalystSchema)
@@ -1378,26 +1378,26 @@ abstract class AvroSuite
       new File(tempEmptyDir).mkdirs()
       spark.sql(
         s"""
-           |CREATE TEMPORARY VIEW episodes
-           |USING avro
-           |OPTIONS (path "${episodesAvro}")
-         """.stripMargin.replaceAll("\n", " "))
+           CREATE TEMPORARY VIEW episodes
+           USING avro
+           OPTIONS (path "${episodesAvro}")
+         """.replaceAll("\n", " "))
       spark.sql(
         s"""
-           |CREATE TEMPORARY VIEW episodesEmpty
-           |(name string, air_date string, doctor int)
-           |USING avro
-           |OPTIONS (path "$tempEmptyDir")
-         """.stripMargin.replaceAll("\n", " "))
+           CREATE TEMPORARY VIEW episodesEmpty
+           (name string, air_date string, doctor int)
+           USING avro
+           OPTIONS (path "$tempEmptyDir")
+         """.replaceAll("\n", " "))
 
       assert(spark.sql("SELECT * FROM episodes").collect().length === 8)
       assert(spark.sql("SELECT * FROM episodesEmpty").collect().isEmpty)
 
       spark.sql(
         s"""
-           |INSERT OVERWRITE TABLE episodesEmpty
-           |SELECT * FROM episodes
-         """.stripMargin.replaceAll("\n", " "))
+           INSERT OVERWRITE TABLE episodesEmpty
+           SELECT * FROM episodes
+         """.replaceAll("\n", " "))
       assert(spark.sql("SELECT * FROM episodesEmpty").collect().length == 8)
     }
   }
@@ -1484,15 +1484,15 @@ abstract class AvroSuite
     withTempDir { tempDir =>
       val avroSchema =
         """
-          |{
-          |  "type" : "record",
-          |  "name" : "test_schema",
-          |  "fields" : [
-          |    {"name": "foo", "type": "int"},
-          |    {"name": "BAR", "type": "int"}
-          |  ]
-          |}
-      """.stripMargin
+          {
+            "type" : "record",
+            "name" : "test_schema",
+            "fields" : [
+              {"name": "foo", "type": "int"},
+              {"name": "BAR", "type": "int"}
+            ]
+          }
+      """
       val df = Seq((1, 3), (2, 4)).toDF("FOO", "bar")
 
       val savePath = s"$tempDir/save"
@@ -1516,15 +1516,15 @@ abstract class AvroSuite
     withTempDir { tempDir =>
       val avroSchema =
         """
-          |{
-          |  "type" : "record",
-          |  "name" : "test_schema",
-          |  "fields" : [
-          |    {"name": "foo", "type": "int"},
-          |    {"name": "FOO", "type": "string"}
-          |  ]
-          |}
-      """.stripMargin
+          {
+            "type" : "record",
+            "name" : "test_schema",
+            "fields" : [
+              {"name": "foo", "type": "int"},
+              {"name": "FOO", "type": "string"}
+            ]
+          }
+      """
 
       val errorMsg = "Searching for 'foo' in Avro schema at top-level record gave 2 matches. " +
           "Candidates: [foo, FOO]"
@@ -1808,59 +1808,59 @@ abstract class AvroSuite
 
   test("Detect recursive loop") {
     checkSchemaWithRecursiveLoop("""
-      |{
-      |  "type": "record",
-      |  "name": "LongList",
-      |  "fields" : [
-      |    {"name": "value", "type": "long"},             // each element has a long
-      |    {"name": "next", "type": ["null", "LongList"]} // optional next element
-      |  ]
-      |}
-    """.stripMargin)
+      {
+        "type": "record",
+        "name": "LongList",
+        "fields" : [
+          {"name": "value", "type": "long"},             // each element has a long
+          {"name": "next", "type": ["null", "LongList"]} // optional next element
+        ]
+      }
+    """)
 
     checkSchemaWithRecursiveLoop("""
-      |{
-      |  "type": "record",
-      |  "name": "LongList",
-      |  "fields": [
-      |    {
-      |      "name": "value",
-      |      "type": {
-      |        "type": "record",
-      |        "name": "foo",
-      |        "fields": [
-      |          {
-      |            "name": "parent",
-      |            "type": "LongList"
-      |          }
-      |        ]
-      |      }
-      |    }
-      |  ]
-      |}
-    """.stripMargin)
+      {
+        "type": "record",
+        "name": "LongList",
+        "fields": [
+          {
+            "name": "value",
+            "type": {
+              "type": "record",
+              "name": "foo",
+              "fields": [
+                {
+                  "name": "parent",
+                  "type": "LongList"
+                }
+              ]
+            }
+          }
+        ]
+      }
+    """)
 
     checkSchemaWithRecursiveLoop("""
-      |{
-      |  "type": "record",
-      |  "name": "LongList",
-      |  "fields" : [
-      |    {"name": "value", "type": "long"},
-      |    {"name": "array", "type": {"type": "array", "items": "LongList"}}
-      |  ]
-      |}
-    """.stripMargin)
+      {
+        "type": "record",
+        "name": "LongList",
+        "fields" : [
+          {"name": "value", "type": "long"},
+          {"name": "array", "type": {"type": "array", "items": "LongList"}}
+        ]
+      }
+    """)
 
     checkSchemaWithRecursiveLoop("""
-      |{
-      |  "type": "record",
-      |  "name": "LongList",
-      |  "fields" : [
-      |    {"name": "value", "type": "long"},
-      |    {"name": "map", "type": {"type": "map", "values": "LongList"}}
-      |  ]
-      |}
-    """.stripMargin)
+      {
+        "type": "record",
+        "name": "LongList",
+        "fields" : [
+          {"name": "value", "type": "long"},
+          {"name": "map", "type": {"type": "map", "values": "LongList"}}
+        ]
+      }
+    """)
   }
 
   test("log a warning of ignoreExtension deprecation") {
@@ -1926,15 +1926,15 @@ abstract class AvroSuite
           // scalastyle:off line.size.limit
           Map("avroSchema" ->
             s"""
-               |  {
-               |    "namespace": "logical",
-               |    "type": "record",
-               |    "name": "test",
-               |    "fields": [
-               |      {"name": "dt", "type": ["null", {"type": "long","logicalType": "timestamp-millis"}], "default": null}
-               |    ]
-               |  }
-               |""".stripMargin))
+                 {
+                   "namespace": "logical",
+                   "type": "record",
+                   "name": "test",
+                   "fields": [
+                     {"name": "dt", "type": ["null", {"type": "long","logicalType": "timestamp-millis"}], "default": null}
+                   ]
+                 }
+               """))
         // scalastyle:on line.size.limit
         save(
           Seq("1001-01-01 01:02:03.123456"),
@@ -1993,13 +1993,13 @@ abstract class AvroSuite
           val df = Seq(dataStr).toDF("str").select($"str".cast("timestamp").as("dt"))
           val avroSchema =
             s"""
-              |{
-              |  "type" : "record",
-              |  "name" : "test_schema",
-              |  "fields" : [
-              |    {"name": "dt", "type": {"type": "long", "logicalType": "$dt"}}
-              |  ]
-              |}""".stripMargin
+              {
+                "type" : "record",
+                "name" : "test_schema",
+                "fields" : [
+                  {"name": "dt", "type": {"type": "long", "logicalType": "$dt"}}
+                ]
+              }"""
 
           // By default we should fail to write ancient datetime values.
           val e = intercept[SparkException] {
@@ -2102,14 +2102,14 @@ abstract class AvroSuite
           """{"type": "long","logicalType": "timestamp-millis"}""",
           """"long"""").foreach { tsType =>
           val timestampSchema = s"""
-            |{
-            |  "namespace": "logical",
-            |  "type": "record",
-            |  "name": "test",
-            |  "fields": [
-            |    {"name": "ts", "type": $tsType}
-            |  ]
-            |}""".stripMargin
+            {
+              "namespace": "logical",
+              "type": "record",
+              "name": "test",
+              "fields": [
+                {"name": "ts", "type": $tsType}
+              ]
+            }"""
           withTempPath { dir =>
             val path = dir.getAbsolutePath
             withSQLConf(SQLConf.AVRO_REBASE_MODE_IN_WRITE.key -> LEGACY.toString) {
@@ -2248,13 +2248,13 @@ abstract class AvroSuite
             .select($"str".cast("timestamp").as("dt"))
           val avroSchema =
             s"""
-              |{
-              |  "type" : "record",
-              |  "name" : "test_schema",
-              |  "fields" : [
-              |    {"name": "dt", "type": {"type": "long", "logicalType": "$dt"}}
-              |  ]
-              |}""".stripMargin
+              {
+                "type" : "record",
+                "name" : "test_schema",
+                "fields" : [
+                  {"name": "dt", "type": {"type": "long", "logicalType": "$dt"}}
+                ]
+              }"""
 
           val e = intercept[SparkException] {
             df.write.format("avro").option("avroSchema", avroSchema).save(dir.getCanonicalPath)
@@ -2311,10 +2311,10 @@ abstract class AvroSuite
         withTempDir { dir =>
           spark.sql(
             s"""
-               |CREATE TABLE test_ddl USING AVRO
-               |LOCATION '${dir}'
-               |AS SELECT ID, IF(ID=1,ID,0) AS A, ABS(ID) AS B
-               |FROM v""".stripMargin)
+               CREATE TABLE test_ddl USING AVRO
+               LOCATION '${dir}'
+               AS SELECT ID, IF(ID=1,ID,0) AS A, ABS(ID) AS B
+               FROM v""")
           val expectedSchema = StructType(Seq(StructField("ID", LongType, true),
             StructField("A", LongType, true), StructField("B", LongType, true)))
           assert(spark.table("test_ddl").schema == expectedSchema)
@@ -2343,9 +2343,9 @@ abstract class AvroSuite
     withTempPath { file =>
       val df = spark.sql(
         """SELECT
-          |  named_struct('interval', interval '1-2' year to month) a,
-          |  array(interval '1 2:3' day to minute) b,
-          |  map('key', interval '10' year) c""".stripMargin)
+            named_struct('interval', interval '1-2' year to month) a,
+            array(interval '1 2:3' day to minute) b,
+            map('key', interval '10' year) c""")
       df.write.format("avro").save(file.getCanonicalPath)
       val df2 = spark.read.format("avro").load(file.getCanonicalPath)
       checkAnswer(df2, df.collect().toSeq)

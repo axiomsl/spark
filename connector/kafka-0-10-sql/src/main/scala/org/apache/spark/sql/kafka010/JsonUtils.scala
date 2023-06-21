@@ -87,7 +87,7 @@ private object JsonUtils {
       case NonFatal(x) =>
         throw new IllegalArgumentException(
           s"""Expected e.g. {"topicA": {"0": 123456789, "1": 123456789},
-             |"topicB": {"0": 123456789, "1": 123456789}}, got $str""".stripMargin)
+             "topicB": {"0": 123456789, "1": 123456789}}, got $str""")
     }
   }
 

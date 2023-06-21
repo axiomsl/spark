@@ -72,15 +72,15 @@ object GenerateMutableProjection extends CodeGenerator[Seq[Expression], MutableP
         val (code, isNull) = if (e.nullable) {
           val isNull = ctx.addMutableState(CodeGenerator.JAVA_BOOLEAN, "isNull")
           (s"""
-              |${ev.code}
-              |$isNull = ${ev.isNull};
-              |$value = ${ev.value};
-            """.stripMargin, JavaCode.isNullGlobal(isNull))
+              ${ev.code}
+              $isNull = ${ev.isNull};
+              $value = ${ev.value};
+            """, JavaCode.isNullGlobal(isNull))
         } else {
           (s"""
-              |${ev.code}
-              |$value = ${ev.value};
-            """.stripMargin, FalseLiteral)
+              ${ev.code}
+              $value = ${ev.value};
+            """, FalseLiteral)
         }
         val update = CodeGenerator.updateColumn(
           "mutableRow",
@@ -98,18 +98,18 @@ object GenerateMutableProjection extends CodeGenerator[Seq[Expression], MutableP
     val allUpdates = ctx.splitExpressionsWithCurrentInputs(projectionCodes.map(_._2))
 
     val codeBody = s"""
-      public java.lang.Object generate(Object[] references) {
-        return new SpecificMutableProjection(references);
+      public java.lang.Object generate(Object[] refs) {
+        return new SpecificMutableProjection(refs);
       }
 
       class SpecificMutableProjection extends ${classOf[BaseMutableProjection].getName} {
 
-        private Object[] references;
+        private Object[] refs;
         private InternalRow mutableRow;
         ${ctx.declareMutableStates()}
 
-        public SpecificMutableProjection(Object[] references) {
-          this.references = references;
+        public SpecificMutableProjection(Object[] refs) {
+          this.refs = refs;
           mutableRow = new $genericMutableRowType(${expressions.size});
           ${ctx.initMutableStates()}
         }

@@ -53,10 +53,10 @@ case class BoundReference(ordinal: Int, dataType: DataType, nullable: Boolean)
       if (nullable) {
         ev.copy(code =
           code"""
-             |boolean ${ev.isNull} = ${ctx.INPUT_ROW}.isNullAt($ordinal);
-             |$javaType ${ev.value} = ${ev.isNull} ?
-             |  ${CodeGenerator.defaultValue(dataType)} : ($value);
-           """.stripMargin)
+             boolean ${ev.isNull} = ${ctx.INPUT_ROW}.isNullAt($ordinal);
+             $javaType ${ev.value} = ${ev.isNull} ?
+               ${CodeGenerator.defaultValue(dataType)} : ($value);
+           """)
       } else {
         ev.copy(code = code"$javaType ${ev.value} = $value;", isNull = FalseLiteral)
       }

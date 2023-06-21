@@ -413,7 +413,7 @@ private[spark] class ExecutorAllocationManager(
       updates: Map[Int, ExecutorAllocationManager.TargetNumUpdates],
       now: Long): Int = {
     // Only call cluster manager if target has changed.
-    if (updates.size > 0) {
+    if (updates.nonEmpty) {
       val requestAcknowledged = try {
         logDebug("requesting updates: " + updates)
         testing ||
@@ -700,6 +700,11 @@ private[spark] class ExecutorAllocationManager(
           (numTasksPending, hostToLocalTaskCountPerStage.toMap, profId))
         // Update the executor placement hints
         updateExecutorPlacementHints()
+
+        logInfo(
+          s"numTasksPending: [$numTasksPending] " +
+            s"after stageSubmitted: [${stageSubmitted.stageInfo.stageId}]"
+        )
 
         if (!numExecutorsTargetPerResourceProfileId.contains(profId)) {
           numExecutorsTargetPerResourceProfileId.put(profId, initialNumExecutors)

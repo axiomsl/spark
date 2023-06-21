@@ -210,7 +210,7 @@ private[sql] class JSONOptionsInRead(
     val isDenied = JSONOptionsInRead.denyList.contains(Charset.forName(enc))
     require(multiLine || !isDenied,
       s"""The $enc encoding must not be included in the denyList when multiLine is disabled:
-         |denylist: ${JSONOptionsInRead.denyList.mkString(", ")}""".stripMargin)
+         denylist: ${JSONOptionsInRead.denyList.mkString(", ")}""")
 
     val isLineSepRequired =
         multiLine || Charset.forName(enc) == StandardCharsets.UTF_8 || lineSeparator.nonEmpty

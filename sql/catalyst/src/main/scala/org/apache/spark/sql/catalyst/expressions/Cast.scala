@@ -1394,39 +1394,39 @@ case class Cast(
       buffer: ExprValue,
       ctx: CodegenContext): Block = {
     val elementToStringCode = castToStringCode(et, ctx)
-    val funcName = ctx.freshName("elementToString")
-    val element = JavaCode.variable("element", et)
-    val elementStr = JavaCode.variable("elementStr", StringType)
+    val funcName = ctx.freshName("elm2Str")
+    val element = JavaCode.variable("elm", et)
+    val elementStr = JavaCode.variable("elmStr", StringType)
     val elementToStringFunc = inline"${ctx.addNewFunction(funcName,
       s"""
-         |private UTF8String $funcName(${CodeGenerator.javaType(et)} $element) {
-         |  UTF8String $elementStr = null;
-         |  ${elementToStringCode(element, elementStr, null /* resultIsNull won't be used */)}
-         |  return elementStr;
-         |}
-       """.stripMargin)}"
+         private UTF8String $funcName(${CodeGenerator.javaType(et)} $element) {
+           UTF8String $elementStr = null;
+           ${elementToStringCode(element, elementStr, null /* resultIsNull won't be used */)}
+           return elmStr;
+         }
+       """)}"
 
     val loopIndex = ctx.freshVariable("loopIndex", IntegerType)
     code"""
-       |$buffer.append("[");
-       |if ($array.numElements() > 0) {
-       |  if ($array.isNullAt(0)) {
-       |    ${appendIfNotLegacyCastToStr(buffer, "null")}
-       |  } else {
-       |    $buffer.append($elementToStringFunc(${CodeGenerator.getValue(array, et, "0")}));
-       |  }
-       |  for (int $loopIndex = 1; $loopIndex < $array.numElements(); $loopIndex++) {
-       |    $buffer.append(",");
-       |    if ($array.isNullAt($loopIndex)) {
-       |      ${appendIfNotLegacyCastToStr(buffer, " null")}
-       |    } else {
-       |      $buffer.append(" ");
-       |      $buffer.append($elementToStringFunc(${CodeGenerator.getValue(array, et, loopIndex)}));
-       |    }
-       |  }
-       |}
-       |$buffer.append("]");
-     """.stripMargin
+       $buffer.append("[");
+       if ($array.numElements() > 0) {
+         if ($array.isNullAt(0)) {
+           ${appendIfNotLegacyCastToStr(buffer, "null")}
+         } else {
+           $buffer.append($elementToStringFunc(${CodeGenerator.getValue(array, et, "0")}));
+         }
+         for (int $loopIndex = 1; $loopIndex < $array.numElements(); $loopIndex++) {
+           $buffer.append(",");
+           if ($array.isNullAt($loopIndex)) {
+             ${appendIfNotLegacyCastToStr(buffer, " null")}
+           } else {
+             $buffer.append(" ");
+             $buffer.append($elementToStringFunc(${CodeGenerator.getValue(array, et, loopIndex)}));
+           }
+         }
+       }
+       $buffer.append("]");
+     """
   }
 
   private def writeMapToStringBuilder(
@@ -1443,12 +1443,12 @@ case class Cast(
       val dataStr = JavaCode.variable("dataStr", StringType)
       val functionCall = ctx.addNewFunction(funcName,
         s"""
-           |private UTF8String $funcName(${CodeGenerator.javaType(dataType)} $data) {
-           |  UTF8String $dataStr = null;
-           |  ${dataToStringCode(data, dataStr, null /* resultIsNull won't be used */)}
-           |  return dataStr;
-           |}
-         """.stripMargin)
+           private UTF8String $funcName(${CodeGenerator.javaType(dataType)} $data) {
+             UTF8String $dataStr = null;
+             ${dataToStringCode(data, dataStr, null /* resultIsNull won't be used */)}
+             return dataStr;
+           }
+         """)
       inline"$functionCall"
     }
 
@@ -1463,30 +1463,30 @@ case class Cast(
     val getMapKeyArray = CodeGenerator.getValue(mapKeyArray, kt, loopIndex)
     val getMapValueArray = CodeGenerator.getValue(mapValueArray, vt, loopIndex)
     code"""
-       |$buffer.append("$leftBracket");
-       |if ($map.numElements() > 0) {
-       |  $buffer.append($keyToStringFunc($getMapFirstKey));
-       |  $buffer.append(" ->");
-       |  if ($map.valueArray().isNullAt(0)) {
-       |    ${appendIfNotLegacyCastToStr(buffer, " null")}
-       |  } else {
-       |    $buffer.append(" ");
-       |    $buffer.append($valueToStringFunc($getMapFirstValue));
-       |  }
-       |  for (int $loopIndex = 1; $loopIndex < $map.numElements(); $loopIndex++) {
-       |    $buffer.append(", ");
-       |    $buffer.append($keyToStringFunc($getMapKeyArray));
-       |    $buffer.append(" ->");
-       |    if ($map.valueArray().isNullAt($loopIndex)) {
-       |      ${appendIfNotLegacyCastToStr(buffer, " null")}
-       |    } else {
-       |      $buffer.append(" ");
-       |      $buffer.append($valueToStringFunc($getMapValueArray));
-       |    }
-       |  }
-       |}
-       |$buffer.append("$rightBracket");
-     """.stripMargin
+       $buffer.append("$leftBracket");
+       if ($map.numElements() > 0) {
+         $buffer.append($keyToStringFunc($getMapFirstKey));
+         $buffer.append(" ->");
+         if ($map.valueArray().isNullAt(0)) {
+           ${appendIfNotLegacyCastToStr(buffer, " null")}
+         } else {
+           $buffer.append(" ");
+           $buffer.append($valueToStringFunc($getMapFirstValue));
+         }
+         for (int $loopIndex = 1; $loopIndex < $map.numElements(); $loopIndex++) {
+           $buffer.append(", ");
+           $buffer.append($keyToStringFunc($getMapKeyArray));
+           $buffer.append(" ->");
+           if ($map.valueArray().isNullAt($loopIndex)) {
+             ${appendIfNotLegacyCastToStr(buffer, " null")}
+           } else {
+             $buffer.append(" ");
+             $buffer.append($valueToStringFunc($getMapValueArray));
+           }
+         }
+       }
+       $buffer.append("$rightBracket");
+     """
   }
 
   private def writeStructToStringBuilder(
@@ -1500,19 +1500,19 @@ case class Cast(
       val fieldStr = ctx.freshVariable("fieldStr", StringType)
       val javaType = JavaCode.javaType(ft)
       code"""
-         |${if (i != 0) code"""$buffer.append(",");""" else EmptyBlock}
-         |if ($row.isNullAt($i)) {
-         |  ${appendIfNotLegacyCastToStr(buffer, if (i == 0) "null" else " null")}
-         |} else {
-         |  ${if (i != 0) code"""$buffer.append(" ");""" else EmptyBlock}
-         |
-         |  // Append $i field into the string buffer
-         |  $javaType $field = ${CodeGenerator.getValue(row, ft, s"$i")};
-         |  UTF8String $fieldStr = null;
-         |  ${fieldToStringCode(field, fieldStr, null /* resultIsNull won't be used */)}
-         |  $buffer.append($fieldStr);
-         |}
-       """.stripMargin
+         ${if (i != 0) code"""$buffer.append(",");""" else EmptyBlock}
+         if ($row.isNullAt($i)) {
+           ${appendIfNotLegacyCastToStr(buffer, if (i == 0) "null" else " null")}
+         } else {
+           ${if (i != 0) code"""$buffer.append(" ");""" else EmptyBlock}
+
+           // Append $i field into the string buffer
+           $javaType $field = ${CodeGenerator.getValue(row, ft, s"$i")};
+           UTF8String $fieldStr = null;
+           ${fieldToStringCode(field, fieldStr, null /* resultIsNull won't be used */)}
+           $buffer.append($fieldStr);
+         }
+       """
     }
 
     val writeStructCode = ctx.splitExpressions(
@@ -1522,10 +1522,10 @@ case class Cast(
         (classOf[UTF8StringBuilder].getName, buffer.code) :: Nil)
 
     code"""
-       |$buffer.append("$leftBracket");
-       |$writeStructCode
-       |$buffer.append("$rightBracket");
-     """.stripMargin
+       $buffer.append("$leftBracket");
+       $writeStructCode
+       $buffer.append("$rightBracket");
+     """
   }
 
   @scala.annotation.tailrec
@@ -1556,10 +1556,10 @@ case class Cast(
           val bufferClass = JavaCode.javaType(classOf[UTF8StringBuilder])
           val writeArrayElemCode = writeArrayToStringBuilder(et, c, buffer, ctx)
           code"""
-             |$bufferClass $buffer = new $bufferClass();
-             |$writeArrayElemCode;
-             |$evPrim = $buffer.build();
-           """.stripMargin
+             $bufferClass $buffer = new $bufferClass();
+             $writeArrayElemCode;
+             $evPrim = $buffer.build();
+           """
         }
       case MapType(kt, vt, _) =>
         (c, evPrim, evNull) => {
@@ -1567,10 +1567,10 @@ case class Cast(
           val bufferClass = JavaCode.javaType(classOf[UTF8StringBuilder])
           val writeMapElemCode = writeMapToStringBuilder(kt, vt, c, buffer, ctx)
           code"""
-             |$bufferClass $buffer = new $bufferClass();
-             |$writeMapElemCode;
-             |$evPrim = $buffer.build();
-           """.stripMargin
+             $bufferClass $buffer = new $bufferClass();
+             $writeMapElemCode;
+             $evPrim = $buffer.build();
+           """
         }
       case StructType(fields) =>
         (c, evPrim, evNull) => {
@@ -1579,11 +1579,11 @@ case class Cast(
           val bufferClass = JavaCode.javaType(classOf[UTF8StringBuilder])
           val writeStructCode = writeStructToStringBuilder(fields.map(_.dataType), row, buffer, ctx)
           code"""
-             |InternalRow $row = $c;
-             |$bufferClass $buffer = new $bufferClass();
-             |$writeStructCode
-             |$evPrim = $buffer.build();
-           """.stripMargin
+             InternalRow $row = $c;
+             $bufferClass $buffer = new $bufferClass();
+             $writeStructCode
+             $evPrim = $buffer.build();
+           """
         }
       case pudt: PythonUserDefinedType => castToStringCode(pudt.sqlType, ctx)
       case udt: UserDefinedType[_] =>
@@ -1676,26 +1676,26 @@ case class Cast(
       nullOnOverflow: Boolean): Block = {
     if (canNullSafeCast) {
       code"""
-         |$d.changePrecision(${decimalType.precision}, ${decimalType.scale});
-         |$evPrim = $d;
-       """.stripMargin
+         $d.changePrecision(${decimalType.precision}, ${decimalType.scale});
+         $evPrim = $d;
+       """
     } else {
       val errorContextCode = getContextOrNullCode(ctx, !nullOnOverflow)
       val overflowCode = if (nullOnOverflow) {
         s"$evNull = true;"
       } else {
         s"""
-           |throw QueryExecutionErrors.cannotChangeDecimalPrecisionError(
-           |  $d, ${decimalType.precision}, ${decimalType.scale}, $errorContextCode);
-         """.stripMargin
+           throw QueryExecutionErrors.cannotChangeDecimalPrecisionError(
+             $d, ${decimalType.precision}, ${decimalType.scale}, $errorContextCode);
+         """
       }
       code"""
-         |if ($d.changePrecision(${decimalType.precision}, ${decimalType.scale})) {
-         |  $evPrim = $d;
-         |} else {
-         |  $overflowCode
-         |}
-       """.stripMargin
+         if ($d.changePrecision(${decimalType.precision}, ${decimalType.scale})) {
+           $evPrim = $d;
+         } else {
+           $overflowCode
+         }
+       """
     }
   }
 
@@ -1911,7 +1911,7 @@ case class Cast(
            if(${evPrim} == null) {
              ${evNull} = true;
            }
-         """.stripMargin
+         """
 
   }
 

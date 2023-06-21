@@ -73,19 +73,19 @@ class CSVHeaderChecker(
           }
           if (nameInHeader != nameInSchema) {
             errorMessage = Some(
-              s"""|CSV header does not conform to the schema.
-                  | Header: ${columnNames.mkString(", ")}
-                  | Schema: ${fieldNames.mkString(", ")}
-                  |Expected: ${fieldNames(i)} but found: ${columnNames(i)}
-                  |$source""".stripMargin)
+              s"""CSV header does not conform to the schema.
+                   Header: ${columnNames.mkString(", ")}
+                   Schema: ${fieldNames.mkString(", ")}
+                  Expected: ${fieldNames(i)} but found: ${columnNames(i)}
+                  $source""")
           }
           i += 1
         }
       } else {
         errorMessage = Some(
-          s"""|Number of column in CSV header is not equal to number of fields in the schema:
-              | Header length: $headerLen, schema size: $schemaSize
-              |$source""".stripMargin)
+          s"""Number of column in CSV header is not equal to number of fields in the schema:
+               Header length: $headerLen, schema size: $schemaSize
+              $source""")
       }
 
       errorMessage.foreach { msg =>

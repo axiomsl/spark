@@ -453,7 +453,7 @@ case class In(value: Expression, list: Seq[Expression]) extends Predicate {
   }
 
   override def children: Seq[Expression] = value +: list
-  lazy val inSetConvertible = list.forall(_.isInstanceOf[Literal])
+  lazy val inSetConvertible: Boolean = list.forall(_.isInstanceOf[Literal])
   private lazy val ordering = TypeUtils.getInterpretedOrdering(value.dataType)
 
   override def nullable: Boolean = children.exists(_.nullable)
@@ -505,20 +505,36 @@ case class In(value: Expression, list: Seq[Expression]) extends Predicate {
     val NOT_MATCHED = 0
     // 1 means one value in the list is matched
     val MATCHED = 1
-    val tmpResult = ctx.freshName("inTmpResult")
-    val valueArg = ctx.freshName("valueArg")
+    val tmpResult = ctx.freshName("inTmpRes")
+    val valueArg = ctx.freshName("valArg")
     // All the blocks are meant to be inside a do { ... } while (false); loop.
     // The evaluation of variables can be stopped when we find a matching value.
-    val listCode = listGen.map(x =>
+    val listCode = listGen.map { x =>
+      val ifPart = x.isNull match {
+        case FalseLiteral =>
+          s"""if (${ctx.genEqual(value.dataType, valueArg, x.value)}) {
+               $tmpResult = $MATCHED; // ${ev.isNull} = false; ${ev.value} = true;
+               continue;
+             }
+            """
+        case TrueLiteral =>
+          s"""
+               $tmpResult = $HAS_NULL; // ${ev.isNull} = true;
+           """
+        case _ =>
+          s"""if (${x.isNull}) {
+               $tmpResult = $HAS_NULL; // ${ev.isNull} = true;
+             } else if (${ctx.genEqual(value.dataType, valueArg, x.value)}) {
+               $tmpResult = $MATCHED; // ${ev.isNull} = false; ${ev.value} = true;
+               continue;
+             }
+            """
+      }
       s"""
-         |${x.code}
-         |if (${x.isNull}) {
-         |  $tmpResult = $HAS_NULL; // ${ev.isNull} = true;
-         |} else if (${ctx.genEqual(value.dataType, valueArg, x.value)}) {
-         |  $tmpResult = $MATCHED; // ${ev.isNull} = false; ${ev.value} = true;
-         |  continue;
-         |}
-       """.stripMargin)
+         ${x.code}
+         $ifPart
+      """
+    }
 
     val codes = ctx.splitExpressionsWithCurrentInputs(
       expressions = listCode,
@@ -527,34 +543,34 @@ case class In(value: Expression, list: Seq[Expression]) extends Predicate {
       returnType = CodeGenerator.JAVA_BYTE,
       makeSplitFunction = body =>
         s"""
-           |do {
-           |  $body
-           |} while (false);
-           |return $tmpResult;
-         """.stripMargin,
+           do {
+             $body
+           } while (false);
+           return $tmpResult;
+         """,
       foldFunctions = _.map { funcCall =>
         s"""
-           |$tmpResult = $funcCall;
-           |if ($tmpResult == $MATCHED) {
-           |  continue;
-           |}
-         """.stripMargin
+           $tmpResult = $funcCall;
+           if ($tmpResult == $MATCHED) {
+             continue;
+           }
+         """
       }.mkString("\n"))
 
     ev.copy(code =
       code"""
-         |${valueGen.code}
-         |byte $tmpResult = $HAS_NULL;
-         |if (!${valueGen.isNull}) {
-         |  $tmpResult = $NOT_MATCHED;
-         |  $javaDataType $valueArg = ${valueGen.value};
-         |  do {
-         |    $codes
-         |  } while (false);
-         |}
-         |final boolean ${ev.isNull} = ($tmpResult == $HAS_NULL);
-         |final boolean ${ev.value} = ($tmpResult == $MATCHED);
-       """.stripMargin)
+         ${valueGen.code}
+         byte $tmpResult = $HAS_NULL;
+         if (!${valueGen.isNull}) {
+           $tmpResult = $NOT_MATCHED;
+           $javaDataType $valueArg = ${valueGen.value};
+           do {
+             $codes
+           } while (false);
+         }
+         final boolean ${ev.isNull} = ($tmpResult == $HAS_NULL);
+         final boolean ${ev.value} = ($tmpResult == $MATCHED);
+       """)
   }
 
   override def sql: String = {
@@ -651,18 +667,18 @@ case class InSet(child: Expression, hset: Set[Any]) extends UnaryExpression with
 
       if (hasNaN && isNaNCode.isDefined) {
         s"""
-           |if ($setTerm.contains($c)) {
-           |  ${ev.value} = true;
-           |} else if (${isNaNCode.get(c)}) {
-           |  ${ev.value} = true;
-           |}
-           |$setIsNull
-         """.stripMargin
+           if ($setTerm.contains($c)) {
+             ${ev.value} = true;
+           } else if (${isNaNCode.get(c)}) {
+             ${ev.value} = true;
+           }
+           $setIsNull
+         """
       } else {
         s"""
-           |${ev.value} = $setTerm.contains($c);
-           |$setIsNull
-         """.stripMargin
+           ${ev.value} = $setTerm.contains($c);
+           $setIsNull
+         """
       }
     })
   }
@@ -680,7 +696,7 @@ case class InSet(child: Expression, hset: Set[Any]) extends UnaryExpression with
           break;
        """)
 
-    val switchCode = if (caseBranches.size > 0) {
+    val switchCode = if (caseBranches.nonEmpty) {
       code"""
         switch (${valueGen.value}) {
           ${caseBranches.mkString("\n")}

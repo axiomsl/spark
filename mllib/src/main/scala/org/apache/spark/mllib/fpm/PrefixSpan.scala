@@ -302,11 +302,11 @@ object PrefixSpan extends Logging {
       if (numLocalFreqPatterns > 1000000) {
         logWarning(
           s"""
-             | Collected $numLocalFreqPatterns local frequent patterns. You may want to consider:
-             |   1. increase minSupport,
-             |   2. decrease maxPatternLength,
-             |   3. increase maxLocalProjDBSize.
-           """.stripMargin)
+              Collected $numLocalFreqPatterns local frequent patterns. You may want to consider:
+                1. increase minSupport,
+                2. decrease maxPatternLength,
+                3. increase maxLocalProjDBSize.
+           """)
       }
       logInfo(s"number of small prefixes: ${smallPrefixes.size}")
       logInfo(s"number of large prefixes: ${largePrefixes.size}")

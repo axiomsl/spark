@@ -238,16 +238,16 @@ private[spark] class PythonWorkerFactory(pythonExec: String, envVars: Map[String
         // is arbitrary data but is also coincidentally within range
         if (daemonPort < 1 || daemonPort > 0xffff) {
           val exceptionMessage = f"""
-            |Bad data in $daemonModule's standard output. Invalid port number:
-            |  $daemonPort (0x$daemonPort%08x)
-            |Python command to execute the daemon was:
-            |  ${command.asScala.mkString(" ")}
-            |Check that you don't have any unexpected modules or libraries in
-            |your PYTHONPATH:
-            |  $pythonPath
-            |Also, check if you have a sitecustomize.py module in your python path,
-            |or in your python installation, that is printing to standard output"""
-          throw new SparkException(exceptionMessage.stripMargin)
+            Bad data in $daemonModule's standard output. Invalid port number:
+              $daemonPort (0x$daemonPort%08x)
+            Python command to execute the daemon was:
+              ${command.asScala.mkString(" ")}
+            Check that you don't have any unexpected modules or libraries in
+            your PYTHONPATH:
+              $pythonPath
+            Also, check if you have a sitecustomize.py module in your python path,
+            or in your python installation, that is printing to standard output"""
+          throw new SparkException(exceptionMessage)
         }
 
         // Redirect daemon stdout and stderr
@@ -265,14 +265,14 @@ private[spark] class PythonWorkerFactory(pythonExec: String, envVars: Map[String
           if (stderr != "") {
             val formattedStderr = stderr.replace("\n", "\n  ")
             val errorMessage = s"""
-              |Error from python worker:
-              |  $formattedStderr
-              |PYTHONPATH was:
-              |  $pythonPath
-              |$e"""
+              Error from python worker:
+                $formattedStderr
+              PYTHONPATH was:
+                $pythonPath
+              $e"""
 
             // Append error message from python daemon, but keep original stack trace
-            val wrappedException = new SparkException(errorMessage.stripMargin)
+            val wrappedException = new SparkException(errorMessage)
             wrappedException.setStackTrace(e.getStackTrace)
             throw wrappedException
           } else {

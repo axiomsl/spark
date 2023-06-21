@@ -209,8 +209,8 @@ trait SerializerSupport {
     // Code to initialize the serializer
     ctx.addImmutableStateIfNotExists(serializerInstanceClass, serializerInstance, v =>
       s"""
-         |$v = ($serializerInstanceClass) $newSerializerMethod($kryo);
-       """.stripMargin)
+         $v = ($serializerInstanceClass) $newSerializerMethod($kryo);
+       """)
     serializerInstance
   }
 }
@@ -454,19 +454,19 @@ case class Invoke(
 
     val mainEvalCode =
       code"""
-         |$argCode
-         |${ev.isNull} = $resultIsNull;
-         |if (!${ev.isNull}) {
-         |  $evaluate
-         |}
-         |""".stripMargin
+         $argCode
+         ${ev.isNull} = $resultIsNull;
+         if (!${ev.isNull}) {
+           $evaluate
+         }
+         """
 
     val evalWithNullCheck = if (targetObject.nullable) {
       code"""
-         |if (!${obj.isNull}) {
-         |  $mainEvalCode
-         |}
-         |""".stripMargin
+         if (!${obj.isNull}) {
+           $mainEvalCode
+         }
+         """
     } else {
       mainEvalCode
     }
@@ -989,7 +989,7 @@ case class MapObjects private(
     // In RowEncoder, we use `Object` to represent Array or Seq, so we need to determine the type
     // of input collection at runtime for this case.
     val seq = ctx.freshName("seq")
-    val array = ctx.freshName("array")
+    val array = ctx.freshName("arr")
     val determineCollectionType = inputData.dataType match {
       case ObjectType(cls) if cls == classOf[Object] =>
         val seqClass = classOf[scala.collection.Seq[_]].getName
@@ -1484,7 +1484,7 @@ case class ExternalMapToCatalyst private(
     val genKeyConverter = keyConverter.genCode(ctx)
     val genValueConverter = valueConverter.genCode(ctx)
     val length = ctx.freshName("length")
-    val index = ctx.freshName("index")
+    val index = ctx.freshName("idx")
     val convertedKeys = ctx.freshName("convertedKeys")
     val convertedValues = ctx.freshName("convertedValues")
     val entry = ctx.freshName("entry")
@@ -1616,13 +1616,13 @@ case class CreateExternalRow(children: Seq[Expression], schema: StructType)
     val childrenCodes = children.zipWithIndex.map { case (e, i) =>
       val eval = e.genCode(ctx)
       s"""
-         |${eval.code}
-         |if (${eval.isNull}) {
-         |  $values[$i] = null;
-         |} else {
-         |  $values[$i] = ${eval.value};
-         |}
-       """.stripMargin
+         ${eval.code}
+         if (${eval.isNull}) {
+           $values[$i] = null;
+         } else {
+           $values[$i] = ${eval.value};
+         }
+       """
     }
 
     val childrenCode = ctx.splitExpressionsWithCurrentInputs(
@@ -1633,10 +1633,10 @@ case class CreateExternalRow(children: Seq[Expression], schema: StructType)
 
     val code =
       code"""
-         |Object[] $values = new Object[${children.size}];
-         |$childrenCode
-         |final ${classOf[Row].getName} ${ev.value} = new $rowClass($values, $schemaField);
-       """.stripMargin
+         Object[] $values = new Object[${children.size}];
+         $childrenCode
+         final ${classOf[Row].getName} ${ev.value} = new $rowClass($values, $schemaField);
+       """
     ev.copy(code = code, isNull = FalseLiteral)
   }
 
@@ -1770,11 +1770,11 @@ case class InitializeJavaBean(beanInstance: Expression, setters: Map[String, Exp
       case (setterMethod, fieldValue) =>
         val fieldGen = fieldValue.genCode(ctx)
         s"""
-           |${fieldGen.code}
-           |if (!${fieldGen.isNull}) {
-           |  $javaBeanInstance.$setterMethod(${fieldGen.value});
-           |}
-         """.stripMargin
+           ${fieldGen.code}
+           if (!${fieldGen.isNull}) {
+             $javaBeanInstance.$setterMethod(${fieldGen.value});
+           }
+         """
     }
     val initializeCode = ctx.splitExpressionsWithCurrentInputs(
       expressions = initialize.toSeq,
@@ -1783,11 +1783,11 @@ case class InitializeJavaBean(beanInstance: Expression, setters: Map[String, Exp
 
     val code = instanceGen.code +
       code"""
-         |$beanInstanceJavaType $javaBeanInstance = ${instanceGen.value};
-         |if (!${instanceGen.isNull}) {
-         |  $initializeCode
-         |}
-       """.stripMargin
+         $beanInstanceJavaType $javaBeanInstance = ${instanceGen.value};
+         if (!${instanceGen.isNull}) {
+           $initializeCode
+         }
+       """
     ev.copy(code = code, isNull = instanceGen.isNull, value = instanceGen.value)
   }
 

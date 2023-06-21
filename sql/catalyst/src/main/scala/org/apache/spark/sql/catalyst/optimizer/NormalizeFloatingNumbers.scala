@@ -187,26 +187,26 @@ case class NormalizeNaNAndZero(child: Expression) extends UnaryExpression with E
     val codeToNormalize = child.dataType match {
       case FloatType => (f: String) => {
         s"""
-           |if (Float.isNaN($f)) {
-           |  ${ev.value} = Float.NaN;
-           |} else if ($f == -0.0f) {
-           |  ${ev.value} = 0.0f;
-           |} else {
-           |  ${ev.value} = $f;
-           |}
-         """.stripMargin
+           if (Float.isNaN($f)) {
+             ${ev.value} = Float.NaN;
+           } else if ($f == -0.0f) {
+             ${ev.value} = 0.0f;
+           } else {
+             ${ev.value} = $f;
+           }
+         """
       }
 
       case DoubleType => (d: String) => {
         s"""
-           |if (Double.isNaN($d)) {
-           |  ${ev.value} = Double.NaN;
-           |} else if ($d == -0.0d) {
-           |  ${ev.value} = 0.0d;
-           |} else {
-           |  ${ev.value} = $d;
-           |}
-         """.stripMargin
+           if (Double.isNaN($d)) {
+             ${ev.value} = Double.NaN;
+           } else if ($d == -0.0d) {
+             ${ev.value} = 0.0d;
+           } else {
+             ${ev.value} = $d;
+           }
+         """
       }
     }
 

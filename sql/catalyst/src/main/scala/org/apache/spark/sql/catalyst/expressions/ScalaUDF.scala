@@ -1131,18 +1131,18 @@ case class ScalaUDF(
         val initArg = if (primitive) {
           val convertedTerm = ctx.freshName("conv")
           s"""
-             |${CodeGenerator.boxedType(dt)} $convertedTerm = ${eval.value};
-             |Object $argTerm = ${eval.isNull} ? null : $convertedTerm;
-           """.stripMargin
+             ${CodeGenerator.boxedType(dt)} $convertedTerm = ${eval.value};
+             Object $argTerm = ${eval.isNull} ? null : $convertedTerm;
+           """
         } else if (useEncoders(i)) {
           s"""
-             |Object $argTerm = null;
-             |if (${eval.isNull}) {
-             |  $argTerm = $convertersTerm[$i].apply(null);
-             |} else {
-             |  $argTerm = $convertersTerm[$i].apply(${eval.value});
-             |}
-          """.stripMargin
+             Object $argTerm = null;
+             if (${eval.isNull}) {
+               $argTerm = $convertersTerm[$i].apply(null);
+             } else {
+               $argTerm = $convertersTerm[$i].apply(${eval.value});
+             }
+          """
         } else {
           s"Object $argTerm = ${eval.isNull} ? null : $convertersTerm[$i].apply(${eval.value});"
         }
@@ -1163,27 +1163,27 @@ case class ScalaUDF(
     }
     val callFunc =
       s"""
-         |$boxedType $resultTerm = null;
-         |try {
-         |  $funcInvocation;
-         |} catch (Throwable e) {
-         |  throw QueryExecutionErrors.failedExecuteUserDefinedFunctionError(
-         |    "$funcCls", "$inputTypesString", "$outputType", e);
-         |}
-       """.stripMargin
+         $boxedType $resultTerm = null;
+         try {
+           $funcInvocation;
+         } catch (Throwable e) {
+           throw QueryExecutionErrors.failedExecuteUserDefinedFunctionError(
+             "$funcCls", "$inputTypesString", "$outputType", e);
+         }
+       """
 
     ev.copy(code =
       code"""
-         |$evalCode
-         |${initArgs.mkString("\n")}
-         |$callFunc
-         |
-         |boolean ${ev.isNull} = $resultTerm == null;
-         |${CodeGenerator.javaType(dataType)} ${ev.value} = ${CodeGenerator.defaultValue(dataType)};
-         |if (!${ev.isNull}) {
-         |  ${ev.value} = $resultTerm;
-         |}
-       """.stripMargin)
+         $evalCode
+         ${initArgs.mkString("\n")}
+         $callFunc
+
+         boolean ${ev.isNull} = $resultTerm == null;
+         ${CodeGenerator.javaType(dataType)} ${ev.value} = ${CodeGenerator.defaultValue(dataType)};
+         if (!${ev.isNull}) {
+           ${ev.value} = $resultTerm;
+         }
+       """)
   }
 
   private[this] val resultConverter = catalystConverter

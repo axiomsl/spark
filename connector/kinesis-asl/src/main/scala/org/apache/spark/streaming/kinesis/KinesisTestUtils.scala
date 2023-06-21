@@ -221,14 +221,14 @@ private[kinesis] object KinesisTestUtils {
       // Print this so that they are easily visible on the console and not hidden in the log4j logs.
       println(
         s"""
-          |Kinesis tests that actually send data has been enabled by setting the environment
-          |variable $envVarNameForEnablingTests to 1. This will create Kinesis Streams and
-          |DynamoDB tables in AWS. Please be aware that this may incur some AWS costs.
-          |By default, the tests use the endpoint URL $defaultEndpointUrl to create Kinesis streams.
-          |To change this endpoint URL to a different region, you can set the environment variable
-          |$endVarNameForEndpoint to the desired endpoint URL
-          |(e.g. $endVarNameForEndpoint="https://kinesis.us-west-2.amazonaws.com").
-        """.stripMargin)
+          Kinesis tests that actually send data has been enabled by setting the environment
+          variable $envVarNameForEnablingTests to 1. This will create Kinesis Streams and
+          DynamoDB tables in AWS. Please be aware that this may incur some AWS costs.
+          By default, the tests use the endpoint URL $defaultEndpointUrl to create Kinesis streams.
+          To change this endpoint URL to a different region, you can set the environment variable
+          $endVarNameForEndpoint to the desired endpoint URL
+          (e.g. $endVarNameForEndpoint="https://kinesis.us-west-2.amazonaws.com").
+        """)
       // scalastyle:on println
     }
     isEnvSet
@@ -255,11 +255,11 @@ private[kinesis] object KinesisTestUtils {
       case Failure(e) =>
         throw new Exception(
           s"""
-             |Kinesis tests enabled using environment variable $envVarNameForEnablingTests
-             |but could not find AWS credentials. Please follow instructions in AWS documentation
-             |to set the credentials in your system such that the DefaultAWSCredentialsProviderChain
-             |can find the credentials.
-           """.stripMargin)
+             Kinesis tests enabled using environment variable $envVarNameForEnablingTests
+             but could not find AWS credentials. Please follow instructions in AWS documentation
+             to set the credentials in your system such that the DefaultAWSCredentialsProviderChain
+             can find the credentials.
+           """)
     }
   }
 }

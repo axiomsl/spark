@@ -494,9 +494,9 @@ private[deploy] class SparkSubmitArguments(args: Seq[String], env: Map[String, S
     }
     val command = sys.env.getOrElse("_SPARK_CMD_USAGE",
       """Usage: spark-submit [options] <app jar | python file | R file> [app arguments]
-        |Usage: spark-submit --kill [submission ID] --master [spark://...]
-        |Usage: spark-submit --status [submission ID] --master [spark://...]
-        |Usage: spark-submit run-example [options] example-class [example args]""".stripMargin)
+        Usage: spark-submit --kill [submission ID] --master [spark://...]
+        Usage: spark-submit --status [submission ID] --master [spark://...]
+        Usage: spark-submit run-example [options] example-class [example args]""")
     logInfo(command)
 
     val mem_mb = Utils.DEFAULT_DRIVER_MEM_MB

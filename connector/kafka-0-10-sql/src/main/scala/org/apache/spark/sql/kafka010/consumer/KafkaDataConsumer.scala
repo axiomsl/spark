@@ -414,10 +414,10 @@ private[kafka010] class KafkaDataConsumer(
       //   offset   untilOffset   earliestOffset   latestOffset
       val warningMessage =
       s"""
-         |The current available offset range is $range.
-         | Offset $offset is out of range, and records in [$offset, $untilOffset) will be
-         | skipped ${additionalMessage(topicPartition, groupId, failOnDataLoss = false)}
-        """.stripMargin
+         The current available offset range is $range.
+          Offset $offset is out of range, and records in [$offset, $untilOffset) will be
+          skipped ${additionalMessage(topicPartition, groupId, failOnDataLoss = false)}
+        """
       logWarning(warningMessage)
       UNKNOWN_OFFSET
     } else if (offset >= range.earliest) {
@@ -439,10 +439,10 @@ private[kafka010] class KafkaDataConsumer(
       //   offset   earliestOffset   min(untilOffset,latestOffset)   max(untilOffset, latestOffset)
       val warningMessage =
       s"""
-         |The current available offset range is $range.
-         | Offset ${offset} is out of range, and records in [$offset, ${range.earliest}) will be
-         | skipped ${additionalMessage(topicPartition, groupId, failOnDataLoss = false)}
-        """.stripMargin
+         The current available offset range is $range.
+          Offset ${offset} is out of range, and records in [$offset, ${range.earliest}) will be
+          skipped ${additionalMessage(topicPartition, groupId, failOnDataLoss = false)}
+        """
       logWarning(warningMessage)
       range.earliest
     }

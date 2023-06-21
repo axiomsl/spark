@@ -199,12 +199,12 @@ private[spark] object TestUtils {
       "implements " + (implementsClasses :+ "java.io.Serializable").mkString(", ")
     val sourceFile = new JavaSourceFromString(className,
       s"""
-         |public class $className $extendsText $implementsText {
-         |  @Override public String toString() { return "$toStringValue"; }
-         |
-         |  $extraCodeBody
-         |}
-        """.stripMargin)
+         public class $className $extendsText $implementsText {
+           @Override public String toString() { return "$toStringValue"; }
+
+           $extraCodeBody
+         }
+        """)
     createCompiledClass(className, destDir, sourceFile, classpathUrls)
   }
 

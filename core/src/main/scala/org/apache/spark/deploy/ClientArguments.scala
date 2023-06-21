@@ -105,16 +105,16 @@ private[deploy] class ClientArguments(args: Array[String]) {
     //       separately similar to in the YARN client.
     val usage =
      s"""
-      |Usage: DriverClient [options] launch <active-master> <jar-url> <main-class> [driver options]
-      |Usage: DriverClient kill <active-master> <driver-id>
-      |
-      |Options:
-      |   -c CORES, --cores CORES        Number of cores to request (default: $DEFAULT_CORES)
-      |   -m MEMORY, --memory MEMORY     Megabytes of memory to request (default: $DEFAULT_MEMORY)
-      |   -s, --supervise                Whether to restart the driver on failure
-      |                                  (default: $DEFAULT_SUPERVISE)
-      |   -v, --verbose                  Print more debugging output
-     """.stripMargin
+      Usage: DriverClient [options] launch <active-master> <jar-url> <main-class> [driver options]
+      Usage: DriverClient kill <active-master> <driver-id>
+
+      Options:
+         -c CORES, --cores CORES        Number of cores to request (default: $DEFAULT_CORES)
+         -m MEMORY, --memory MEMORY     Megabytes of memory to request (default: $DEFAULT_MEMORY)
+         -s, --supervise                Whether to restart the driver on failure
+                                        (default: $DEFAULT_SUPERVISE)
+         -v, --verbose                  Print more debugging output
+     """
     // scalastyle:off println
     System.err.println(usage)
     // scalastyle:on println

@@ -3770,8 +3770,8 @@ class AstBuilder extends SqlBaseParserBaseVisitor[AnyRef] with SQLConfHelper wit
           .mkString(", ")
         operationNotAllowed(
           s"""PARTITION BY: Cannot mix partition expressions and partition columns:
-             |Expressions: $references
-             |Columns: $columns""".stripMargin, ctx)
+             Expressions: $references
+             Columns: $columns""", ctx)
 
       }
       partTransforms

@@ -786,7 +786,7 @@ abstract class TreeNode[BaseType <: TreeNode[BaseType]] extends Product with Tre
     }
 
     // Skip no-arg constructors that are just there for kryo.
-    val ctors = allCtors.filter(allowEmptyArgs || _.getParameterTypes.size != 0)
+    val ctors = allCtors.filter(allowEmptyArgs || _.getParameterTypes.length != 0)
     if (ctors.isEmpty) {
       throw QueryExecutionErrors.constructorNotFoundError(nodeName)
     }
@@ -818,13 +818,13 @@ abstract class TreeNode[BaseType <: TreeNode[BaseType]] extends Product with Tre
       case e: java.lang.IllegalArgumentException =>
         throw new IllegalStateException(
           s"""
-             |Failed to copy node.
-             |Is otherCopyArgs specified correctly for $nodeName.
-             |Exception message: ${e.getMessage}
-             |ctor: $defaultCtor?
-             |types: ${newArgs.map(_.getClass).mkString(", ")}
-             |args: ${newArgs.mkString(", ")}
-           """.stripMargin)
+             Failed to copy node.
+             Is otherCopyArgs specified correctly for $nodeName.
+             Exception message: ${e.getMessage}
+             ctor: $defaultCtor?
+             types: ${newArgs.map(_.getClass).mkString(", ")}
+             args: ${newArgs.mkString(", ")}
+           """)
     }
   }
 
@@ -1026,8 +1026,8 @@ abstract class TreeNode[BaseType <: TreeNode[BaseType]] extends Product with Tre
     } else {
       number.i -= 1
       // Note that this traversal order must be the same as numberedTreeString.
-      innerChildren.map(_.getNodeNumbered(number)).find(_ != None).getOrElse {
-        children.map(_.getNodeNumbered(number)).find(_ != None).flatten
+      innerChildren.map(_.getNodeNumbered(number)).find(_.isDefined).getOrElse {
+        children.map(_.getNodeNumbered(number)).find(_.isDefined).flatten
       }
     }
   }
@@ -1177,10 +1177,10 @@ abstract class TreeNode[BaseType <: TreeNode[BaseType]] extends Product with Tre
       t.forall(_.isInstanceOf[DataType]) ||
       t.forall(_.isInstanceOf[Product]) =>
       JArray(t.map(parseToJson).toList)
-    case t: Seq[_] if t.length > 0 && t.head.isInstanceOf[String] =>
+    case t: Seq[_] if t.nonEmpty && t.head.isInstanceOf[String] =>
       JString(truncatedString(t, "[", ", ", "]", SQLConf.get.maxToStringFields))
-    case t: Seq[_] => JNull
-    case m: Map[_, _] => JNull
+    case _: Seq[_] => JNull
+    case _: Map[_, _] => JNull
     // if it's a scala object, we can simply keep the full class path.
     // TODO: currently if the class name ends with "$", we think it's a scala object, there is
     // probably a better way to check it.

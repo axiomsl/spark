@@ -111,14 +111,14 @@ class SparkContext(config: SparkConf) extends Logging {
         }
       throw new IllegalStateException(
         s"""Cannot call methods on a stopped SparkContext.
-           |This stopped SparkContext was created at:
-           |
-           |${creationSite.longForm}
-           |
-           |The currently active SparkContext was created at:
-           |
-           |$activeCreationSite
-         """.stripMargin)
+           This stopped SparkContext was created at:
+
+           ${creationSite.longForm}
+
+           The currently active SparkContext was created at:
+
+           $activeCreationSite
+         """)
     }
   }
 
@@ -384,6 +384,13 @@ class SparkContext(config: SparkConf) extends Logging {
       s"Supplied level $logLevel did not match one of:" +
         s" ${SparkContext.VALID_LOG_LEVELS.mkString(",")}")
     Utils.setLogLevel(Level.toLevel(upperCased))
+  }
+
+  def flushEventLog(): Unit = try {
+    _eventLogger.foreach(_.flush())
+  }
+  catch {
+    case e: Exception => // Do nothing
   }
 
   try {

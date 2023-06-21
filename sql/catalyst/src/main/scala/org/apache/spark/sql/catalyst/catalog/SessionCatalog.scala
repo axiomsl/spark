@@ -247,7 +247,7 @@ class SessionCatalog(
 
   private def requireDbExists(db: String): Unit = {
     if (!databaseExists(db)) {
-      throw new NoSuchDatabaseException(db)
+      throw NoSuchDatabaseException(db)
     }
   }
 
@@ -405,7 +405,8 @@ class SessionCatalog(
 
   def validateTableLocation(table: CatalogTable): Unit = {
     // SPARK-19724: the default location of a managed table should be non-existent or empty.
-    if (table.tableType == CatalogTableType.MANAGED) {
+    if (table.tableType == CatalogTableType.MANAGED &&
+      !conf.allowCreatingManagedTableUsingNonemptyLocation) {
       val tableLocation =
         new Path(table.storage.locationUri.getOrElse(defaultTablePath(table.identifier)))
       val fs = tableLocation.getFileSystem(hadoopConf)
@@ -826,27 +827,43 @@ class SessionCatalog(
   def dropTable(
       name: TableIdentifier,
       ignoreIfNotExists: Boolean,
-      purge: Boolean): Unit = synchronized {
+      purge: Boolean): Unit = {
     val qualifiedIdent = qualifyIdentifier(name)
     val db = qualifiedIdent.database.get
     val table = qualifiedIdent.table
-    if (db == globalTempViewManager.database) {
-      val viewExists = globalTempViewManager.remove(table)
-      if (!viewExists && !ignoreIfNotExists) {
-        throw new NoSuchTableException(globalTempViewManager.database, table)
-      }
-    } else {
-      if (name.database.isDefined || !tempViews.contains(table)) {
+    if (!table.startsWith("v_")) {
+      if (name.database.isDefined) {
         requireDbExists(db)
         // When ignoreIfNotExists is false, no exception is issued when the table does not exist.
         // Instead, log it as an error message.
-        if (tableExists(qualifiedIdent)) {
+        if (tableExists(TableIdentifier(table, Option(db)))) {
           externalCatalog.dropTable(db, table, ignoreIfNotExists = true, purge = purge)
         } else if (!ignoreIfNotExists) {
           throw new NoSuchTableException(db = db, table = table)
         }
-      } else {
-        tempViews.remove(table)
+      }
+    } else {
+      synchronized {
+        if (db == globalTempViewManager.database) {
+          val viewExists = globalTempViewManager.remove(table)
+          if (!viewExists && !ignoreIfNotExists) {
+            throw new NoSuchTableException(globalTempViewManager.database, table)
+          }
+        } else {
+          if (name.database.isDefined || !tempViews.contains(table)) {
+            requireDbExists(db)
+            // When ignoreIfNotExists is false,
+            // no exception is issued when the table does not exist.
+            // Instead, log it as an error message.
+            if (tableExists(TableIdentifier(table, Option(db)))) {
+              externalCatalog.dropTable(db, table, ignoreIfNotExists = true, purge = purge)
+            } else if (!ignoreIfNotExists) {
+              throw new NoSuchTableException(db = db, table = table)
+            }
+          } else {
+            tempViews.remove(table)
+          }
+        }
       }
     }
   }

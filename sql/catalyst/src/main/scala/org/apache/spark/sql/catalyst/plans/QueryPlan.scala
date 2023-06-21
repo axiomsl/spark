@@ -427,13 +427,13 @@ abstract class QueryPlan[PlanType <: QueryPlan[PlanType]]
 
     if (argumentString.nonEmpty) {
       s"""
-         |$formattedNodeName
-         |Arguments: $argumentString
-         |""".stripMargin
+         $formattedNodeName
+         Arguments: $argumentString
+         """
     } else {
       s"""
-         |$formattedNodeName
-         |""".stripMargin
+         $formattedNodeName
+         """
     }
   }
 

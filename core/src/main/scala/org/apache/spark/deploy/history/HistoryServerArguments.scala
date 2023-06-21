@@ -56,32 +56,32 @@ private[history] class HistoryServerArguments(conf: SparkConf, args: Array[Strin
     // scalastyle:off println
     System.err.println(
       """
-      |Usage: HistoryServer [options]
-      |
-      |Options:
-      |  --properties-file FILE      Path to a custom Spark properties file.
-      |                              Default is conf/spark-defaults.conf.
-      |
-      |Configuration options can be set by setting the corresponding JVM system property.
-      |History Server options are always available; additional options depend on the provider.
-      |
-      |History Server options:
-      |
-      |  spark.history.ui.port              Port where server will listen for connections
-      |                                     (default 18080)
-      |  spark.history.acls.enable          Whether to enable view acls for all applications
-      |                                     (default false)
-      |  spark.history.provider             Name of history provider class (defaults to
-      |                                     file system-based provider)
-      |  spark.history.retainedApplications Max number of application UIs to keep loaded in memory
-      |                                     (default 50)
-      |FsHistoryProvider options:
-      |
-      |  spark.history.fs.logDirectory      Directory where app logs are stored
-      |                                     (default: file:/tmp/spark-events)
-      |  spark.history.fs.update.interval   How often to reload log data from storage
-      |                                     (in seconds, default: 10)
-      |""".stripMargin)
+      Usage: HistoryServer [options]
+
+      Options:
+        --properties-file FILE      Path to a custom Spark properties file.
+                                    Default is conf/spark-defaults.conf.
+
+      Configuration options can be set by setting the corresponding JVM system property.
+      History Server options are always available; additional options depend on the provider.
+
+      History Server options:
+
+        spark.history.ui.port              Port where server will listen for connections
+                                           (default 18080)
+        spark.history.acls.enable          Whether to enable view acls for all applications
+                                           (default false)
+        spark.history.provider             Name of history provider class (defaults to
+                                           file system-based provider)
+        spark.history.retainedApplications Max number of application UIs to keep loaded in memory
+                                           (default 50)
+      FsHistoryProvider options:
+
+        spark.history.fs.logDirectory      Directory where app logs are stored
+                                           (default: file:/tmp/spark-events)
+        spark.history.fs.update.interval   How often to reload log data from storage
+                                           (in seconds, default: 10)
+      """)
     // scalastyle:on println
     System.exit(exitCode)
   }

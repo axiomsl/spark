@@ -52,6 +52,14 @@
     <url>https://issues.apache.org/jira/browse/SPARK</url>
   </issueManagement>
 
+  <distributionManagement>
+    <repository>
+      <id>il-axiomsl</id>
+      <name>AXIOM</name>
+      <url>http://il-nexus.global.axiomsl.com:8081/nexus/content/repositories/spark-releases/</url>
+    </repository>
+  </distributionManagement>
+
   <mailingLists>
     <mailingList>
       <name>Dev Mailing List</name>
@@ -1084,7 +1092,7 @@
       <dependency>
         <groupId>org.json4s</groupId>
         <artifactId>json4s-jackson_${scala.binary.version}</artifactId>
-        <version>3.7.0-M11</version>
+        <version>4.0.6</version>
         <exclusions>
           <exclusion>
             <groupId>com.fasterxml.jackson.core</groupId>

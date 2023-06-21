@@ -574,8 +574,8 @@ class JacksonParser(
       case e: CharConversionException if options.encoding.isEmpty =>
         val msg =
           """JSON parser cannot handle a character in its input.
-            |Specifying encoding as an input option explicitly might help to resolve the issue.
-            |""".stripMargin + e.getMessage
+            Specifying encoding as an input option explicitly might help to resolve the issue.
+            """ + e.getMessage
         val wrappedCharException = new CharConversionException(msg)
         wrappedCharException.initCause(e)
         throw BadRecordException(() => recordLiteral(record), () => None, wrappedCharException)

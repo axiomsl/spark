@@ -223,8 +223,8 @@ private[spark] object SchemaUtils {
           if (column.length > 1) {
             throw new AnalysisException(
               s"""Expected $columnPath to be a nested data type, but found $o. Was looking for the
-                 |index of ${UnresolvedAttribute(column).name} in a nested field
-              """.stripMargin)
+                 index of ${UnresolvedAttribute(column).name} in a nested field
+              """)
           }
           Nil
       }

@@ -89,9 +89,9 @@ case class MakeDecimal(
         ""
       }
       s"""
-         |${ev.value} = (new Decimal()).$setMethod($eval, $precision, $scale);
-         |$setNull
-         |""".stripMargin
+         ${ev.value} = (new Decimal()).$setMethod($eval, $precision, $scale);
+         $setNull
+         """
     })
   }
 
@@ -130,10 +130,10 @@ case class CheckOverflow(
     nullSafeCodeGen(ctx, ev, eval => {
       // scalastyle:off line.size.limit
       s"""
-         |${ev.value} = $eval.toPrecision(
-         |  ${dataType.precision}, ${dataType.scale}, Decimal.ROUND_HALF_UP(), $nullOnOverflow, $errorContextCode);
-         |${ev.isNull} = ${ev.value} == null;
-       """.stripMargin
+         ${ev.value} = $eval.toPrecision(
+           ${dataType.precision}, ${dataType.scale}, Decimal.ROUND_HALF_UP(), $nullOnOverflow, $errorContextCode);
+         ${ev.isNull} = ${ev.value} == null;
+       """
       // scalastyle:on line.size.limit
     })
   }
@@ -186,17 +186,17 @@ case class CheckOverflowInSum(
     }
     // scalastyle:off line.size.limit
     val code = code"""
-       |${childGen.code}
-       |boolean ${ev.isNull} = ${childGen.isNull};
-       |Decimal ${ev.value} = null;
-       |if (${childGen.isNull}) {
-       |  $nullHandling
-       |} else {
-       |  ${ev.value} = ${childGen.value}.toPrecision(
-       |    ${dataType.precision}, ${dataType.scale}, Decimal.ROUND_HALF_UP(), $nullOnOverflow, $errorContextCode);
-       |  ${ev.isNull} = ${ev.value} == null;
-       |}
-       |""".stripMargin
+      ${childGen.code}
+      boolean ${ev.isNull} = ${childGen.isNull};
+      Decimal ${ev.value} = null;
+      if (${childGen.isNull}) {
+        $nullHandling
+      } else {
+        ${ev.value} = ${childGen.value}.toPrecision(
+          ${dataType.precision}, ${dataType.scale}, Decimal.ROUND_HALF_UP(), $nullOnOverflow, $errorContextCode);
+        ${ev.isNull} = ${ev.value} == null;
+      }
+      """
     // scalastyle:on line.size.limit
 
     ev.copy(code = code)

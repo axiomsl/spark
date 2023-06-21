@@ -24,7 +24,7 @@ import org.apache.spark.sql.catalyst.expressions.{Alias, Attribute, AttributeMap
 import org.apache.spark.sql.catalyst.plans.logical._
 import org.apache.spark.sql.types.{DecimalType, _}
 
-object EstimationUtils {
+object EstimationUtils extends Logging {
 
   /** Check if each plan has rowCount in its statistics. */
   def rowCountsExist(plans: LogicalPlan*): Boolean =
@@ -106,14 +106,18 @@ object EstimationUtils {
     // Row format.
     8 + attributes.map { attr =>
       if (attrStats.get(attr).map(_.avgLen.isDefined).getOrElse(false)) {
-        attr.dataType match {
+        val s = attr.dataType match {
           case StringType =>
             // UTF8String: base + offset + numBytes
             attrStats(attr).avgLen.get + 8 + 4
           case _ =>
             attrStats(attr).avgLen.get
         }
+        logDebug(s"getSizePerRow - stats : ${attr.dataType}; ${attr.sql}; [$s]")
+        s
       } else {
+        logDebug(s"getSizePerRow - default : ${attr.dataType}; " +
+          s"${attr.sql}; [${attr.dataType.defaultSize}]")
         attr.dataType.defaultSize
       }
     }.sum

@@ -88,8 +88,8 @@ private[deploy] object IvyTestUtils {
   private def createPythonFile(dir: File): File = {
     val contents =
       """def myfunc(x):
-        |   return x + 1
-      """.stripMargin
+           return x + 1
+      """
     writeFile(dir, "mylib.py", contents)
   }
 
@@ -102,29 +102,29 @@ private[deploy] object IvyTestUtils {
     Files.createParentDirs(new File(rFilesDir, "R" + File.separator + "mylib.R"))
     val contents =
       s"""myfunc <- function(x) {
-        |  SparkR:::callJStatic("$packageName.$className", "myFunc", x)
-        |}
-      """.stripMargin
+          SparkR:::callJStatic("$packageName.$className", "myFunc", x)
+        }
+      """
     val source = writeFile(new File(rFilesDir, "R"), "mylib.R", contents)
     val description =
       """Package: sparkPackageTest
-        |Type: Package
-        |Title: Test for building an R package
-        |Version: 0.1
-        |Date: 2015-07-08
-        |Author: Burak Yavuz
-        |Imports: methods, SparkR
-        |Depends: R (>= 3.1), methods, SparkR
-        |Suggests: testthat
-        |Description: Test for building an R package within a jar
-        |License: Apache License (== 2.0)
-        |Collate: 'mylib.R'
-      """.stripMargin
+        Type: Package
+        Title: Test for building an R package
+        Version: 0.1
+        Date: 2015-07-08
+        Author: Burak Yavuz
+        Imports: methods, SparkR
+        Depends: R (>= 3.1), methods, SparkR
+        Suggests: testthat
+        Description: Test for building an R package within a jar
+        License: Apache License (== 2.0)
+        Collate: 'mylib.R'
+      """
     val descFile = writeFile(rFilesDir, "DESCRIPTION", description)
     val namespace =
       """import(SparkR)
-        |export("myfunc")
-      """.stripMargin
+        export("myfunc")
+      """
     val nameFile = writeFile(rFilesDir, "NAMESPACE", namespace)
     Seq(("R/pkg/R/mylib.R", source), ("R/pkg/DESCRIPTION", descFile), ("R/pkg/NAMESPACE", nameFile))
   }
@@ -133,15 +133,15 @@ private[deploy] object IvyTestUtils {
   private def createJavaClass(dir: File, className: String, packageName: String): File = {
     val contents =
       s"""package $packageName;
-        |
-        |import java.lang.Integer;
-        |
-        |public class $className implements java.io.Serializable {
-        | public static Integer myFunc(Integer x) {
-        |   return x + 1;
-        | }
-        |}
-      """.stripMargin
+
+        import java.lang.Integer;
+
+        public class $className implements java.io.Serializable {
+         public static Integer myFunc(Integer x) {
+           return x + 1;
+         }
+        }
+      """
     val sourceFile =
       new JavaSourceFromString(new File(dir, className).toURI.getPath, contents)
     createCompiledClass(className, dir, sourceFile, Seq.empty)
@@ -177,13 +177,13 @@ private[deploy] object IvyTestUtils {
       artifact: MavenCoordinate,
       dependencies: Option[Seq[MavenCoordinate]]): File = {
     var content = """
-                    |<?xml version="1.0" encoding="UTF-8"?>
-                    |<project xmlns="http://maven.apache.org/POM/4.0.0"
-                    |       xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
-                    |       xsi:schemaLocation="http://maven.apache.org/POM/4.0.0
-                    |       http://maven.apache.org/xsd/maven-4.0.0.xsd">
-                    |   <modelVersion>4.0.0</modelVersion>
-                  """.stripMargin.trim
+                    <?xml version="1.0" encoding="UTF-8"?>
+                    <project xmlns="http://maven.apache.org/POM/4.0.0"
+                           xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+                           xsi:schemaLocation="http://maven.apache.org/POM/4.0.0
+                           http://maven.apache.org/xsd/maven-4.0.0.xsd">
+                       <modelVersion>4.0.0</modelVersion>
+                  """.trim
     content += pomArtifactWriter(artifact)
     content += dependencies.map { deps =>
       val inside = deps.map { dep =>
@@ -198,8 +198,8 @@ private[deploy] object IvyTestUtils {
   /** Helper method to write artifact information in the ivy.xml. */
   private def ivyArtifactWriter(artifact: MavenCoordinate): String = {
     s"""<dependency org="${artifact.groupId}" name="${artifact.artifactId}"
-       |            rev="${artifact.version}" force="true"
-       |            conf="compile->compile(*),master(*);runtime->runtime(*)"/>""".stripMargin
+                   rev="${artifact.version}" force="true"
+                   conf="compile->compile(*),master(*);runtime->runtime(*)"/>"""
   }
 
   /** Create a pom file for this artifact. */
@@ -208,24 +208,24 @@ private[deploy] object IvyTestUtils {
       artifact: MavenCoordinate,
       dependencies: Option[Seq[MavenCoordinate]]): File = {
     var content = s"""
-        |<?xml version="1.0" encoding="UTF-8"?>
-        |<ivy-module version="2.0" xmlns:m="http://ant.apache.org/ivy/maven">
-        |  <info organisation="${artifact.groupId}"
-        |        module="${artifact.artifactId}"
-        |        revision="${artifact.version}"
-        |        status="release" publication="20150405222456" />
-        |  <configurations>
-        |    <conf name="default" visibility="public" description="" extends="runtime,master"/>
-        |    <conf name="compile" visibility="public" description=""/>
-        |    <conf name="master" visibility="public" description=""/>
-        |    <conf name="runtime" visibility="public" description="" extends="compile"/>
-        |    <conf name="pom" visibility="public" description=""/>
-        |  </configurations>
-        |  <publications>
-        |     <artifact name="${artifactName(artifact, true, "")}" type="jar" ext="jar"
-        |               conf="master"/>
-        |  </publications>
-      """.stripMargin.trim
+        <?xml version="1.0" encoding="UTF-8"?>
+        <ivy-module version="2.0" xmlns:m="http://ant.apache.org/ivy/maven">
+          <info organisation="${artifact.groupId}"
+                module="${artifact.artifactId}"
+                revision="${artifact.version}"
+                status="release" publication="20150405222456" />
+          <configurations>
+            <conf name="default" visibility="public" description="" extends="runtime,master"/>
+            <conf name="compile" visibility="public" description=""/>
+            <conf name="master" visibility="public" description=""/>
+            <conf name="runtime" visibility="public" description="" extends="compile"/>
+            <conf name="pom" visibility="public" description=""/>
+          </configurations>
+          <publications>
+             <artifact name="${artifactName(artifact, true, "")}" type="jar" ext="jar"
+                       conf="master"/>
+          </publications>
+      """.trim
     content += dependencies.map { deps =>
       val inside = deps.map(ivyArtifactWriter).mkString("\n")
       "\n  <dependencies>\n" + inside + "\n  </dependencies>"

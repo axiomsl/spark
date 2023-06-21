@@ -65,12 +65,12 @@ case class UnaryMinus(
         val javaType = CodeGenerator.javaType(dataType)
         val originValue = ctx.freshName("origin")
         s"""
-           |$javaType $originValue = ($javaType)($eval);
-           |if ($originValue == $javaBoxedType.MIN_VALUE) {
-           |  throw QueryExecutionErrors.unaryMinusCauseOverflowError($originValue);
-           |}
-           |${ev.value} = ($javaType)(-($originValue));
-           """.stripMargin
+           $javaType $originValue = ($javaType)($eval);
+           if ($originValue == $javaBoxedType.MIN_VALUE) {
+             throw QueryExecutionErrors.unaryMinusCauseOverflowError($originValue);
+           }
+           ${ev.value} = ($javaType)(-($originValue));
+           """
       })
     case IntegerType | LongType if failOnError =>
       val mathUtils = MathUtils.getClass.getCanonicalName.stripSuffix("$")
@@ -185,14 +185,14 @@ case class Abs(child: Expression, failOnError: Boolean = SQLConf.get.ansiEnabled
       val javaType = CodeGenerator.javaType(dataType)
       nullSafeCodeGen(ctx, ev, eval =>
         s"""
-          |if ($eval == $javaBoxedType.MIN_VALUE) {
-          |  throw QueryExecutionErrors.unaryMinusCauseOverflowError($eval);
-          |} else if ($eval < 0) {
-          |  ${ev.value} = ($javaType)-$eval;
-          |} else {
-          |  ${ev.value} = $eval;
-          |}
-          |""".stripMargin)
+          if ($eval == $javaBoxedType.MIN_VALUE) {
+            throw QueryExecutionErrors.unaryMinusCauseOverflowError($eval);
+          } else if ($eval < 0) {
+            ${ev.value} = ($javaType)-$eval;
+          } else {
+            ${ev.value} = $eval;
+          }
+          """)
 
     case IntegerType | LongType if failOnError =>
       val mathUtils = MathUtils.getClass.getCanonicalName.stripSuffix("$")
@@ -325,27 +325,27 @@ abstract class BinaryArithmetic extends BinaryOperator
         val overflowCheck = if (failOnError) {
           val javaType = CodeGenerator.boxedType(dataType)
           s"""
-             |if ($tmpResult < $javaType.MIN_VALUE || $tmpResult > $javaType.MAX_VALUE) {
-             |  throw QueryExecutionErrors.binaryArithmeticCauseOverflowError(
-             |  $eval1, "$symbol", $eval2);
-             |}
-           """.stripMargin
+             if ($tmpResult < $javaType.MIN_VALUE || $tmpResult > $javaType.MAX_VALUE) {
+               throw QueryExecutionErrors.binaryArithmeticCauseOverflowError(
+               $eval1, "$symbol", $eval2);
+             }
+           """
         } else {
           ""
         }
         s"""
-           |${CodeGenerator.JAVA_INT} $tmpResult = $eval1 $symbol $eval2;
-           |$overflowCheck
-           |${ev.value} = (${CodeGenerator.javaType(dataType)})($tmpResult);
-         """.stripMargin
+           ${CodeGenerator.JAVA_INT} $tmpResult = $eval1 $symbol $eval2;
+           $overflowCheck
+           ${ev.value} = (${CodeGenerator.javaType(dataType)})($tmpResult);
+         """
       })
     case IntegerType | LongType if failOnError && exactMathMethod.isDefined =>
       nullSafeCodeGen(ctx, ev, (eval1, eval2) => {
         val errorContext = getContextOrNullCode(ctx)
         val mathUtils = MathUtils.getClass.getCanonicalName.stripSuffix("$")
         s"""
-           |${ev.value} = $mathUtils.${exactMathMethod.get}($eval1, $eval2, $errorContext);
-         """.stripMargin
+           ${ev.value} = $mathUtils.${exactMathMethod.get}($eval1, $eval2, $errorContext);
+         """
       })
 
     case IntegerType | LongType | DoubleType | FloatType =>
@@ -354,8 +354,8 @@ abstract class BinaryArithmetic extends BinaryOperator
       // - returns (+/-)Infinite: same behavior also other DBs have (e.g. Postgres)
       nullSafeCodeGen(ctx, ev, (eval1, eval2) => {
         s"""
-           |${ev.value} = $eval1 $symbol $eval2;
-         """.stripMargin
+           ${ev.value} = $eval1 $symbol $eval2;
+         """
       })
   }
 
@@ -366,12 +366,12 @@ abstract class BinaryArithmetic extends BinaryOperator
     if (evalMode == EvalMode.TRY) {
       val tryBlock: (String, String) => String = (eval1, eval2) => {
         s"""
-           |try {
-           | ${f(eval1, eval2)}
-           |} catch (Exception e) {
-           | ${ev.isNull} = true;
-           |}
-           |""".stripMargin
+           try {
+            ${f(eval1, eval2)}
+           } catch (Exception e) {
+            ${ev.isNull} = true;
+           }
+           """
       }
       super.nullSafeCodeGen(ctx, ev, tryBlock)
     } else {
@@ -1072,23 +1072,23 @@ case class Pmod(
     } else {
       s"${eval2.value} == 0"
     }
-    val remainder = ctx.freshName("remainder")
+    val remainder = ctx.freshName("rmdr")
     val javaType = CodeGenerator.javaType(dataType)
     val errorContext = getContextOrNullCode(ctx)
     val result = dataType match {
       case DecimalType.Fixed(precision, scale) =>
         val decimalAdd = "$plus"
         s"""
-           |$javaType $remainder = ${eval1.value}.$decimalMethod(${eval2.value});
-           |if ($remainder.compare(new org.apache.spark.sql.types.Decimal().set(0)) < 0) {
-           |  ${ev.value}=($remainder.$decimalAdd(${eval2.value})).$decimalMethod(${eval2.value});
-           |} else {
-           |  ${ev.value}=$remainder;
-           |}
-           |${ev.value} = ${ev.value}.toPrecision(
-           |  $precision, $scale, Decimal.ROUND_HALF_UP(), ${!failOnError}, $errorContext);
-           |${ev.isNull} = ${ev.value} == null;
-           |""".stripMargin
+           $javaType $remainder = ${eval1.value}.$decimalMethod(${eval2.value});
+           if ($remainder.compare(new org.apache.spark.sql.types.Decimal().set(0)) < 0) {
+             ${ev.value}=($remainder.$decimalAdd(${eval2.value})).$decimalMethod(${eval2.value});
+           } else {
+             ${ev.value}=$remainder;
+           }
+           ${ev.value} = ${ev.value}.toPrecision(
+             $precision, $scale, Decimal.ROUND_HALF_UP(), ${!failOnError}, $errorContext);
+           ${ev.isNull} = ${ev.value} == null;
+           """
 
       // byte and short are casted into int when add, minus, times or divide
       case ByteType | ShortType =>
@@ -1249,9 +1249,9 @@ case class Least(children: Seq[Expression]) extends ComplexTypeMergingExpression
     ev.isNull = JavaCode.isNullGlobal(ctx.addMutableState(CodeGenerator.JAVA_BOOLEAN, ev.isNull))
     val evals = evalChildren.map(eval =>
       s"""
-         |${eval.code}
-         |${ctx.reassignIfSmaller(dataType, ev, eval)}
-      """.stripMargin
+         ${eval.code}
+         ${ctx.reassignIfSmaller(dataType, ev, eval)}
+      """
     )
 
     val resultType = CodeGenerator.javaType(dataType)
@@ -1262,16 +1262,16 @@ case class Least(children: Seq[Expression]) extends ComplexTypeMergingExpression
       returnType = resultType,
       makeSplitFunction = body =>
         s"""
-          |$body
-          |return ${ev.value};
-        """.stripMargin,
+          $body
+          return ${ev.value};
+        """,
       foldFunctions = _.map(funcCall => s"${ev.value} = $funcCall;").mkString("\n"))
     ev.copy(code =
       code"""
-         |${ev.isNull} = true;
-         |$resultType ${ev.value} = ${CodeGenerator.defaultValue(dataType)};
-         |$codes
-      """.stripMargin)
+         ${ev.isNull} = true;
+         $resultType ${ev.value} = ${CodeGenerator.defaultValue(dataType)};
+         $codes
+      """)
   }
 
   override protected def withNewChildrenInternal(newChildren: IndexedSeq[Expression]): Least =
@@ -1281,6 +1281,220 @@ case class Least(children: Seq[Expression]) extends ComplexTypeMergingExpression
     Least(orderCommutative({ case Least(children) => children }))
   }
 }
+
+@ExpressionDescription(
+  usage = "_FUNC_(expr, ...) - Returns the least value of all parameters.",
+  examples =
+    """
+    Examples:
+      > SELECT _FUNC_(10, 9, 2, 4, 3);
+       2
+      > SELECT _FUNC_(null, 9, 2, 4, 3);
+       null
+  """
+)
+case class LeastNullIntolerant(children: Seq[Expression]) extends NullIntolerant {
+
+  override def nullable: Boolean = children.exists(_.nullable)
+
+  override def foldable: Boolean = children.forall(_.foldable)
+
+  private lazy val ordering = TypeUtils.getInterpretedOrdering(dataType)
+
+  /**
+   * A collection of data types used for resolution the output type of the expression. By default,
+   * data types of all child expressions. The collection must not be empty.
+   */
+  @transient
+  lazy val inputTypesForMerging: Seq[DataType] = children.map(_.dataType)
+
+  def dataTypeCheck(): Unit = {
+    require(inputTypesForMerging.nonEmpty, "The collection of input data types must not be empty.")
+    require(
+      TypeCoercion.haveSameType(inputTypesForMerging),
+      "All input types must be the same except nullable, containsNull, valueContainsNull flags." +
+        s" The input types found are\n\t${inputTypesForMerging.mkString("\n\t")}"
+    )
+  }
+
+  override def dataType: DataType = {
+    dataTypeCheck()
+    inputTypesForMerging.reduceLeft(TypeCoercion.findCommonTypeDifferentOnlyInNullFlags(_, _).get)
+  }
+
+  override def checkInputDataTypes(): TypeCheckResult = {
+    if (children.length <= 1) {
+      TypeCheckResult
+        .TypeCheckFailure(s"input to function $prettyName requires at least two arguments")
+    } else if (!TypeCoercion.haveSameType(inputTypesForMerging)) {
+      TypeCheckResult.TypeCheckFailure(
+        "The expressions should all have the same type," +
+          s" got LeastNullIntolerant(${children.map(_.dataType.catalogString).mkString(", ")})."
+      )
+    } else {
+      TypeUtils.checkForOrderingExpr(dataType, s"function $prettyName")
+    }
+  }
+
+  override def eval(input: InternalRow): Any = {
+    var nullWasFound = false
+    children.foldLeft[Any](null)((r, c) => {
+      if (nullWasFound) {
+        null
+      } else {
+        val evalc = c.eval(input)
+        if (evalc == null) {
+          nullWasFound = true
+          null
+        } else if (evalc != null) {
+          if (r == null || ordering.lt(evalc, r)) evalc else r
+        } else {
+          r
+        }
+      }
+    })
+  }
+
+  override def doGenCode(ctx: CodegenContext, ev: ExprCode): ExprCode = {
+    val evalChildren = children.map(_.genCode(ctx))
+    val args = ctx.freshName("args")
+    val hasNull = ctx.freshName("hasN")
+
+    val inputs = evalChildren.zip(children.map(_.nullable)).zipWithIndex.map {
+      case ((eval, true), index) =>
+
+        eval.isNull match {
+          case TrueLiteral =>
+            s"""
+if (!$hasNull) {
+  ${eval.code}
+  $hasNull = true;
+}
+"""
+          case FalseLiteral =>
+            s"""
+if (!$hasNull) {
+  ${eval.code}
+  $args[$index] = ${eval.value};
+}
+"""
+          case isNull =>
+            s"""
+if (!$hasNull) {
+  ${eval.code}
+  if (!$isNull) {
+    $args[$index] = ${eval.value};
+  } else {
+    $hasNull = true;
+  }
+}
+"""
+        }
+
+      case ((eval, false), index) =>
+        s"""
+if (!$hasNull) {
+  ${eval.code}
+  $args[$index] = ${eval.value};
+}
+"""
+    }
+
+    ev.isNull = JavaCode.isNullGlobal(ctx.addMutableState(CodeGenerator.JAVA_BOOLEAN, ev.isNull))
+    val resultType = CodeGenerator.boxedType(dataType)
+    val codes = ctx.splitExpressionsWithCurrentInputs(
+      expressions = inputs,
+      funcName = "least_null",
+      extraArguments = (s"$resultType[]", args) :: ("boolean", hasNull) :: Nil,
+      returnType = "boolean",
+      makeSplitFunction = body =>
+        s"""
+if (!$hasNull) {
+  $body
+}
+return $hasNull;
+""",
+      foldFunctions = _.map(funcCall => s"$hasNull = $funcCall;").mkString("\n")
+    )
+    val defaultValueString =
+      CodeGenerator.defaultValue(CodeGenerator.javaType(dataType), typedNull = false)
+    ev.copy(code =
+      code"""
+boolean $hasNull = false;
+$resultType[] $args = new $resultType[${evalChildren.length}];
+$codes
+$resultType ${ev.value} = $defaultValueString;
+if (!$hasNull) {
+   ${ev.value} = ($resultType) java.util.Collections.min(java.util.Arrays.asList($args));
+}
+${ev.isNull} = $hasNull;
+""")
+  }
+
+  /**
+   * Returns an [[ExprCode]], that contains the Java source code to generate the result of
+   * evaluating the expression on an input row.
+   *
+   * @param ctx a [[CodegenContext]]
+   * @return [[ExprCode]]
+   */
+  override def genCode(ctx: CodegenContext): ExprCode = {
+    ctx.subExprEliminationExprs.get(ExpressionEquals(this)).map { subExprState =>
+      // This expression is repeated which means that the code to evaluate it has already been added
+      // as a function before. In that case, we just re-use it.
+      ExprCode(ctx.registerComment(this.toString),
+        subExprState.eval.isNull, subExprState.eval.value)
+    }.getOrElse {
+      val isNull = ctx.freshName("isN")
+      val value = ctx.freshName("val")
+      val eval = doGenCode(ctx, ExprCode(
+        JavaCode.isNullVariable(isNull),
+        JavaCode.variable(value, dataType)))
+      reduceCodeSize(ctx, eval)
+      if (eval.code.toString.nonEmpty) {
+        // Add `this` in the comment.
+        eval.copy(code = ctx.registerComment(this.toString) + eval.code)
+      } else {
+        eval
+      }
+    }
+  }
+
+  def reduceCodeSize(ctx: CodegenContext, eval: ExprCode): Unit = {
+    // TODO: support whole stage codegen too
+    if (eval.code.length > 1024 && ctx.INPUT_ROW != null && ctx.currentVars == null) {
+      val setIsNull = if (!eval.isNull.isInstanceOf[LiteralValue]) {
+        val globalIsNull = ctx.addMutableState(CodeGenerator.JAVA_BOOLEAN, "globalIsNull")
+        val localIsNull = eval.isNull
+        eval.isNull = JavaCode.isNullGlobal(globalIsNull)
+        s"$globalIsNull = $localIsNull;"
+      } else {
+        ""
+      }
+
+      val javaType = CodeGenerator.boxedType(dataType)
+      val newValue = ctx.freshName("val")
+
+      val funcName = ctx.freshName(nodeName)
+      val funcFullName = ctx.addNewFunction(funcName,
+        s"""
+private $javaType $funcName(InternalRow ${ctx.INPUT_ROW}) {
+  ${eval.code}
+  $setIsNull
+  return ${eval.value};
+}
+""")
+
+      eval.value = JavaCode.variable(newValue, dataType)
+      eval.code = code"$javaType $newValue = $funcFullName(${ctx.INPUT_ROW});"
+    }
+  }
+
+  override protected def withNewChildrenInternal
+  (newChildren: IndexedSeq[Expression]): LeastNullIntolerant =
+    copy(children = newChildren)
+}
+
 
 /**
  * A function that returns the greatest value of all parameters, skipping null values.
@@ -1337,9 +1551,9 @@ case class Greatest(children: Seq[Expression]) extends ComplexTypeMergingExpress
     ev.isNull = JavaCode.isNullGlobal(ctx.addMutableState(CodeGenerator.JAVA_BOOLEAN, ev.isNull))
     val evals = evalChildren.map(eval =>
       s"""
-         |${eval.code}
-         |${ctx.reassignIfGreater(dataType, ev, eval)}
-      """.stripMargin
+         ${eval.code}
+         ${ctx.reassignIfGreater(dataType, ev, eval)}
+      """
     )
 
     val resultType = CodeGenerator.javaType(dataType)
@@ -1350,16 +1564,16 @@ case class Greatest(children: Seq[Expression]) extends ComplexTypeMergingExpress
       returnType = resultType,
       makeSplitFunction = body =>
         s"""
-           |$body
-           |return ${ev.value};
-        """.stripMargin,
+           $body
+           return ${ev.value};
+        """,
       foldFunctions = _.map(funcCall => s"${ev.value} = $funcCall;").mkString("\n"))
     ev.copy(code =
       code"""
-         |${ev.isNull} = true;
-         |$resultType ${ev.value} = ${CodeGenerator.defaultValue(dataType)};
-         |$codes
-      """.stripMargin)
+         ${ev.isNull} = true;
+         $resultType ${ev.value} = ${CodeGenerator.defaultValue(dataType)};
+         $codes
+      """)
   }
 
   override protected def withNewChildrenInternal(newChildren: IndexedSeq[Expression]): Greatest =
@@ -1368,4 +1582,223 @@ case class Greatest(children: Seq[Expression]) extends ComplexTypeMergingExpress
   override lazy val canonicalized: Expression = {
     Greatest(orderCommutative({ case Greatest(children) => children }))
   }
+}
+
+/**
+ * A function that returns the greatest value of all parameters.
+ * It takes at least 2 parameters, and returns null if one parameters is null.
+ */
+@ExpressionDescription(
+  usage = "_FUNC_(expr, ...) - Returns the greatest value of all parameters.",
+  examples = """
+    Examples:
+      > SELECT _FUNC_(10, 9, 2, 4, 3);
+       10
+      > SELECT _FUNC_(null, 9, 2, 4, 3);
+       null
+  """
+)
+case class GreatestNullIntolerant(children: Seq[Expression]) extends NullIntolerant {
+
+  override def nullable: Boolean = children.exists(_.nullable)
+  override def foldable: Boolean = children.forall(_.foldable)
+
+  /**
+   * A collection of data types used for resolution the output type of the expression. By default,
+   * data types of all child expressions. The collection must not be empty.
+   */
+  @transient
+  lazy val inputTypesForMerging: Seq[DataType] = children.map(_.dataType)
+
+  def dataTypeCheck(): Unit = {
+    require(inputTypesForMerging.nonEmpty, "The collection of input data types must not be empty.")
+    require(
+      TypeCoercion.haveSameType(inputTypesForMerging),
+      "All input types must be the same except nullable, containsNull, valueContainsNull flags." +
+        s" The input types found are\n\t${inputTypesForMerging.mkString("\n\t")}"
+    )
+  }
+
+  override def dataType: DataType = {
+    dataTypeCheck()
+    inputTypesForMerging.reduceLeft(TypeCoercion.findCommonTypeDifferentOnlyInNullFlags(_, _).get)
+  }
+
+  private lazy val ordering = TypeUtils.getInterpretedOrdering(dataType)
+
+  override def checkInputDataTypes(): TypeCheckResult = {
+    if (children.length <= 1) {
+      TypeCheckResult.TypeCheckFailure(
+        s"input to function $prettyName requires at least two arguments"
+      )
+    } else if (!TypeCoercion.haveSameType(inputTypesForMerging)) {
+      TypeCheckResult.TypeCheckFailure(
+        "The expressions should all have the same type," +
+          s" got GreatestNullIntolerant(${children.map(_.dataType.catalogString).mkString(", ")})."
+      )
+    } else {
+      TypeUtils.checkForOrderingExpr(dataType, s"function $prettyName")
+    }
+  }
+
+  override def eval(input: InternalRow): Any = {
+    var nullWasFound = false
+    children.foldLeft[Any](null)((r, c) => {
+      if (nullWasFound) {
+        null
+      } else {
+        val evalc = c.eval(input)
+        if (evalc == null) {
+          nullWasFound = true
+          null
+        } else if (evalc != null) {
+          if (r == null || ordering.gt(evalc, r)) evalc else r
+        } else {
+          r
+        }
+      }
+    })
+  }
+
+
+  override def doGenCode(ctx: CodegenContext, ev: ExprCode): ExprCode = {
+    val evalChildren = children.map(_.genCode(ctx))
+    val args = ctx.freshName("args")
+    val hasNull = ctx.freshName("hasN")
+
+    val inputs = evalChildren.zip(children.map(_.nullable)).zipWithIndex.map {
+      case ((eval, true), index) =>
+        eval.isNull match {
+          case TrueLiteral =>
+            s"""
+if (!$hasNull) {
+  ${eval.code}
+  $hasNull = true;
+}
+"""
+          case FalseLiteral =>
+            s"""
+if (!$hasNull) {
+  ${eval.code}
+  $args[$index] = ${eval.value};
+}
+"""
+          case isNull =>
+            s"""
+if (!$hasNull) {
+  ${eval.code}
+  if (!$isNull) {
+    $args[$index] = ${eval.value};
+  } else {
+    $hasNull = true;
+  }
+}
+"""
+        }
+
+      case ((eval, false), index) =>
+        s"""
+if (!$hasNull) {
+  ${eval.code}
+  $args[$index] = ${eval.value};
+}
+"""
+    }
+
+    ev.isNull = JavaCode.isNullGlobal(ctx.addMutableState(CodeGenerator.JAVA_BOOLEAN, ev.isNull))
+    val resultType = CodeGenerator.boxedType(dataType)
+    val codes = ctx.splitExpressionsWithCurrentInputs(
+      expressions = inputs,
+      funcName = "greatest_null",
+      extraArguments = (s"$resultType[]", args) :: ("boolean", hasNull) :: Nil,
+      returnType = "boolean",
+      makeSplitFunction = body =>
+        s"""
+if (!$hasNull) {
+  $body
+}
+return $hasNull;
+""",
+      foldFunctions = _.map(funcCall => s"$hasNull = $funcCall;").mkString("\n")
+    )
+    val defaultValueString =
+      CodeGenerator.defaultValue(CodeGenerator.javaType(dataType), typedNull = false)
+    ev.copy(code =
+      code"""
+boolean $hasNull = false;
+$resultType[] $args = new $resultType[${evalChildren.length}];
+$codes
+$resultType ${ev.value} = $defaultValueString;
+if (!$hasNull) {
+   ${ev.value} = ($resultType) java.util.Collections.max(java.util.Arrays.asList($args));
+}
+${ev.isNull} = $hasNull;
+""")
+  }
+
+  /**
+   * Returns an [[ExprCode]], that contains the Java source code to generate the result of
+   * evaluating the expression on an input row.
+   *
+   * @param ctx a [[CodegenContext]]
+   * @return [[ExprCode]]
+   */
+  override def genCode(ctx: CodegenContext): ExprCode = {
+    ctx.subExprEliminationExprs.get(ExpressionEquals(this)).map { subExprState =>
+      // This expression is repeated which means that the code to evaluate it has already been added
+      // as a function before. In that case, we just re-use it.
+      ExprCode(
+        ctx.registerComment(this.toString),
+        subExprState.eval.isNull,
+        subExprState.eval.value
+      )
+    }.getOrElse {
+      val isNull = ctx.freshName("isN")
+      val value = ctx.freshName("val")
+      val eval = doGenCode(ctx, ExprCode(
+        JavaCode.isNullVariable(isNull),
+        JavaCode.variable(value, dataType)))
+      reduceCodeSize(ctx, eval)
+      if (eval.code.toString.nonEmpty) {
+        // Add `this` in the comment.
+        eval.copy(code = ctx.registerComment(this.toString) + eval.code)
+      } else {
+        eval
+      }
+    }
+  }
+
+  def reduceCodeSize(ctx: CodegenContext, eval: ExprCode): Unit = {
+    // TODO: support whole stage codegen too
+    if (eval.code.length > 1024 && ctx.INPUT_ROW != null && ctx.currentVars == null) {
+      val setIsNull = if (!eval.isNull.isInstanceOf[LiteralValue]) {
+        val globalIsNull = ctx.addMutableState(CodeGenerator.JAVA_BOOLEAN, "globalIsNull")
+        val localIsNull = eval.isNull
+        eval.isNull = JavaCode.isNullGlobal(globalIsNull)
+        s"$globalIsNull = $localIsNull;"
+      } else {
+        ""
+      }
+
+      val javaType = CodeGenerator.boxedType(dataType)
+      val newValue = ctx.freshName("val")
+
+      val funcName = ctx.freshName(nodeName)
+      val funcFullName = ctx.addNewFunction(funcName,
+        s"""
+private $javaType $funcName(InternalRow ${ctx.INPUT_ROW}) {
+  ${eval.code}
+  $setIsNull
+  return ${eval.value};
+}
+""")
+
+      eval.value = JavaCode.variable(newValue, dataType)
+      eval.code = code"$javaType $newValue = $funcFullName(${ctx.INPUT_ROW});"
+    }
+  }
+
+  override protected def withNewChildrenInternal
+  (newChildren: IndexedSeq[Expression]): GreatestNullIntolerant =
+    copy(children = newChildren)
 }

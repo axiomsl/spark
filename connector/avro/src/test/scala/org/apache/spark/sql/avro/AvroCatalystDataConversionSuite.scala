@@ -160,11 +160,11 @@ class AvroCatalystDataConversionSuite extends SparkFunSuite
     val data = Literal(1)
     val avroTypeJson =
       s"""
-         |{
-         |  "type": "string",
-         |  "name": "my_string"
-         |}
-       """.stripMargin
+         {
+           "type": "string",
+           "name": "my_string"
+         }
+       """
 
     // When read int as string, avro reader is not able to parse the binary and fail.
     checkUnsupportedRead(data, avroTypeJson)
@@ -174,11 +174,11 @@ class AvroCatalystDataConversionSuite extends SparkFunSuite
     val data = Literal("abc")
     val avroTypeJson =
       s"""
-         |{
-         |  "type": "int",
-         |  "name": "my_int"
-         |}
-       """.stripMargin
+         {
+           "type": "int",
+           "name": "my_int"
+         }
+       """
 
     // When read string data as int, avro reader is not able to find the type mismatch and read
     // the string length as int value.
@@ -189,11 +189,11 @@ class AvroCatalystDataConversionSuite extends SparkFunSuite
     val data = Literal(1.23f)
     val avroTypeJson =
       s"""
-         |{
-         |  "type": "double",
-         |  "name": "my_double"
-         |}
-       """.stripMargin
+         {
+           "type": "double",
+           "name": "my_double"
+         }
+       """
 
     // When read float data as double, avro reader fails(trying to read 8 bytes while the data have
     // only 4 bytes).
@@ -204,11 +204,11 @@ class AvroCatalystDataConversionSuite extends SparkFunSuite
     val data = Literal(1.23)
     val avroTypeJson =
       s"""
-         |{
-         |  "type": "float",
-         |  "name": "my_float"
-         |}
-       """.stripMargin
+         {
+           "type": "float",
+           "name": "my_float"
+         }
+       """
 
     // avro reader reads the first 4 bytes of a double as a float, the result is totally undefined.
     checkResult(data, avroTypeJson, 5.848603E35f)
@@ -243,11 +243,11 @@ class AvroCatalystDataConversionSuite extends SparkFunSuite
     val data = Literal("SPADES")
     val jsonFormatSchema =
       """
-        |{ "type": "enum",
-        |  "name": "Suit",
-        |  "symbols" : ["SPADES", "HEARTS", "DIAMONDS", "CLUBS"]
-        |}
-      """.stripMargin
+        { "type": "enum",
+          "name": "Suit",
+          "symbols" : ["SPADES", "HEARTS", "DIAMONDS", "CLUBS"]
+        }
+      """
 
     val message = intercept[SparkException] {
       AvroDataToCatalyst(
@@ -299,17 +299,17 @@ class AvroCatalystDataConversionSuite extends SparkFunSuite
   test("avro array can be generic java collection") {
     val jsonFormatSchema =
       """
-        |{ "type": "record",
-        |  "name": "record",
-        |  "fields" : [{
-        |    "name": "array",
-        |    "type": {
-        |      "type": "array",
-        |      "items": ["null", "int"]
-        |    }
-        |  }]
-        |}
-      """.stripMargin
+        { "type": "record",
+          "name": "record",
+          "fields" : [{
+            "name": "array",
+            "type": {
+              "type": "array",
+              "items": ["null", "int"]
+            }
+          }]
+        }
+      """
     val avroSchema = new Schema.Parser().parse(jsonFormatSchema)
 
     def validateDeserialization(array: java.util.Collection[Integer]): Unit = {
@@ -331,15 +331,15 @@ class AvroCatalystDataConversionSuite extends SparkFunSuite
   test("SPARK-32346: filter pushdown to Avro deserializer") {
     val schema =
       """
-        |{
-        |  "type" : "record",
-        |  "name" : "test_schema",
-        |  "fields" : [
-        |    {"name": "Age", "type": "int"},
-        |    {"name": "Name", "type": "string"}
-        |  ]
-        |}
-        """.stripMargin
+        {
+          "type" : "record",
+          "name" : "test_schema",
+          "fields" : [
+            {"name": "Age", "type": "int"},
+            {"name": "Name", "type": "string"}
+          ]
+        }
+        """
     val avroSchema = new Schema.Parser().parse(schema)
     val sqlSchema = new StructType().add("Age", "int").add("Name", "string")
     val data = new GenericRecordBuilder(avroSchema)
@@ -364,14 +364,14 @@ class AvroCatalystDataConversionSuite extends SparkFunSuite
   test("AvroDeserializer with binary type") {
     val jsonFormatSchema =
       """
-        |{
-        |  "type": "record",
-        |  "name": "record",
-        |  "fields" : [
-        |    {"name": "a", "type": "bytes"}
-        |  ]
-        |}
-      """.stripMargin
+        {
+          "type": "record",
+          "name": "record",
+          "fields" : [
+            {"name": "a", "type": "bytes"}
+          ]
+        }
+      """
     val avroSchema = new Schema.Parser().parse(jsonFormatSchema)
     val avroRecord = new GenericData.Record(avroSchema)
     val bb = java.nio.ByteBuffer.wrap(Array[Byte](97, 48, 53))

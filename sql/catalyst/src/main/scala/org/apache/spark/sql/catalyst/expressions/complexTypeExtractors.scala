@@ -281,7 +281,7 @@ case class GetArrayItem(
 
   override def doGenCode(ctx: CodegenContext, ev: ExprCode): ExprCode = {
     nullSafeCodeGen(ctx, ev, (eval1, eval2) => {
-      val index = ctx.freshName("index")
+      val index = ctx.freshName("idx")
       val childArrayElementNullable = child.dataType.asInstanceOf[ArrayType].containsNull
       val nullCheck = if (childArrayElementNullable) {
         s"""else if ($eval1.isNullAt($index)) {
@@ -388,7 +388,7 @@ trait GetMapValueUtil extends BinaryExpression with ImplicitCastInputTypes {
       ctx: CodegenContext,
       ev: ExprCode,
       mapType: MapType): ExprCode = {
-    val index = ctx.freshName("index")
+    val index = ctx.freshName("idx")
     val length = ctx.freshName("length")
     val keys = ctx.freshName("keys")
     val key = ctx.freshName("key")

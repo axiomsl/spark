@@ -100,45 +100,45 @@ object GenerateUnsafeRowJoiner extends CodeGenerator[(StructType, StructType), U
     // --------------------- copy fixed length portion from row 1 ----------------------- //
     var cursor = outputBitsetWords * 8
     val copyFixedLengthRow1 = s"""
-       |// Copy fixed length data for row1
-       |Platform.copyMemory(
-       |  obj1, offset1 + ${bitset1Words * 8},
-       |  buf, $offset + $cursor,
-       |  ${schema1.size * 8});
-     """.stripMargin
+       // Copy fixed length data for row1
+       Platform.copyMemory(
+         obj1, offset1 + ${bitset1Words * 8},
+         buf, $offset + $cursor,
+         ${schema1.size * 8});
+     """
     cursor += schema1.size * 8
 
     // --------------------- copy fixed length portion from row 2 ----------------------- //
     val copyFixedLengthRow2 = s"""
-       |// Copy fixed length data for row2
-       |Platform.copyMemory(
-       |  obj2, offset2 + ${bitset2Words * 8},
-       |  buf, $offset + $cursor,
-       |  ${schema2.size * 8});
-     """.stripMargin
+       // Copy fixed length data for row2
+       Platform.copyMemory(
+         obj2, offset2 + ${bitset2Words * 8},
+         buf, $offset + $cursor,
+         ${schema2.size * 8});
+     """
     cursor += schema2.size * 8
 
     // --------------------- copy variable length portion from row 1 ----------------------- //
     val numBytesBitsetAndFixedRow1 = (bitset1Words + schema1.size) * 8
     val copyVariableLengthRow1 = s"""
-       |// Copy variable length data for row1
-       |long numBytesVariableRow1 = row1.getSizeInBytes() - $numBytesBitsetAndFixedRow1;
-       |Platform.copyMemory(
-       |  obj1, offset1 + ${(bitset1Words + schema1.size) * 8},
-       |  buf, $offset + $cursor,
-       |  numBytesVariableRow1);
-     """.stripMargin
+       // Copy variable length data for row1
+       long numBytesVariableRow1 = row1.getSizeInBytes() - $numBytesBitsetAndFixedRow1;
+       Platform.copyMemory(
+         obj1, offset1 + ${(bitset1Words + schema1.size) * 8},
+         buf, $offset + $cursor,
+         numBytesVariableRow1);
+     """
 
     // --------------------- copy variable length portion from row 2 ----------------------- //
     val numBytesBitsetAndFixedRow2 = (bitset2Words + schema2.size) * 8
     val copyVariableLengthRow2 = s"""
-       |// Copy variable length data for row2
-       |long numBytesVariableRow2 = row2.getSizeInBytes() - $numBytesBitsetAndFixedRow2;
-       |Platform.copyMemory(
-       |  obj2, offset2 + ${(bitset2Words + schema2.size) * 8},
-       |  buf, $offset + $cursor + numBytesVariableRow1,
-       |  numBytesVariableRow2);
-     """.stripMargin
+       // Copy variable length data for row2
+       long numBytesVariableRow2 = row2.getSizeInBytes() - $numBytesBitsetAndFixedRow2;
+       Platform.copyMemory(
+         obj2, offset2 + ${(bitset2Words + schema2.size) * 8},
+         buf, $offset + $cursor + numBytesVariableRow1,
+         numBytesVariableRow2);
+     """
 
     // ------------- update fixed length data for variable length data type  --------------- //
     val updateOffset = (schema1 ++ schema2).zipWithIndex.map { case (field, i) =>
@@ -194,11 +194,11 @@ object GenerateUnsafeRowJoiner extends CodeGenerator[(StructType, StructType), U
         // Thus it is safe to perform `existingOffset != 0` checks here in the place of
         // more expensive null-bit checks.
         s"""
-           |existingOffset = $getLong(buf, $offset + $cursor);
-           |if (existingOffset != 0) {
-           |    $putLong(buf, $offset + $cursor, existingOffset + ($shift << 32));
-           |}
-         """.stripMargin
+           existingOffset = $getLong(buf, $offset + $cursor);
+           if (existingOffset != 0) {
+               $putLong(buf, $offset + $cursor, existingOffset + ($shift << 32));
+           }
+         """
       }
     }
 
@@ -210,44 +210,44 @@ object GenerateUnsafeRowJoiner extends CodeGenerator[(StructType, StructType), U
 
     // ------------------------ Finally, put everything together  --------------------------- //
     val codeBody = s"""
-       |public java.lang.Object generate(Object[] references) {
-       |  return new SpecificUnsafeRowJoiner();
-       |}
-       |
-       |class SpecificUnsafeRowJoiner extends ${classOf[UnsafeRowJoiner].getName} {
-       |  private byte[] buf = new byte[64];
-       |  private UnsafeRow out = new UnsafeRow(${schema1.size + schema2.size});
-       |
-       |  ${ctx.declareAddedFunctions()}
-       |
-       |  public UnsafeRow join(UnsafeRow row1, UnsafeRow row2) {
-       |    // row1: ${schema1.size} fields, $bitset1Words words in bitset
-       |    // row2: ${schema2.size}, $bitset2Words words in bitset
-       |    // output: ${schema1.size + schema2.size} fields, $outputBitsetWords words in bitset
-       |    final int sizeInBytes = row1.getSizeInBytes() + row2.getSizeInBytes() - $sizeReduction;
-       |    if (sizeInBytes > buf.length) {
-       |      buf = new byte[sizeInBytes];
-       |    }
-       |
-       |    final java.lang.Object obj1 = row1.getBaseObject();
-       |    final long offset1 = row1.getBaseOffset();
-       |    final java.lang.Object obj2 = row2.getBaseObject();
-       |    final long offset2 = row2.getBaseOffset();
-       |
-       |    $copyBitsets
-       |    $copyFixedLengthRow1
-       |    $copyFixedLengthRow2
-       |    $copyVariableLengthRow1
-       |    $copyVariableLengthRow2
-       |    long existingOffset;
-       |    $updateOffsets
-       |
-       |    out.pointTo(buf, sizeInBytes);
-       |
-       |    return out;
-       |  }
-       |}
-     """.stripMargin
+       public java.lang.Object generate(Object[] refs) {
+         return new SpecificUnsafeRowJoiner();
+       }
+
+       class SpecificUnsafeRowJoiner extends ${classOf[UnsafeRowJoiner].getName} {
+         private byte[] buf = new byte[64];
+         private UnsafeRow out = new UnsafeRow(${schema1.size + schema2.size});
+
+         ${ctx.declareAddedFunctions()}
+
+         public UnsafeRow join(UnsafeRow row1, UnsafeRow row2) {
+           // row1: ${schema1.size} fields, $bitset1Words words in bitset
+           // row2: ${schema2.size}, $bitset2Words words in bitset
+           // output: ${schema1.size + schema2.size} fields, $outputBitsetWords words in bitset
+           final int sizeInBytes = row1.getSizeInBytes() + row2.getSizeInBytes() - $sizeReduction;
+           if (sizeInBytes > buf.length) {
+             buf = new byte[sizeInBytes];
+           }
+
+           final java.lang.Object obj1 = row1.getBaseObject();
+           final long offset1 = row1.getBaseOffset();
+           final java.lang.Object obj2 = row2.getBaseObject();
+           final long offset2 = row2.getBaseOffset();
+
+           $copyBitsets
+           $copyFixedLengthRow1
+           $copyFixedLengthRow2
+           $copyVariableLengthRow1
+           $copyVariableLengthRow2
+           long existingOffset;
+           $updateOffsets
+
+           out.pointTo(buf, sizeInBytes);
+
+           return out;
+         }
+       }
+     """
     val code = CodeFormatter.stripOverlappingComments(new CodeAndComment(codeBody, Map.empty))
     logDebug(s"SpecificUnsafeRowJoiner($schema1, $schema2):\n${CodeFormatter.format(code)}")
 

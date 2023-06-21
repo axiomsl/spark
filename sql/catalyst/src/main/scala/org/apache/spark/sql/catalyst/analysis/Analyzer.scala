@@ -233,7 +233,7 @@ class Analyzer(override val catalogManager: CatalogManager) extends RuleExecutor
    * If the plan cannot be resolved within maxIterations, analyzer will throw exception to inform
    * user to increase the value of SQLConf.ANALYZER_MAX_ITERATIONS.
    */
-  protected def fixedPoint =
+  protected def fixedPoint: FixedPoint =
     FixedPoint(
       conf.analyzerMaxIterations,
       errorOnExceed = true,
@@ -1107,7 +1107,7 @@ class Analyzer(override val catalogManager: CatalogManager) extends RuleExecutor
               case u: UnresolvedCatalogRelation =>
                 throw QueryCompilationErrors.writeIntoV1TableNotAllowedError(
                   u.tableMeta.identifier, write)
-              case other =>
+              case _ =>
                 throw QueryCompilationErrors.writeIntoTempViewNotAllowedError(
                   u.multipartIdentifier.quoted)
             }.getOrElse(write)
@@ -1341,7 +1341,7 @@ class Analyzer(override val catalogManager: CatalogManager) extends RuleExecutor
         val partCols = partitionColumnNames(r.table)
         validatePartitionSpec(partCols, i.partitionSpec)
 
-        val staticPartitions = i.partitionSpec.filter(_._2.isDefined).mapValues(_.get).toMap
+        val staticPartitions = i.partitionSpec.filter(_._2.isDefined).mapValues(_.get)
         val query = addStaticPartitionColumns(r, projectByName.getOrElse(i.query), staticPartitions,
           isByName)
 
@@ -1905,7 +1905,7 @@ class Analyzer(override val catalogManager: CatalogManager) extends RuleExecutor
           })
         case c: CreateNamedStruct if containsStar(c.valExprs) =>
           val newChildren = c.children.grouped(2).flatMap {
-            case Seq(k, s : Star) => CreateStruct(expand(s, child)).children
+            case Seq(_, s : Star) => CreateStruct(expand(s, child)).children
             case kv => kv
           }
           c.copy(children = newChildren.toList )
@@ -2572,7 +2572,7 @@ class Analyzer(override val catalogManager: CatalogManager) extends RuleExecutor
           buildAggExprList(e, agg, extraAggExprs)
         }
       }
-      (extraAggExprs.toSeq, transformed)
+      (extraAggExprs, transformed)
     }
 
     private def buildAggExprList(

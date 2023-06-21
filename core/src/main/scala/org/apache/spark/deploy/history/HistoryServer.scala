@@ -269,10 +269,10 @@ class HistoryServer(
    */
   override def toString: String = {
     s"""
-      | History Server;
-      | provider = $provider
-      | cache = $appCache
-    """.stripMargin
+       History Server;
+       provider = $provider
+       cache = $appCache
+    """
   }
 }
 

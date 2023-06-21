@@ -17,6 +17,7 @@
 
 package org.apache.spark.sql.catalyst.plans.logical.statsEstimation
 
+import org.apache.spark.internal.Logging
 import org.apache.spark.sql.catalyst.expressions.{AttributeMap, ExpressionSet}
 import org.apache.spark.sql.catalyst.planning.ExtractEquiJoinKeys
 import org.apache.spark.sql.catalyst.plans._
@@ -25,7 +26,7 @@ import org.apache.spark.sql.catalyst.plans.logical._
 /**
  * An [[LogicalPlanVisitor]] that computes a single dimension for plan stats: size in bytes.
  */
-object SizeInBytesOnlyStatsPlanVisitor extends LogicalPlanVisitor[Statistics] {
+object SizeInBytesOnlyStatsPlanVisitor extends LogicalPlanVisitor[Statistics] with Logging {
 
   /**
    * A default, commonly used estimation for unary nodes. We assume the input row number is the
@@ -34,18 +35,34 @@ object SizeInBytesOnlyStatsPlanVisitor extends LogicalPlanVisitor[Statistics] {
   private def visitUnaryNode(p: UnaryNode): Statistics = {
     // There should be some overhead in Row object, the size should not be zero when there is
     // no columns, this help to prevent divide-by-zero error.
-    val childRowSize = EstimationUtils.getSizePerRow(p.child.output)
     val outputRowSize = EstimationUtils.getSizePerRow(p.output)
-    // Assume there will be the same number of rows as child has.
-    var sizeInBytes = (p.child.stats.sizeInBytes * outputRowSize) / childRowSize
-    if (sizeInBytes == 0) {
-      // sizeInBytes can't be zero, or sizeInBytes of BinaryNode will also be zero
-      // (product of children).
-      sizeInBytes = 1
+    logDebug("--- visitUnaryNode ---")
+    val sizeInBytes = if (p.child.stats.rowCount.isEmpty) {
+      val childRowSize = EstimationUtils.getSizePerRow(p.child.output)
+      // Assume there will be the same number of rows as child has.
+      val estimatedChildRowCount = p.child.stats.sizeInBytes / childRowSize
+      var estimatedParentTotalSize = estimatedChildRowCount * outputRowSize
+      if (estimatedParentTotalSize == 0) {
+        // sizeInBytes can't be zero, or sizeInBytes of BinaryNode will also be zero
+        // (product of children).
+        estimatedParentTotalSize = 1
+      }
+      logDebug(s"visitUnaryNode - noRowCount : $estimatedParentTotalSize; " +
+        s"childRowSize: $childRowSize; parentRowSize: $outputRowSize;" +
+        s" sizeInBytes: ${p.child.stats.sizeInBytes}")
+      estimatedParentTotalSize
+    } else {
+      val estimatedParentTotalSize = p.child.stats.rowCount.get * outputRowSize
+      logDebug(s"visitUnaryNode - RowCount : $estimatedParentTotalSize; " +
+        s"parentRowSize: $outputRowSize; sizeInBytes: ${p.child.stats.sizeInBytes}")
+      estimatedParentTotalSize
     }
 
     // Don't propagate rowCount and attributeStats, since they are not estimated here.
-    Statistics(sizeInBytes = sizeInBytes)
+    val statistics = Statistics(sizeInBytes = sizeInBytes, rowCount = p.child.stats.rowCount)
+    logDebug(s"visitUnaryNode : $statistics; " +
+      s"${p.schema.fields.map(_.name).mkString("[", ", ", "]")}")
+    statistics
   }
 
   /**
@@ -53,19 +70,31 @@ object SizeInBytesOnlyStatsPlanVisitor extends LogicalPlanVisitor[Statistics] {
    * product of all of the children's `computeStats`.
    */
   override def default(p: LogicalPlan): Statistics = p match {
-    case p: LeafNode => p.computeStats()
+    case p: LeafNode =>
+      val statistics = p.computeStats()
+      logDebug(s"default - LeafNode : $statistics; " +
+        s"${p.schema.fields.map(_.name).mkString("[", ", ", "]")}")
+      statistics
     case _: LogicalPlan =>
-      Statistics(sizeInBytes = p.children.map(_.stats.sizeInBytes).filter(_ > 0L).product)
+      val statistics = Statistics(
+        sizeInBytes = p.children.map(_.stats.sizeInBytes).filter(_ > 0L).product
+      )
+      logDebug(s"default - LogicalPlan : $statistics; " +
+        s"${p.schema.fields.map(_.name).mkString("[", ", ", "]")}")
+      statistics
   }
 
   override def visitAggregate(p: Aggregate): Statistics = {
-    if (p.groupingExpressions.isEmpty) {
+    val statistics = if (p.groupingExpressions.isEmpty) {
       Statistics(
         sizeInBytes = EstimationUtils.getOutputSize(p.output, outputRowCount = 1),
         rowCount = Some(1))
     } else {
       visitUnaryNode(p)
     }
+    logDebug(s"visitAggregate : $statistics; " +
+      s"${p.schema.fields.map(_.name).mkString("[", ", ", "]")}")
+    statistics
   }
 
   override def visitDistinct(p: Distinct): Statistics = visitUnaryNode(p)
@@ -168,7 +197,10 @@ object SizeInBytesOnlyStatsPlanVisitor extends LogicalPlanVisitor[Statistics] {
   override def visitScriptTransform(p: ScriptTransformation): Statistics = default(p)
 
   override def visitUnion(p: Union): Statistics = {
-    Statistics(sizeInBytes = p.children.map(_.stats.sizeInBytes).sum)
+    val statistics = Statistics(sizeInBytes = p.children.map(_.stats.sizeInBytes).sum)
+    logDebug(s"visitUnion : $statistics; " +
+      s"${p.schema.fields.map(_.name).mkString("[", ", ", "]")}")
+    statistics
   }
 
   override def visitWindow(p: Window): Statistics = visitUnaryNode(p)

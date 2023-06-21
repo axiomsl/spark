@@ -49,9 +49,9 @@ case class PrintToStderr(child: Expression) extends UnaryExpression {
     val outputPrefixField = ctx.addReferenceObj("outputPrefix", outputPrefix)
     nullSafeCodeGen(ctx, ev, c =>
       s"""
-         | System.err.println($outputPrefixField + $c);
-         | ${ev.value} = $c;
-       """.stripMargin)
+          System.err.println($outputPrefixField + $c);
+          ${ev.value} = $c;
+       """)
   }
 
   override protected def withNewChildInternal(newChild: Expression): PrintToStderr =
@@ -95,12 +95,12 @@ case class RaiseError(child: Expression, dataType: DataType)
     val eval = child.genCode(ctx)
     ExprCode(
       code = code"""${eval.code}
-        |if (true) {
-        |  if (${eval.isNull}) {
-        |    throw new RuntimeException();
-        |  }
-        |  throw new RuntimeException(${eval.value}.toString());
-        |}""".stripMargin,
+        if (true) {
+          if (${eval.isNull}) {
+            throw new RuntimeException();
+          }
+          throw new RuntimeException(${eval.value}.toString());
+        }""",
       isNull = TrueLiteral,
       value = JavaCode.defaultLiteral(dataType)
     )

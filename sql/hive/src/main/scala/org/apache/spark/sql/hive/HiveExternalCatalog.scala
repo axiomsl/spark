@@ -63,12 +63,52 @@ private[spark] class HiveExternalCatalog(conf: SparkConf, hadoopConf: Configurat
   // This is to ensure Hive can get the Hadoop version when using the isolated classloader.
   org.apache.hadoop.util.VersionInfo.getVersion()
 
+  private val concurrentHiveConnections: Boolean = conf.getBoolean(
+    "spark.sql.catalog.concurrentHiveConnections", sys.env.getOrElse("concurrentHiveConnections",
+    sys.props.getOrElse("concurrentHiveConnections", "false")).toBoolean)
+
+  private lazy val _client: () => HiveClient = {
+    if (concurrentHiveConnections) {
+      () => clientThreadLocal.get()
+    } else {
+      () => __client
+    }
+  }
+
+  sealed trait Sync {
+    def sync[T](body: => T): T
+  }
+  case class RealSync() extends Sync {
+    override def sync[T](body: => T): T = {
+      super.synchronized(
+        body
+      )
+    }
+  }
+  case class NooPSync() extends Sync {
+    override def sync[T](body: => T): T = body
+  }
+
+  private val sync: Sync = {
+    if (concurrentHiveConnections) {
+      NooPSync()
+    } else {
+      RealSync()
+    }
+  }
+
+  private lazy val clientThreadLocal: ThreadLocal[HiveClient] = {
+    ThreadLocal.withInitial(() => HiveUtils.newClientForMetadata(conf, hadoopConf))
+  }
+
+  private lazy val __client: HiveClient = {
+    HiveUtils.newClientForMetadata(conf, hadoopConf)
+  }
+
   /**
    * A Hive client used to interact with the metastore.
    */
-  lazy val client: HiveClient = {
-    HiveUtils.newClientForMetadata(conf, hadoopConf)
-  }
+  def client: HiveClient = _client()
 
   // Exceptions thrown by the hive client that we would like to wrap
   private val clientExceptions = Set(
@@ -96,20 +136,20 @@ private[spark] class HiveExternalCatalog(conf: SparkConf, hadoopConf: Configurat
    * Run some code involving `client` in a [[synchronized]] block and wrap certain
    * exceptions thrown in the process in [[AnalysisException]].
    */
-  private def withClient[T](body: => T): T = synchronized {
-    try {
-      body
-    } catch {
-      case NonFatal(exception) if isClientException(exception) =>
-        val e = exception match {
-          // Since we are using shim, the exceptions thrown by the underlying method of
-          // Method.invoke() are wrapped by InvocationTargetException
-          case i: InvocationTargetException => i.getCause
-          case o => o
-        }
-        throw new AnalysisException(
-          e.getClass.getCanonicalName + ": " + e.getMessage, cause = Some(e))
-    }
+  private def withClient[T](body: => T): T = sync.sync {
+      try {
+        body
+      } catch {
+        case NonFatal(exception) if isClientException(exception) =>
+          val e = exception match {
+            // Since we are using shim, the exceptions thrown by the underlying method of
+            // Method.invoke() are wrapped by InvocationTargetException
+            case i: InvocationTargetException => i.getCause
+            case o => o
+          }
+          throw new AnalysisException(
+            e.getClass.getCanonicalName + ": " + e.getMessage, cause = Some(e))
+      }
   }
 
   /**

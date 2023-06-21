@@ -70,16 +70,16 @@ private[yarn] class ExecutorRunnable(
     val env = prepareEnvironment()
 
     s"""
-    |===============================================================================
-    |Default YARN executor launch context:
-    |  env:
-    |${Utils.redact(sparkConf, env.toSeq).map { case (k, v) => s"    $k -> $v\n" }.mkString}
-    |  command:
-    |    ${Utils.redactCommandLineArgs(sparkConf, commands).mkString(" \\ \n      ")}
-    |
-    |  resources:
-    |${localResources.map { case (k, v) => s"    $k -> $v\n" }.mkString}
-    |===============================================================================""".stripMargin
+    ===============================================================================
+    Default YARN executor launch context:
+      env:
+    ${Utils.redact(sparkConf, env.toSeq).map { case (k, v) => s"    $k -> $v\n" }.mkString}
+      command:
+        ${Utils.redactCommandLineArgs(sparkConf, commands).mkString(" \\ \n      ")}
+
+      resources:
+    ${localResources.map { case (k, v) => s"    $k -> $v\n" }.mkString}
+    ==============================================================================="""
   }
 
   def startContainer(): java.util.Map[String, ByteBuffer] = {

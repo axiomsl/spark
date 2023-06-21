@@ -542,8 +542,8 @@ private[spark] class TaskSetManager(
         abort(s"$msg Exception during serialization: $e")
         throw SparkCoreErrors.failToSerializeTaskError(e)
     }
-    if (serializedTask.limit() > TaskSetManager.TASK_SIZE_TO_WARN_KIB * 1024 &&
-      !emittedTaskSizeWarning) {
+    if (!emittedTaskSizeWarning &&
+      serializedTask.limit() > TaskSetManager.TASK_SIZE_TO_WARN_KIB * 1024) {
       emittedTaskSizeWarning = true
       logWarning(s"Stage ${task.stageId} contains a task of very large size " +
         s"(${serializedTask.limit() / 1024} KiB). The maximum recommended task size is " +
@@ -747,13 +747,13 @@ private[spark] class TaskSetManager(
     taskSetExcludelistHelperOpt.foreach { taskSetExcludelist =>
       val partition = tasks(indexInTaskSet).partitionId
       abort(s"""
-         |Aborting $taskSet because task $indexInTaskSet (partition $partition)
-         |cannot run anywhere due to node and executor excludeOnFailure.
-         |Most recent failure:
-         |${taskSetExcludelist.getLatestFailureReason}
-         |
-         |ExcludeOnFailure behavior can be configured via spark.excludeOnFailure.*.
-         |""".stripMargin)
+         Aborting $taskSet because task $indexInTaskSet (partition $partition)
+         cannot run anywhere due to node and executor excludeOnFailure.
+         Most recent failure:
+         ${taskSetExcludelist.getLatestFailureReason}
+
+         ExcludeOnFailure behavior can be configured via spark.excludeOnFailure.*.
+         """)
     }
   }
 
@@ -803,7 +803,7 @@ private[spark] class TaskSetManager(
       // checking if can fetch more results
       calculatedTasks -= 1
       val resultSizeAcc = result.accumUpdates.find(a =>
-        a.name == Some(InternalAccumulator.RESULT_SIZE))
+        a.name.contains(InternalAccumulator.RESULT_SIZE))
       if (resultSizeAcc.isDefined) {
         totalResultSize -= resultSizeAcc.get.asInstanceOf[LongAccumulator].value
       }
@@ -1248,18 +1248,18 @@ private[spark] class TaskSetManager(
   private def computeValidLocalityLevels(): Array[TaskLocality.TaskLocality] = {
     import TaskLocality.{PROCESS_LOCAL, NODE_LOCAL, NO_PREF, RACK_LOCAL, ANY}
     val levels = new ArrayBuffer[TaskLocality.TaskLocality]
-    if (!pendingTasks.forExecutor.isEmpty &&
+    if (pendingTasks.forExecutor.nonEmpty &&
         pendingTasks.forExecutor.keySet.exists(sched.isExecutorAlive(_))) {
       levels += PROCESS_LOCAL
     }
-    if (!pendingTasks.forHost.isEmpty &&
+    if (pendingTasks.forHost.nonEmpty &&
         pendingTasks.forHost.keySet.exists(sched.hasExecutorsAliveOnHost(_))) {
       levels += NODE_LOCAL
     }
-    if (!pendingTasks.noPrefs.isEmpty) {
+    if (pendingTasks.noPrefs.nonEmpty) {
       levels += NO_PREF
     }
-    if (!pendingTasks.forRack.isEmpty &&
+    if (pendingTasks.forRack.nonEmpty &&
         pendingTasks.forRack.keySet.exists(sched.hasHostAliveOnRack(_))) {
       levels += RACK_LOCAL
     }
