@@ -23,7 +23,7 @@ import scala.collection.JavaConverters._
 
 import org.apache.arrow.vector.VectorSchemaRoot
 import org.apache.arrow.vector.ipc.ArrowStreamWriter
-import org.json4s._
+
 import org.json4s.jackson.JsonMethods._
 
 import org.apache.spark.api.python._
