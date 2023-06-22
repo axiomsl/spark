@@ -19,16 +19,13 @@ package org.apache.spark.sql.catalyst.catalog
 
 import java.net.URI
 import java.util.Locale
-import java.util.concurrent.Callable
-import java.util.concurrent.TimeUnit
+import java.util.concurrent.{Callable, ConcurrentHashMap, TimeUnit}
 import javax.annotation.concurrent.GuardedBy
-
-import scala.collection.mutable
-import scala.util.{Failure, Success, Try}
 
 import com.google.common.cache.{Cache, CacheBuilder}
 import org.apache.hadoop.conf.Configuration
 import org.apache.hadoop.fs.Path
+import scala.util.{Failure, Success, Try}
 
 import org.apache.spark.internal.Logging
 import org.apache.spark.sql.catalyst._
@@ -123,15 +120,14 @@ class SessionCatalog(
   lazy val globalTempViewManager = globalTempViewManagerBuilder()
 
   /** List of temporary views, mapping from table name to their logical plan. */
-  @GuardedBy("this")
-  protected val tempViews = new mutable.HashMap[String, TemporaryViewRelation]
+  protected val tempViews = new ConcurrentHashMap[String, TemporaryViewRelation]()
 
   // Note: we track current database here because certain operations do not explicitly
   // specify the database (e.g. DROP TABLE my_table). In these cases we must first
   // check whether the temporary view or function exists, then, if not, operate on
   // the corresponding item in the current database.
   @GuardedBy("this")
-  protected var currentDb: String = format(defaultDatabase)
+  protected var currentDb: String = format(DEFAULT_DATABASE)
 
   private val validNameFormat = "([\\w_]+)".r
 
@@ -253,13 +249,15 @@ class SessionCatalog(
 
   private def requireTableExists(name: TableIdentifier): Unit = {
     if (!tableExists(name)) {
-      throw new NoSuchTableException(db = name.database.get, table = name.table)
+      val db = name.database.getOrElse(currentDb)
+      throw new NoSuchTableException(db = db, table = name.table)
     }
   }
 
   private def requireTableNotExists(name: TableIdentifier): Unit = {
     if (tableExists(name)) {
-      throw new TableAlreadyExistsException(db = name.database.get, table = name.table)
+      val db = name.database.getOrElse(currentDb)
+      throw new TableAlreadyExistsException(db = db, table = name.table)
     }
   }
 
@@ -327,7 +325,7 @@ class SessionCatalog(
     externalCatalog.listDatabases(pattern)
   }
 
-  def getCurrentDatabase: String = synchronized { currentDb }
+  def getCurrentDatabase: String = currentDb
 
   def setCurrentDatabase(db: String): Unit = {
     val dbName = format(db)
@@ -625,12 +623,14 @@ class SessionCatalog(
   def createTempView(
       name: String,
       viewDefinition: TemporaryViewRelation,
-      overrideIfExists: Boolean): Unit = synchronized {
+      overrideIfExists: Boolean): Unit = {
     val normalized = format(name)
-    if (tempViews.contains(normalized) && !overrideIfExists) {
-      throw new TempTableAlreadyExistsException(name)
+    tempViews.synchronized {
+      if (!overrideIfExists && tempViews.contains(normalized)) {
+        throw new TempTableAlreadyExistsException(name)
+      }
+      tempViews.put(normalized, viewDefinition)
     }
-    tempViews.put(normalized, viewDefinition)
   }
 
   /**
@@ -649,14 +649,16 @@ class SessionCatalog(
    */
   def alterTempViewDefinition(
       name: TableIdentifier,
-      viewDefinition: TemporaryViewRelation): Boolean = synchronized {
+      viewDefinition: TemporaryViewRelation): Boolean = {
     val viewName = format(name.table)
     if (name.database.isEmpty) {
-      if (tempViews.contains(viewName)) {
-        createTempView(viewName, viewDefinition, overrideIfExists = true)
-        true
-      } else {
-        false
+      tempViews.synchronized {
+        if (tempViews.contains(viewName)) {
+          createTempView(viewName, viewDefinition, overrideIfExists = true)
+          true
+        } else {
+          false
+        }
       }
     } else if (format(name.database.get) == globalTempViewManager.database) {
       globalTempViewManager.update(viewName, viewDefinition)
@@ -668,19 +670,20 @@ class SessionCatalog(
   /**
    * Return a local temporary view exactly as it was stored.
    */
-  def getRawTempView(name: String): Option[TemporaryViewRelation] = synchronized {
-    tempViews.get(format(name))
+  def getRawTempView(name: String): Option[TemporaryViewRelation] = {
+    Option(tempViews.get(format(name)))
   }
 
   /**
    * Generate a [[View]] operator from the temporary view stored.
    */
-  def getTempView(name: String): Option[View] = synchronized {
+  def getTempView(name: String): Option[View] = {
     getRawTempView(name).map(getTempViewPlan)
   }
 
-  def getTempViewNames(): Seq[String] = synchronized {
-    tempViews.keySet.toSeq
+  def getTempViewNames(): Seq[String] = {
+    import scala.collection.JavaConverters._
+    tempViews.keySet.asScala.toSeq
   }
 
   /**
@@ -720,8 +723,8 @@ class SessionCatalog(
    *
    * Returns true if this view is dropped successfully, false otherwise.
    */
-  def dropTempView(name: String): Boolean = synchronized {
-    tempViews.remove(format(name)).isDefined
+  def dropTempView(name: String): Boolean = {
+    tempViews.remove(format(name)) != null
   }
 
   /**
@@ -762,10 +765,10 @@ class SessionCatalog(
    * with the same name, then, if that does not exist, return the metadata of table/view in the
    * current database.
    */
-  def getTempViewOrPermanentTableMetadata(name: TableIdentifier): CatalogTable = synchronized {
+  def getTempViewOrPermanentTableMetadata(name: TableIdentifier): CatalogTable = {
     val table = format(name.table)
     if (name.database.isEmpty) {
-      tempViews.get(table).map(_.tableMeta).getOrElse(getTableMetadata(name))
+      Option(tempViews.get(table)).map(_.tableMeta).getOrElse(getTableMetadata(name))
     } else if (format(name.database.get) == globalTempViewManager.database) {
       globalTempViewManager.get(table).map(_.tableMeta)
         .getOrElse(throw new NoSuchTableException(globalTempViewManager.database, table))
@@ -783,7 +786,7 @@ class SessionCatalog(
    *
    * This assumes the database specified in `newName` matches the one in `oldName`.
    */
-  def renameTable(oldName: TableIdentifier, newName: TableIdentifier): Unit = synchronized {
+  def renameTable(oldName: TableIdentifier, newName: TableIdentifier): Unit = {
     val qualifiedIdent = qualifyIdentifier(oldName)
     val db = qualifiedIdent.database.get
     newName.database.map(format).foreach { newDb =>
@@ -807,12 +810,14 @@ class SessionCatalog(
           throw QueryCompilationErrors.cannotRenameTempViewWithDatabaseSpecifiedError(
             oldName, newName)
         }
-        if (tempViews.contains(newTableName)) {
-          throw QueryCompilationErrors.cannotRenameTempViewToExistingTableError(newName)
+        tempViews.synchronized {
+          if (tempViews.contains(newTableName)) {
+            throw QueryCompilationErrors.cannotRenameTempViewToExistingTableError(newName)
+          }
+          val table = tempViews.get(oldTableName)
+          tempViews.remove(oldTableName)
+          tempViews.put(newTableName, table)
         }
-        val table = tempViews(oldTableName)
-        tempViews.remove(oldTableName)
-        tempViews.put(newTableName, table)
       }
     }
   }
@@ -884,7 +889,7 @@ class SessionCatalog(
    *
    * @param name The name of the table/view that we look up.
    */
-  def lookupRelation(name: TableIdentifier): LogicalPlan = synchronized {
+  def lookupRelation(name: TableIdentifier): LogicalPlan = {
     val qualifiedIdent = qualifyIdentifier(name)
     val db = qualifiedIdent.database.get
     val table = qualifiedIdent.table
@@ -896,7 +901,7 @@ class SessionCatalog(
       val metadata = externalCatalog.getTable(db, table)
       getRelation(metadata)
     } else {
-      SubqueryAlias(table, getTempViewPlan(tempViews(table)))
+      SubqueryAlias(table, getTempViewPlan(tempViews.get(table)))
     }
   }
 
@@ -1112,7 +1117,8 @@ class SessionCatalog(
    */
   def listLocalTempViews(pattern: String): Seq[TableIdentifier] = {
     synchronized {
-      StringUtils.filterPattern(tempViews.keys.toSeq, pattern).map { name =>
+      import scala.collection.JavaConverters._
+      StringUtils.filterPattern(tempViews.keys.asScala.toSeq, pattern).map { name =>
         TableIdentifier(name)
       }
     }
@@ -1152,7 +1158,7 @@ class SessionCatalog(
    * Drop all existing temporary views.
    * For testing only.
    */
-  def clearTempTables(): Unit = synchronized {
+  def clearTempTables(): Unit = {
     tempViews.clear()
   }
 
@@ -1915,7 +1921,8 @@ class SessionCatalog(
   private[sql] def copyStateTo(target: SessionCatalog): Unit = synchronized {
     target.currentDb = currentDb
     // copy over temporary views
-    tempViews.foreach(kv => target.tempViews.put(kv._1, kv._2))
+    import scala.collection.JavaConverters._
+    tempViews.asScala.foreach(kv => target.tempViews.put(kv._1, kv._2))
   }
 
   /**
