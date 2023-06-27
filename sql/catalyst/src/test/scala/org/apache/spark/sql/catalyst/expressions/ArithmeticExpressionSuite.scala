@@ -578,7 +578,7 @@ class ArithmeticExpressionSuite extends SparkFunSuite with ExpressionEvalHelper 
     // Type checking error
     assert(
       LeastNullIntolerant(Seq(Literal(1), Literal("1"))).checkInputDataTypes() ==
-        TypeCheckFailure("The expressions should all have the same type, " +
+        TypeCheckResult.TypeCheckFailure("The expressions should all have the same type, " +
           "got LeastNullIntolerant(int, string)."))
 
     DataTypeTestUtils.ordered.foreach { dt =>
@@ -708,7 +708,7 @@ class ArithmeticExpressionSuite extends SparkFunSuite with ExpressionEvalHelper 
     // Type checking error
     assert(
       GreatestNullIntolerant(Seq(Literal(1), Literal("1"))).checkInputDataTypes() ==
-        TypeCheckFailure("The expressions should all have the same type, " +
+        TypeCheckResult.TypeCheckFailure("The expressions should all have the same type, " +
           "got GreatestNullIntolerant(int, string)."))
 
     DataTypeTestUtils.ordered.foreach { dt =>
