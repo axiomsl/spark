@@ -54,10 +54,10 @@ class HiveCommandSuite extends QueryTest with SQLTestUtils with TestHiveSingleto
 
     sql(
       """
-        |CREATE TABLE parquet_tab2 (c1 INT, c2 STRING)
-        |STORED AS PARQUET
-        |TBLPROPERTIES('prop1Key'="prop1Val", '`prop2Key`'="prop2Val")
-      """.stripMargin)
+        CREATE TABLE parquet_tab2 (c1 INT, c2 STRING)
+        STORED AS PARQUET
+        TBLPROPERTIES('prop1Key'="prop1Val", '`prop2Key`'="prop2Val")
+      """)
     sql("CREATE TABLE parquet_tab4 (price int, qty int) partitioned by (year int, month int)")
     sql("INSERT INTO parquet_tab4 PARTITION(year = 2015, month = 1) SELECT 1, 1")
     sql("INSERT INTO parquet_tab4 PARTITION(year = 2015, month = 2) SELECT 2, 2")
@@ -159,11 +159,11 @@ class HiveCommandSuite extends QueryTest with SQLTestUtils with TestHiveSingleto
     withTable("non_part_table", "part_table") {
       sql(
         """
-          |CREATE TABLE non_part_table (employeeID INT, employeeName STRING)
-          |ROW FORMAT DELIMITED
-          |FIELDS TERMINATED BY '|'
-          |LINES TERMINATED BY '\n'
-        """.stripMargin)
+          CREATE TABLE non_part_table (employeeID INT, employeeName STRING)
+          ROW FORMAT DELIMITED
+          FIELDS TERMINATED BY '|'
+          LINES TERMINATED BY '\n'
+        """)
 
       // LOAD DATA INTO non-partitioned table can't specify partition
       intercept[AnalysisException] {
@@ -215,12 +215,12 @@ class HiveCommandSuite extends QueryTest with SQLTestUtils with TestHiveSingleto
 
       sql(
         """
-          |CREATE TABLE part_table (employeeID INT, employeeName STRING)
-          |PARTITIONED BY (c STRING, d STRING)
-          |ROW FORMAT DELIMITED
-          |FIELDS TERMINATED BY '|'
-          |LINES TERMINATED BY '\n'
-        """.stripMargin)
+          CREATE TABLE part_table (employeeID INT, employeeName STRING)
+          PARTITIONED BY (c STRING, d STRING)
+          ROW FORMAT DELIMITED
+          FIELDS TERMINATED BY '|'
+          LINES TERMINATED BY '\n'
+        """)
 
       // LOAD DATA INTO partitioned table must specify partition
       withInputFile { f =>

@@ -50,11 +50,11 @@ class QueryCompilationErrorsSuite
       parameters = Map("expression" -> "b", "sourceType" -> "\"BIGINT\"", "targetType" -> "\"INT\"",
         "details" -> (
         s"""
-           |The type path of the target object is:
-           |- field (class: "int", name: "b")
-           |- root class: "org.apache.spark.sql.errors.StringIntClass"
-           |You can either add an explicit cast to the input data or choose a higher precision type
-         """.stripMargin.trim + " of the field in the target object")))
+           The type path of the target object is:
+           - field (class: "int", name: "b")
+           - root class: "org.apache.spark.sql.errors.StringIntClass"
+           You can either add an explicit cast to the input data or choose a higher precision type
+         """.trim + " of the field in the target object")))
 
     val e2 = intercept[AnalysisException] {
       sql("select 1L as a," +
@@ -68,12 +68,12 @@ class QueryCompilationErrorsSuite
         "targetType" -> "\"BIGINT\"",
         "details" -> (
         s"""
-           |The type path of the target object is:
-           |- field (class: "long", name: "b")
-           |- field (class: "org.apache.spark.sql.errors.StringLongClass", name: "b")
-           |- root class: "org.apache.spark.sql.errors.ComplexClass"
-           |You can either add an explicit cast to the input data or choose a higher precision type
-         """.stripMargin.trim + " of the field in the target object")))
+           The type path of the target object is:
+           - field (class: "long", name: "b")
+           - field (class: "org.apache.spark.sql.errors.StringLongClass", name: "b")
+           - root class: "org.apache.spark.sql.errors.ComplexClass"
+           You can either add an explicit cast to the input data or choose a higher precision type
+         """.trim + " of the field in the target object")))
   }
 
   test("UNSUPPORTED_GROUPING_EXPRESSION: filter with grouping/grouping_Id expression") {
@@ -205,9 +205,9 @@ class QueryCompilationErrorsSuite
     withUserDefinedFunction(functionName -> true) {
       sql(
         s"""
-          |CREATE TEMPORARY FUNCTION $functionName
-          |AS 'org.apache.spark.sql.errors.MyCastToString'
-          |""".stripMargin)
+          CREATE TEMPORARY FUNCTION $functionName
+          AS 'org.apache.spark.sql.errors.MyCastToString'
+          """)
 
       val e = intercept[AnalysisException] (
         sql(s"SELECT $functionName(123) as value")
@@ -332,10 +332,10 @@ class QueryCompilationErrorsSuite
     withTable(tableName) {
       sql(
         s"""
-          |CREATE TABLE $tableName (a STRING, b INT, c STRING, d STRING)
-          |USING parquet
-          |PARTITIONED BY (c, d)
-          |""".stripMargin)
+          CREATE TABLE $tableName (a STRING, b INT, c STRING, d STRING)
+          USING parquet
+          PARTITIONED BY (c, d)
+          """)
 
       withTempView(tempViewName) {
         sql(s"CREATE TEMPORARY VIEW $tempViewName as SELECT * FROM $tableName")
@@ -358,10 +358,10 @@ class QueryCompilationErrorsSuite
     withTable(tableName) {
       sql(
         s"""
-           |CREATE TABLE $tableName (a STRING, b INT, c STRING, d STRING)
-           |USING parquet
-           |PARTITIONED BY (c, d)
-           |""".stripMargin)
+           CREATE TABLE $tableName (a STRING, b INT, c STRING, d STRING)
+           USING parquet
+           PARTITIONED BY (c, d)
+           """)
 
       withView(viewName) {
         sql(s"CREATE VIEW $viewName as SELECT * FROM $tableName")
@@ -441,23 +441,23 @@ class QueryCompilationErrorsSuite
     checkAnswer(
       sql(
         """select distinct struct.a, struct.b
-          |from (
-          |  select named_struct('a', 1, 'b', 2, 'c', 3) as struct
-          |  union all
-          |  select named_struct('a', 1, 'b', 2, 'c', 4) as struct) tmp
-          |order by a, b
-          |""".stripMargin), Row(1, 2) :: Nil)
+          from (
+            select named_struct('a', 1, 'b', 2, 'c', 3) as struct
+            union all
+            select named_struct('a', 1, 'b', 2, 'c', 4) as struct) tmp
+          order by a, b
+          """), Row(1, 2) :: Nil)
 
     checkError(
       exception = intercept[AnalysisException] {
         sql(
           """select distinct struct.a, struct.b
-            |from (
-            |  select named_struct('a', 1, 'b', 2, 'c', 3) as struct
-            |  union all
-            |  select named_struct('a', 1, 'b', 2, 'c', 4) as struct) tmp
-            |order by struct.a, struct.b
-            |""".stripMargin)
+            from (
+              select named_struct('a', 1, 'b', 2, 'c', 3) as struct
+              union all
+              select named_struct('a', 1, 'b', 2, 'c', 4) as struct) tmp
+            order by struct.a, struct.b
+            """)
       },
       errorClass = "UNRESOLVED_COLUMN.WITH_SUGGESTION",
       sqlState = None,
@@ -643,9 +643,9 @@ class QueryCompilationErrorsSuite
     val e = intercept[AnalysisException](
       sql(
         """
-          |SELECT explodedvalue.*
-          |FROM VALUES array(1, 2, 3) AS (value)
-          |LATERAL VIEW array_contains(value, 1) AS explodedvalue""".stripMargin).collect()
+          SELECT explodedvalue.*
+          FROM VALUES array(1, 2, 3) AS (value)
+          LATERAL VIEW array_contains(value, 1) AS explodedvalue""").collect()
     )
 
     checkError(
@@ -702,10 +702,10 @@ class QueryCompilationErrorsSuite
     withTable(tableName) {
       sql(
         s"""
-           |CREATE TABLE $tableName (a STRING, b INT, c STRING, d STRING)
-           |USING parquet
-           |PARTITIONED BY (c, d)
-           |""".stripMargin)
+           CREATE TABLE $tableName (a STRING, b INT, c STRING, d STRING)
+           USING parquet
+           PARTITIONED BY (c, d)
+           """)
 
       checkError(
         exception = intercept[AnalysisException] {

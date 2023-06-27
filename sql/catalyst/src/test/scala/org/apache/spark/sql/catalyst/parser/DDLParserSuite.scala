@@ -111,29 +111,29 @@ class DDLParserSuite extends AnalysisTest {
   test("create/replace table - partitioned by transforms") {
     val createSql =
       """
-        |CREATE TABLE my_tab (a INT, b STRING, ts TIMESTAMP) USING parquet
-        |PARTITIONED BY (
-        |    a,
-        |    bucket(16, b),
-        |    years(ts),
-        |    months(ts),
-        |    days(ts),
-        |    hours(ts),
-        |    foo(a, "bar", 34))
-      """.stripMargin
+        CREATE TABLE my_tab (a INT, b STRING, ts TIMESTAMP) USING parquet
+        PARTITIONED BY (
+            a,
+            bucket(16, b),
+            years(ts),
+            months(ts),
+            days(ts),
+            hours(ts),
+            foo(a, "bar", 34))
+      """
 
     val replaceSql =
       """
-        |REPLACE TABLE my_tab (a INT, b STRING, ts TIMESTAMP) USING parquet
-        |PARTITIONED BY (
-        |    a,
-        |    bucket(16, b),
-        |    years(ts),
-        |    months(ts),
-        |    days(ts),
-        |    hours(ts),
-        |    foo(a, "bar", 34))
-      """.stripMargin
+        REPLACE TABLE my_tab (a INT, b STRING, ts TIMESTAMP) USING parquet
+        PARTITIONED BY (
+            a,
+            bucket(16, b),
+            years(ts),
+            months(ts),
+            days(ts),
+            hours(ts),
+            foo(a, "bar", 34))
+      """
     val expectedTableSpec = TableSpec(
       Seq("my_tab"),
       Some(new StructType()
@@ -317,8 +317,8 @@ class DDLParserSuite extends AnalysisTest {
     val createSql = "CREATE TABLE my_tab (id bigint, p1 string) PARTITIONED BY (p1, p2 string)"
     val value1 =
       """PARTITION BY: Cannot mix partition expressions and partition columns:
-        |Expressions: p1
-        |Columns: p2 string""".stripMargin
+        Expressions: p1
+        Columns: p2 string"""
     checkError(
       exception = parseException(createSql),
       errorClass = "_LEGACY_ERROR_TEMP_0035",
@@ -342,8 +342,8 @@ class DDLParserSuite extends AnalysisTest {
       "CREATE TABLE my_tab (id bigint, p1 string) PARTITIONED BY (p2 string, truncate(p1, 16))"
     val value2 =
       """PARTITION BY: Cannot mix partition expressions and partition columns:
-        |Expressions: truncate(p1, 16)
-        |Columns: p2 string""".stripMargin
+        Expressions: truncate(p1, 16)
+        Columns: p2 string"""
     checkError(
       exception = parseException(createSqlWithExpr),
       errorClass = "_LEGACY_ERROR_TEMP_0035",
@@ -367,9 +367,9 @@ class DDLParserSuite extends AnalysisTest {
   test("create/replace table - stored as") {
     val createSql =
       """CREATE TABLE my_tab (id bigint)
-        |PARTITIONED BY (part string)
-        |STORED AS parquet
-        """.stripMargin
+        PARTITIONED BY (part string)
+        STORED AS parquet
+        """
     val replaceSql = createSql.replaceFirst("CREATE", "REPLACE")
     val expectedTableSpec = TableSpec(
       Seq("my_tab"),
@@ -390,11 +390,11 @@ class DDLParserSuite extends AnalysisTest {
     Seq("sequencefile", "textfile", "rcfile").foreach { format =>
       val createSql =
         s"""CREATE TABLE my_tab (id bigint)
-          |PARTITIONED BY (part string)
-          |STORED AS $format
-          |ROW FORMAT SERDE 'customSerde'
-          |WITH SERDEPROPERTIES ('prop'='value')
-        """.stripMargin
+          PARTITIONED BY (part string)
+          STORED AS $format
+          ROW FORMAT SERDE 'customSerde'
+          WITH SERDEPROPERTIES ('prop'='value')
+        """
       val replaceSql = createSql.replaceFirst("CREATE", "REPLACE")
       val expectedTableSpec = TableSpec(
         Seq("my_tab"),
@@ -415,10 +415,10 @@ class DDLParserSuite extends AnalysisTest {
 
     val createSql =
       s"""CREATE TABLE my_tab (id bigint)
-         |PARTITIONED BY (part string)
-         |STORED AS otherFormat
-         |ROW FORMAT SERDE 'customSerde'
-         |WITH SERDEPROPERTIES ('prop'='value')""".stripMargin
+         PARTITIONED BY (part string)
+         STORED AS otherFormat
+         ROW FORMAT SERDE 'customSerde'
+         WITH SERDEPROPERTIES ('prop'='value')"""
     val value = "ROW FORMAT SERDE is incompatible with format 'otherformat', " +
       "which also specifies a serde"
     checkError(
@@ -444,14 +444,14 @@ class DDLParserSuite extends AnalysisTest {
   test("create/replace table - stored as format with delimited clauses") {
     val createSql =
       s"""CREATE TABLE my_tab (id bigint)
-         |PARTITIONED BY (part string)
-         |STORED AS textfile
-         |ROW FORMAT DELIMITED
-         |FIELDS TERMINATED BY ',' ESCAPED BY '\\\\' -- double escape for Scala and for SQL
-         |COLLECTION ITEMS TERMINATED BY '#'
-         |MAP KEYS TERMINATED BY '='
-         |LINES TERMINATED BY '\\n'
-      """.stripMargin
+         PARTITIONED BY (part string)
+         STORED AS textfile
+         ROW FORMAT DELIMITED
+         FIELDS TERMINATED BY ',' ESCAPED BY '\\\\' -- double escape for Scala and for SQL
+         COLLECTION ITEMS TERMINATED BY '#'
+         MAP KEYS TERMINATED BY '='
+         LINES TERMINATED BY '\\n'
+      """
     val replaceSql = createSql.replaceFirst("CREATE", "REPLACE")
     val expectedTableSpec = TableSpec(
       Seq("my_tab"),
@@ -472,10 +472,10 @@ class DDLParserSuite extends AnalysisTest {
 
     val createFailSql =
       s"""CREATE TABLE my_tab (id bigint)
-         |PARTITIONED BY (part string)
-         |STORED AS otherFormat
-         |ROW FORMAT DELIMITED
-         |FIELDS TERMINATED BY ','""".stripMargin
+         PARTITIONED BY (part string)
+         STORED AS otherFormat
+         ROW FORMAT DELIMITED
+         FIELDS TERMINATED BY ','"""
     val value = "ROW FORMAT DELIMITED is only compatible with 'textfile', not 'otherformat'"
     checkError(
       exception = parseException(createFailSql),
@@ -500,9 +500,9 @@ class DDLParserSuite extends AnalysisTest {
   test("create/replace table - stored as inputformat/outputformat") {
     val createSql =
       """CREATE TABLE my_tab (id bigint)
-        |PARTITIONED BY (part string)
-        |STORED AS INPUTFORMAT 'inFormat' OUTPUTFORMAT 'outFormat'
-        """.stripMargin
+        PARTITIONED BY (part string)
+        STORED AS INPUTFORMAT 'inFormat' OUTPUTFORMAT 'outFormat'
+        """
     val replaceSql = createSql.replaceFirst("CREATE", "REPLACE")
     val expectedTableSpec = TableSpec(
       Seq("my_tab"),
@@ -522,10 +522,10 @@ class DDLParserSuite extends AnalysisTest {
   test("create/replace table - stored as inputformat/outputformat with serde") {
     val createSql =
       """CREATE TABLE my_tab (id bigint)
-        |PARTITIONED BY (part string)
-        |STORED AS INPUTFORMAT 'inFormat' OUTPUTFORMAT 'outFormat'
-        |ROW FORMAT SERDE 'customSerde'
-        """.stripMargin
+        PARTITIONED BY (part string)
+        STORED AS INPUTFORMAT 'inFormat' OUTPUTFORMAT 'outFormat'
+        ROW FORMAT SERDE 'customSerde'
+        """
     val replaceSql = createSql.replaceFirst("CREATE", "REPLACE")
     val expectedTableSpec = TableSpec(
       Seq("my_tab"),
@@ -547,8 +547,8 @@ class DDLParserSuite extends AnalysisTest {
   test("create/replace table - using with stored as") {
     val createSql =
       """CREATE TABLE my_tab (id bigint, part string)
-        |USING parquet
-        |STORED AS parquet""".stripMargin
+        USING parquet
+        STORED AS parquet"""
     checkError(
       exception = parseException(createSql),
       errorClass = "_LEGACY_ERROR_TEMP_0035",
@@ -572,8 +572,8 @@ class DDLParserSuite extends AnalysisTest {
   test("create/replace table - using with row format serde") {
     val createSql =
       """CREATE TABLE my_tab (id bigint, part string)
-        |USING parquet
-        |ROW FORMAT SERDE 'customSerde'""".stripMargin
+        USING parquet
+        ROW FORMAT SERDE 'customSerde'"""
     checkError(
       exception = parseException(createSql),
       errorClass = "_LEGACY_ERROR_TEMP_0035",
@@ -597,8 +597,8 @@ class DDLParserSuite extends AnalysisTest {
   test("create/replace table - using with row format delimited") {
     val createSql =
       """CREATE TABLE my_tab (id bigint, part string)
-        |USING parquet
-        |ROW FORMAT DELIMITED FIELDS TERMINATED BY ','""".stripMargin
+        USING parquet
+        ROW FORMAT DELIMITED FIELDS TERMINATED BY ','"""
     checkError(
       exception = parseException(createSql),
       errorClass = "_LEGACY_ERROR_TEMP_0035",
@@ -622,7 +622,7 @@ class DDLParserSuite extends AnalysisTest {
   test("create/replace table - stored by") {
     val createSql =
       """CREATE TABLE my_tab (id bigint, p1 string)
-        |STORED BY 'handler'""".stripMargin
+        STORED BY 'handler'"""
     val fragment = "STORED BY 'handler'"
     checkError(
       exception = parseException(createSql),
@@ -859,14 +859,14 @@ class DDLParserSuite extends AnalysisTest {
   test("support for other types in OPTIONS") {
     val createSql =
       """
-        |CREATE TABLE table_name USING json
-        |OPTIONS (a 1, b 0.1, c TRUE)
-      """.stripMargin
+        CREATE TABLE table_name USING json
+        OPTIONS (a 1, b 0.1, c TRUE)
+      """
     val replaceSql =
       """
-        |REPLACE TABLE table_name USING json
-        |OPTIONS (a 1, b 0.1, c TRUE)
-      """.stripMargin
+        REPLACE TABLE table_name USING json
+        OPTIONS (a 1, b 0.1, c TRUE)
+      """
     Seq(createSql, replaceSql).foreach { sql =>
       testCreateOrReplaceDdl(
         sql,
@@ -887,43 +887,43 @@ class DDLParserSuite extends AnalysisTest {
   test("Test CTAS against native tables") {
     val s1 =
       """
-        |CREATE TABLE IF NOT EXISTS mydb.page_view
-        |USING parquet
-        |COMMENT 'This is the staging page view table'
-        |LOCATION '/user/external/page_view'
-        |TBLPROPERTIES ('p1'='v1', 'p2'='v2')
-        |AS SELECT * FROM src
-      """.stripMargin
+        CREATE TABLE IF NOT EXISTS mydb.page_view
+        USING parquet
+        COMMENT 'This is the staging page view table'
+        LOCATION '/user/external/page_view'
+        TBLPROPERTIES ('p1'='v1', 'p2'='v2')
+        AS SELECT * FROM src
+      """
 
     val s2 =
       """
-        |CREATE TABLE IF NOT EXISTS mydb.page_view
-        |USING parquet
-        |LOCATION '/user/external/page_view'
-        |COMMENT 'This is the staging page view table'
-        |TBLPROPERTIES ('p1'='v1', 'p2'='v2')
-        |AS SELECT * FROM src
-      """.stripMargin
+        CREATE TABLE IF NOT EXISTS mydb.page_view
+        USING parquet
+        LOCATION '/user/external/page_view'
+        COMMENT 'This is the staging page view table'
+        TBLPROPERTIES ('p1'='v1', 'p2'='v2')
+        AS SELECT * FROM src
+      """
 
     val s3 =
       """
-        |CREATE TABLE IF NOT EXISTS mydb.page_view
-        |USING parquet
-        |COMMENT 'This is the staging page view table'
-        |LOCATION '/user/external/page_view'
-        |TBLPROPERTIES ('p1'='v1', 'p2'='v2')
-        |AS SELECT * FROM src
-      """.stripMargin
+        CREATE TABLE IF NOT EXISTS mydb.page_view
+        USING parquet
+        COMMENT 'This is the staging page view table'
+        LOCATION '/user/external/page_view'
+        TBLPROPERTIES ('p1'='v1', 'p2'='v2')
+        AS SELECT * FROM src
+      """
 
     val s4 =
       """
-        |REPLACE TABLE mydb.page_view
-        |USING parquet
-        |COMMENT 'This is the staging page view table'
-        |LOCATION '/user/external/page_view'
-        |TBLPROPERTIES ('p1'='v1', 'p2'='v2')
-        |AS SELECT * FROM src
-      """.stripMargin
+        REPLACE TABLE mydb.page_view
+        USING parquet
+        COMMENT 'This is the staging page view table'
+        LOCATION '/user/external/page_view'
+        TBLPROPERTIES ('p1'='v1', 'p2'='v2')
+        AS SELECT * FROM src
+      """
 
     val expectedTableSpec = TableSpec(
         Seq("mydb", "page_view"),
@@ -966,9 +966,9 @@ class DDLParserSuite extends AnalysisTest {
         assert(create.ignoreIfExists == expectedIfNotExists)
       case ctas: CreateTableAsSelect if newTableToken == "CREATE" =>
         assert(ctas.ignoreIfExists == expectedIfNotExists)
-      case replace: ReplaceTable if newTableToken == "REPLACE" =>
-      case replace: ReplaceTableAsSelect if newTableToken == "REPLACE" =>
-      case other =>
+      case _: ReplaceTable if newTableToken == "REPLACE" =>
+      case _: ReplaceTableAsSelect if newTableToken == "REPLACE" =>
+      case _ =>
         fail("First token in statement does not match the expected parsed plan; CREATE TABLE" +
           " should create a CreateTableStatement, and REPLACE TABLE should create a" +
           s" ReplaceTableStatement. Statement: $sqlStatement, plan type:" +
@@ -1518,10 +1518,10 @@ class DDLParserSuite extends AnalysisTest {
   test("insert table: append with partition") {
     parseCompare(
       """
-        |INSERT INTO testcat.ns1.ns2.tbl
-        |PARTITION (p1 = 3, p2)
-        |SELECT * FROM source
-      """.stripMargin,
+        INSERT INTO testcat.ns1.ns2.tbl
+        PARTITION (p1 = 3, p2)
+        SELECT * FROM source
+      """,
       InsertIntoStatement(
         UnresolvedRelation(Seq("testcat", "ns1", "ns2", "tbl")),
         Map("p1" -> Some("3"), "p2" -> None),
@@ -1533,10 +1533,10 @@ class DDLParserSuite extends AnalysisTest {
   test("insert table: append with partition and a column list") {
     parseCompare(
       """
-        |INSERT INTO testcat.ns1.ns2.tbl
-        |PARTITION (p1 = 3, p2) (a, b)
-        |SELECT * FROM source
-      """.stripMargin,
+        INSERT INTO testcat.ns1.ns2.tbl
+        PARTITION (p1 = 3, p2) (a, b)
+        SELECT * FROM source
+      """,
       InsertIntoStatement(
         UnresolvedRelation(Seq("testcat", "ns1", "ns2", "tbl")),
         Map("p1" -> Some("3"), "p2" -> None),
@@ -1578,10 +1578,10 @@ class DDLParserSuite extends AnalysisTest {
   test("insert table: overwrite with partition") {
     parseCompare(
       """
-        |INSERT OVERWRITE TABLE testcat.ns1.ns2.tbl
-        |PARTITION (p1 = 3, p2)
-        |SELECT * FROM source
-      """.stripMargin,
+        INSERT OVERWRITE TABLE testcat.ns1.ns2.tbl
+        PARTITION (p1 = 3, p2)
+        SELECT * FROM source
+      """,
       InsertIntoStatement(
         UnresolvedRelation(Seq("testcat", "ns1", "ns2", "tbl")),
         Map("p1" -> Some("3"), "p2" -> None),
@@ -1593,10 +1593,10 @@ class DDLParserSuite extends AnalysisTest {
   test("insert table: overwrite with partition and column list") {
     parseCompare(
       """
-        |INSERT OVERWRITE TABLE testcat.ns1.ns2.tbl
-        |PARTITION (p1 = 3, p2) (a, b)
-        |SELECT * FROM source
-      """.stripMargin,
+        INSERT OVERWRITE TABLE testcat.ns1.ns2.tbl
+        PARTITION (p1 = 3, p2) (a, b)
+        SELECT * FROM source
+      """,
       InsertIntoStatement(
         UnresolvedRelation(Seq("testcat", "ns1", "ns2", "tbl")),
         Map("p1" -> Some("3"), "p2" -> None),
@@ -1608,10 +1608,10 @@ class DDLParserSuite extends AnalysisTest {
   test("insert table: overwrite with partition if not exists") {
     parseCompare(
       """
-        |INSERT OVERWRITE TABLE testcat.ns1.ns2.tbl
-        |PARTITION (p1 = 3) IF NOT EXISTS
-        |SELECT * FROM source
-      """.stripMargin,
+        INSERT OVERWRITE TABLE testcat.ns1.ns2.tbl
+        PARTITION (p1 = 3) IF NOT EXISTS
+        SELECT * FROM source
+      """,
       InsertIntoStatement(
         UnresolvedRelation(Seq("testcat", "ns1", "ns2", "tbl")),
         Map("p1" -> Some("3")),
@@ -1623,11 +1623,11 @@ class DDLParserSuite extends AnalysisTest {
   test("insert table: if not exists with dynamic partition fails") {
     val sql =
       """INSERT OVERWRITE TABLE testcat.ns1.ns2.tbl
-        |PARTITION (p1 = 3, p2) IF NOT EXISTS
-        |SELECT * FROM source""".stripMargin
+        PARTITION (p1 = 3, p2) IF NOT EXISTS
+        SELECT * FROM source"""
     val fragment =
       """INSERT OVERWRITE TABLE testcat.ns1.ns2.tbl
-        |PARTITION (p1 = 3, p2) IF NOT EXISTS""".stripMargin
+        PARTITION (p1 = 3, p2) IF NOT EXISTS"""
     checkError(
       exception = parseException(sql),
       errorClass = "_LEGACY_ERROR_TEMP_0035",
@@ -1641,11 +1641,11 @@ class DDLParserSuite extends AnalysisTest {
   test("insert table: if not exists without overwrite fails") {
     val sql =
       """INSERT INTO TABLE testcat.ns1.ns2.tbl
-        |PARTITION (p1 = 3) IF NOT EXISTS
-        |SELECT * FROM source""".stripMargin
+        PARTITION (p1 = 3) IF NOT EXISTS
+        SELECT * FROM source"""
     val fragment =
       """INSERT INTO TABLE testcat.ns1.ns2.tbl
-        |PARTITION (p1 = 3) IF NOT EXISTS""".stripMargin
+        PARTITION (p1 = 3) IF NOT EXISTS"""
     checkError(
       exception = parseException(sql),
       errorClass = "_LEGACY_ERROR_TEMP_0035",
@@ -1685,9 +1685,9 @@ class DDLParserSuite extends AnalysisTest {
   test("update table: basic") {
     parseCompare(
       """
-        |UPDATE testcat.ns1.ns2.tbl
-        |SET a='Robert', b=32
-      """.stripMargin,
+        UPDATE testcat.ns1.ns2.tbl
+        SET a='Robert', b=32
+      """,
       UpdateTable(
         UnresolvedRelation(Seq("testcat", "ns1", "ns2", "tbl")),
         Seq(Assignment(UnresolvedAttribute("a"), Literal("Robert")),
@@ -1698,10 +1698,10 @@ class DDLParserSuite extends AnalysisTest {
   test("update table: with alias and where clause") {
     parseCompare(
       """
-        |UPDATE testcat.ns1.ns2.tbl AS t
-        |SET t.a='Robert', t.b=32
-        |WHERE t.c=2
-      """.stripMargin,
+        UPDATE testcat.ns1.ns2.tbl AS t
+        SET t.a='Robert', t.b=32
+        WHERE t.c=2
+      """,
       UpdateTable(
         SubqueryAlias("t", UnresolvedRelation(Seq("testcat", "ns1", "ns2", "tbl"))),
         Seq(Assignment(UnresolvedAttribute("t.a"), Literal("Robert")),
@@ -1712,8 +1712,8 @@ class DDLParserSuite extends AnalysisTest {
   test("update table: columns aliases is not allowed") {
     val sql =
       """UPDATE testcat.ns1.ns2.tbl AS t(a,b,c,d)
-        |SET b='Robert', c=32
-        |WHERE d=2""".stripMargin
+        SET b='Robert', c=32
+        WHERE d=2"""
     checkError(
       exception = parseException(sql),
       errorClass = "_LEGACY_ERROR_TEMP_0003",
@@ -1727,17 +1727,17 @@ class DDLParserSuite extends AnalysisTest {
   test("merge into table: basic") {
     parseCompare(
       """
-        |MERGE INTO testcat1.ns1.ns2.tbl AS target
-        |USING testcat2.ns1.ns2.tbl AS source
-        |ON target.col1 = source.col1
-        |WHEN MATCHED AND (target.col2='delete') THEN DELETE
-        |WHEN MATCHED AND (target.col2='update') THEN UPDATE SET target.col2 = source.col2
-        |WHEN NOT MATCHED AND (target.col2='insert')
-        |THEN INSERT (target.col1, target.col2) values (source.col1, source.col2)
-        |WHEN NOT MATCHED BY SOURCE AND (target.col3='delete') THEN DELETE
-        |WHEN NOT MATCHED BY SOURCE AND (target.col3='update')
-        |THEN UPDATE SET target.col3 = 'delete'
-      """.stripMargin,
+        MERGE INTO testcat1.ns1.ns2.tbl AS target
+        USING testcat2.ns1.ns2.tbl AS source
+        ON target.col1 = source.col1
+        WHEN MATCHED AND (target.col2='delete') THEN DELETE
+        WHEN MATCHED AND (target.col2='update') THEN UPDATE SET target.col2 = source.col2
+        WHEN NOT MATCHED AND (target.col2='insert')
+        THEN INSERT (target.col1, target.col2) values (source.col1, source.col2)
+        WHEN NOT MATCHED BY SOURCE AND (target.col3='delete') THEN DELETE
+        WHEN NOT MATCHED BY SOURCE AND (target.col3='update')
+        THEN UPDATE SET target.col3 = 'delete'
+      """,
       MergeIntoTable(
         SubqueryAlias("target", UnresolvedRelation(Seq("testcat1", "ns1", "ns2", "tbl"))),
         SubqueryAlias("source", UnresolvedRelation(Seq("testcat2", "ns1", "ns2", "tbl"))),
@@ -1757,17 +1757,17 @@ class DDLParserSuite extends AnalysisTest {
   test("merge into table: using subquery") {
     parseCompare(
       """
-        |MERGE INTO testcat1.ns1.ns2.tbl AS target
-        |USING (SELECT * FROM testcat2.ns1.ns2.tbl) AS source
-        |ON target.col1 = source.col1
-        |WHEN MATCHED AND (target.col2='delete') THEN DELETE
-        |WHEN MATCHED AND (target.col2='update') THEN UPDATE SET target.col2 = source.col2
-        |WHEN NOT MATCHED AND (target.col2='insert')
-        |THEN INSERT (target.col1, target.col2) values (source.col1, source.col2)
-        |WHEN NOT MATCHED BY SOURCE AND (target.col3='delete') THEN DELETE
-        |WHEN NOT MATCHED BY SOURCE AND (target.col3='update')
-        |THEN UPDATE SET target.col3 = 'delete'
-      """.stripMargin,
+        MERGE INTO testcat1.ns1.ns2.tbl AS target
+        USING (SELECT * FROM testcat2.ns1.ns2.tbl) AS source
+        ON target.col1 = source.col1
+        WHEN MATCHED AND (target.col2='delete') THEN DELETE
+        WHEN MATCHED AND (target.col2='update') THEN UPDATE SET target.col2 = source.col2
+        WHEN NOT MATCHED AND (target.col2='insert')
+        THEN INSERT (target.col1, target.col2) values (source.col1, source.col2)
+        WHEN NOT MATCHED BY SOURCE AND (target.col3='delete') THEN DELETE
+        WHEN NOT MATCHED BY SOURCE AND (target.col3='update')
+        THEN UPDATE SET target.col3 = 'delete'
+      """,
       MergeIntoTable(
         SubqueryAlias("target", UnresolvedRelation(Seq("testcat1", "ns1", "ns2", "tbl"))),
         SubqueryAlias("source", Project(Seq(UnresolvedStar(None)),
@@ -1788,17 +1788,17 @@ class DDLParserSuite extends AnalysisTest {
   test("merge into table: cte") {
     parseCompare(
       """
-        |MERGE INTO testcat1.ns1.ns2.tbl AS target
-        |USING (WITH s as (SELECT * FROM testcat2.ns1.ns2.tbl) SELECT * FROM s) AS source
-        |ON target.col1 = source.col1
-        |WHEN MATCHED AND (target.col2='delete') THEN DELETE
-        |WHEN MATCHED AND (target.col2='update') THEN UPDATE SET target.col2 = source.col2
-        |WHEN NOT MATCHED AND (target.col2='insert')
-        |THEN INSERT (target.col1, target.col2) values (source.col1, source.col2)
-        |WHEN NOT MATCHED BY SOURCE AND (target.col3='delete') THEN DELETE
-        |WHEN NOT MATCHED BY SOURCE AND (target.col3='update')
-        |THEN UPDATE SET target.col3 = 'delete'
-      """.stripMargin,
+        MERGE INTO testcat1.ns1.ns2.tbl AS target
+        USING (WITH s as (SELECT * FROM testcat2.ns1.ns2.tbl) SELECT * FROM s) AS source
+        ON target.col1 = source.col1
+        WHEN MATCHED AND (target.col2='delete') THEN DELETE
+        WHEN MATCHED AND (target.col2='update') THEN UPDATE SET target.col2 = source.col2
+        WHEN NOT MATCHED AND (target.col2='insert')
+        THEN INSERT (target.col1, target.col2) values (source.col1, source.col2)
+        WHEN NOT MATCHED BY SOURCE AND (target.col3='delete') THEN DELETE
+        WHEN NOT MATCHED BY SOURCE AND (target.col3='update')
+        THEN UPDATE SET target.col3 = 'delete'
+      """,
       MergeIntoTable(
         SubqueryAlias("target", UnresolvedRelation(Seq("testcat1", "ns1", "ns2", "tbl"))),
         SubqueryAlias("source", UnresolvedWith(Project(Seq(UnresolvedStar(None)),
@@ -1821,14 +1821,14 @@ class DDLParserSuite extends AnalysisTest {
   test("merge into table: no additional condition") {
     parseCompare(
       """
-        |MERGE INTO testcat1.ns1.ns2.tbl AS target
-        |USING testcat2.ns1.ns2.tbl AS source
-        |ON target.col1 = source.col1
-        |WHEN MATCHED THEN UPDATE SET target.col2 = source.col2
-        |WHEN NOT MATCHED
-        |THEN INSERT (target.col1, target.col2) values (source.col1, source.col2)
-        |WHEN NOT MATCHED BY SOURCE THEN DELETE
-      """.stripMargin,
+        MERGE INTO testcat1.ns1.ns2.tbl AS target
+        USING testcat2.ns1.ns2.tbl AS source
+        ON target.col1 = source.col1
+        WHEN MATCHED THEN UPDATE SET target.col2 = source.col2
+        WHEN NOT MATCHED
+        THEN INSERT (target.col1, target.col2) values (source.col1, source.col2)
+        WHEN NOT MATCHED BY SOURCE THEN DELETE
+      """,
     MergeIntoTable(
       SubqueryAlias("target", UnresolvedRelation(Seq("testcat1", "ns1", "ns2", "tbl"))),
       SubqueryAlias("source", UnresolvedRelation(Seq("testcat2", "ns1", "ns2", "tbl"))),
@@ -1844,14 +1844,14 @@ class DDLParserSuite extends AnalysisTest {
   test("merge into table: star") {
     parseCompare(
       """
-        |MERGE INTO testcat1.ns1.ns2.tbl AS target
-        |USING testcat2.ns1.ns2.tbl AS source
-        |ON target.col1 = source.col1
-        |WHEN MATCHED AND (target.col2='delete') THEN DELETE
-        |WHEN MATCHED AND (target.col2='update') THEN UPDATE SET *
-        |WHEN NOT MATCHED AND (target.col2='insert')
-        |THEN INSERT *
-      """.stripMargin,
+        MERGE INTO testcat1.ns1.ns2.tbl AS target
+        USING testcat2.ns1.ns2.tbl AS source
+        ON target.col1 = source.col1
+        WHEN MATCHED AND (target.col2='delete') THEN DELETE
+        WHEN MATCHED AND (target.col2='update') THEN UPDATE SET *
+        WHEN NOT MATCHED AND (target.col2='insert')
+        THEN INSERT *
+      """,
     MergeIntoTable(
       SubqueryAlias("target", UnresolvedRelation(Seq("testcat1", "ns1", "ns2", "tbl"))),
       SubqueryAlias("source", UnresolvedRelation(Seq("testcat2", "ns1", "ns2", "tbl"))),
@@ -1864,11 +1864,11 @@ class DDLParserSuite extends AnalysisTest {
 
   test("merge into table: invalid star in not matched by source") {
     val sql = """
-        |MERGE INTO testcat1.ns1.ns2.tbl AS target
-        |USING testcat2.ns1.ns2.tbl AS source
-        |ON target.col1 = source.col1
-        |WHEN NOT MATCHED BY SOURCE THEN UPDATE *
-      """.stripMargin
+        MERGE INTO testcat1.ns1.ns2.tbl AS target
+        USING testcat2.ns1.ns2.tbl AS source
+        ON target.col1 = source.col1
+        WHEN NOT MATCHED BY SOURCE THEN UPDATE *
+      """
     checkError(
       exception = parseException(sql),
       errorClass = "PARSE_SYNTAX_ERROR",
@@ -1878,16 +1878,16 @@ class DDLParserSuite extends AnalysisTest {
   test("merge into table: not matched by target") {
     parseCompare(
       """
-        |MERGE INTO testcat1.ns1.ns2.tbl AS target
-        |USING testcat2.ns1.ns2.tbl AS source
-        |ON target.col1 = source.col1
-        |WHEN NOT MATCHED BY TARGET AND (target.col3='insert1')
-        |THEN INSERT (target.col1, target.col2) VALUES (source.col1, 0)
-        |WHEN NOT MATCHED AND (target.col3='insert2')
-        |THEN INSERT (target.col1, target.col2) VALUES (1, source.col2)
-        |WHEN NOT MATCHED BY TARGET
-        |THEN INSERT *
-      """.stripMargin,
+        MERGE INTO testcat1.ns1.ns2.tbl AS target
+        USING testcat2.ns1.ns2.tbl AS source
+        ON target.col1 = source.col1
+        WHEN NOT MATCHED BY TARGET AND (target.col3='insert1')
+        THEN INSERT (target.col1, target.col2) VALUES (source.col1, 0)
+        WHEN NOT MATCHED AND (target.col3='insert2')
+        THEN INSERT (target.col1, target.col2) VALUES (1, source.col2)
+        WHEN NOT MATCHED BY TARGET
+        THEN INSERT *
+      """,
       MergeIntoTable(
         SubqueryAlias("target", UnresolvedRelation(Seq("testcat1", "ns1", "ns2", "tbl"))),
         SubqueryAlias("source", UnresolvedRelation(Seq("testcat2", "ns1", "ns2", "tbl"))),
@@ -1907,13 +1907,13 @@ class DDLParserSuite extends AnalysisTest {
     Seq("target(c1, c2)" -> "source", "target" -> "source(c1, c2)").foreach {
       case (targetAlias, sourceAlias) =>
         val sql = s"""MERGE INTO testcat1.ns1.ns2.tbl AS $targetAlias
-             |USING testcat2.ns1.ns2.tbl AS $sourceAlias
-             |ON target.col1 = source.col1
-             |WHEN MATCHED AND (target.col2='delete') THEN DELETE
-             |WHEN MATCHED AND (target.col2='update') THEN UPDATE SET target.col2 = source.col2
-             |WHEN NOT MATCHED AND (target.col2='insert')
-             |THEN INSERT (target.col1, target.col2) values (source.col1, source.col2)"""
-          .stripMargin
+             USING testcat2.ns1.ns2.tbl AS $sourceAlias
+             ON target.col1 = source.col1
+             WHEN MATCHED AND (target.col2='delete') THEN DELETE
+             WHEN MATCHED AND (target.col2='update') THEN UPDATE SET target.col2 = source.col2
+             WHEN NOT MATCHED AND (target.col2='insert')
+             THEN INSERT (target.col1, target.col2) values (source.col1, source.col2)"""
+
         checkError(
           exception = parseException(sql),
           errorClass = "_LEGACY_ERROR_TEMP_0003",
@@ -1928,20 +1928,20 @@ class DDLParserSuite extends AnalysisTest {
   test("merge into table: multi matched, not matched and not matched by source clauses") {
     parseCompare(
       """
-        |MERGE INTO testcat1.ns1.ns2.tbl AS target
-        |USING testcat2.ns1.ns2.tbl AS source
-        |ON target.col1 = source.col1
-        |WHEN MATCHED AND (target.col2='delete') THEN DELETE
-        |WHEN MATCHED AND (target.col2='update1') THEN UPDATE SET target.col2 = 1
-        |WHEN MATCHED AND (target.col2='update2') THEN UPDATE SET target.col2 = 2
-        |WHEN NOT MATCHED AND (target.col2='insert1')
-        |THEN INSERT (target.col1, target.col2) values (source.col1, 1)
-        |WHEN NOT MATCHED AND (target.col2='insert2')
-        |THEN INSERT (target.col1, target.col2) values (source.col1, 2)
-        |WHEN NOT MATCHED BY SOURCE AND (target.col3='delete') THEN DELETE
-        |WHEN NOT MATCHED BY SOURCE AND (target.col3='update1') THEN UPDATE SET target.col3 = 1
-        |WHEN NOT MATCHED BY SOURCE AND (target.col3='update2') THEN UPDATE SET target.col3 = 2
-      """.stripMargin,
+        MERGE INTO testcat1.ns1.ns2.tbl AS target
+        USING testcat2.ns1.ns2.tbl AS source
+        ON target.col1 = source.col1
+        WHEN MATCHED AND (target.col2='delete') THEN DELETE
+        WHEN MATCHED AND (target.col2='update1') THEN UPDATE SET target.col2 = 1
+        WHEN MATCHED AND (target.col2='update2') THEN UPDATE SET target.col2 = 2
+        WHEN NOT MATCHED AND (target.col2='insert1')
+        THEN INSERT (target.col1, target.col2) values (source.col1, 1)
+        WHEN NOT MATCHED AND (target.col2='insert2')
+        THEN INSERT (target.col1, target.col2) values (source.col1, 2)
+        WHEN NOT MATCHED BY SOURCE AND (target.col3='delete') THEN DELETE
+        WHEN NOT MATCHED BY SOURCE AND (target.col3='update1') THEN UPDATE SET target.col3 = 1
+        WHEN NOT MATCHED BY SOURCE AND (target.col3='update2') THEN UPDATE SET target.col3 = 2
+      """,
       MergeIntoTable(
         SubqueryAlias("target", UnresolvedRelation(Seq("testcat1", "ns1", "ns2", "tbl"))),
         SubqueryAlias("source", UnresolvedRelation(Seq("testcat2", "ns1", "ns2", "tbl"))),
@@ -1967,13 +1967,13 @@ class DDLParserSuite extends AnalysisTest {
   test("merge into table: only the last matched clause can omit the condition") {
     val sql =
       """MERGE INTO testcat1.ns1.ns2.tbl AS target
-        |USING testcat2.ns1.ns2.tbl AS source
-        |ON target.col1 = source.col1
-        |WHEN MATCHED AND (target.col2 == 'update1') THEN UPDATE SET target.col2 = 1
-        |WHEN MATCHED THEN UPDATE SET target.col2 = 2
-        |WHEN MATCHED THEN DELETE
-        |WHEN NOT MATCHED AND (target.col2='insert')
-        |THEN INSERT (target.col1, target.col2) values (source.col1, source.col2)""".stripMargin
+        USING testcat2.ns1.ns2.tbl AS source
+        ON target.col1 = source.col1
+        WHEN MATCHED AND (target.col2 == 'update1') THEN UPDATE SET target.col2 = 1
+        WHEN MATCHED THEN UPDATE SET target.col2 = 2
+        WHEN MATCHED THEN DELETE
+        WHEN NOT MATCHED AND (target.col2='insert')
+        THEN INSERT (target.col1, target.col2) values (source.col1, source.col2)"""
     checkError(
       exception = parseException(sql),
       errorClass = "NON_LAST_MATCHED_CLAUSE_OMIT_CONDITION",
@@ -1987,16 +1987,16 @@ class DDLParserSuite extends AnalysisTest {
   test("merge into table: only the last not matched clause can omit the condition") {
     val sql =
       """MERGE INTO testcat1.ns1.ns2.tbl AS target
-        |USING testcat2.ns1.ns2.tbl AS source
-        |ON target.col1 = source.col1
-        |WHEN MATCHED AND (target.col2 == 'update') THEN UPDATE SET target.col2 = source.col2
-        |WHEN MATCHED THEN DELETE
-        |WHEN NOT MATCHED AND (target.col2='insert1')
-        |THEN INSERT (target.col1, target.col2) values (source.col1, 1)
-        |WHEN NOT MATCHED
-        |THEN INSERT (target.col1, target.col2) values (source.col1, 2)
-        |WHEN NOT MATCHED
-        |THEN INSERT (target.col1, target.col2) values (source.col1, source.col2)""".stripMargin
+        USING testcat2.ns1.ns2.tbl AS source
+        ON target.col1 = source.col1
+        WHEN MATCHED AND (target.col2 == 'update') THEN UPDATE SET target.col2 = source.col2
+        WHEN MATCHED THEN DELETE
+        WHEN NOT MATCHED AND (target.col2='insert1')
+        THEN INSERT (target.col1, target.col2) values (source.col1, 1)
+        WHEN NOT MATCHED
+        THEN INSERT (target.col1, target.col2) values (source.col1, 2)
+        WHEN NOT MATCHED
+        THEN INSERT (target.col1, target.col2) values (source.col1, source.col2)"""
     checkError(
       exception = parseException(sql),
       errorClass = "NON_LAST_NOT_MATCHED_BY_TARGET_CLAUSE_OMIT_CONDITION",
@@ -2011,16 +2011,16 @@ class DDLParserSuite extends AnalysisTest {
        "condition") {
     val sql =
       """MERGE INTO testcat1.ns1.ns2.tbl AS target
-        |USING testcat2.ns1.ns2.tbl AS source
-        |ON target.col1 = source.col1
-        |WHEN MATCHED AND (target.col2 == 'update') THEN UPDATE SET target.col2 = source.col2
-        |WHEN MATCHED THEN DELETE
-        |WHEN NOT MATCHED AND (target.col2='insert')
-        |THEN INSERT (target.col1, target.col2) values (source.col1, source.col2)
-        |WHEN NOT MATCHED BY SOURCE AND (target.col3='update')
-        |THEN UPDATE SET target.col3 = 'delete'
-        |WHEN NOT MATCHED BY SOURCE THEN UPDATE SET target.col3 = 'update'
-        |WHEN NOT MATCHED BY SOURCE THEN DELETE""".stripMargin
+        USING testcat2.ns1.ns2.tbl AS source
+        ON target.col1 = source.col1
+        WHEN MATCHED AND (target.col2 == 'update') THEN UPDATE SET target.col2 = source.col2
+        WHEN MATCHED THEN DELETE
+        WHEN NOT MATCHED AND (target.col2='insert')
+        THEN INSERT (target.col1, target.col2) values (source.col1, source.col2)
+        WHEN NOT MATCHED BY SOURCE AND (target.col3='update')
+        THEN UPDATE SET target.col3 = 'delete'
+        WHEN NOT MATCHED BY SOURCE THEN UPDATE SET target.col3 = 'update'
+        WHEN NOT MATCHED BY SOURCE THEN DELETE"""
     checkError(
       exception = parseException(sql),
       errorClass = "NON_LAST_NOT_MATCHED_BY_SOURCE_CLAUSE_OMIT_CONDITION",
@@ -2034,8 +2034,8 @@ class DDLParserSuite extends AnalysisTest {
   test("merge into table: there must be a when (not) matched condition") {
     val sql =
       """MERGE INTO testcat1.ns1.ns2.tbl AS target
-        |USING testcat2.ns1.ns2.tbl AS source
-        |ON target.col1 = source.col1""".stripMargin
+        USING testcat2.ns1.ns2.tbl AS source
+        ON target.col1 = source.col1"""
     checkError(
       exception = parseException(sql),
       errorClass = "_LEGACY_ERROR_TEMP_0008",
@@ -2182,9 +2182,9 @@ class DDLParserSuite extends AnalysisTest {
     comparePlans(
       parsePlan(
         s"""
-           |ANALYZE TABLE a.b.c PARTITION(ds='2017-06-10')
-           |COMPUTE STATISTICS FOR COLUMNS key, value
-         """.stripMargin),
+           ANALYZE TABLE a.b.c PARTITION(ds='2017-06-10')
+           COMPUTE STATISTICS FOR COLUMNS key, value
+         """),
       AnalyzeColumn(
         UnresolvedTableOrView(Seq("a", "b", "c"), "ANALYZE TABLE ... FOR COLUMNS ...", true),
         Option(Seq("key", "value")),
@@ -2194,9 +2194,9 @@ class DDLParserSuite extends AnalysisTest {
     comparePlans(
       parsePlan(
         s"""
-           |ANALYZE TABLE a.b.c PARTITION(ds='2017-06-10')
-           |COMPUTE STATISTICS FOR ALL COLUMNS
-         """.stripMargin),
+           ANALYZE TABLE a.b.c PARTITION(ds='2017-06-10')
+           COMPUTE STATISTICS FOR ALL COLUMNS
+         """),
       AnalyzeColumn(
         UnresolvedTableOrView(Seq("a", "b", "c"), "ANALYZE TABLE ... FOR ALL COLUMNS", true),
         None,
@@ -2246,9 +2246,9 @@ class DDLParserSuite extends AnalysisTest {
     comparePlans(
       parsePlan(
         s"""
-           |LOAD DATA LOCAL INPATH 'filepath' OVERWRITE INTO TABLE a.b.c
-           |PARTITION(ds='2017-06-10')
-         """.stripMargin),
+           LOAD DATA LOCAL INPATH 'filepath' OVERWRITE INTO TABLE a.b.c
+           PARTITION(ds='2017-06-10')
+         """),
       LoadData(
         UnresolvedTable(Seq("a", "b", "c"), "LOAD DATA", None),
         "filepath",
@@ -2338,8 +2338,8 @@ class DDLParserSuite extends AnalysisTest {
   test("alter view: add partition (not supported)") {
     val sql =
       """ALTER VIEW a.b.c ADD IF NOT EXISTS PARTITION
-        |(dt='2008-08-08', country='us') PARTITION
-        |(dt='2009-09-09', country='uk')""".stripMargin
+        (dt='2008-08-08', country='us') PARTITION
+        (dt='2009-09-09', country='uk')"""
     checkError(
       exception = parseException(sql),
       errorClass = "_LEGACY_ERROR_TEMP_0035",
@@ -2656,16 +2656,16 @@ class DDLParserSuite extends AnalysisTest {
         overwrite = false, ifPartitionNotExists = false))
     parseCompare(
       """
-        |MERGE INTO testcat1.ns1.ns2.tbl AS target
-        |USING testcat2.ns1.ns2.tbl AS source
-        |ON target.col1 = source.col1
-        |WHEN MATCHED AND (target.col2='delete') THEN DELETE
-        |WHEN MATCHED AND (target.col2='update') THEN UPDATE SET target.col2 = DEFAULT
-        |WHEN NOT MATCHED AND (target.col2='insert')
-        |THEN INSERT (target.col1, target.col2) VALUES (source.col1, DEFAULT)
-        |WHEN NOT MATCHED BY SOURCE AND (target.col2='delete') THEN DELETE
-        |WHEN NOT MATCHED BY SOURCE AND (target.col2='update') THEN UPDATE SET target.col2 = DEFAULT
-      """.stripMargin,
+        MERGE INTO testcat1.ns1.ns2.tbl AS target
+        USING testcat2.ns1.ns2.tbl AS source
+        ON target.col1 = source.col1
+        WHEN MATCHED AND (target.col2='delete') THEN DELETE
+        WHEN MATCHED AND (target.col2='update') THEN UPDATE SET target.col2 = DEFAULT
+        WHEN NOT MATCHED AND (target.col2='insert')
+        THEN INSERT (target.col1, target.col2) VALUES (source.col1, DEFAULT)
+        WHEN NOT MATCHED BY SOURCE AND (target.col2='delete') THEN DELETE
+        WHEN NOT MATCHED BY SOURCE AND (target.col2='update') THEN UPDATE SET target.col2 = DEFAULT
+      """,
       MergeIntoTable(
         SubqueryAlias("target", UnresolvedRelation(Seq("testcat1", "ns1", "ns2", "tbl"))),
         SubqueryAlias("source", UnresolvedRelation(Seq("testcat2", "ns1", "ns2", "tbl"))),

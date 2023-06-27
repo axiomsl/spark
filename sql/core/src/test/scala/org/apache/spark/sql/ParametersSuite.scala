@@ -28,10 +28,10 @@ class ParametersSuite extends QueryTest with SharedSparkSession {
   test("bind parameters") {
     val sqlText =
       """
-        |SELECT id, id % :div as c0
-        |FROM VALUES (0), (1), (2), (3), (4), (5), (6), (7), (8), (9) AS t(id)
-        |WHERE id < :constA
-        |""".stripMargin
+        SELECT id, id % :div as c0
+        FROM VALUES (0), (1), (2), (3), (4), (5), (6), (7), (8), (9) AS t(id)
+        WHERE id < :constA
+        """
     val args = Map("div" -> 3, "constA" -> 4L)
     checkAnswer(
       spark.sql(sqlText, args),
@@ -63,9 +63,9 @@ class ParametersSuite extends QueryTest with SharedSparkSession {
   test("parameters in CTE") {
     val sqlText =
       """
-        |WITH w1 AS (SELECT :p1 AS p)
-        |SELECT p + :p2 FROM w1
-        |""".stripMargin
+        WITH w1 AS (SELECT :p1 AS p)
+        SELECT p + :p2 FROM w1
+        """
     val args = Map("p1" -> 1, "p2" -> 2)
     checkAnswer(
       spark.sql(sqlText, args),
@@ -75,10 +75,10 @@ class ParametersSuite extends QueryTest with SharedSparkSession {
   test("parameters in nested CTE") {
     val sqlText =
       """
-        |WITH w1 AS
-        |  (WITH w2 AS (SELECT :p1 AS p) SELECT p + :p2 AS p2 FROM w2)
-        |SELECT p2 + :p3 FROM w1
-        |""".stripMargin
+        WITH w1 AS
+          (WITH w2 AS (SELECT :p1 AS p) SELECT p + :p2 AS p2 FROM w2)
+        SELECT p2 + :p3 FROM w1
+        """
     val args = Map("p1" -> 1, "p2" -> 2, "p3" -> 3)
     checkAnswer(
       spark.sql(sqlText, args),
@@ -104,9 +104,9 @@ class ParametersSuite extends QueryTest with SharedSparkSession {
   test("parameters in subquery expression inside CTE") {
     val sqlText =
       """
-        |WITH w1 AS (SELECT (SELECT max(id) + :p1 FROM range(10)) + :p2 AS p)
-        |SELECT p + :p3 FROM w1
-        |""".stripMargin
+        WITH w1 AS (SELECT (SELECT max(id) + :p1 FROM range(10)) + :p2 AS p)
+        SELECT p + :p3 FROM w1
+        """
     val args = Map("p1" -> 1, "p2" -> 2, "p3" -> 3)
     checkAnswer(
       spark.sql(sqlText, args),
@@ -162,7 +162,7 @@ class ParametersSuite extends QueryTest with SharedSparkSession {
   test("literal argument of `sql()`") {
     val sqlText =
       """SELECT s FROM VALUES ('Jeff /*__*/ Green'), ('E\'Twaun Moore'), ('Vander Blue') AS t(s)
-        |WHERE s = :player_name""".stripMargin
+        WHERE s = :player_name"""
     checkAnswer(
       spark.sql(sqlText, args = Map("player_name" -> lit("E'Twaun Moore"))),
       Row("E'Twaun Moore") :: Nil)
@@ -177,20 +177,20 @@ class ParametersSuite extends QueryTest with SharedSparkSession {
       checkAnswer(
         spark.sql(
           sqlText = """
-                      |SELECT d
-                      |FROM VALUES (DATE'1970-01-01'), (DATE'2023-12-31') AS t(d)
-                      |WHERE d < :currDate
-                      |""".stripMargin,
+                      SELECT d
+                      FROM VALUES (DATE'1970-01-01'), (DATE'2023-12-31') AS t(d)
+                      WHERE d < :currDate
+                      """,
           args = Map("currDate" -> lit(LocalDate.of(2023, 4, 1)))),
         Row(LocalDate.of(1970, 1, 1)) :: Nil)
       checkAnswer(
         spark.sql(
           sqlText = """
-                      |SELECT d
-                      |FROM VALUES (TIMESTAMP_LTZ'1970-01-01 01:02:03 Europe/Amsterdam'),
-                      |            (TIMESTAMP_LTZ'2023-12-31 04:05:06 America/Los_Angeles') AS t(d)
-                      |WHERE d < :currDate
-                      |""".stripMargin,
+                      SELECT d
+                      FROM VALUES (TIMESTAMP_LTZ'1970-01-01 01:02:03 Europe/Amsterdam'),
+                                  (TIMESTAMP_LTZ'2023-12-31 04:05:06 America/Los_Angeles') AS t(d)
+                      WHERE d < :currDate
+                      """,
           args = Map("currDate" -> lit(Instant.parse("2023-04-01T00:00:00Z")))),
         Row(LocalDateTime.of(1970, 1, 1, 1, 2, 3)
           .atZone(ZoneId.of("Europe/Amsterdam"))

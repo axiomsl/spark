@@ -139,10 +139,10 @@ private object YarnExternalShuffleDriver extends Logging with Matchers {
       // scalastyle:off println
       System.err.println(
         s"""
-        |Invalid command line: ${args.mkString(" ")}
-        |
-        |Usage: ExternalShuffleDriver [result file] [registered exec file]
-        """.stripMargin)
+        Invalid command line: ${args.mkString(" ")}
+
+        Usage: ExternalShuffleDriver [result file] [registered exec file]
+        """)
       // scalastyle:on println
       System.exit(1)
     }

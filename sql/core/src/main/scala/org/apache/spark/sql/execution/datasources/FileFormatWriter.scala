@@ -434,9 +434,9 @@ object FileFormatWriter extends Logging {
     val numStatsTrackers = statsTrackers.length
     assert(statsPerTask.forall(_.length == numStatsTrackers),
       s"""Every WriteTask should have produced one `WriteTaskStats` object for every tracker.
-         |There are $numStatsTrackers statsTrackers, but some task returned
-         |${statsPerTask.find(_.length != numStatsTrackers).get.length} results instead.
-       """.stripMargin)
+         There are $numStatsTrackers statsTrackers, but some task returned
+         ${statsPerTask.find(_.length != numStatsTrackers).get.length} results instead.
+       """)
 
     val statsPerTracker = if (statsPerTask.nonEmpty) {
       statsPerTask.transpose

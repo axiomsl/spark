@@ -66,46 +66,46 @@ class ErrorPositionSuite extends QueryTest with TestHiveSingleton with BeforeAnd
 
   positionTest("unresolved attribute 4",
     """SELECT key,
-      |x FROM src
-    """.stripMargin, "x")
+      x FROM src
+    """, "x")
 
   positionTest("unresolved attribute 5",
     """SELECT key,
-      |  x FROM src
-    """.stripMargin, "x")
+        x FROM src
+    """, "x")
 
   positionTest("unresolved attribute 6",
     """SELECT key,
-      |
-      |  1 + x FROM src
-    """.stripMargin, "x")
+
+        1 + x FROM src
+    """, "x")
 
   positionTest("unresolved attribute 7",
     """SELECT key,
-      |
-      |  1 + x + 1 FROM src
-    """.stripMargin, "x")
+
+        1 + x + 1 FROM src
+    """, "x")
 
   positionTest("multi-char unresolved attribute",
     """SELECT key,
-      |
-      |  1 + abcd + 1 FROM src
-    """.stripMargin, "abcd")
+
+        1 + abcd + 1 FROM src
+    """, "abcd")
 
   positionTest("unresolved attribute group by",
     """SELECT key FROM src GROUP BY
-       |x
-    """.stripMargin, "x")
+       x
+    """, "x")
 
   positionTest("unresolved attribute order by",
     """SELECT key FROM src ORDER BY
-      |x
-    """.stripMargin, "x")
+      x
+    """, "x")
 
   positionTest("unresolved attribute where",
     """SELECT key FROM src
-      |WHERE x = true
-    """.stripMargin, "x")
+      WHERE x = true
+    """, "x")
 
   positionTest("unresolved attribute backticks",
     "SELECT `x` FROM src", "`x`")
@@ -157,18 +157,18 @@ class ErrorPositionSuite extends QueryTest with TestHiveSingleton with BeforeAnd
       }
       assert(expectedStart === actualStart,
        s"""Incorrect start position.
-          |== QUERY ==
-          |$query
-          |
-          |== AST ==
-          |$parseTree
-          |
-          |Actual: $actualStart, Expected: $expectedStart
-          |$line
-          |${" " * actualStart}^
-          |0123456789 123456789 1234567890
-          |          2         3
-        """.stripMargin)
+          == QUERY ==
+          $query
+
+          == AST ==
+          $parseTree
+
+          Actual: $actualStart, Expected: $expectedStart
+          $line
+          ${" " * actualStart}^
+          0123456789 123456789 1234567890
+                    2         3
+        """)
     }
   }
 }

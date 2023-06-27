@@ -360,11 +360,11 @@ class SparkConfSuite extends SparkFunSuite with LocalSparkContext with ResetSyst
       .set("spark.regular.property", "regular_value")
     assert(conf.toDebugString ==
       s"""
-        |dummy.password=${Utils.REDACTION_REPLACEMENT_TEXT}
-        |spark.hadoop.hive.server2.keystore.password=${Utils.REDACTION_REPLACEMENT_TEXT}
-        |spark.hadoop.javax.jdo.option.ConnectionPassword=${Utils.REDACTION_REPLACEMENT_TEXT}
-        |spark.regular.property=regular_value
-      """.stripMargin.trim)
+        dummy.password=${Utils.REDACTION_REPLACEMENT_TEXT}
+        spark.hadoop.hive.server2.keystore.password=${Utils.REDACTION_REPLACEMENT_TEXT}
+        spark.hadoop.javax.jdo.option.ConnectionPassword=${Utils.REDACTION_REPLACEMENT_TEXT}
+        spark.regular.property=regular_value
+      """.trim)
   }
 
   test("SPARK-28355: Use Spark conf for threshold at which UDFs are compressed by broadcast") {

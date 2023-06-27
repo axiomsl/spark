@@ -58,10 +58,10 @@ object Connect {
   val CONNECT_EXTENSIONS_RELATION_CLASSES =
     ConfigBuilder("spark.connect.extensions.relation.classes")
       .doc("""
-          |Comma separated list of classes that implement the trait
-          |org.apache.spark.sql.connect.plugin.RelationPlugin to support custom
-          |Relation types in proto.
-          |""".stripMargin)
+          Comma separated list of classes that implement the trait
+          org.apache.spark.sql.connect.plugin.RelationPlugin to support custom
+          Relation types in proto.
+          """)
       .version("3.4.0")
       .stringConf
       .toSequence
@@ -70,10 +70,10 @@ object Connect {
   val CONNECT_EXTENSIONS_EXPRESSION_CLASSES =
     ConfigBuilder("spark.connect.extensions.expression.classes")
       .doc("""
-          |Comma separated list of classes that implement the trait
-          |org.apache.spark.sql.connect.plugin.ExpressionPlugin to support custom
-          |Expression types in proto.
-          |""".stripMargin)
+          Comma separated list of classes that implement the trait
+          org.apache.spark.sql.connect.plugin.ExpressionPlugin to support custom
+          Expression types in proto.
+          """)
       .version("3.4.0")
       .stringConf
       .toSequence
@@ -82,10 +82,10 @@ object Connect {
   val CONNECT_EXTENSIONS_COMMAND_CLASSES =
     ConfigBuilder("spark.connect.extensions.command.classes")
       .doc("""
-             |Comma separated list of classes that implement the trait
-             |org.apache.spark.sql.connect.plugin.CommandPlugin to support custom
-             |Command types in proto.
-             |""".stripMargin)
+             Comma separated list of classes that implement the trait
+             org.apache.spark.sql.connect.plugin.CommandPlugin to support custom
+             Command types in proto.
+             """)
       .version("3.4.0")
       .stringConf
       .toSequence

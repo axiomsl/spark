@@ -125,12 +125,12 @@ case class OptimizeSkewedJoin(ensureRequirements: EnsureRequirements)
     val rightMedSize = Utils.median(rightSizes, false)
     logDebug(
       s"""
-         |Optimizing skewed join.
-         |Left side partitions size info:
-         |${getSizeInfo(leftMedSize, leftSizes)}
-         |Right side partitions size info:
-         |${getSizeInfo(rightMedSize, rightSizes)}
-      """.stripMargin)
+         Optimizing skewed join.
+         Left side partitions size info:
+         ${getSizeInfo(leftMedSize, leftSizes)}
+         Right side partitions size info:
+         ${getSizeInfo(rightMedSize, rightSizes)}
+      """)
 
     val leftSkewThreshold = getSkewThreshold(leftMedSize)
     val rightSkewThreshold = getSkewThreshold(rightMedSize)

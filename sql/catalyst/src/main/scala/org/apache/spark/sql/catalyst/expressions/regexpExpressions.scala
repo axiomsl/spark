@@ -799,18 +799,18 @@ abstract class RegExpExtractBase
     val termPattern = ctx.addMutableState(classNamePattern, "ptrn")
 
     s"""
-      |if (!$regexp.equals($termLastRegex)) {
-      |  // regex value changed
-      |  try {
-      |    UTF8String r = $regexp.clone();
-      |    $termPattern = $classNamePattern.compile(r.toString());
-      |    $termLastRegex = r;
-      |  } catch (java.util.regex.PatternSyntaxException e) {
-      |    throw QueryExecutionErrors.invalidPatternError("$prettyName", e.getPattern(), e);
-      |  }
-      |}
-      |java.util.regex.Matcher $matcher = $termPattern.matcher($subject.toString());
-      |""".stripMargin
+      if (!$regexp.equals($termLastRegex)) {
+        // regex value changed
+        try {
+          UTF8String r = $regexp.clone();
+          $termPattern = $classNamePattern.compile(r.toString());
+          $termLastRegex = r;
+        } catch (java.util.regex.PatternSyntaxException e) {
+          throw QueryExecutionErrors.invalidPatternError("$prettyName", e.getPattern(), e);
+        }
+      }
+      java.util.regex.Matcher $matcher = $termPattern.matcher($subject.toString());
+      """
   }
 }
 
@@ -1133,18 +1133,18 @@ case class RegExpInStr(subject: Expression, regexp: Expression, idx: Expression)
 
     nullSafeCodeGen(ctx, ev, (subject, regexp, _) => {
       s"""
-         |try {
-         |  $setEvNotNull
-         |  ${initLastMatcherCode(ctx, subject, regexp, matcher)}
-         |  if ($matcher.find()) {
-         |    ${ev.value} = $matcher.toMatchResult().start() + 1;
-         |  } else {
-         |    ${ev.value} = 0;
-         |  }
-         |} catch (IllegalStateException e) {
-         |  ${ev.value} = 0;
-         |}
-         |""".stripMargin
+         try {
+           $setEvNotNull
+           ${initLastMatcherCode(ctx, subject, regexp, matcher)}
+           if ($matcher.find()) {
+             ${ev.value} = $matcher.toMatchResult().start() + 1;
+           } else {
+             ${ev.value} = 0;
+           }
+         } catch (IllegalStateException e) {
+           ${ev.value} = 0;
+         }
+         """
     })
   }
 

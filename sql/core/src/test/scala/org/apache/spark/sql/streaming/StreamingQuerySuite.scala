@@ -664,22 +664,22 @@ class StreamingQuerySuite extends StreamTest with BeforeAndAfter with Logging wi
 
       val dfWithClause = spark.sql(
         """
-          |with batch_tbl as (
-          |  SELECT col1, col2 FROM parquet_tbl
-          |)
-          |
-          |SELECT col1 AS key, col2 as value_batch FROM batch_tbl
-          |""".stripMargin)
+          with batch_tbl as (
+            SELECT col1, col2 FROM parquet_tbl
+          )
+
+          SELECT col1 AS key, col2 as value_batch FROM batch_tbl
+          """)
 
       spark.sql(
         """
-          |CREATE TABLE parquet_streaming_tbl
-          |(
-          |  key integer,
-          |  value_stream integer
-          |)
-          |USING parquet
-          |""".stripMargin)
+          CREATE TABLE parquet_streaming_tbl
+          (
+            key integer,
+            value_stream integer
+          )
+          USING parquet
+          """)
 
       // NOTE: if we only have DSv2 streaming source(s) as all streaming sources in the query, it
       // simply collects the corresponding physical nodes from executed plan and does not encounter
@@ -716,13 +716,13 @@ class StreamingQuerySuite extends StreamTest with BeforeAndAfter with Logging wi
 
       spark.sql(
         """
-          |CREATE TABLE parquet_streaming_tbl
-          |(
-          |  key integer,
-          |  value_stream integer
-          |)
-          |USING parquet
-          |""".stripMargin)
+          CREATE TABLE parquet_streaming_tbl
+          (
+            key integer,
+            value_stream integer
+          )
+          USING parquet
+          """)
 
       val streamDf2 = spark.readStream.table("parquet_streaming_tbl")
       val unionedDf = streamDf.union(streamDf2)

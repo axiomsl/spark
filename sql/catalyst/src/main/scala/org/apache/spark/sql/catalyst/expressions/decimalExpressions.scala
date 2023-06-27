@@ -293,18 +293,18 @@ case class DecimalDivideWithOverflowCheck(
     // scalastyle:off line.size.limit
     val code =
       code"""
-         |${eval1.code}
-         |${eval2.code}
-         |boolean ${ev.isNull} = ${eval1.isNull};
-         |${CodeGenerator.javaType(dataType)} ${ev.value} = ${CodeGenerator.defaultValue(dataType)};
-         |if (${eval1.isNull}) {
-         |  $nullHandling
-         |} else {
-         |  ${ev.value} = ${eval1.value}.$decimalMethod(${eval2.value}).toPrecision(
-         |      ${dataType.precision}, ${dataType.scale}, Decimal.ROUND_HALF_UP(), $nullOnOverflow, $errorContextCode);
-         |  ${ev.isNull} = ${ev.value} == null;
-         |}
-      """.stripMargin
+         ${eval1.code}
+         ${eval2.code}
+         boolean ${ev.isNull} = ${eval1.isNull};
+         ${CodeGenerator.javaType(dataType)} ${ev.value} = ${CodeGenerator.defaultValue(dataType)};
+         if (${eval1.isNull}) {
+           $nullHandling
+         } else {
+           ${ev.value} = ${eval1.value}.$decimalMethod(${eval2.value}).toPrecision(
+               ${dataType.precision}, ${dataType.scale}, Decimal.ROUND_HALF_UP(), $nullOnOverflow, $errorContextCode);
+           ${ev.isNull} = ${ev.value} == null;
+         }
+      """
     // scalastyle:on line.size.limit
     ev.copy(code = code)
   }

@@ -581,15 +581,15 @@ trait LeafExecNode extends SparkPlan with LeafLike[SparkPlan] {
 
     if (argumentString.nonEmpty) {
       s"""
-         |$formattedNodeName
-         |$outputStr
-         |Arguments: $argumentString
-         |""".stripMargin
+         $formattedNodeName
+         $outputStr
+         Arguments: $argumentString
+         """
     } else {
       s"""
-         |$formattedNodeName
-         |$outputStr
-         |""".stripMargin
+         $formattedNodeName
+         $outputStr
+         """
     }
   }
 }
@@ -609,15 +609,15 @@ trait UnaryExecNode extends SparkPlan with UnaryLike[SparkPlan] {
 
     if (argumentString.nonEmpty) {
       s"""
-         |$formattedNodeName
-         |$inputStr
-         |Arguments: $argumentString
-         |""".stripMargin
+         $formattedNodeName
+         $inputStr
+         Arguments: $argumentString
+         """
     } else {
       s"""
-         |$formattedNodeName
-         |$inputStr
-         |""".stripMargin
+         $formattedNodeName
+         $inputStr
+         """
     }
   }
 }
@@ -631,17 +631,17 @@ trait BinaryExecNode extends SparkPlan with BinaryLike[SparkPlan] {
 
     if (argumentString.nonEmpty) {
       s"""
-         |$formattedNodeName
-         |$leftOutputStr
-         |$rightOutputStr
-         |Arguments: $argumentString
-         |""".stripMargin
+         $formattedNodeName
+         $leftOutputStr
+         $rightOutputStr
+         Arguments: $argumentString
+         """
     } else {
       s"""
-         |$formattedNodeName
-         |$leftOutputStr
-         |$rightOutputStr
-         |""".stripMargin
+         $formattedNodeName
+         $leftOutputStr
+         $rightOutputStr
+         """
     }
   }
 }

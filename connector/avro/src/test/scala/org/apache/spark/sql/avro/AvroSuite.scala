@@ -1175,16 +1175,16 @@ abstract class AvroSuite
 
     for (optionalNull <- Seq(""""null",""", "")) {
       val avroSchema = s"""
-        |{
-        |  "type" : "record",
-        |  "name" : "test_schema",
-        |  "fields" : [
-        |    {"name": "Age", "type": [$optionalNull "int", "long"]},
-        |    {"name": "Length", "type": [$optionalNull "float", "double"]},
-        |    {"name": "Name", "type": ["null", "string"]}
-        |  ]
-        |}
-      """.stripMargin
+        {
+          "type" : "record",
+          "name" : "test_schema",
+          "fields" : [
+            {"name": "Age", "type": [$optionalNull "int", "long"]},
+            {"name": "Length", "type": [$optionalNull "float", "double"]},
+            {"name": "Name", "type": ["null", "string"]}
+          ]
+        }
+      """
 
       val df = spark.createDataFrame(
         spark.sparkContext.parallelize(Seq(Row(2L, 1.8D, "Aurora"), Row(1L, 0.9D, null))),
@@ -2298,9 +2298,9 @@ abstract class AvroSuite
             exception = intercept[AnalysisException] {
               sql(
                 s"""
-                   |CREATE TABLE test_ddl USING AVRO
-                   |LOCATION '${dir}'
-                   |AS SELECT ID, IF(ID=1,1,0) FROM v""".stripMargin)
+                   CREATE TABLE test_ddl USING AVRO
+                   LOCATION '${dir}'
+                   AS SELECT ID, IF(ID=1,1,0) FROM v""")
             },
             errorClass = "INVALID_COLUMN_NAME_AS_PATH",
             parameters = Map(
@@ -2511,15 +2511,15 @@ class AvroV2Suite extends AvroSuite with ExplainSuiteHelper {
       val basePath = dir.getCanonicalPath + "/avro"
       val expected_plan_fragment =
         s"""
-           |\\(1\\) BatchScan avro file:$basePath
-           |Output \\[2\\]: \\[value#xL, id#x\\]
-           |DataFilters: \\[isnotnull\\(value#xL\\), \\(value#xL > 2\\)\\]
-           |Format: avro
-           |Location: InMemoryFileIndex\\([0-9]+ paths\\)\\[.*\\]
-           |PartitionFilters: \\[isnotnull\\(id#x\\), \\(id#x > 1\\)\\]
-           |PushedFilters: \\[IsNotNull\\(value\\), GreaterThan\\(value,2\\)\\]
-           |ReadSchema: struct\\<value:bigint\\>
-           |""".stripMargin.trim
+           \\(1\\) BatchScan avro file:$basePath
+           Output \\[2\\]: \\[value#xL, id#x\\]
+           DataFilters: \\[isnotnull\\(value#xL\\), \\(value#xL > 2\\)\\]
+           Format: avro
+           Location: InMemoryFileIndex\\([0-9]+ paths\\)\\[.*\\]
+           PartitionFilters: \\[isnotnull\\(id#x\\), \\(id#x > 1\\)\\]
+           PushedFilters: \\[IsNotNull\\(value\\), GreaterThan\\(value,2\\)\\]
+           ReadSchema: struct\\<value:bigint\\>
+           """.trim
       spark.range(10)
         .select(col("id"), col("id").as("value"))
         .write.option("header", true)

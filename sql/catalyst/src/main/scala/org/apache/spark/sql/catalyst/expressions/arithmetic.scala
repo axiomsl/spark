@@ -700,21 +700,21 @@ trait DivModLike extends BinaryArithmetic {
       case DecimalType.Fixed(precision, scale) =>
         val decimalValue = ctx.freshName("decimalValue")
         s"""
-           |Decimal $decimalValue = ${eval1.value}.$decimalMethod(${eval2.value}).toPrecision(
-           |  $precision, $scale, Decimal.ROUND_HALF_UP(), ${!failOnError}, $errorContextCode);
-           |if ($decimalValue != null) {
-           |  ${ev.value} = ${decimalToDataTypeCodeGen(s"$decimalValue")};
-           |} else {
-           |  ${ev.isNull} = true;
-           |}
-           |""".stripMargin
+           Decimal $decimalValue = ${eval1.value}.$decimalMethod(${eval2.value}).toPrecision(
+             $precision, $scale, Decimal.ROUND_HALF_UP(), ${!failOnError}, $errorContextCode);
+           if ($decimalValue != null) {
+             ${ev.value} = ${decimalToDataTypeCodeGen(s"$decimalValue")};
+           } else {
+             ${ev.isNull} = true;
+           }
+           """
       case _ => s"${ev.value} = ($javaType)(${eval1.value} $symbol ${eval2.value});"
     }
     val checkIntegralDivideOverflow = if (checkDivideOverflow) {
       s"""
-        |if (${eval1.value} == ${Long.MinValue}L && ${eval2.value} == -1)
-        |  throw QueryExecutionErrors.overflowInIntegralDivideError($errorContextCode);
-        |""".stripMargin
+        if (${eval1.value} == ${Long.MinValue}L && ${eval2.value} == -1)
+          throw QueryExecutionErrors.overflowInIntegralDivideError($errorContextCode);
+        """
     } else {
       ""
     }

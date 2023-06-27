@@ -34,14 +34,14 @@ object ConnectRepl {
 
   private val splash =
     """
-      |Spark session available as 'spark'.
-      |   _____                  __      ______                            __
-      |  / ___/____  ____ ______/ /__   / ____/___  ____  ____  ___  _____/ /_
-      |  \__ \/ __ \/ __ `/ ___/ //_/  / /   / __ \/ __ \/ __ \/ _ \/ ___/ __/
-      | ___/ / /_/ / /_/ / /  / ,<    / /___/ /_/ / / / / / / /  __/ /__/ /_
-      |/____/ .___/\__,_/_/  /_/|_|   \____/\____/_/ /_/_/ /_/\___/\___/\__/
-      |    /_/
-      |""".stripMargin
+      Spark session available as 'spark'.
+         _____                  __      ______                            __
+        / ___/____  ____ ______/ /__   / ____/___  ____  ____  ___  _____/ /_
+        \__ \/ __ \/ __ `/ ___/ //_/  / /   / __ \/ __ \/ __ \/ _ \/ ___/ __/
+       ___/ / /_/ / /_/ / /  / ,<    / /___/ /_/ / / / / / / /  __/ /__/ /_
+      /____/ .___/\__,_/_/  /_/|_|   \____/\____/_/ /_/_/ /_/\___/\___/\__/
+          /_/
+      """
 
   def main(args: Array[String]): Unit = {
     // Build the client.
@@ -57,10 +57,10 @@ object ConnectRepl {
         case NonFatal(e) =>
           // scalastyle:off println
           println(s"""
-             |$name
-             |${e.getMessage}
-             |${SparkConnectClientParser.usage()}
-             |""".stripMargin)
+             $name
+             ${e.getMessage}
+             ${SparkConnectClientParser.usage()}
+             """)
           // scalastyle:on println
           sys.exit(1)
       }
@@ -71,10 +71,10 @@ object ConnectRepl {
     // Add the proper imports.
     val imports =
       """
-        |import org.apache.spark.sql.functions._
-        |import spark.implicits._
-        |import spark.sql
-        |""".stripMargin
+        import org.apache.spark.sql.functions._
+        import spark.implicits._
+        import spark.sql
+        """
 
     // Please note that we make ammonite generate classes instead of objects.
     // Classes tend to have superior serialization behavior when using UDFs.

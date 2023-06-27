@@ -60,12 +60,12 @@ object CosineSimilarity {
         .action((x, c) => c.copy(inputFile = x))
       note(
         """
-          |For example, the following command runs this app on a dataset:
-          |
-          | ./bin/spark-submit  --class org.apache.spark.examples.mllib.CosineSimilarity \
-          | examplesjar.jar \
-          | --threshold 0.1 data/mllib/sample_svm_data.txt
-        """.stripMargin)
+          For example, the following command runs this app on a dataset:
+
+           ./bin/spark-submit  --class org.apache.spark.examples.mllib.CosineSimilarity \
+           examplesjar.jar \
+           --threshold 0.1 data/mllib/sample_svm_data.txt
+        """)
     }
 
     parser.parse(args, defaultParams) match {

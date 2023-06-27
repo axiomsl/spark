@@ -45,22 +45,22 @@ abstract class BaseYarnClusterSuite extends SparkFunSuite with Matchers {
   // log4j configuration for the YARN containers, so that their output is collected
   // by YARN instead of trying to overwrite unit-tests.log.
   protected val LOG4J_CONF = """
-    |rootLogger.level = debug
-    |rootLogger.appenderRef.stdout.ref = console
-    |appender.console.type = Console
-    |appender.console.name = console
-    |appender.console.target = SYSTEM_ERR
-    |appender.console.layout.type = PatternLayout
-    |appender.console.layout.pattern = %d{yy/MM/dd HH:mm:ss} %p %c{1}: %m%n%ex
-    |logger.jetty.name = org.sparkproject.jetty
-    |logger.jetty.level = warn
-    |logger.eclipse.name = org.eclipse.jetty
-    |logger.eclipse.level = warn
-    |logger.hadoop.name = org.apache.hadoop
-    |logger.hadoop.level = warn
-    |logger.mortbay.name = org.mortbay
-    |logger.mortbay.level = warn
-    """.stripMargin
+    rootLogger.level = debug
+    rootLogger.appenderRef.stdout.ref = console
+    appender.console.type = Console
+    appender.console.name = console
+    appender.console.target = SYSTEM_ERR
+    appender.console.layout.type = PatternLayout
+    appender.console.layout.pattern = %d{yy/MM/dd HH:mm:ss} %p %c{1}: %m%n%ex
+    logger.jetty.name = org.sparkproject.jetty
+    logger.jetty.level = warn
+    logger.eclipse.name = org.eclipse.jetty
+    logger.eclipse.level = warn
+    logger.hadoop.name = org.apache.hadoop
+    logger.hadoop.level = warn
+    logger.mortbay.name = org.mortbay
+    logger.mortbay.level = warn
+    """
 
   private var yarnCluster: MiniYARNCluster = _
   protected var tempDir: File = _

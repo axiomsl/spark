@@ -99,12 +99,12 @@ class DataTypeParserSuite extends SparkFunSuite with SQLHelper {
   )
   checkDataType(
     """
-      |struct<
-      |  struct:struct<deciMal:DECimal, anotherDecimal:decimAL(5,2)>,
-      |  MAP:Map<timestamp, varchar(10)>,
-      |  arrAy:Array<double>,
-      |  anotherArray:Array<char(9)>>
-    """.stripMargin,
+      struct<
+        struct:struct<deciMal:DECimal, anotherDecimal:decimAL(5,2)>,
+        MAP:Map<timestamp, varchar(10)>,
+        arrAy:Array<double>,
+        anotherArray:Array<char(9)>>
+    """,
     StructType(
       StructField("struct",
         StructType(

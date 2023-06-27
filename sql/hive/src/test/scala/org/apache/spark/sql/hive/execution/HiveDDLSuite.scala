@@ -245,16 +245,16 @@ class HiveCatalogedDDLSuite extends DDLSuite with TestHiveSingleton with BeforeA
     withTable("table_old", "table_ctas_old") {
       sql(
         """
-          |CREATE TABLE table_old (col1 LONG, col2 STRING, col3 DOUBLE, col4 BOOLEAN)
-          |STORED AS
-          |INPUTFORMAT 'org.apache.hadoop.mapred.TextInputFormat'
-          |OUTPUTFORMAT 'org.apache.hadoop.hive.ql.io.HiveIgnoreKeyTextOutputFormat'
-        """.stripMargin)
+          CREATE TABLE table_old (col1 LONG, col2 STRING, col3 DOUBLE, col4 BOOLEAN)
+          STORED AS
+          INPUTFORMAT 'org.apache.hadoop.mapred.TextInputFormat'
+          OUTPUTFORMAT 'org.apache.hadoop.hive.ql.io.HiveIgnoreKeyTextOutputFormat'
+        """)
       sql(
         """
-          |INSERT INTO table_old
-          |VALUES (2147483648, 'AAA', 3.14, false), (2147483649, 'BBB', 3.142, true)
-        """.stripMargin)
+          INSERT INTO table_old
+          VALUES (2147483648, 'AAA', 3.14, false), (2147483649, 'BBB', 3.142, true)
+        """)
       checkAnswer(
         sql("SELECT col1, col2, col3, col4 FROM table_old"),
         Row(2147483648L, "AAA", 3.14, false) :: Row(2147483649L, "BBB", 3.142, true) :: Nil)
@@ -270,17 +270,17 @@ class HiveCatalogedDDLSuite extends DDLSuite with TestHiveSingleton with BeforeA
     withTable("table_pt_old", "table_ctas_pt_old") {
       sql(
         """
-          |CREATE TABLE table_pt_old (col1 LONG, col2 STRING, col3 DOUBLE, col4 BOOLEAN)
-          |PARTITIONED BY (pt INT)
-          |STORED AS
-          |INPUTFORMAT 'org.apache.hadoop.mapred.TextInputFormat'
-          |OUTPUTFORMAT 'org.apache.hadoop.hive.ql.io.HiveIgnoreKeyTextOutputFormat'
-        """.stripMargin)
+          CREATE TABLE table_pt_old (col1 LONG, col2 STRING, col3 DOUBLE, col4 BOOLEAN)
+          PARTITIONED BY (pt INT)
+          STORED AS
+          INPUTFORMAT 'org.apache.hadoop.mapred.TextInputFormat'
+          OUTPUTFORMAT 'org.apache.hadoop.hive.ql.io.HiveIgnoreKeyTextOutputFormat'
+        """)
       sql(
         """
-          |INSERT INTO table_pt_old PARTITION (pt = 1)
-          |VALUES (2147483648, 'AAA', 3.14, false), (2147483649, 'BBB', 3.142, true)
-        """.stripMargin)
+          INSERT INTO table_pt_old PARTITION (pt = 1)
+          VALUES (2147483648, 'AAA', 3.14, false), (2147483649, 'BBB', 3.142, true)
+        """)
       checkAnswer(
         sql("SELECT col1, col2, col3, col4 FROM table_pt_old WHERE pt = 1"),
         Row(2147483648L, "AAA", 3.14, false) :: Row(2147483649L, "BBB", 3.142, true) :: Nil)
@@ -296,16 +296,16 @@ class HiveCatalogedDDLSuite extends DDLSuite with TestHiveSingleton with BeforeA
     withTable("table_new", "table_ctas_new") {
       sql(
         """
-          |CREATE TABLE table_new (col1 LONG, col2 STRING, col3 DOUBLE, col4 BOOLEAN)
-          |STORED AS
-          |INPUTFORMAT 'org.apache.hadoop.mapreduce.lib.input.TextInputFormat'
-          |OUTPUTFORMAT 'org.apache.hadoop.hive.ql.io.HiveIgnoreKeyTextOutputFormat'
-        """.stripMargin)
+          CREATE TABLE table_new (col1 LONG, col2 STRING, col3 DOUBLE, col4 BOOLEAN)
+          STORED AS
+          INPUTFORMAT 'org.apache.hadoop.mapreduce.lib.input.TextInputFormat'
+          OUTPUTFORMAT 'org.apache.hadoop.hive.ql.io.HiveIgnoreKeyTextOutputFormat'
+        """)
       sql(
         """
-          |INSERT INTO table_new
-          |VALUES (2147483648, 'AAA', 3.14, false), (2147483649, 'BBB', 3.142, true)
-        """.stripMargin)
+          INSERT INTO table_new
+          VALUES (2147483648, 'AAA', 3.14, false), (2147483649, 'BBB', 3.142, true)
+        """)
       checkAnswer(
         sql("SELECT col1, col2, col3, col4 FROM table_new"),
         Row(2147483648L, "AAA", 3.14, false) :: Row(2147483649L, "BBB", 3.142, true) :: Nil)
@@ -321,17 +321,17 @@ class HiveCatalogedDDLSuite extends DDLSuite with TestHiveSingleton with BeforeA
     withTable("table_pt_new", "table_ctas_pt_new") {
       sql(
         """
-          |CREATE TABLE table_pt_new (col1 LONG, col2 STRING, col3 DOUBLE, col4 BOOLEAN)
-          |PARTITIONED BY (pt INT)
-          |STORED AS
-          |INPUTFORMAT 'org.apache.hadoop.mapreduce.lib.input.TextInputFormat'
-          |OUTPUTFORMAT 'org.apache.hadoop.hive.ql.io.HiveIgnoreKeyTextOutputFormat'
-        """.stripMargin)
+          CREATE TABLE table_pt_new (col1 LONG, col2 STRING, col3 DOUBLE, col4 BOOLEAN)
+          PARTITIONED BY (pt INT)
+          STORED AS
+          INPUTFORMAT 'org.apache.hadoop.mapreduce.lib.input.TextInputFormat'
+          OUTPUTFORMAT 'org.apache.hadoop.hive.ql.io.HiveIgnoreKeyTextOutputFormat'
+        """)
       sql(
         """
-          |INSERT INTO table_pt_new PARTITION (pt = 1)
-          |VALUES (2147483648, 'AAA', 3.14, false), (2147483649, 'BBB', 3.142, true)
-        """.stripMargin)
+          INSERT INTO table_pt_new PARTITION (pt = 1)
+          VALUES (2147483648, 'AAA', 3.14, false), (2147483649, 'BBB', 3.142, true)
+        """)
       checkAnswer(
         sql("SELECT col1, col2, col3, col4 FROM table_pt_new WHERE pt = 1"),
         Row(2147483648L, "AAA", 3.14, false) :: Row(2147483649L, "BBB", 3.142, true) :: Nil)
@@ -444,11 +444,11 @@ class HiveDDLSuite
         assert(tmpDir.listFiles.isEmpty)
         sql(
           s"""
-             |create table $tabName
-             |stored as parquet
-             |location '${tmpDir.toURI}'
-             |as select 1, '3'
-          """.stripMargin)
+             create table $tabName
+             stored as parquet
+             location '${tmpDir.toURI}'
+             as select 1, '3'
+          """)
 
         val hiveTable =
           spark.sessionState.catalog.getTableMetadata(TableIdentifier(tabName, Some("default")))
@@ -520,18 +520,18 @@ class HiveDDLSuite
     // scalastyle:on
     withTable(tabName) {
       sql(s"""
-             |CREATE TABLE $tabName(`$colName1` int COMMENT '$comment')
-             |COMMENT '$comment'
-             |PARTITIONED BY (`$colName2` int)
-           """.stripMargin)
+             CREATE TABLE $tabName(`$colName1` int COMMENT '$comment')
+             COMMENT '$comment'
+             PARTITIONED BY (`$colName2` int)
+           """)
       sql(s"INSERT OVERWRITE TABLE $tabName partition (`$colName2`=2) SELECT 1")
       withView(viewName) {
         sql(
           s"""
-             |CREATE VIEW $viewName(`$colName1` COMMENT '$comment', `$colName2`)
-             |COMMENT '$comment'
-             |AS SELECT `$colName1`, `$colName2` FROM $tabName
-           """.stripMargin)
+             CREATE VIEW $viewName(`$colName1` COMMENT '$comment', `$colName2`)
+             COMMENT '$comment'
+             AS SELECT `$colName1`, `$colName2` FROM $tabName
+           """)
         val tableMetadata = catalog.getTableMetadata(TableIdentifier(tabName, Some("default")))
         val viewMetadata = catalog.getTableMetadata(TableIdentifier(viewName, Some("default")))
         assert(tableMetadata.comment == Option(comment))
@@ -580,15 +580,15 @@ class HiveDDLSuite
       withTable(tab) {
         sql(
           s"""
-             |CREATE TABLE $tab (key INT, value STRING)
-             |PARTITIONED BY (ds STRING, hr STRING)
-           """.stripMargin)
+             CREATE TABLE $tab (key INT, value STRING)
+             PARTITIONED BY (ds STRING, hr STRING)
+           """)
         sql(
           s"""
-             |ALTER TABLE $tab ADD
-             |PARTITION (ds='2008-04-08', hr=11) LOCATION '${part1Path.toURI}'
-             |PARTITION (ds='2008-04-08', hr=12) LOCATION '${part2Path.toURI}'
-           """.stripMargin)
+             ALTER TABLE $tab ADD
+             PARTITION (ds='2008-04-08', hr=11) LOCATION '${part1Path.toURI}'
+             PARTITION (ds='2008-04-08', hr=12) LOCATION '${part2Path.toURI}'
+           """)
         assert(dirSet.forall(dir => dir.listFiles == null || dir.listFiles.isEmpty))
 
         sql(s"INSERT OVERWRITE TABLE $tab partition (ds='2008-04-08', hr=11) SELECT 1, 'a'")
@@ -641,10 +641,10 @@ class HiveDDLSuite
         assert(tmpDir.listFiles.isEmpty)
         sql(
           s"""
-             |CREATE EXTERNAL TABLE $externalTab (key INT, value STRING)
-             |PARTITIONED BY (ds STRING, hr STRING)
-             |LOCATION '${tmpDir.toURI}'
-          """.stripMargin)
+             CREATE EXTERNAL TABLE $externalTab (key INT, value STRING)
+             PARTITIONED BY (ds STRING, hr STRING)
+             LOCATION '${tmpDir.toURI}'
+          """)
 
         // Before data insertion, all the directory are empty
         assert(dirSet.forall(dir => dir.listFiles == null || dir.listFiles.isEmpty))
@@ -652,10 +652,10 @@ class HiveDDLSuite
         for (ds <- Seq("2008-04-08", "2008-04-09"); hr <- Seq("11", "12")) {
           sql(
             s"""
-               |INSERT OVERWRITE TABLE $externalTab
-               |partition (ds='$ds',hr='$hr')
-               |SELECT 1, 'a'
-             """.stripMargin)
+               INSERT OVERWRITE TABLE $externalTab
+               partition (ds='$ds',hr='$hr')
+               SELECT 1, 'a'
+             """)
         }
 
         val hiveTable = catalog.getTableMetadata(TableIdentifier(externalTab, Some("default")))
@@ -670,9 +670,9 @@ class HiveDDLSuite
 
         sql(
           s"""
-             |ALTER TABLE $externalTab DROP PARTITION (ds='2008-04-08'),
-             |PARTITION (hr='12')
-          """.stripMargin)
+             ALTER TABLE $externalTab DROP PARTITION (ds='2008-04-08'),
+             PARTITION (hr='12')
+          """)
         assert(catalog.listPartitions(TableIdentifier(externalTab)).map(_.spec).toSet ==
           Set(Map("ds" -> "2008-04-09", "hr" -> "11")))
         // drop partition will not delete the data of external table
@@ -680,9 +680,9 @@ class HiveDDLSuite
 
         sql(
           s"""
-             |ALTER TABLE $externalTab ADD PARTITION (ds='2008-04-08', hr='12')
-             |PARTITION (ds='2008-04-08', hr=11)
-          """.stripMargin)
+             ALTER TABLE $externalTab ADD PARTITION (ds='2008-04-08', hr='12')
+             PARTITION (ds='2008-04-08', hr=11)
+          """)
         assert(catalog.listPartitions(TableIdentifier(externalTab)).map(_.spec).toSet ==
           Set(Map("ds" -> "2008-04-08", "hr" -> "11"),
             Map("ds" -> "2008-04-08", "hr" -> "12"),
@@ -937,10 +937,10 @@ class HiveDDLSuite
           withTempPath { path =>
             sql(
               s"""
-                |CREATE TABLE tbl2(ID long) USING hive
-                |OPTIONS(fileFormat 'parquet')
-                |LOCATION '${path.toURI}'
-              """.stripMargin)
+                CREATE TABLE tbl2(ID long) USING hive
+                OPTIONS(fileFormat 'parquet')
+                LOCATION '${path.toURI}'
+              """)
             spark.sql("INSERT OVERWRITE TABLE tbl2 SELECT ID FROM view1")
             val expectedSchema = StructType(Seq(StructField("ID", LongType, true)))
             assert(spark.read.parquet(path.toString).schema == expectedSchema)
@@ -961,11 +961,11 @@ class HiveDDLSuite
           withTempPath { path =>
             sql(
               s"""
-                |CREATE TABLE tbl2 USING hive
-                |OPTIONS(fileFormat 'parquet')
-                |LOCATION '${path.toURI}'
-                |AS SELECT ID FROM view1
-              """.stripMargin)
+                CREATE TABLE tbl2 USING hive
+                OPTIONS(fileFormat 'parquet')
+                LOCATION '${path.toURI}'
+                AS SELECT ID FROM view1
+              """)
             val expectedSchema = StructType(Seq(StructField("ID", LongType, true)))
             assert(spark.read.parquet(path.toString).schema == expectedSchema)
             checkAnswer(spark.table("tbl2"), Seq(Row(4)))
@@ -1007,9 +1007,9 @@ class HiveDDLSuite
     assert(oldPart.storage.properties.filterKeys(expectedSerdeProps.contains) !=
       expectedSerdeProps, "bad test: serde properties were already set")
     sql(s"""ALTER TABLE boxes PARTITION (width=4)
-      |    SET SERDE '$expectedSerde'
-      |    WITH SERDEPROPERTIES ($expectedSerdePropsString)
-      |""".stripMargin)
+          SET SERDE '$expectedSerde'
+          WITH SERDEPROPERTIES ($expectedSerdePropsString)
+      """)
     val newPart = catalog.getPartition(TableIdentifier("boxes"), Map("width" -> "4"))
     assert(newPart.storage.serde == Some(expectedSerde))
     assert(newPart.storage.properties.filterKeys(expectedSerdeProps.contains).toMap ==
@@ -1134,11 +1134,11 @@ class HiveDDLSuite
     withTable("tbl") {
       sql(
         s"""
-          |CREATE TABLE tbl (id int, name string)
-          |CLUSTERED BY(id)
-          |SORTED BY(id, name) INTO 1024 BUCKETS
-          |PARTITIONED BY (ds string)
-        """.stripMargin)
+          CREATE TABLE tbl (id int, name string)
+          CLUSTERED BY(id)
+          SORTED BY(id, name) INTO 1024 BUCKETS
+          PARTITIONED BY (ds string)
+        """)
 
       val x = sql("DESC FORMATTED tbl").collect()
       assert(x.containsSlice(
@@ -1290,10 +1290,10 @@ class HiveDDLSuite
       intercept[SparkException] {
         sql(
           """
-            |CREATE TABLE tab
-            |STORED AS TEXTFILE
-            |SELECT 1 AS a, (SELECT a FROM (SELECT 1 AS a UNION ALL SELECT 2 AS a) t) AS b
-          """.stripMargin)
+            CREATE TABLE tab
+            STORED AS TEXTFILE
+            SELECT 1 AS a, (SELECT a FROM (SELECT 1 AS a UNION ALL SELECT 2 AS a) t) AS b
+          """)
       }
       // After hitting runtime exception, we should drop the created table.
       assert(!spark.sessionState.catalog.tableExists(TableIdentifier("tab")))
@@ -1473,18 +1473,18 @@ class HiveDDLSuite
         assert(tmpDir.listFiles.isEmpty)
         sql(
           s"""
-             |CREATE EXTERNAL TABLE $sourceTabName (key INT comment 'test', value STRING)
-             |COMMENT 'Apache Spark'
-             |PARTITIONED BY (ds STRING, hr STRING)
-             |LOCATION '$basePath'
-           """.stripMargin)
+             CREATE EXTERNAL TABLE $sourceTabName (key INT comment 'test', value STRING)
+             COMMENT 'Apache Spark'
+             PARTITIONED BY (ds STRING, hr STRING)
+             LOCATION '$basePath'
+           """)
         for (ds <- Seq("2008-04-08", "2008-04-09"); hr <- Seq("11", "12")) {
           sql(
             s"""
-               |INSERT OVERWRITE TABLE $sourceTabName
-               |partition (ds='$ds',hr='$hr')
-               |SELECT 1, 'a'
-             """.stripMargin)
+               INSERT OVERWRITE TABLE $sourceTabName
+               partition (ds='$ds',hr='$hr')
+               SELECT 1, 'a'
+             """)
         }
 
         val locationClause = if (location.nonEmpty) s"LOCATION '${location.getOrElse("")}'" else ""
@@ -1687,10 +1687,10 @@ class HiveDDLSuite
         spark.sharedState.externalCatalog.unwrapped.asInstanceOf[HiveExternalCatalog].client
       client.runSqlHive(
         s"""
-           |CREATE Table $tabName(col1 int, col2 int)
-           |PARTITIONED BY (part1 string, part2 string)
-           |SKEWED BY (col1) ON (3, 4) STORED AS DIRECTORIES
-         """.stripMargin)
+           CREATE Table $tabName(col1 int, col2 int)
+           PARTITIONED BY (part1 string, part2 string)
+           SKEWED BY (col1) ON (3, 4) STORED AS DIRECTORIES
+         """)
       val hiveTable =
         spark.sessionState.catalog.getTableMetadata(TableIdentifier(tabName, Some("default")))
 
@@ -1699,18 +1699,18 @@ class HiveDDLSuite
       // Call loadDynamicPartitions against a skewed table with enabling list bucketing
       sql(
         s"""
-           |INSERT OVERWRITE TABLE $tabName
-           |PARTITION (part1='a', part2)
-           |SELECT 3, 4, 'b'
-         """.stripMargin)
+           INSERT OVERWRITE TABLE $tabName
+           PARTITION (part1='a', part2)
+           SELECT 3, 4, 'b'
+         """)
 
       // Call loadPartitions against a skewed table with enabling list bucketing
       sql(
         s"""
-           |INSERT INTO TABLE $tabName
-           |PARTITION (part1='a', part2='b')
-           |SELECT 1, 2
-         """.stripMargin)
+           INSERT INTO TABLE $tabName
+           PARTITION (part1='a', part2='b')
+           SELECT 1, 2
+         """)
 
       checkAnswer(
         sql(s"SELECT * from $tabName"),
@@ -1762,10 +1762,10 @@ class HiveDDLSuite
       withTempPath { path =>
         sql(
           s"""
-            |CREATE TABLE t(id int) USING hive
-            |OPTIONS(fileFormat 'orc', compression 'Zlib')
-            |LOCATION '${path.toURI}'
-          """.stripMargin)
+            CREATE TABLE t(id int) USING hive
+            OPTIONS(fileFormat 'orc', compression 'Zlib')
+            LOCATION '${path.toURI}'
+          """)
         val table = spark.sessionState.catalog.getTableMetadata(TableIdentifier("t"))
         assert(DDLUtils.isHiveTable(table))
         assert(table.storage.serde == Some("org.apache.hadoop.hive.ql.io.orc.OrcSerde"))
@@ -1870,37 +1870,37 @@ class HiveDDLSuite
   test("SPARK-26836: support Avro schema evolution (add column with avro.schema.literal)") {
     val originalSchema =
       """
-        |{
-        |  "namespace": "test",
-        |  "name": "some_schema",
-        |  "type": "record",
-        |  "fields": [
-        |    {
-        |      "name": "col2",
-        |      "type": "string"
-        |    }
-        |  ]
-        |}
-      """.stripMargin
+        {
+          "namespace": "test",
+          "name": "some_schema",
+          "type": "record",
+          "fields": [
+            {
+              "name": "col2",
+              "type": "string"
+            }
+          ]
+        }
+      """
     val evolvedSchema =
       """
-        |{
-        |  "namespace": "test",
-        |  "name": "some_schema",
-        |  "type": "record",
-        |  "fields": [
-        |    {
-        |      "name": "col1",
-        |      "type": "string",
-        |      "default": "col1_default"
-        |    },
-        |    {
-        |      "name": "col2",
-        |      "type": "string"
-        |    }
-        |  ]
-        |}
-      """.stripMargin
+        {
+          "namespace": "test",
+          "name": "some_schema",
+          "type": "record",
+          "fields": [
+            {
+              "name": "col1",
+              "type": "string",
+              "default": "col1_default"
+            },
+            {
+              "name": "col2",
+              "type": "string"
+            }
+          ]
+        }
+      """
     checkAvroSchemaEvolutionAddColumn(
       s"'avro.schema.literal'='$originalSchema'",
       s"'avro.schema.literal'='$evolvedSchema'")
@@ -1912,13 +1912,13 @@ class HiveDDLSuite
     withTable("t") {
       sql(
         s"""
-          |CREATE TABLE t PARTITIONED BY (ds string)
-          |ROW FORMAT SERDE 'org.apache.hadoop.hive.serde2.avro.AvroSerDe'
-          |WITH SERDEPROPERTIES ($originalSerdeProperties)
-          |STORED AS
-          |INPUTFORMAT 'org.apache.hadoop.hive.ql.io.avro.AvroContainerInputFormat'
-          |OUTPUTFORMAT 'org.apache.hadoop.hive.ql.io.avro.AvroContainerOutputFormat'
-        """.stripMargin)
+          CREATE TABLE t PARTITIONED BY (ds string)
+          ROW FORMAT SERDE 'org.apache.hadoop.hive.serde2.avro.AvroSerDe'
+          WITH SERDEPROPERTIES ($originalSerdeProperties)
+          STORED AS
+          INPUTFORMAT 'org.apache.hadoop.hive.ql.io.avro.AvroContainerInputFormat'
+          OUTPUTFORMAT 'org.apache.hadoop.hive.ql.io.avro.AvroContainerOutputFormat'
+        """)
       sql("INSERT INTO t partition (ds='1981-01-07') VALUES ('col2_value')")
       sql(s"ALTER TABLE t SET SERDEPROPERTIES ($evolvedSerdeProperties)")
       sql("INSERT INTO t partition (ds='1983-04-27') VALUES ('col1_value', 'col2_value')")
@@ -1936,37 +1936,37 @@ class HiveDDLSuite
   test("SPARK-26836: support Avro schema evolution (remove column with avro.schema.literal)") {
     val originalSchema =
       """
-        |{
-        |  "namespace": "test",
-        |  "name": "some_schema",
-        |  "type": "record",
-        |  "fields": [
-        |    {
-        |      "name": "col1",
-        |      "type": "string",
-        |      "default": "col1_default"
-        |    },
-        |    {
-        |      "name": "col2",
-        |      "type": "string"
-        |    }
-        |  ]
-        |}
-      """.stripMargin
+        {
+          "namespace": "test",
+          "name": "some_schema",
+          "type": "record",
+          "fields": [
+            {
+              "name": "col1",
+              "type": "string",
+              "default": "col1_default"
+            },
+            {
+              "name": "col2",
+              "type": "string"
+            }
+          ]
+        }
+      """
     val evolvedSchema =
       """
-        |{
-        |  "namespace": "test",
-        |  "name": "some_schema",
-        |  "type": "record",
-        |  "fields": [
-        |    {
-        |      "name": "col2",
-        |      "type": "string"
-        |    }
-        |  ]
-        |}
-      """.stripMargin
+        {
+          "namespace": "test",
+          "name": "some_schema",
+          "type": "record",
+          "fields": [
+            {
+              "name": "col2",
+              "type": "string"
+            }
+          ]
+        }
+      """
     checkAvroSchemaEvolutionRemoveColumn(
       s"'avro.schema.literal'='$originalSchema'",
       s"'avro.schema.literal'='$evolvedSchema'")
@@ -1978,13 +1978,13 @@ class HiveDDLSuite
     withTable("t") {
       sql(
         s"""
-          |CREATE TABLE t PARTITIONED BY (ds string)
-          |ROW FORMAT SERDE 'org.apache.hadoop.hive.serde2.avro.AvroSerDe'
-          |WITH SERDEPROPERTIES ($originalSerdeProperties)
-          |STORED AS
-          |INPUTFORMAT 'org.apache.hadoop.hive.ql.io.avro.AvroContainerInputFormat'
-          |OUTPUTFORMAT 'org.apache.hadoop.hive.ql.io.avro.AvroContainerOutputFormat'
-        """.stripMargin)
+          CREATE TABLE t PARTITIONED BY (ds string)
+          ROW FORMAT SERDE 'org.apache.hadoop.hive.serde2.avro.AvroSerDe'
+          WITH SERDEPROPERTIES ($originalSerdeProperties)
+          STORED AS
+          INPUTFORMAT 'org.apache.hadoop.hive.ql.io.avro.AvroContainerInputFormat'
+          OUTPUTFORMAT 'org.apache.hadoop.hive.ql.io.avro.AvroContainerOutputFormat'
+        """)
       sql("INSERT INTO t partition (ds='1983-04-27') VALUES ('col1_value', 'col2_value')")
       sql(s"ALTER TABLE t SET SERDEPROPERTIES ($evolvedSerdeProperties)")
       sql("INSERT INTO t partition (ds='1981-01-07') VALUES ('col2_value')")
@@ -2119,11 +2119,11 @@ class HiveDDLSuite
       withTempPath { dir =>
         spark.sql(
           s"""
-             |CREATE TABLE t1(a int, b int)
-             |USING hive
-             |PARTITIONED BY(a)
-             |LOCATION '${dir.toURI}'
-           """.stripMargin)
+             CREATE TABLE t1(a int, b int)
+             USING hive
+             PARTITIONED BY(a)
+             LOCATION '${dir.toURI}'
+           """)
 
         val table = spark.sessionState.catalog.getTableMetadata(TableIdentifier("t1"))
         assert(table.location == makeQualifiedPath(dir.getAbsolutePath))
@@ -2148,11 +2148,11 @@ class HiveDDLSuite
             if (shouldDelete) dir.delete()
             spark.sql(
               s"""
-                 |CREATE TABLE t
-                 |USING hive
-                 |LOCATION '${dir.toURI}'
-                 |AS SELECT 3 as a, 4 as b, 1 as c, 2 as d
-               """.stripMargin)
+                 CREATE TABLE t
+                 USING hive
+                 LOCATION '${dir.toURI}'
+                 AS SELECT 3 as a, 4 as b, 1 as c, 2 as d
+               """)
             val table = spark.sessionState.catalog.getTableMetadata(TableIdentifier("t"))
             assert(table.location == makeQualifiedPath(dir.getAbsolutePath))
 
@@ -2163,12 +2163,12 @@ class HiveDDLSuite
             if (shouldDelete) dir.delete()
             spark.sql(
               s"""
-                 |CREATE TABLE t1
-                 |USING hive
-                 |PARTITIONED BY(a, b)
-                 |LOCATION '${dir.toURI}'
-                 |AS SELECT 3 as a, 4 as b, 1 as c, 2 as d
-               """.stripMargin)
+                 CREATE TABLE t1
+                 USING hive
+                 PARTITIONED BY(a, b)
+                 LOCATION '${dir.toURI}'
+                 AS SELECT 3 as a, 4 as b, 1 as c, 2 as d
+               """)
             val table = spark.sessionState.catalog.getTableMetadata(TableIdentifier("t1"))
             assert(table.location == makeQualifiedPath(dir.getAbsolutePath))
 
@@ -2189,11 +2189,11 @@ class HiveDDLSuite
           withTempDir { dir =>
             spark.sql(
               s"""
-                 |CREATE TABLE t(a string, `$specialChars` string)
-                 |USING $datasource
-                 |PARTITIONED BY(`$specialChars`)
-                 |LOCATION '${dir.toURI}'
-               """.stripMargin)
+                 CREATE TABLE t(a string, `$specialChars` string)
+                 USING $datasource
+                 PARTITIONED BY(`$specialChars`)
+                 LOCATION '${dir.toURI}'
+               """)
 
             assert(dir.listFiles().isEmpty)
             spark.sql(s"INSERT INTO TABLE t PARTITION(`$specialChars`=2) SELECT 1")
@@ -2230,10 +2230,10 @@ class HiveDDLSuite
           val escapedLoc = loc.getAbsolutePath.replace("\\", "\\\\")
           spark.sql(
             s"""
-               |CREATE TABLE t(a string)
-               |USING hive
-               |LOCATION '$escapedLoc'
-             """.stripMargin)
+               CREATE TABLE t(a string)
+               USING hive
+               LOCATION '$escapedLoc'
+             """)
 
           val table = spark.sessionState.catalog.getTableMetadata(TableIdentifier("t"))
           assert(table.location == makeQualifiedPath(loc.getAbsolutePath))
@@ -2257,11 +2257,11 @@ class HiveDDLSuite
           val escapedLoc = loc.getAbsolutePath.replace("\\", "\\\\")
           spark.sql(
             s"""
-               |CREATE TABLE t1(a string, b string)
-               |USING hive
-               |PARTITIONED BY(b)
-               |LOCATION '$escapedLoc'
-             """.stripMargin)
+               CREATE TABLE t1(a string, b string)
+               USING hive
+               PARTITIONED BY(b)
+               LOCATION '$escapedLoc'
+             """)
 
           val table = spark.sessionState.catalog.getTableMetadata(TableIdentifier("t1"))
           assert(table.location == makeQualifiedPath(loc.getAbsolutePath))
@@ -2315,9 +2315,9 @@ class HiveDDLSuite
       withTable("tab") {
         sql(
           s"""
-             |CREATE TABLE tab (c1 int, c2 int)
-             |PARTITIONED BY (c3 int) STORED AS $tableType
-          """.stripMargin)
+             CREATE TABLE tab (c1 int, c2 int)
+             PARTITIONED BY (c3 int) STORED AS $tableType
+          """)
 
         sql("INSERT INTO tab PARTITION (c3=1) VALUES (1, 2)")
         sql("ALTER TABLE tab ADD COLUMNS (c4 int)")
@@ -2459,14 +2459,14 @@ class HiveDDLSuite
       Seq((1, "one"), (2, "two"), (4, "four")).toDF("number", "word").createOrReplaceTempView("t1")
       // Make a table and ensure it will be broadcast.
       sql("""CREATE TABLE smallTable(word string, number int)
-            |ROW FORMAT SERDE 'org.apache.hadoop.hive.serde2.lazy.LazySimpleSerDe'
-            |STORED AS TEXTFILE
-          """.stripMargin)
+            ROW FORMAT SERDE 'org.apache.hadoop.hive.serde2.lazy.LazySimpleSerDe'
+            STORED AS TEXTFILE
+          """)
 
       sql(
         """INSERT INTO smallTable
-          |SELECT word, number from t1
-        """.stripMargin)
+          SELECT word, number from t1
+        """)
 
       val inputData = MemoryStream[Int]
       val joined = inputData.toDS().toDF()
@@ -2525,10 +2525,10 @@ class HiveDDLSuite
           withTempPath { path =>
             sql(
               s"""
-                |CREATE TABLE t(id int) USING hive
-                |OPTIONS(fileFormat '$fileFormat', compression '$compression')
-                |LOCATION '${path.toURI}'
-              """.stripMargin)
+                CREATE TABLE t(id int) USING hive
+                OPTIONS(fileFormat '$fileFormat', compression '$compression')
+                LOCATION '${path.toURI}'
+              """)
             val table = spark.sessionState.catalog.getTableMetadata(TableIdentifier("t"))
             assert(DDLUtils.isHiveTable(table))
             assert(table.storage.serde.get.contains(fileFormat))
@@ -2562,15 +2562,15 @@ class HiveDDLSuite
           withTempPath { path =>
             sql(
               s"""
-                |CREATE TABLE t(id int) STORED AS ORC
-                |TBLPROPERTIES (
-                |  orc.compress 'ZLIB',
-                |  orc.compress.size '1001',
-                |  orc.row.index.stride '2002',
-                |  hive.exec.orc.default.block.size '3003',
-                |  hive.exec.orc.compression.strategy 'COMPRESSION')
-                |LOCATION '${path.toURI}'
-              """.stripMargin)
+                CREATE TABLE t(id int) STORED AS ORC
+                TBLPROPERTIES (
+                  orc.compress 'ZLIB',
+                  orc.compress.size '1001',
+                  orc.row.index.stride '2002',
+                  hive.exec.orc.default.block.size '3003',
+                  hive.exec.orc.compression.strategy 'COMPRESSION')
+                LOCATION '${path.toURI}'
+              """)
             val table = spark.sessionState.catalog.getTableMetadata(TableIdentifier("t"))
             assert(DDLUtils.isHiveTable(table))
             assert(table.storage.serde.get.contains("orc"))
@@ -2603,12 +2603,12 @@ class HiveDDLSuite
         withTempPath { path =>
           sql(
             s"""
-               |CREATE TABLE t(id int) STORED AS PARQUET
-               |TBLPROPERTIES (
-               |  parquet.compression 'GZIP'
-               |)
-               |LOCATION '${path.toURI}'
-            """.stripMargin)
+               CREATE TABLE t(id int) STORED AS PARQUET
+               TBLPROPERTIES (
+                 parquet.compression 'GZIP'
+               )
+               LOCATION '${path.toURI}'
+            """)
           val table = spark.sessionState.catalog.getTableMetadata(TableIdentifier("t"))
           assert(DDLUtils.isHiveTable(table))
           assert(table.storage.serde.get.contains("parquet"))
@@ -2703,9 +2703,9 @@ class HiveDDLSuite
   test("Hive CTAS can't create partitioned table by specifying schema") {
     val sql1 =
       s"""CREATE TABLE t (a int)
-         |PARTITIONED BY (b string)
-         |STORED AS parquet
-         |AS SELECT 1 as a, "a" as b""".stripMargin
+         PARTITIONED BY (b string)
+         STORED AS parquet
+         AS SELECT 1 as a, "a" as b"""
     checkError(
       exception = intercept[ParseException](sql(sql1)),
       errorClass = "_LEGACY_ERROR_TEMP_0035",
@@ -2715,9 +2715,9 @@ class HiveDDLSuite
 
     val sql2 =
       s"""CREATE TABLE t
-         |PARTITIONED BY (b string)
-         |STORED AS parquet
-         |AS SELECT 1 as a, "a" as b""".stripMargin
+         PARTITIONED BY (b string)
+         STORED AS parquet
+         AS SELECT 1 as a, "a" as b"""
     checkError(
       exception = intercept[ParseException](sql(sql2)),
       errorClass = "_LEGACY_ERROR_TEMP_0035",
@@ -2733,11 +2733,11 @@ class HiveDDLSuite
         withSQLConf("hive.exec.dynamic.partition.mode" -> "nonstrict") {
           spark.sql(
             s"""
-               |CREATE TABLE t
-               |PARTITIONED BY (b)
-               |STORED AS $format
-               |AS SELECT 1 as a, "a" as b
-               """.stripMargin)
+               CREATE TABLE t
+               PARTITIONED BY (b)
+               STORED AS $format
+               AS SELECT 1 as a, "a" as b
+               """)
           checkAnswer(spark.table("t"), Row(1, "a"))
 
           assert(spark.sessionState.catalog.getTableMetadata(TableIdentifier("t"))
@@ -2806,36 +2806,36 @@ class HiveDDLSuite
       // row format doesn't work in create targetDsTable
       assertAnalysisError(
         """
-          |CREATE TABLE targetDsTable LIKE sourceHiveTable USING PARQUET
-          |ROW FORMAT SERDE 'org.apache.hadoop.hive.serde2.lazy.LazySimpleSerDe'
-        """.stripMargin,
+          CREATE TABLE targetDsTable LIKE sourceHiveTable USING PARQUET
+          ROW FORMAT SERDE 'org.apache.hadoop.hive.serde2.lazy.LazySimpleSerDe'
+        """,
         "Operation not allowed: CREATE TABLE LIKE ... USING ... ROW FORMAT SERDE")
 
       // row format doesn't work with provider hive
       assertAnalysisError(
         """
-          |CREATE TABLE targetHiveTable LIKE sourceHiveTable USING hive
-          |ROW FORMAT SERDE 'org.apache.hadoop.hive.serde2.lazy.LazySimpleSerDe'
-          |WITH SERDEPROPERTIES ('test' = 'test')
-        """.stripMargin,
+          CREATE TABLE targetHiveTable LIKE sourceHiveTable USING hive
+          ROW FORMAT SERDE 'org.apache.hadoop.hive.serde2.lazy.LazySimpleSerDe'
+          WITH SERDEPROPERTIES ('test' = 'test')
+        """,
         "Operation not allowed: CREATE TABLE LIKE ... USING ... ROW FORMAT SERDE")
 
       // row format doesn't work without 'STORED AS'
       assertAnalysisError(
         """
-          |CREATE TABLE targetDsTable LIKE sourceDsTable
-          |ROW FORMAT SERDE 'org.apache.hadoop.hive.serde2.lazy.LazySimpleSerDe'
-          |WITH SERDEPROPERTIES ('test' = 'test')
-        """.stripMargin,
+          CREATE TABLE targetDsTable LIKE sourceDsTable
+          ROW FORMAT SERDE 'org.apache.hadoop.hive.serde2.lazy.LazySimpleSerDe'
+          WITH SERDEPROPERTIES ('test' = 'test')
+        """,
         "'ROW FORMAT' must be used with 'STORED AS'")
 
       // 'INPUTFORMAT' and 'OUTPUTFORMAT' conflict with 'USING'
       assertAnalysisError(
         """
-          |CREATE TABLE targetDsTable LIKE sourceDsTable USING format
-          |STORED AS INPUTFORMAT 'inFormat' OUTPUTFORMAT 'outFormat'
-          |ROW FORMAT SERDE 'org.apache.hadoop.hive.serde2.lazy.LazySimpleSerDe'
-        """.stripMargin,
+          CREATE TABLE targetDsTable LIKE sourceDsTable USING format
+          STORED AS INPUTFORMAT 'inFormat' OUTPUTFORMAT 'outFormat'
+          ROW FORMAT SERDE 'org.apache.hadoop.hive.serde2.lazy.LazySimpleSerDe'
+        """,
         "Operation not allowed: CREATE TABLE LIKE ... USING ... STORED AS")
     }
   }
@@ -2878,10 +2878,10 @@ class HiveDDLSuite
           withTable("targetTable") {
             spark.sql(
               s"""
-                 |CREATE TABLE targetTable LIKE $sourceTable
-                 |ROW FORMAT SERDE 'org.apache.hadoop.hive.serde2.lazy.LazySimpleSerDe'
-                 |STORED AS $format
-             """.stripMargin)
+                 CREATE TABLE targetTable LIKE $sourceTable
+                 ROW FORMAT SERDE 'org.apache.hadoop.hive.serde2.lazy.LazySimpleSerDe'
+                 STORED AS $format
+             """)
 
             val expectedSerde = HiveSerDe.sourceToSerDe(format)
             val table = catalog.getTableMetadata(TableIdentifier("targetTable", Some("default")))
@@ -2898,10 +2898,10 @@ class HiveDDLSuite
           withTable("targetTable") {
             assertAnalysisError(
               s"""
-                 |CREATE TABLE targetTable LIKE $sourceTable
-                 |ROW FORMAT SERDE 'org.apache.hadoop.hive.serde2.lazy.LazySimpleSerDe'
-                 |STORED AS $format
-              """.stripMargin,
+                 CREATE TABLE targetTable LIKE $sourceTable
+                 ROW FORMAT SERDE 'org.apache.hadoop.hive.serde2.lazy.LazySimpleSerDe'
+                 STORED AS $format
+              """,
               s"ROW FORMAT SERDE is incompatible with format '${format.toLowerCase(Locale.ROOT)}'")
           }
         }
@@ -2912,10 +2912,10 @@ class HiveDDLSuite
         withTable("targetTable") {
           spark.sql(
             s"""
-               |CREATE TABLE targetTable LIKE $sourceTable
-               |ROW FORMAT DELIMITED
-               |STORED AS TEXTFILE
-             """.stripMargin)
+               CREATE TABLE targetTable LIKE $sourceTable
+               ROW FORMAT DELIMITED
+               STORED AS TEXTFILE
+             """)
 
           val expectedSerde = HiveSerDe.sourceToSerDe("TEXTFILE")
           val table = catalog.getTableMetadata(TableIdentifier("targetTable", Some("default")))
@@ -2927,10 +2927,10 @@ class HiveDDLSuite
           // negative case
           assertAnalysisError(
             s"""
-               |CREATE TABLE targetTable LIKE $sourceTable
-               |ROW FORMAT DELIMITED
-               |STORED AS PARQUET
-            """.stripMargin,
+               CREATE TABLE targetTable LIKE $sourceTable
+               ROW FORMAT DELIMITED
+               STORED AS PARQUET
+            """,
             "ROW FORMAT DELIMITED is only compatible with 'textfile'")
         }
       }
@@ -2942,11 +2942,11 @@ class HiveDDLSuite
           withTable("targetTable") {
             spark.sql(
               s"""
-                 |CREATE TABLE targetTable LIKE $sourceTable
-                 |ROW FORMAT SERDE '${expectedSerde.get.serde.get}'
-                 |STORED AS INPUTFORMAT '${expectedSerde.get.inputFormat.get}'
-                 |OUTPUTFORMAT '${expectedSerde.get.outputFormat.get}'
-               """.stripMargin)
+                 CREATE TABLE targetTable LIKE $sourceTable
+                 ROW FORMAT SERDE '${expectedSerde.get.serde.get}'
+                 STORED AS INPUTFORMAT '${expectedSerde.get.inputFormat.get}'
+                 OUTPUTFORMAT '${expectedSerde.get.outputFormat.get}'
+               """)
 
             val table = catalog.getTableMetadata(TableIdentifier("targetTable", Some("default")))
             assert(table.provider === Some("hive"))
@@ -2991,12 +2991,12 @@ class HiveDDLSuite
             exception = intercept[SparkException] {
               spark.sql(
                 s"""
-                   |INSERT OVERWRITE LOCAL DIRECTORY '${path.getCanonicalPath}'
-                   |STORED AS PARQUET
-                   |SELECT
-                   |NAMED_STRUCT('ID', ID, 'IF(ID=1,ID,0)', IF(ID=1,ID,0), 'B', ABS(ID)) AS col1
-                   |FROM v
-               """.stripMargin)
+                   INSERT OVERWRITE LOCAL DIRECTORY '${path.getCanonicalPath}'
+                   STORED AS PARQUET
+                   SELECT
+                   NAMED_STRUCT('ID', ID, 'IF(ID=1,ID,0)', IF(ID=1,ID,0), 'B', ABS(ID)) AS col1
+                   FROM v
+               """)
             }.getCause.asInstanceOf[AnalysisException],
             errorClass = "INVALID_COLUMN_NAME_AS_PATH",
             parameters = Map("datasource" -> "HiveFileFormat", "columnName" -> "`IF(ID=1,ID,0)`")
@@ -3035,12 +3035,12 @@ class HiveDDLSuite
     withTable(tbl) {
       Seq(
         s"""
-           |CREATE TABLE $tbl
-           |STORED AS ORC
-           |AS SELECT
-           |  INTERVAL '1-1' YEAR TO MONTH AS YM,
-           |  INTERVAL '1 02:03:04.123456' DAY TO SECOND AS DT
-           |""".stripMargin,
+           CREATE TABLE $tbl
+           STORED AS ORC
+           AS SELECT
+             INTERVAL '1-1' YEAR TO MONTH AS YM,
+             INTERVAL '1 02:03:04.123456' DAY TO SECOND AS DT
+           """,
         s"CREATE TABLE $tbl (dt INTERVAL HOUR TO MINUTE)"
       ).foreach { sqlCmd =>
         val errMsg = intercept[UnsupportedOperationException] {

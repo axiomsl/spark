@@ -66,11 +66,11 @@ abstract class QueryTest extends PlanTest {
     if (!QueryTest.compare(result.toSeq, expectedAnswer)) {
       fail(
         s"""
-           |Decoded objects do not match expected objects:
-           |expected: $expectedAnswer
-           |actual:   ${result.toSeq}
-           |${ds.exprEnc.deserializer.treeString}
-         """.stripMargin)
+           Decoded objects do not match expected objects:
+           expected: $expectedAnswer
+           actual:   ${result.toSeq}
+           ${ds.exprEnc.deserializer.treeString}
+         """)
     }
   }
 
@@ -86,11 +86,11 @@ abstract class QueryTest extends PlanTest {
     if (!QueryTest.compare(result.toSeq.sorted, expectedAnswer.sorted)) {
       fail(
         s"""
-           |Decoded objects do not match expected objects:
-           |expected: $expectedAnswer
-           |actual:   ${result.toSeq}
-           |${ds.exprEnc.deserializer.treeString}
-         """.stripMargin)
+           Decoded objects do not match expected objects:
+           expected: $expectedAnswer
+           actual:   ${result.toSeq}
+           ${ds.exprEnc.deserializer.treeString}
+         """)
     }
   }
 
@@ -100,11 +100,11 @@ abstract class QueryTest extends PlanTest {
         if (ae.plan.isDefined) {
           fail(
             s"""
-               |Failed to analyze query: $ae
-               |${ae.plan.get}
-               |
-               |${stackTraceToString(ae)}
-             """.stripMargin)
+               Failed to analyze query: $ae
+               ${ae.plan.get}
+
+               ${stackTraceToString(ae)}
+             """)
         } else {
           throw ae
         }
@@ -115,11 +115,11 @@ abstract class QueryTest extends PlanTest {
       case e: Exception =>
         fail(
           s"""
-             |Exception collecting dataset as objects
-             |${ds.exprEnc}
-             |${ds.exprEnc.deserializer.treeString}
-             |${ds.queryExecution}
-           """.stripMargin, e)
+             Exception collecting dataset as objects
+             ${ds.exprEnc}
+             ${ds.exprEnc.deserializer.treeString}
+             ${ds.queryExecution}
+           """, e)
     }
   }
 
@@ -135,11 +135,11 @@ abstract class QueryTest extends PlanTest {
         if (ae.plan.isDefined) {
           fail(
             s"""
-               |Failed to analyze query: $ae
-               |${ae.plan.get}
-               |
-               |${stackTraceToString(ae)}
-               |""".stripMargin)
+               Failed to analyze query: $ae
+               ${ae.plan.get}
+
+               ${stackTraceToString(ae)}
+               """)
         } else {
           throw ae
         }
@@ -270,25 +270,25 @@ object QueryTest extends Assertions {
       case e: Exception =>
         val errorMessage =
           s"""
-            |Exception thrown while executing query:
-            |${df.queryExecution}
-            |== Exception ==
-            |$e
-            |${org.apache.spark.sql.catalyst.util.stackTraceToString(e)}
-          """.stripMargin
+            Exception thrown while executing query:
+            ${df.queryExecution}
+            == Exception ==
+            $e
+            ${org.apache.spark.sql.catalyst.util.stackTraceToString(e)}
+          """
         return Some(errorMessage)
     }
 
     sameRows(expectedAnswer, sparkAnswer, isSorted).map { results =>
         s"""
-        |Results do not match for query:
-        |Timezone: ${TimeZone.getDefault}
-        |Timezone Env: ${sys.env.getOrElse("TZ", "")}
-        |
-        |${df.queryExecution}
-        |== Results ==
-        |$results
-       """.stripMargin
+        Results do not match for query:
+        Timezone: ${TimeZone.getDefault}
+        Timezone Env: ${sys.env.getOrElse("TZ", "")}
+
+        ${df.queryExecution}
+        == Results ==
+        $results
+       """
     }
   }
 
@@ -338,8 +338,8 @@ object QueryTest extends Assertions {
         }).getOrElse("struct<>")
 
     s"""
-       |== Results ==
-       |${
+       == Results ==
+       ${
       sideBySide(
         s"== Correct Answer - ${expectedAnswer.size} ==" +:
           getRowType(expectedAnswer.headOption) +:
@@ -348,7 +348,7 @@ object QueryTest extends Assertions {
           getRowType(sparkAnswer.headOption) +:
           prepareAnswer(sparkAnswer, isSorted).map(_.toString())).mkString("\n")
     }
-    """.stripMargin
+    """
   }
 
   def includesRows(

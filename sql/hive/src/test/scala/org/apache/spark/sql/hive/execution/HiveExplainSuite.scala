@@ -112,13 +112,13 @@ class HiveExplainSuite extends QueryTest with SQLTestUtils with TestHiveSingleto
 
     checkKeywordsExist(sql(
       """
-        | EXPLAIN EXTENDED CREATE TABLE temp__b
-        | ROW FORMAT SERDE "org.apache.hadoop.hive.serde2.columnar.ColumnarSerDe"
-        | WITH SERDEPROPERTIES("serde_p1"="p1","serde_p2"="p2")
-        | STORED AS RCFile
-        | TBLPROPERTIES("tbl_p1"="p11", "tbl_p2"="p22")
-        | AS SELECT * FROM src LIMIT 2
-      """.stripMargin),
+         EXPLAIN EXTENDED CREATE TABLE temp__b
+         ROW FORMAT SERDE "org.apache.hadoop.hive.serde2.columnar.ColumnarSerDe"
+         WITH SERDEPROPERTIES("serde_p1"="p1","serde_p2"="p2")
+         STORED AS RCFile
+         TBLPROPERTIES("tbl_p1"="p11", "tbl_p2"="p22")
+         AS SELECT * FROM src LIMIT 2
+      """),
       "== Parsed Logical Plan ==",
       "== Analyzed Logical Plan ==",
       "== Optimized Logical Plan ==",
@@ -130,10 +130,10 @@ class HiveExplainSuite extends QueryTest with SQLTestUtils with TestHiveSingleto
     DisableAdaptiveExecution("Adaptive explain is different")) {
     checkKeywordsExist(sql(
       """
-        |EXPLAIN SELECT t1.id AS a, t2.id AS b FROM
-        |(SELECT * FROM range(3)) t1 JOIN
-        |(SELECT * FROM range(10)) t2 ON t1.id == t2.id % 3
-      """.stripMargin),
+        EXPLAIN SELECT t1.id AS a, t2.id AS b FROM
+        (SELECT * FROM range(3)) t1 JOIN
+        (SELECT * FROM range(10)) t2 ON t1.id == t2.id % 3
+      """),
       "== Physical Plan ==",
       "*(2) Project ",
       "+- *(2) BroadcastHashJoin ",
@@ -190,11 +190,11 @@ class HiveExplainSuite extends QueryTest with SQLTestUtils with TestHiveSingleto
         withTable("t") {
           sql(
             """
-              |CREATE TABLE t USING json
-              |PARTITIONED BY (j)
-              |CLUSTERED BY (i) SORTED BY (i) INTO 4 BUCKETS
-              |AS SELECT 1 i, 2 j
-            """.stripMargin)
+              CREATE TABLE t USING json
+              PARTITIONED BY (j)
+              CLUSTERED BY (i) SORTED BY (i) INTO 4 BUCKETS
+              AS SELECT 1 i, 2 j
+            """)
           assert(HiveCatalogMetrics.METRIC_PARTITIONS_FETCHED.getCount == 0)
           spark.table("t").sort($"i").explain()
           if (legacyBucketedScan) {

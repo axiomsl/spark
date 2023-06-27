@@ -231,9 +231,9 @@ abstract class ParquetPartitioningTest extends QueryTest with SQLTestUtils with 
       checkAnswer(
         sql(
           s"""
-             |SELECT p, structField.intStructField, structField.stringStructField
-             |FROM $table WHERE p = 1
-           """.stripMargin),
+             SELECT p, structField.intStructField, structField.stringStructField
+             FROM $table WHERE p = 1
+           """),
         (1 to 10).map(i => Row(1, i, f"${i}_string")))
     }
 

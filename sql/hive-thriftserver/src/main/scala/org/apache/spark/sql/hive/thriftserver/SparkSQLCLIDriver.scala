@@ -457,8 +457,8 @@ private[hive] class SparkSQLCLIDriver extends CliDriver with Logging {
             case e: IOException =>
               console.printError(
                 s"""Failed with exception ${e.getClass.getName}: ${e.getMessage}
-                   |${org.apache.hadoop.util.StringUtils.stringifyException(e)}
-                 """.stripMargin)
+                   ${org.apache.hadoop.util.StringUtils.stringifyException(e)}
+                 """)
               ret = 1
           }
 

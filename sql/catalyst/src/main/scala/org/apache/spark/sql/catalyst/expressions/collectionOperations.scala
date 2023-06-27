@@ -2392,23 +2392,23 @@ case class ElementAt(
           }
 
           s"""
-             |int $index = (int) $eval2;
-             |if ($eval1.numElements() < Math.abs($index)) {
-             |  $indexOutOfBoundBranch
-             |} else {
-             |  if ($index == 0) {
-             |    throw QueryExecutionErrors.invalidIndexOfZeroError($errorContext);
-             |  } else if ($index > 0) {
-             |    $index--;
-             |  } else {
-             |    $index += $eval1.numElements();
-             |  }
-             |  $nullCheck
-             |  {
-             |    ${ev.value} = ${CodeGenerator.getValue(eval1, dataType, index)};
-             |  }
-             |}
-           """.stripMargin
+             int $index = (int) $eval2;
+             if ($eval1.numElements() < Math.abs($index)) {
+               $indexOutOfBoundBranch
+             } else {
+               if ($index == 0) {
+                 throw QueryExecutionErrors.invalidIndexOfZeroError($errorContext);
+               } else if ($index > 0) {
+                 $index--;
+               } else {
+                 $index += $eval1.numElements();
+               }
+               $nullCheck
+               {
+                 ${ev.value} = ${CodeGenerator.getValue(eval1, dataType, index)};
+               }
+             }
+           """
         })
       case _: MapType =>
         doGetValueGenCode(ctx, ev, left.dataType.asInstanceOf[MapType])

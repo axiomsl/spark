@@ -508,15 +508,15 @@ class HiveThriftBinaryServerSuite extends HiveThriftServer2Test {
             "CREATE TABLE smallKV(key INT, val STRING) USING hive",
             s"LOAD DATA LOCAL INPATH '${TestData.smallKv}' OVERWRITE INTO TABLE smallKV",
             """CREATE TABLE addJar(key string)
-              |ROW FORMAT SERDE 'org.apache.hive.hcatalog.data.JsonSerDe'
-            """.stripMargin)
+              ROW FORMAT SERDE 'org.apache.hive.hcatalog.data.JsonSerDe'
+            """)
 
           queries.foreach(statement.execute)
 
           statement.executeQuery(
             """
-              |INSERT INTO TABLE addJar SELECT 'k1' as key FROM smallKV limit 1
-            """.stripMargin)
+              INSERT INTO TABLE addJar SELECT 'k1' as key FROM smallKV limit 1
+            """)
 
           val actualResult =
             statement.executeQuery("SELECT key FROM addJar")
@@ -574,8 +574,8 @@ class HiveThriftBinaryServerSuite extends HiveThriftServer2Test {
         Seq(
           s"ADD JAR $jarURL",
           s"""CREATE TEMPORARY FUNCTION udtf_count2
-             |AS 'org.apache.spark.sql.hive.execution.GenericUDTFCount2'
-           """.stripMargin
+             AS 'org.apache.spark.sql.hive.execution.GenericUDTFCount2'
+           """
         ).foreach(statement.execute)
 
         val rs1 = statement.executeQuery("DESCRIBE FUNCTION udtf_count2")
@@ -717,27 +717,27 @@ class HiveThriftBinaryServerSuite extends HiveThriftServer2Test {
     val viewName2 = "view_interval_2"
     val ddl1 =
       s"""
-         |CREATE GLOBAL TEMP VIEW $viewName1
-         |AS SELECT
-         | INTERVAL 1 DAY AS a,
-         | INTERVAL '2-1' YEAR TO MONTH AS b,
-         | INTERVAL '3 1:1:1' DAY TO SECOND AS c
-       """.stripMargin
+         CREATE GLOBAL TEMP VIEW $viewName1
+         AS SELECT
+          INTERVAL 1 DAY AS a,
+          INTERVAL '2-1' YEAR TO MONTH AS b,
+          INTERVAL '3 1:1:1' DAY TO SECOND AS c
+       """
     val ddl2 = s"CREATE TEMP VIEW $viewName2 as select * from global_temp.$viewName1"
     withJdbcStatement(viewName1, viewName2) { statement =>
       statement.executeQuery(ddl1)
       statement.executeQuery(ddl2)
       val rs = statement.executeQuery(
         s"""
-           |SELECT v1.a AS a1, v2.a AS a2,
-           | v1.b AS b1, v2.b AS b2,
-           | v1.c AS c1, v2.c AS c2
-           |FROM global_temp.$viewName1 v1
-           |JOIN $viewName2 v2
-           |ON date_part('DAY', v1.a) = date_part('DAY', v2.a)
-           |  AND v1.b = v2.b
-           |  AND v1.c = v2.c
-           |""".stripMargin)
+           SELECT v1.a AS a1, v2.a AS a2,
+            v1.b AS b1, v2.b AS b2,
+            v1.c AS c1, v2.c AS c2
+           FROM global_temp.$viewName1 v1
+           JOIN $viewName2 v2
+           ON date_part('DAY', v1.a) = date_part('DAY', v2.a)
+             AND v1.b = v2.b
+             AND v1.c = v2.c
+           """)
       while (rs.next()) {
         assert(rs.getString("a1") === "1 00:00:00.000000000")
         assert(rs.getString("a2") === "1 00:00:00.000000000")
@@ -851,8 +851,8 @@ class HiveThriftBinaryServerSuite extends HiveThriftServer2Test {
 
         client.executeStatement(sessionHandle,
           """CREATE TABLE addJar(key string)
-            |ROW FORMAT SERDE 'org.apache.hive.hcatalog.data.JsonSerDe'
-          """.stripMargin, confOverlay)
+            ROW FORMAT SERDE 'org.apache.hive.hcatalog.data.JsonSerDe'
+          """, confOverlay)
 
         client.executeStatement(sessionHandle,
           "INSERT INTO TABLE addJar SELECT 'k1' as key FROM smallKV limit 1", confOverlay)
@@ -1013,8 +1013,8 @@ class SingleSessionSuite extends HiveThriftServer2TestBase {
           "CREATE TABLE test_udtf(key INT, value STRING) USING hive",
           s"LOAD DATA LOCAL INPATH '${TestData.smallKv}' OVERWRITE INTO TABLE test_udtf",
           s"""CREATE TEMPORARY FUNCTION udtf_count2
-              |AS 'org.apache.spark.sql.hive.execution.GenericUDTFCount2'
-           """.stripMargin
+              AS 'org.apache.spark.sql.hive.execution.GenericUDTFCount2'
+           """
         ).foreach(statement.execute)
       },
 
@@ -1224,13 +1224,13 @@ abstract class HiveThriftServer2TestBase extends SparkFunSuite with BeforeAndAft
 
       Files.write(
         """rootLogger.level = info
-          |rootLogger.appenderRef.stdout.ref = console
-          |appender.console.type = Console
-          |appender.console.name = console
-          |appender.console.target = SYSTEM_ERR
-          |appender.console.layout.type = PatternLayout
-          |appender.console.layout.pattern = %d{yy/MM/dd HH:mm:ss} %p %c{1}: %m%n%ex
-        """.stripMargin,
+          rootLogger.appenderRef.stdout.ref = console
+          appender.console.type = Console
+          appender.console.name = console
+          appender.console.target = SYSTEM_ERR
+          appender.console.layout.type = PatternLayout
+          appender.console.layout.pattern = %d{yy/MM/dd HH:mm:ss} %p %c{1}: %m%n%ex
+        """,
         new File(s"$tempLog4jConf/log4j2.properties"),
         StandardCharsets.UTF_8)
 
@@ -1238,19 +1238,19 @@ abstract class HiveThriftServer2TestBase extends SparkFunSuite with BeforeAndAft
     }
 
     s"""$startScript
-       |  --master local
-       |  --hiveconf ${ConfVars.METASTORECONNECTURLKEY}=$metastoreJdbcUri
-       |  --hiveconf ${ConfVars.METASTOREWAREHOUSE}=$warehousePath
-       |  --hiveconf ${ConfVars.HIVE_SERVER2_THRIFT_BIND_HOST}=$localhost
-       |  --hiveconf ${ConfVars.HIVE_SERVER2_TRANSPORT_MODE}=$mode
-       |  --hiveconf ${ConfVars.HIVE_SERVER2_LOGGING_OPERATION_LOG_LOCATION}=$operationLogPath
-       |  --hiveconf ${ConfVars.LOCALSCRATCHDIR}=$lScratchDir
-       |  --hiveconf $portConf=0
-       |  --driver-class-path $driverClassPath
-       |  --driver-java-options -Dlog4j2.debug
-       |  --conf spark.ui.enabled=false
-       |  ${extraConf.mkString("\n")}
-     """.stripMargin.split("\\s+").toSeq
+         --master local
+         --hiveconf ${ConfVars.METASTORECONNECTURLKEY}=$metastoreJdbcUri
+         --hiveconf ${ConfVars.METASTOREWAREHOUSE}=$warehousePath
+         --hiveconf ${ConfVars.HIVE_SERVER2_THRIFT_BIND_HOST}=$localhost
+         --hiveconf ${ConfVars.HIVE_SERVER2_TRANSPORT_MODE}=$mode
+         --hiveconf ${ConfVars.HIVE_SERVER2_LOGGING_OPERATION_LOG_LOCATION}=$operationLogPath
+         --hiveconf ${ConfVars.LOCALSCRATCHDIR}=$lScratchDir
+         --hiveconf $portConf=0
+         --driver-class-path $driverClassPath
+         --driver-java-options -Dlog4j2.debug
+         --conf spark.ui.enabled=false
+         ${extraConf.mkString("\n")}
+     """.split("\\s+").toSeq
   }
 
   /**
@@ -1283,11 +1283,11 @@ abstract class HiveThriftServer2TestBase extends SparkFunSuite with BeforeAndAft
 
     diagnosisBuffer ++=
       s"""
-         |### Attempt $attempt ###
-         |HiveThriftServer2 command line: $command
-         |Listening port: 0
-         |System user: $user
-       """.stripMargin.split("\n")
+         ### Attempt $attempt ###
+         HiveThriftServer2 command line: $command
+         Listening port: 0
+         System user: $user
+       """.split("\n")
 
     logPath = {
       val lines = Utils.executeAndGetOutput(
@@ -1378,14 +1378,14 @@ abstract class HiveThriftServer2TestBase extends SparkFunSuite with BeforeAndAft
   private def dumpLogs(): Unit = {
     logError(
       s"""
-         |=====================================
-         |HiveThriftServer2Suite failure output
-         |=====================================
-         |${diagnosisBuffer.mkString("\n")}
-         |=========================================
-         |End HiveThriftServer2Suite failure output
-         |=========================================
-       """.stripMargin)
+         =====================================
+         HiveThriftServer2Suite failure output
+         =====================================
+         ${diagnosisBuffer.mkString("\n")}
+         =========================================
+         End HiveThriftServer2Suite failure output
+         =========================================
+       """)
   }
 
   override def beforeEach(): Unit = {
@@ -1430,11 +1430,11 @@ abstract class HiveThriftServer2TestBase extends SparkFunSuite with BeforeAndAft
 
   protected def jdbcUri(database: String = "default"): String = if (mode == ServerMode.http) {
     s"""jdbc:hive2://$localhost:$serverPort/
-       |$database?
-       |hive.server2.transport.mode=http;
-       |hive.server2.thrift.http.path=cliservice;
-       |${hiveConfList}#${hiveVarList}
-     """.stripMargin.split("\n").mkString.trim
+       $database?
+       hive.server2.transport.mode=http;
+       hive.server2.thrift.http.path=cliservice;
+       ${hiveConfList}#${hiveVarList}
+     """.split("\n").mkString.trim
   } else {
     s"jdbc:hive2://$localhost:$serverPort/$database?${hiveConfList}#${hiveVarList}"
   }

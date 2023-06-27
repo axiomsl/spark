@@ -36,33 +36,33 @@ class HiveOrcSourceSuite extends OrcSuite with TestHiveSingleton {
 
     sql(
       s"""CREATE EXTERNAL TABLE normal_orc(
-         |  intField INT,
-         |  stringField STRING
-         |)
-         |STORED AS ORC
-         |LOCATION '${orcTableAsDir.toURI}'
-       """.stripMargin)
+           intField INT,
+           stringField STRING
+         )
+         STORED AS ORC
+         LOCATION '${orcTableAsDir.toURI}'
+       """)
 
     sql(
       s"""INSERT INTO TABLE normal_orc
-         |SELECT intField, stringField FROM orc_temp_table
-       """.stripMargin)
+         SELECT intField, stringField FROM orc_temp_table
+       """)
 
     spark.sql(
       s"""CREATE TEMPORARY VIEW normal_orc_source
-         |USING org.apache.spark.sql.hive.orc
-         |OPTIONS (
-         |  PATH '${new File(orcTableAsDir.getAbsolutePath).toURI}'
-         |)
-       """.stripMargin)
+         USING org.apache.spark.sql.hive.orc
+         OPTIONS (
+           PATH '${new File(orcTableAsDir.getAbsolutePath).toURI}'
+         )
+       """)
 
     spark.sql(
       s"""CREATE TEMPORARY VIEW normal_orc_as_source
-         |USING org.apache.spark.sql.hive.orc
-         |OPTIONS (
-         |  PATH '${new File(orcTableAsDir.getAbsolutePath).toURI}'
-         |)
-       """.stripMargin)
+         USING org.apache.spark.sql.hive.orc
+         OPTIONS (
+           PATH '${new File(orcTableAsDir.getAbsolutePath).toURI}'
+         )
+       """)
   }
 
   test("SPARK-19459/SPARK-18220: read char/varchar column written by Hive") {
@@ -72,32 +72,32 @@ class HiveOrcSourceSuite extends OrcSuite with TestHiveSingleton {
       hiveClient.runSqlHive("USE default")
       hiveClient.runSqlHive(
         """
-          |CREATE EXTERNAL TABLE hive_orc(
-          |  a STRING,
-          |  b CHAR(10),
-          |  c VARCHAR(10),
-          |  d ARRAY<CHAR(3)>)
-          |STORED AS orc""".stripMargin)
+          CREATE EXTERNAL TABLE hive_orc(
+            a STRING,
+            b CHAR(10),
+            c VARCHAR(10),
+            d ARRAY<CHAR(3)>)
+          STORED AS orc""")
       // Hive throws an exception if I assign the location in the create table statement.
       hiveClient.runSqlHive(
         s"ALTER TABLE hive_orc SET LOCATION '$uri'")
       hiveClient.runSqlHive(
         """
-          |INSERT INTO TABLE hive_orc
-          |SELECT 'a', 'b', 'c', ARRAY(CAST('d' AS CHAR(3)))
-          |FROM (SELECT 1) t""".stripMargin)
+          INSERT INTO TABLE hive_orc
+          SELECT 'a', 'b', 'c', ARRAY(CAST('d' AS CHAR(3)))
+          FROM (SELECT 1) t""")
 
       // We create a different table in Spark using the same schema which points to
       // the same location.
       spark.sql(
         s"""
-           |CREATE EXTERNAL TABLE spark_orc(
-           |  a STRING,
-           |  b CHAR(10),
-           |  c VARCHAR(10),
-           |  d ARRAY<CHAR(3)>)
-           |STORED AS orc
-           |LOCATION '$uri'""".stripMargin)
+           CREATE EXTERNAL TABLE spark_orc(
+             a STRING,
+             b CHAR(10),
+             c VARCHAR(10),
+             d ARRAY<CHAR(3)>)
+           STORED AS orc
+           LOCATION '$uri'""")
       val result = Row("a", "b         ", "c", Seq("d  "))
       checkAnswer(spark.table("hive_orc"), result)
       checkAnswer(spark.table("spark_orc"), result)
@@ -179,55 +179,55 @@ class HiveOrcSourceSuite extends OrcSuite with TestHiveSingleton {
           withTable("orc_tbl1", "orc_tbl2", "orc_tbl3") {
             val orcTblStatement1 =
               s"""
-                 |CREATE EXTERNAL TABLE orc_tbl1(
-                 |  c1 int,
-                 |  c2 int,
-                 |  c3 string)
-                 |STORED AS orc
-                 |LOCATION '${s"${dir.getCanonicalPath}/l1/"}'""".stripMargin
+                 CREATE EXTERNAL TABLE orc_tbl1(
+                   c1 int,
+                   c2 int,
+                   c3 string)
+                 STORED AS orc
+                 LOCATION '${s"${dir.getCanonicalPath}/l1/"}'"""
             sql(orcTblStatement1)
 
             val orcTblInsertL1 =
-              s"INSERT INTO TABLE orc_tbl1 VALUES (1, 1, 'orc1'), (2, 2, 'orc2')".stripMargin
+              s"INSERT INTO TABLE orc_tbl1 VALUES (1, 1, 'orc1'), (2, 2, 'orc2')"
             sql(orcTblInsertL1)
 
             val orcTblStatement2 =
             s"""
-               |CREATE EXTERNAL TABLE orc_tbl2(
-               |  c1 int,
-               |  c2 int,
-               |  c3 string)
-               |STORED AS orc
-               |LOCATION '${s"${dir.getCanonicalPath}/l1/l2/"}'""".stripMargin
+               CREATE EXTERNAL TABLE orc_tbl2(
+                 c1 int,
+                 c2 int,
+                 c3 string)
+               STORED AS orc
+               LOCATION '${s"${dir.getCanonicalPath}/l1/l2/"}'"""
             sql(orcTblStatement2)
 
             val orcTblInsertL2 =
-              s"INSERT INTO TABLE orc_tbl2 VALUES (3, 3, 'orc3'), (4, 4, 'orc4')".stripMargin
+              s"INSERT INTO TABLE orc_tbl2 VALUES (3, 3, 'orc3'), (4, 4, 'orc4')"
             sql(orcTblInsertL2)
 
             val orcTblStatement3 =
             s"""
-               |CREATE EXTERNAL TABLE orc_tbl3(
-               |  c1 int,
-               |  c2 int,
-               |  c3 string)
-               |STORED AS orc
-               |LOCATION '${s"${dir.getCanonicalPath}/l1/l2/l3/"}'""".stripMargin
+               CREATE EXTERNAL TABLE orc_tbl3(
+                 c1 int,
+                 c2 int,
+                 c3 string)
+               STORED AS orc
+               LOCATION '${s"${dir.getCanonicalPath}/l1/l2/l3/"}'"""
             sql(orcTblStatement3)
 
             val orcTblInsertL3 =
-              s"INSERT INTO TABLE orc_tbl3 VALUES (5, 5, 'orc5'), (6, 6, 'orc6')".stripMargin
+              s"INSERT INTO TABLE orc_tbl3 VALUES (5, 5, 'orc5'), (6, 6, 'orc6')"
             sql(orcTblInsertL3)
 
             withTable("tbl1", "tbl2", "tbl3", "tbl4", "tbl5", "tbl6") {
               val topDirStatement =
                 s"""
-                   |CREATE EXTERNAL TABLE tbl1(
-                   |  c1 int,
-                   |  c2 int,
-                   |  c3 string)
-                   |STORED AS orc
-                   |LOCATION '${s"${dir.getCanonicalPath}"}'""".stripMargin
+                   CREATE EXTERNAL TABLE tbl1(
+                     c1 int,
+                     c2 int,
+                     c3 string)
+                   STORED AS orc
+                   LOCATION '${s"${dir.getCanonicalPath}"}'"""
               sql(topDirStatement)
               val topDirSqlStatement = s"SELECT * FROM tbl1"
               if (convertMetastore) {
@@ -238,12 +238,12 @@ class HiveOrcSourceSuite extends OrcSuite with TestHiveSingleton {
 
               val l1DirStatement =
                 s"""
-                   |CREATE EXTERNAL TABLE tbl2(
-                   |  c1 int,
-                   |  c2 int,
-                   |  c3 string)
-                   |STORED AS orc
-                   |LOCATION '${s"${dir.getCanonicalPath}/l1/"}'""".stripMargin
+                   CREATE EXTERNAL TABLE tbl2(
+                     c1 int,
+                     c2 int,
+                     c3 string)
+                   STORED AS orc
+                   LOCATION '${s"${dir.getCanonicalPath}/l1/"}'"""
               sql(l1DirStatement)
               val l1DirSqlStatement = s"SELECT * FROM tbl2"
               if (convertMetastore) {
@@ -254,12 +254,12 @@ class HiveOrcSourceSuite extends OrcSuite with TestHiveSingleton {
 
               val l2DirStatement =
                 s"""
-                   |CREATE EXTERNAL TABLE tbl3(
-                   |  c1 int,
-                   |  c2 int,
-                   |  c3 string)
-                   |STORED AS orc
-                   |LOCATION '${s"${dir.getCanonicalPath}/l1/l2/"}'""".stripMargin
+                   CREATE EXTERNAL TABLE tbl3(
+                     c1 int,
+                     c2 int,
+                     c3 string)
+                   STORED AS orc
+                   LOCATION '${s"${dir.getCanonicalPath}/l1/l2/"}'"""
               sql(l2DirStatement)
               val l2DirSqlStatement = s"SELECT * FROM tbl3"
               if (convertMetastore) {
@@ -270,12 +270,12 @@ class HiveOrcSourceSuite extends OrcSuite with TestHiveSingleton {
 
               val wildcardTopDirStatement =
                 s"""
-                   |CREATE EXTERNAL TABLE tbl4(
-                   |  c1 int,
-                   |  c2 int,
-                   |  c3 string)
-                   |STORED AS orc
-                   |LOCATION '${new File(s"${dir}/*").toURI}'""".stripMargin
+                   CREATE EXTERNAL TABLE tbl4(
+                     c1 int,
+                     c2 int,
+                     c3 string)
+                   STORED AS orc
+                   LOCATION '${new File(s"${dir}/*").toURI}'"""
               sql(wildcardTopDirStatement)
               val wildcardTopDirSqlStatement = s"SELECT * FROM tbl4"
               if (convertMetastore) {
@@ -286,12 +286,12 @@ class HiveOrcSourceSuite extends OrcSuite with TestHiveSingleton {
 
               val wildcardL1DirStatement =
                 s"""
-                   |CREATE EXTERNAL TABLE tbl5(
-                   |  c1 int,
-                   |  c2 int,
-                   |  c3 string)
-                   |STORED AS orc
-                   |LOCATION '${new File(s"${dir}/l1/*").toURI}'""".stripMargin
+                   CREATE EXTERNAL TABLE tbl5(
+                     c1 int,
+                     c2 int,
+                     c3 string)
+                   STORED AS orc
+                   LOCATION '${new File(s"${dir}/l1/*").toURI}'"""
               sql(wildcardL1DirStatement)
               val wildcardL1DirSqlStatement = s"SELECT * FROM tbl5"
               if (convertMetastore) {
@@ -302,12 +302,12 @@ class HiveOrcSourceSuite extends OrcSuite with TestHiveSingleton {
 
               val wildcardL2Statement =
                 s"""
-                   |CREATE EXTERNAL TABLE tbl6(
-                   |  c1 int,
-                   |  c2 int,
-                   |  c3 string)
-                   |STORED AS orc
-                   |LOCATION '${new File(s"${dir}/l1/l2/*").toURI}'""".stripMargin
+                   CREATE EXTERNAL TABLE tbl6(
+                     c1 int,
+                     c2 int,
+                     c3 string)
+                   STORED AS orc
+                   LOCATION '${new File(s"${dir}/l1/l2/*").toURI}'"""
               sql(wildcardL2Statement)
               val wildcardL2SqlStatement = s"SELECT * FROM tbl6"
               if (convertMetastore) {

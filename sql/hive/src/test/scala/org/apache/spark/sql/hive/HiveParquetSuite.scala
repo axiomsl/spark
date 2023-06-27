@@ -116,13 +116,13 @@ class HiveParquetSuite extends QueryTest
     withTable("t") {
       val query =
         s"""
-           |CREATE TABLE t STORED AS PARQUET AS
-           |SELECT * FROM (
-           | SELECT c3 FROM (
-           |  SELECT c1, c2 from values(1,2) t(c1, c2)
-           |  )
-           |)
-           |""".stripMargin
+           CREATE TABLE t STORED AS PARQUET AS
+           SELECT * FROM (
+            SELECT c3 FROM (
+             SELECT c1, c2 from values(1,2) t(c1, c2)
+             )
+           )
+           """
       val ex = intercept[AnalysisException] {
         sql(query)
       }
@@ -146,8 +146,8 @@ class HiveParquetSuite extends QueryTest
       sql(s"CREATE TABLE $tbl (ym INTERVAL YEAR TO MONTH, dt INTERVAL DAY TO SECOND) USING PARQUET")
       sql(
         s"""INSERT INTO $tbl VALUES (
-           |  INTERVAL '1-1' YEAR TO MONTH,
-           |  INTERVAL '1 02:03:04.123456' DAY TO SECOND)""".stripMargin)
+             INTERVAL '1-1' YEAR TO MONTH,
+             INTERVAL '1 02:03:04.123456' DAY TO SECOND)""")
       checkAnswer(
         sql(s"SELECT * FROM $tbl"),
         Row(

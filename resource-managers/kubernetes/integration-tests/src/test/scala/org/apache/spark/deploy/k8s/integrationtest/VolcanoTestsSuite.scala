@@ -319,14 +319,14 @@ private[spark] trait VolcanoTestsSuite extends BeforeAndAfterEach { k8sSuite: Ku
     createOrReplaceQueue(name = queueName, cpu = Some(s"$jobCores"))
     val testContent =
       s"""
-         |apiVersion: scheduling.volcano.sh/v1beta1
-         |kind: PodGroup
-         |spec:
-         |  queue: $queueName
-         |  minMember: 1
-         |  minResources:
-         |    cpu: $jobCores
-         |""".stripMargin
+         apiVersion: scheduling.volcano.sh/v1beta1
+         kind: PodGroup
+         spec:
+           queue: $queueName
+           minMember: 1
+           minResources:
+             cpu: $jobCores
+         """
     val file = Utils.createTempFile(testContent, TEMP_DIR)
     val path = TEMP_DIR + file
     // Submit 3 jobs with minCPU = 2

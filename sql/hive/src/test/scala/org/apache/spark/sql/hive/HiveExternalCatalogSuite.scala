@@ -95,10 +95,10 @@ class HiveExternalCatalogSuite extends ExternalCatalogSuite {
     val catalog = newBasicCatalog()
     externalCatalog.client.runSqlHive(
       """
-        |CREATE TABLE db1.t(a string, b string)
-        |CLUSTERED BY (a, b) SORTED BY (a, b) INTO 10 BUCKETS
-        |STORED AS PARQUET
-      """.stripMargin)
+        CREATE TABLE db1.t(a string, b string)
+        CLUSTERED BY (a, b) SORTED BY (a, b) INTO 10 BUCKETS
+        STORED AS PARQUET
+      """)
 
     val newSchema = new StructType().add("a", "string").add("b", "string").add("c", "string")
     catalog.alterTableDataSchema("db1", "t", newSchema)
@@ -113,10 +113,10 @@ class HiveExternalCatalogSuite extends ExternalCatalogSuite {
     val catalog = newBasicCatalog()
     externalCatalog.client.runSqlHive(
       """
-        |CREATE TABLE db1.t(a string, b string)
-        |CLUSTERED BY (a, b) SORTED BY (a, b) INTO 10 BUCKETS
-        |STORED AS PARQUET
-      """.stripMargin)
+        CREATE TABLE db1.t(a string, b string)
+        CLUSTERED BY (a, b) SORTED BY (a, b) INTO 10 BUCKETS
+        STORED AS PARQUET
+      """)
 
     val bucketString1 = externalCatalog.client.runSqlHive("DESC FORMATTED db1.t")
       .filter(_.contains("Num Buckets")).head

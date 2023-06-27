@@ -290,9 +290,9 @@ class PlanResolutionSuite extends AnalysisTest {
     transforms.foreach { transform =>
       val query =
         s"""
-           |CREATE TABLE my_tab(a INT, b STRING) USING parquet
-           |PARTITIONED BY ($transform)
-           """.stripMargin
+           CREATE TABLE my_tab(a INT, b STRING) USING parquet
+           PARTITIONED BY ($transform)
+           """
       checkError(
         exception = intercept[SparkUnsupportedOperationException] {
           parseAndResolve(query)
@@ -307,9 +307,9 @@ class PlanResolutionSuite extends AnalysisTest {
     transforms.foreach { transform =>
       val query =
         s"""
-           |CREATE TABLE my_tab(a INT, b STRING, c String) USING parquet
-           |PARTITIONED BY ($transform)
-           """.stripMargin
+           CREATE TABLE my_tab(a INT, b STRING, c String) USING parquet
+           PARTITIONED BY ($transform)
+           """
       checkError(
         exception = intercept[SparkUnsupportedOperationException] {
           parseAndResolve(query)
@@ -401,9 +401,9 @@ class PlanResolutionSuite extends AnalysisTest {
 
     val v2 =
       """CREATE TABLE my_tab(a INT, b STRING)
-        |USING parquet
-        |OPTIONS (path '/tmp/file')
-        |LOCATION '/tmp/file'""".stripMargin
+        USING parquet
+        OPTIONS (path '/tmp/file')
+        LOCATION '/tmp/file'"""
     checkError(
       exception = intercept[AnalysisException] {
         parseAndResolve(v2)
@@ -438,9 +438,9 @@ class PlanResolutionSuite extends AnalysisTest {
   test("support for other types in OPTIONS") {
     val sql =
       """
-        |CREATE TABLE table_name USING json
-        |OPTIONS (a 1, b 0.1, c TRUE)
-      """.stripMargin
+        CREATE TABLE table_name USING json
+        OPTIONS (a 1, b 0.1, c TRUE)
+      """
 
     val expectedTableDesc = CatalogTable(
       identifier = TableIdentifier("table_name", Some("default"), Some(SESSION_CATALOG_NAME)),
@@ -464,33 +464,33 @@ class PlanResolutionSuite extends AnalysisTest {
   test("Test CTAS against data source tables") {
     val s1 =
       """
-        |CREATE TABLE IF NOT EXISTS mydb.page_view
-        |USING parquet
-        |COMMENT 'This is the staging page view table'
-        |LOCATION '/user/external/page_view'
-        |TBLPROPERTIES ('p1'='v1', 'p2'='v2')
-        |AS SELECT * FROM src
-      """.stripMargin
+        CREATE TABLE IF NOT EXISTS mydb.page_view
+        USING parquet
+        COMMENT 'This is the staging page view table'
+        LOCATION '/user/external/page_view'
+        TBLPROPERTIES ('p1'='v1', 'p2'='v2')
+        AS SELECT * FROM src
+      """
 
     val s2 =
       """
-        |CREATE TABLE IF NOT EXISTS mydb.page_view
-        |USING parquet
-        |LOCATION '/user/external/page_view'
-        |COMMENT 'This is the staging page view table'
-        |TBLPROPERTIES ('p1'='v1', 'p2'='v2')
-        |AS SELECT * FROM src
-      """.stripMargin
+        CREATE TABLE IF NOT EXISTS mydb.page_view
+        USING parquet
+        LOCATION '/user/external/page_view'
+        COMMENT 'This is the staging page view table'
+        TBLPROPERTIES ('p1'='v1', 'p2'='v2')
+        AS SELECT * FROM src
+      """
 
     val s3 =
       """
-        |CREATE TABLE IF NOT EXISTS mydb.page_view
-        |USING parquet
-        |COMMENT 'This is the staging page view table'
-        |LOCATION '/user/external/page_view'
-        |TBLPROPERTIES ('p1'='v1', 'p2'='v2')
-        |AS SELECT * FROM src
-      """.stripMargin
+        CREATE TABLE IF NOT EXISTS mydb.page_view
+        USING parquet
+        COMMENT 'This is the staging page view table'
+        LOCATION '/user/external/page_view'
+        TBLPROPERTIES ('p1'='v1', 'p2'='v2')
+        AS SELECT * FROM src
+      """
 
     checkParsing(s1)
     checkParsing(s2)
@@ -517,15 +517,15 @@ class PlanResolutionSuite extends AnalysisTest {
   test("Test v2 CreateTable with known catalog in identifier") {
     val sql =
       s"""
-         |CREATE TABLE IF NOT EXISTS testcat.mydb.table_name (
-         |    id bigint,
-         |    description string,
-         |    point struct<x: double, y: double>)
-         |USING parquet
-         |COMMENT 'table comment'
-         |TBLPROPERTIES ('p1'='v1', 'p2'='v2')
-         |OPTIONS (path 's3://bucket/path/to/data', other 20)
-      """.stripMargin
+         CREATE TABLE IF NOT EXISTS testcat.mydb.table_name (
+             id bigint,
+             description string,
+             point struct<x: double, y: double>)
+         USING parquet
+         COMMENT 'table comment'
+         TBLPROPERTIES ('p1'='v1', 'p2'='v2')
+         OPTIONS (path 's3://bucket/path/to/data', other 20)
+      """
 
     parseAndResolve(sql) match {
       case create: CreateTable =>
@@ -548,15 +548,15 @@ class PlanResolutionSuite extends AnalysisTest {
   test("Test v2 CreateTable with default catalog") {
     val sql =
       s"""
-         |CREATE TABLE IF NOT EXISTS mydb.table_name (
-         |    id bigint,
-         |    description string,
-         |    point struct<x: double, y: double>)
-         |USING parquet
-         |COMMENT 'table comment'
-         |TBLPROPERTIES ('p1'='v1', 'p2'='v2')
-         |OPTIONS (path 's3://bucket/path/to/data', other 20)
-      """.stripMargin
+         CREATE TABLE IF NOT EXISTS mydb.table_name (
+             id bigint,
+             description string,
+             point struct<x: double, y: double>)
+         USING parquet
+         COMMENT 'table comment'
+         TBLPROPERTIES ('p1'='v1', 'p2'='v2')
+         OPTIONS (path 's3://bucket/path/to/data', other 20)
+      """
 
     parseAndResolve(sql, withDefault = true) match {
       case create: CreateTable =>
@@ -579,15 +579,15 @@ class PlanResolutionSuite extends AnalysisTest {
   test("Test v2 CreateTable with data source v2 provider and no default") {
     val sql =
       s"""
-         |CREATE TABLE IF NOT EXISTS mydb.page_view (
-         |    id bigint,
-         |    description string,
-         |    point struct<x: double, y: double>)
-         |USING $v2Format
-         |COMMENT 'This is the staging page view table'
-         |LOCATION '/user/external/page_view'
-         |TBLPROPERTIES ('p1'='v1', 'p2'='v2')
-      """.stripMargin
+         CREATE TABLE IF NOT EXISTS mydb.page_view (
+             id bigint,
+             description string,
+             point struct<x: double, y: double>)
+         USING $v2Format
+         COMMENT 'This is the staging page view table'
+         LOCATION '/user/external/page_view'
+         TBLPROPERTIES ('p1'='v1', 'p2'='v2')
+      """
 
     parseAndResolve(sql) match {
       case create: CreateTable =>
@@ -611,13 +611,13 @@ class PlanResolutionSuite extends AnalysisTest {
   test("Test v2 CTAS with known catalog in identifier") {
     val sql =
       s"""
-         |CREATE TABLE IF NOT EXISTS testcat.mydb.table_name
-         |USING parquet
-         |COMMENT 'table comment'
-         |TBLPROPERTIES ('p1'='v1', 'p2'='v2')
-         |OPTIONS (path 's3://bucket/path/to/data', other 20)
-         |AS SELECT * FROM src
-      """.stripMargin
+         CREATE TABLE IF NOT EXISTS testcat.mydb.table_name
+         USING parquet
+         COMMENT 'table comment'
+         TBLPROPERTIES ('p1'='v1', 'p2'='v2')
+         OPTIONS (path 's3://bucket/path/to/data', other 20)
+         AS SELECT * FROM src
+      """
 
     parseAndResolve(sql) match {
       case ctas: CreateTableAsSelect =>
@@ -638,13 +638,13 @@ class PlanResolutionSuite extends AnalysisTest {
   test("Test v2 CTAS with default catalog") {
     val sql =
       s"""
-         |CREATE TABLE IF NOT EXISTS mydb.table_name
-         |USING parquet
-         |COMMENT 'table comment'
-         |TBLPROPERTIES ('p1'='v1', 'p2'='v2')
-         |OPTIONS (path 's3://bucket/path/to/data', other 20)
-         |AS SELECT * FROM src
-      """.stripMargin
+         CREATE TABLE IF NOT EXISTS mydb.table_name
+         USING parquet
+         COMMENT 'table comment'
+         TBLPROPERTIES ('p1'='v1', 'p2'='v2')
+         OPTIONS (path 's3://bucket/path/to/data', other 20)
+         AS SELECT * FROM src
+      """
 
     parseAndResolve(sql, withDefault = true) match {
       case ctas: CreateTableAsSelect =>
@@ -665,13 +665,13 @@ class PlanResolutionSuite extends AnalysisTest {
   test("Test v2 CTAS with data source v2 provider and no default") {
     val sql =
       s"""
-        |CREATE TABLE IF NOT EXISTS mydb.page_view
-        |USING $v2Format
-        |COMMENT 'This is the staging page view table'
-        |LOCATION '/user/external/page_view'
-        |TBLPROPERTIES ('p1'='v1', 'p2'='v2')
-        |AS SELECT * FROM src
-      """.stripMargin
+        CREATE TABLE IF NOT EXISTS mydb.page_view
+        USING $v2Format
+        COMMENT 'This is the staging page view table'
+        LOCATION '/user/external/page_view'
+        TBLPROPERTIES ('p1'='v1', 'p2'='v2')
+        AS SELECT * FROM src
+      """
 
     parseAndResolve(sql) match {
       case ctas: CreateTableAsSelect =>
@@ -854,9 +854,9 @@ class PlanResolutionSuite extends AnalysisTest {
       case (tblName, useV1Command) =>
         val sql =
           s"""
-            |ALTER TABLE $tblName
-            |SET TBLPROPERTIES ('a' = 1, 'b' = 0.1, 'c' = TRUE)
-          """.stripMargin
+            ALTER TABLE $tblName
+            SET TBLPROPERTIES ('a' = 1, 'b' = 0.1, 'c' = TRUE)
+          """
         val parsed = parseAndResolve(sql)
         if (useV1Command) {
           val expected = AlterTableSetPropertiesCommand(
@@ -958,9 +958,9 @@ class PlanResolutionSuite extends AnalysisTest {
       val sql3 = s"DELETE FROM $tblName AS t where t.name='Robert'"
       val sql4 =
         s"""
-           |WITH s(name) AS (SELECT 'Robert')
-           |DELETE FROM $tblName AS t WHERE t.name IN (SELECT s.name FROM s)
-         """.stripMargin
+           WITH s(name) AS (SELECT 'Robert')
+           DELETE FROM $tblName AS t WHERE t.name IN (SELECT s.name FROM s)
+         """
 
       val parsed1 = parseAndResolve(sql1)
       val parsed2 = parseAndResolve(sql2)
@@ -1015,11 +1015,11 @@ class PlanResolutionSuite extends AnalysisTest {
       val sql3 = s"UPDATE $tblName AS t SET name='Robert', age=32 WHERE p=1"
       val sql4 =
         s"""
-           |WITH s(name) AS (SELECT 'Robert')
-           |UPDATE $tblName AS t
-           |SET t.age=32
-           |WHERE t.name IN (SELECT s.name FROM s)
-         """.stripMargin
+           WITH s(name) AS (SELECT 'Robert')
+           UPDATE $tblName AS t
+           SET t.age=32
+           WHERE t.name IN (SELECT s.name FROM s)
+         """
       val sql5 = s"UPDATE $tblName SET name=DEFAULT, age=DEFAULT"
       // Note: 'i' and 's' are the names of the columns in 'tblName'.
       val sql6 = s"UPDATE $tblName SET i=DEFAULT, s=DEFAULT"
@@ -1293,12 +1293,12 @@ class PlanResolutionSuite extends AnalysisTest {
               "table" -> "spark_catalog.default.v1Table",
               "schema" ->
                 """root
-                  | |-- i: integer (nullable = true)
-                  | |-- s: string (nullable = true)
-                  | |-- point: struct (nullable = true)
-                  | |    |-- x: integer (nullable = true)
-                  | |    |-- y: integer (nullable = true)
-                  |""".stripMargin),
+                   |-- i: integer (nullable = true)
+                   |-- s: string (nullable = true)
+                   |-- point: struct (nullable = true)
+                   |    |-- x: integer (nullable = true)
+                   |    |-- y: integer (nullable = true)
+                  """),
             context = ExpectedContext(fragment = sql3, start = 0, stop = 55))
 
           val sql4 = s"ALTER TABLE $tblName ALTER COLUMN point.x TYPE bigint"
@@ -1377,12 +1377,12 @@ class PlanResolutionSuite extends AnalysisTest {
               "table" -> "spark_catalog.default.v1Table",
               "schema" ->
                 """root
-                  | |-- i: integer (nullable = true)
-                  | |-- s: string (nullable = true)
-                  | |-- point: struct (nullable = true)
-                  | |    |-- x: integer (nullable = true)
-                  | |    |-- y: integer (nullable = true)
-                  |""".stripMargin),
+                   |-- i: integer (nullable = true)
+                   |-- s: string (nullable = true)
+                   |-- point: struct (nullable = true)
+                   |    |-- x: integer (nullable = true)
+                   |    |-- y: integer (nullable = true)
+                  """),
             context = ExpectedContext(fragment = sql, start = 0, stop = 55))
         } else {
           val actual = parseAndResolve(sql)
@@ -1540,16 +1540,16 @@ class PlanResolutionSuite extends AnalysisTest {
         // basic
         val sql1 =
           s"""
-             |MERGE INTO $target AS target
-             |USING $source AS source
-             |ON target.i = source.i
-             |WHEN MATCHED AND (target.s='delete') THEN DELETE
-             |WHEN MATCHED AND (target.s='update') THEN UPDATE SET target.s = source.s
-             |WHEN NOT MATCHED AND (source.s='insert')
-             |  THEN INSERT (target.i, target.s) values (source.i, source.s)
-             |WHEN NOT MATCHED BY SOURCE AND (target.s='delete') THEN DELETE
-             |WHEN NOT MATCHED BY SOURCE AND (target.s='update') THEN UPDATE SET target.s = 'delete'
-           """.stripMargin
+             MERGE INTO $target AS target
+             USING $source AS source
+             ON target.i = source.i
+             WHEN MATCHED AND (target.s='delete') THEN DELETE
+             WHEN MATCHED AND (target.s='update') THEN UPDATE SET target.s = source.s
+             WHEN NOT MATCHED AND (source.s='insert')
+               THEN INSERT (target.i, target.s) values (source.i, source.s)
+             WHEN NOT MATCHED BY SOURCE AND (target.s='delete') THEN DELETE
+             WHEN NOT MATCHED BY SOURCE AND (target.s='update') THEN UPDATE SET target.s = 'delete'
+           """
         parseAndResolve(sql1) match {
           case MergeIntoTable(
               SubqueryAlias(AliasIdentifier("target", Seq()), AsDataSourceV2Relation(target)),
@@ -1575,13 +1575,13 @@ class PlanResolutionSuite extends AnalysisTest {
         // star
         val sql2 =
           s"""
-             |MERGE INTO $target AS target
-             |USING $source AS source
-             |ON target.i = source.i
-             |WHEN MATCHED AND (target.s='delete') THEN DELETE
-             |WHEN MATCHED AND (target.s='update') THEN UPDATE SET *
-             |WHEN NOT MATCHED AND (source.s='insert') THEN INSERT *
-           """.stripMargin
+             MERGE INTO $target AS target
+             USING $source AS source
+             ON target.i = source.i
+             WHEN MATCHED AND (target.s='delete') THEN DELETE
+             WHEN MATCHED AND (target.s='update') THEN UPDATE SET *
+             WHEN NOT MATCHED AND (source.s='insert') THEN INSERT *
+           """
         parseAndResolve(sql2) match {
           case MergeIntoTable(
               SubqueryAlias(AliasIdentifier("target", Seq()), AsDataSourceV2Relation(target)),
@@ -1605,12 +1605,12 @@ class PlanResolutionSuite extends AnalysisTest {
         // is no other unresolved expression in the merge
         parseAndResolve(
           s"""
-             |MERGE INTO $target AS target
-             |USING $source AS source
-             |ON true
-             |WHEN MATCHED THEN UPDATE SET *
-             |WHEN NOT MATCHED THEN INSERT *
-           """.stripMargin) match {
+             MERGE INTO $target AS target
+             USING $source AS source
+             ON true
+             WHEN MATCHED THEN UPDATE SET *
+             WHEN NOT MATCHED THEN INSERT *
+           """) match {
           case MergeIntoTable(
               SubqueryAlias(AliasIdentifier("target", Seq()), AsDataSourceV2Relation(target)),
               SubqueryAlias(AliasIdentifier("source", Seq()), AsDataSourceV2Relation(source)),
@@ -1629,15 +1629,15 @@ class PlanResolutionSuite extends AnalysisTest {
         // no additional conditions
         val sql3 =
           s"""
-             |MERGE INTO $target AS target
-             |USING $source AS source
-             |ON target.i = source.i
-             |WHEN MATCHED AND (target.s='delete') THEN DELETE
-             |WHEN MATCHED THEN UPDATE SET target.s = source.s
-             |WHEN NOT MATCHED THEN INSERT (target.i, target.s) values (source.i, source.s)
-             |WHEN NOT MATCHED BY SOURCE AND (target.s='delete') THEN DELETE
-             |WHEN NOT MATCHED BY SOURCE THEN UPDATE SET target.s = 'delete'
-           """.stripMargin
+             MERGE INTO $target AS target
+             USING $source AS source
+             ON target.i = source.i
+             WHEN MATCHED AND (target.s='delete') THEN DELETE
+             WHEN MATCHED THEN UPDATE SET target.s = source.s
+             WHEN NOT MATCHED THEN INSERT (target.i, target.s) values (source.i, source.s)
+             WHEN NOT MATCHED BY SOURCE AND (target.s='delete') THEN DELETE
+             WHEN NOT MATCHED BY SOURCE THEN UPDATE SET target.s = 'delete'
+           """
         parseAndResolve(sql3) match {
           case MergeIntoTable(
               SubqueryAlias(AliasIdentifier("target", Seq()), AsDataSourceV2Relation(target)),
@@ -1659,16 +1659,16 @@ class PlanResolutionSuite extends AnalysisTest {
         // using subquery
         val sql4 =
           s"""
-             |MERGE INTO $target AS target
-             |USING (SELECT * FROM $source) AS source
-             |ON target.i = source.i
-             |WHEN MATCHED AND (target.s='delete') THEN DELETE
-             |WHEN MATCHED AND (target.s='update') THEN UPDATE SET target.s = source.s
-             |WHEN NOT MATCHED AND (source.s='insert')
-             |  THEN INSERT (target.i, target.s) values (source.i, source.s)
-             |WHEN NOT MATCHED BY SOURCE AND (target.s='delete') THEN DELETE
-             |WHEN NOT MATCHED BY SOURCE AND (target.s='update') THEN UPDATE SET target.s = 'delete'
-           """.stripMargin
+             MERGE INTO $target AS target
+             USING (SELECT * FROM $source) AS source
+             ON target.i = source.i
+             WHEN MATCHED AND (target.s='delete') THEN DELETE
+             WHEN MATCHED AND (target.s='update') THEN UPDATE SET target.s = source.s
+             WHEN NOT MATCHED AND (source.s='insert')
+               THEN INSERT (target.i, target.s) values (source.i, source.s)
+             WHEN NOT MATCHED BY SOURCE AND (target.s='delete') THEN DELETE
+             WHEN NOT MATCHED BY SOURCE AND (target.s='update') THEN UPDATE SET target.s = 'delete'
+           """
         parseAndResolve(sql4) match {
           case MergeIntoTable(
               SubqueryAlias(AliasIdentifier("target", Seq()), AsDataSourceV2Relation(target)),
@@ -1694,18 +1694,18 @@ class PlanResolutionSuite extends AnalysisTest {
         // cte
         val sql5 =
           s"""
-             |WITH source(s, i) AS
-             | (SELECT * FROM $source)
-             |MERGE INTO $target AS target
-             |USING source
-             |ON target.i = source.i
-             |WHEN MATCHED AND (target.s='delete') THEN DELETE
-             |WHEN MATCHED AND (target.s='update') THEN UPDATE SET target.s = source.s
-             |WHEN NOT MATCHED AND (source.s='insert')
-             |THEN INSERT (target.i, target.s) values (source.i, source.s)
-             |WHEN NOT MATCHED BY SOURCE AND (target.s='delete') THEN DELETE
-             |WHEN NOT MATCHED BY SOURCE AND (target.s='update') THEN UPDATE SET target.s = 'delete'
-           """.stripMargin
+             WITH source(s, i) AS
+              (SELECT * FROM $source)
+             MERGE INTO $target AS target
+             USING source
+             ON target.i = source.i
+             WHEN MATCHED AND (target.s='delete') THEN DELETE
+             WHEN MATCHED AND (target.s='update') THEN UPDATE SET target.s = source.s
+             WHEN NOT MATCHED AND (source.s='insert')
+             THEN INSERT (target.i, target.s) values (source.i, source.s)
+             WHEN NOT MATCHED BY SOURCE AND (target.s='delete') THEN DELETE
+             WHEN NOT MATCHED BY SOURCE AND (target.s='update') THEN UPDATE SET target.s = 'delete'
+           """
         parseAndResolve(sql5) match {
           case MergeIntoTable(
               SubqueryAlias(AliasIdentifier("target", Seq()), AsDataSourceV2Relation(target)),
@@ -1733,17 +1733,17 @@ class PlanResolutionSuite extends AnalysisTest {
         // This test case covers that behavior.
         val sql6 =
           s"""
-             |MERGE INTO $target AS target
-             |USING $source AS source
-             |ON target.i = source.i
-             |WHEN MATCHED AND (target.s='delete') THEN DELETE
-             |WHEN MATCHED AND (target.s='update')
-             |THEN UPDATE SET target.s = DEFAULT, target.i = target.i
-             |WHEN NOT MATCHED AND (source.s='insert')
-             |  THEN INSERT (target.i, target.s) values (DEFAULT, DEFAULT)
-             |WHEN NOT MATCHED BY SOURCE AND (target.s='delete') THEN DELETE
-             |WHEN NOT MATCHED BY SOURCE AND (target.s='update') THEN UPDATE SET target.s = DEFAULT
-           """.stripMargin
+             MERGE INTO $target AS target
+             USING $source AS source
+             ON target.i = source.i
+             WHEN MATCHED AND (target.s='delete') THEN DELETE
+             WHEN MATCHED AND (target.s='update')
+             THEN UPDATE SET target.s = DEFAULT, target.i = target.i
+             WHEN NOT MATCHED AND (source.s='insert')
+               THEN INSERT (target.i, target.s) values (DEFAULT, DEFAULT)
+             WHEN NOT MATCHED BY SOURCE AND (target.s='delete') THEN DELETE
+             WHEN NOT MATCHED BY SOURCE AND (target.s='update') THEN UPDATE SET target.s = DEFAULT
+           """
         parseAndResolve(sql6) match {
           case m: MergeIntoTable =>
             val source = m.sourceTable
@@ -1809,16 +1809,16 @@ class PlanResolutionSuite extends AnalysisTest {
         // invalid and returns an error message.
         val mergeWithDefaultReferenceInMergeCondition =
           s"""MERGE INTO testcat.tab AS target
-             |USING testcat.tab1 AS source
-             |ON target.i = DEFAULT
-             |WHEN MATCHED AND (target.s = 31) THEN DELETE
-             |WHEN MATCHED AND (target.s = 31)
-             |  THEN UPDATE SET target.s = DEFAULT
-             |WHEN NOT MATCHED AND (source.s='insert')
-             |  THEN INSERT (target.i, target.s) values (DEFAULT, DEFAULT)
-             |WHEN NOT MATCHED BY SOURCE AND (target.s = 31) THEN DELETE
-             |WHEN NOT MATCHED BY SOURCE AND (target.s = 31)
-             |  THEN UPDATE SET target.s = DEFAULT""".stripMargin
+             USING testcat.tab1 AS source
+             ON target.i = DEFAULT
+             WHEN MATCHED AND (target.s = 31) THEN DELETE
+             WHEN MATCHED AND (target.s = 31)
+               THEN UPDATE SET target.s = DEFAULT
+             WHEN NOT MATCHED AND (source.s='insert')
+               THEN INSERT (target.i, target.s) values (DEFAULT, DEFAULT)
+             WHEN NOT MATCHED BY SOURCE AND (target.s = 31) THEN DELETE
+             WHEN NOT MATCHED BY SOURCE AND (target.s = 31)
+               THEN UPDATE SET target.s = DEFAULT"""
         checkError(
           exception = intercept[AnalysisException] {
             parseAndResolve(mergeWithDefaultReferenceInMergeCondition)
@@ -1831,16 +1831,16 @@ class PlanResolutionSuite extends AnalysisTest {
         // of a complex expression (DEFAULT + 1). This is invalid and returns an error message.
         val mergeWithDefaultReferenceAsPartOfComplexExpression =
           s"""MERGE INTO testcat.tab AS target
-             |USING testcat.tab1 AS source
-             |ON target.i = source.i
-             |WHEN MATCHED AND (target.s = 31) THEN DELETE
-             |WHEN MATCHED AND (target.s = 31)
-             |  THEN UPDATE SET target.s = DEFAULT + 1
-             |WHEN NOT MATCHED AND (source.s='insert')
-             |  THEN INSERT (target.i, target.s) values (DEFAULT, DEFAULT)
-             |WHEN NOT MATCHED BY SOURCE AND (target.s = 31) THEN DELETE
-             |WHEN NOT MATCHED BY SOURCE AND (target.s = 31)
-             |  THEN UPDATE SET target.s = DEFAULT + 1""".stripMargin
+             USING testcat.tab1 AS source
+             ON target.i = source.i
+             WHEN MATCHED AND (target.s = 31) THEN DELETE
+             WHEN MATCHED AND (target.s = 31)
+               THEN UPDATE SET target.s = DEFAULT + 1
+             WHEN NOT MATCHED AND (source.s='insert')
+               THEN INSERT (target.i, target.s) values (DEFAULT, DEFAULT)
+             WHEN NOT MATCHED BY SOURCE AND (target.s = 31) THEN DELETE
+             WHEN NOT MATCHED BY SOURCE AND (target.s = 31)
+               THEN UPDATE SET target.s = DEFAULT + 1"""
         checkError(
           exception = intercept[AnalysisException] {
             parseAndResolve(mergeWithDefaultReferenceAsPartOfComplexExpression)
@@ -1852,18 +1852,18 @@ class PlanResolutionSuite extends AnalysisTest {
         // "DEFAULT".
         val mergeIntoTableWithColumnNamedDefault =
         s"""
-           |MERGE INTO testcat.tablewithcolumnnameddefault AS target
-           |USING testcat.tab1 AS source
-           |ON default = source.i
-           |WHEN MATCHED AND (target.s = 32) THEN DELETE
-           |WHEN MATCHED AND (target.s = 32)
-           |  THEN UPDATE SET target.s = DEFAULT
-           |WHEN NOT MATCHED AND (source.s='insert')
-           |  THEN INSERT (target.s) values (DEFAULT)
-           |WHEN NOT MATCHED BY SOURCE AND (target.s = 32) THEN DELETE
-           |WHEN NOT MATCHED BY SOURCE AND (target.s = 32)
-           |  THEN UPDATE SET target.s = DEFAULT
-             """.stripMargin
+           MERGE INTO testcat.tablewithcolumnnameddefault AS target
+           USING testcat.tab1 AS source
+           ON default = source.i
+           WHEN MATCHED AND (target.s = 32) THEN DELETE
+           WHEN MATCHED AND (target.s = 32)
+             THEN UPDATE SET target.s = DEFAULT
+           WHEN NOT MATCHED AND (source.s='insert')
+             THEN INSERT (target.s) values (DEFAULT)
+           WHEN NOT MATCHED BY SOURCE AND (target.s = 32) THEN DELETE
+           WHEN NOT MATCHED BY SOURCE AND (target.s = 32)
+             THEN UPDATE SET target.s = DEFAULT
+             """
         parseAndResolve(mergeIntoTableWithColumnNamedDefault, withDefault = true) match {
           case m: MergeIntoTable =>
             val target = m.targetTable
@@ -1890,18 +1890,18 @@ class PlanResolutionSuite extends AnalysisTest {
     // values. This test case covers that behavior.
     val mergeDefaultWithExplicitDefaultColumns =
       s"""
-         |MERGE INTO defaultvalues AS target
-         |USING testcat.tab1 AS source
-         |ON target.i = source.i
-         |WHEN MATCHED AND (target.s = 31) THEN DELETE
-         |WHEN MATCHED AND (target.s = 31)
-         |  THEN UPDATE SET target.s = DEFAULT
-         |WHEN NOT MATCHED AND (source.s='insert')
-         |  THEN INSERT (target.i, target.s) values (DEFAULT, DEFAULT)
-         |WHEN NOT MATCHED BY SOURCE AND (target.s = 31) THEN DELETE
-         |WHEN NOT MATCHED BY SOURCE AND (target.s = 31)
-         |  THEN UPDATE SET target.s = DEFAULT
-           """.stripMargin
+         MERGE INTO defaultvalues AS target
+         USING testcat.tab1 AS source
+         ON target.i = source.i
+         WHEN MATCHED AND (target.s = 31) THEN DELETE
+         WHEN MATCHED AND (target.s = 31)
+           THEN UPDATE SET target.s = DEFAULT
+         WHEN NOT MATCHED AND (source.s='insert')
+           THEN INSERT (target.i, target.s) values (DEFAULT, DEFAULT)
+         WHEN NOT MATCHED BY SOURCE AND (target.s = 31) THEN DELETE
+         WHEN NOT MATCHED BY SOURCE AND (target.s = 31)
+           THEN UPDATE SET target.s = DEFAULT
+           """
     parseAndResolve(mergeDefaultWithExplicitDefaultColumns, true) match {
       case m: MergeIntoTable =>
         val cond = m.mergeCondition
@@ -1963,15 +1963,15 @@ class PlanResolutionSuite extends AnalysisTest {
       val source = pair._2
       val sql1 =
         s"""
-           |MERGE INTO $target
-           |USING $source
-           |ON 1 = 1
-           |WHEN MATCHED AND (${target}.s='delete') THEN DELETE
-           |WHEN MATCHED THEN UPDATE SET s = 1
-           |WHEN NOT MATCHED AND (s = 'a') THEN INSERT (i) values (i)
-           |WHEN NOT MATCHED BY SOURCE AND (${target}.s='delete') THEN DELETE
-           |WHEN NOT MATCHED BY SOURCE THEN UPDATE SET s = 1
-         """.stripMargin
+           MERGE INTO $target
+           USING $source
+           ON 1 = 1
+           WHEN MATCHED AND (${target}.s='delete') THEN DELETE
+           WHEN MATCHED THEN UPDATE SET s = 1
+           WHEN NOT MATCHED AND (s = 'a') THEN INSERT (i) values (i)
+           WHEN NOT MATCHED BY SOURCE AND (${target}.s='delete') THEN DELETE
+           WHEN NOT MATCHED BY SOURCE THEN UPDATE SET s = 1
+         """
 
       parseAndResolve(sql1) match {
         case MergeIntoTable(
@@ -2007,9 +2007,9 @@ class PlanResolutionSuite extends AnalysisTest {
 
       val sql2 =
         s"""MERGE INTO $target
-           |USING $source
-           |ON i = 1
-           |WHEN MATCHED THEN DELETE""".stripMargin
+           USING $source
+           ON i = 1
+           WHEN MATCHED THEN DELETE"""
       // merge condition is resolved with both target and source tables, and we can't
       // resolve column `i` as it's ambiguous.
       checkError(
@@ -2023,9 +2023,9 @@ class PlanResolutionSuite extends AnalysisTest {
 
       val sql3 =
         s"""MERGE INTO $target
-           |USING $source
-           |ON 1 = 1
-           |WHEN MATCHED AND (s='delete') THEN DELETE""".stripMargin
+           USING $source
+           ON 1 = 1
+           WHEN MATCHED AND (s='delete') THEN DELETE"""
       // delete condition is resolved with both target and source tables, and we can't
       // resolve column `s` as it's ambiguous.
       checkError(
@@ -2039,9 +2039,9 @@ class PlanResolutionSuite extends AnalysisTest {
 
       val sql4 =
         s"""MERGE INTO $target
-           |USING $source
-           |ON 1 = 1
-           |WHEN MATCHED AND (s = 'a') THEN UPDATE SET i = 1""".stripMargin
+           USING $source
+           ON 1 = 1
+           WHEN MATCHED AND (s = 'a') THEN UPDATE SET i = 1"""
       // update condition is resolved with both target and source tables, and we can't
       // resolve column `s` as it's ambiguous.
       checkError(
@@ -2055,9 +2055,9 @@ class PlanResolutionSuite extends AnalysisTest {
 
       val sql5 =
         s"""MERGE INTO $target
-           |USING $source
-           |ON 1 = 1
-           |WHEN MATCHED THEN UPDATE SET s = s""".stripMargin
+           USING $source
+           ON 1 = 1
+           WHEN MATCHED THEN UPDATE SET s = s"""
       // update value is resolved with both target and source tables, and we can't
       // resolve column `s` as it's ambiguous.
       checkError(
@@ -2071,12 +2071,12 @@ class PlanResolutionSuite extends AnalysisTest {
 
       val sql6 =
         s"""
-           |MERGE INTO $target
-           |USING $source
-           |ON target.i = source.i
-           |WHEN NOT MATCHED BY SOURCE AND (s = 'b') THEN DELETE
-           |WHEN NOT MATCHED BY SOURCE AND (s = 'a') THEN UPDATE SET i = 1
-         """.stripMargin
+           MERGE INTO $target
+           USING $source
+           ON target.i = source.i
+           WHEN NOT MATCHED BY SOURCE AND (s = 'b') THEN DELETE
+           WHEN NOT MATCHED BY SOURCE AND (s = 'a') THEN UPDATE SET i = 1
+         """
       // not matched by source clauses are resolved using the target table only, resolving columns
       // is not ambiguous.
       val parsed = parseAndResolve(sql6)
@@ -2112,11 +2112,11 @@ class PlanResolutionSuite extends AnalysisTest {
 
       val sql7 =
         s"""
-           |MERGE INTO $target
-           |USING $source
-           |ON 1 = 1
-           |WHEN NOT MATCHED BY SOURCE THEN UPDATE SET $target.s = $source.s
-         """.stripMargin
+           MERGE INTO $target
+           USING $source
+           ON 1 = 1
+           WHEN NOT MATCHED BY SOURCE THEN UPDATE SET $target.s = $source.s
+         """
       // update value in not matched by source clause can only reference the target table.
       val e7 = intercept[AnalysisException](parseAndResolve(sql7))
       assert(e7.message.contains(s"cannot resolve $source.s in MERGE command"))
@@ -2124,13 +2124,13 @@ class PlanResolutionSuite extends AnalysisTest {
 
     val sql1 =
       s"""
-         |MERGE INTO non_exist_target
-         |USING non_exist_source
-         |ON target.i = source.i
-         |WHEN MATCHED AND (non_exist_target.s='delete') THEN DELETE
-         |WHEN MATCHED THEN UPDATE SET *
-         |WHEN NOT MATCHED THEN INSERT *
-       """.stripMargin
+         MERGE INTO non_exist_target
+         USING non_exist_source
+         ON target.i = source.i
+         WHEN MATCHED AND (non_exist_target.s='delete') THEN DELETE
+         WHEN MATCHED THEN UPDATE SET *
+         WHEN NOT MATCHED THEN INSERT *
+       """
     val parsed = parseAndResolve(sql1)
     parsed match {
       case u: MergeIntoTable =>
@@ -2142,9 +2142,9 @@ class PlanResolutionSuite extends AnalysisTest {
     // UPDATE * with incompatible schema between source and target tables.
     val sql2 =
       """MERGE INTO testcat.tab
-         |USING testcat.tab2
-         |ON 1 = 1
-         |WHEN MATCHED THEN UPDATE SET *""".stripMargin
+         USING testcat.tab2
+         ON 1 = 1
+         WHEN MATCHED THEN UPDATE SET *"""
     checkError(
       exception = intercept[AnalysisException](parseAndResolve(sql2)),
       errorClass = "_LEGACY_ERROR_TEMP_2309",
@@ -2154,9 +2154,9 @@ class PlanResolutionSuite extends AnalysisTest {
     // INSERT * with incompatible schema between source and target tables.
     val sql3 =
       """MERGE INTO testcat.tab
-        |USING testcat.tab2
-        |ON 1 = 1
-        |WHEN NOT MATCHED THEN INSERT *""".stripMargin
+        USING testcat.tab2
+        ON 1 = 1
+        WHEN NOT MATCHED THEN INSERT *"""
     checkError(
       exception = intercept[AnalysisException](parseAndResolve(sql3)),
       errorClass = "_LEGACY_ERROR_TEMP_2309",
@@ -2165,13 +2165,13 @@ class PlanResolutionSuite extends AnalysisTest {
 
     val sql4 =
       """
-        |MERGE INTO testcat.charvarchar
-        |USING testcat.tab2
-        |ON 1 = 1
-        |WHEN MATCHED THEN UPDATE SET c1='a', c2=1
-        |WHEN NOT MATCHED THEN INSERT (c1, c2) VALUES ('b', 2)
-        |WHEN NOT MATCHED BY SOURCE THEN UPDATE SET c1='a', c2=1
-        |""".stripMargin
+        MERGE INTO testcat.charvarchar
+        USING testcat.tab2
+        ON 1 = 1
+        WHEN MATCHED THEN UPDATE SET c1='a', c2=1
+        WHEN NOT MATCHED THEN INSERT (c1, c2) VALUES ('b', 2)
+        WHEN NOT MATCHED BY SOURCE THEN UPDATE SET c1='a', c2=1
+        """
     val parsed4 = parseAndResolve(sql4)
     parsed4 match {
       case m: MergeIntoTable =>
@@ -2221,16 +2221,16 @@ class PlanResolutionSuite extends AnalysisTest {
   test("MERGE INTO TABLE - skip resolution on v2 tables that accept any schema") {
     val sql =
       s"""
-         |MERGE INTO v2TableWithAcceptAnySchemaCapability AS target
-         |USING v2Table AS source
-         |ON target.i = source.i
-         |WHEN MATCHED AND (target.s='delete')THEN DELETE
-         |WHEN MATCHED AND (target.s='update') THEN UPDATE SET target.s = source.s
-         |WHEN NOT MATCHED AND (target.s=DEFAULT)
-         |  THEN INSERT (target.i, target.s) values (source.i, source.s)
-         |WHEN NOT MATCHED BY SOURCE AND (target.s='delete') THEN DELETE
-         |WHEN NOT MATCHED BY SOURCE AND (target.s='update') THEN UPDATE SET target.s = target.i
-       """.stripMargin
+         MERGE INTO v2TableWithAcceptAnySchemaCapability AS target
+         USING v2Table AS source
+         ON target.i = source.i
+         WHEN MATCHED AND (target.s='delete')THEN DELETE
+         WHEN MATCHED AND (target.s='update') THEN UPDATE SET target.s = source.s
+         WHEN NOT MATCHED AND (target.s=DEFAULT)
+           THEN INSERT (target.i, target.s) values (source.i, source.s)
+         WHEN NOT MATCHED BY SOURCE AND (target.s='delete') THEN DELETE
+         WHEN NOT MATCHED BY SOURCE AND (target.s='update') THEN UPDATE SET target.s = target.i
+       """
 
     parseAndResolve(sql) match {
       case MergeIntoTable(
@@ -2575,33 +2575,33 @@ class PlanResolutionSuite extends AnalysisTest {
   test("Test CTAS #1") {
     val s1 =
       """
-        |CREATE EXTERNAL TABLE IF NOT EXISTS mydb.page_view
-        |COMMENT 'This is the staging page view table'
-        |STORED AS RCFILE
-        |LOCATION '/user/external/page_view'
-        |TBLPROPERTIES ('p1'='v1', 'p2'='v2')
-        |AS SELECT * FROM src
-      """.stripMargin
+        CREATE EXTERNAL TABLE IF NOT EXISTS mydb.page_view
+        COMMENT 'This is the staging page view table'
+        STORED AS RCFILE
+        LOCATION '/user/external/page_view'
+        TBLPROPERTIES ('p1'='v1', 'p2'='v2')
+        AS SELECT * FROM src
+      """
 
     val s2 =
       """
-        |CREATE EXTERNAL TABLE IF NOT EXISTS mydb.page_view
-        |STORED AS RCFILE
-        |COMMENT 'This is the staging page view table'
-        |TBLPROPERTIES ('p1'='v1', 'p2'='v2')
-        |LOCATION '/user/external/page_view'
-        |AS SELECT * FROM src
-      """.stripMargin
+        CREATE EXTERNAL TABLE IF NOT EXISTS mydb.page_view
+        STORED AS RCFILE
+        COMMENT 'This is the staging page view table'
+        TBLPROPERTIES ('p1'='v1', 'p2'='v2')
+        LOCATION '/user/external/page_view'
+        AS SELECT * FROM src
+      """
 
     val s3 =
       """
-        |CREATE EXTERNAL TABLE IF NOT EXISTS mydb.page_view
-        |TBLPROPERTIES ('p1'='v1', 'p2'='v2')
-        |LOCATION '/user/external/page_view'
-        |STORED AS RCFILE
-        |COMMENT 'This is the staging page view table'
-        |AS SELECT * FROM src
-      """.stripMargin
+        CREATE EXTERNAL TABLE IF NOT EXISTS mydb.page_view
+        TBLPROPERTIES ('p1'='v1', 'p2'='v2')
+        LOCATION '/user/external/page_view'
+        STORED AS RCFILE
+        COMMENT 'This is the staging page view table'
+        AS SELECT * FROM src
+      """
 
     checkParsing(s1)
     checkParsing(s2)
@@ -2632,29 +2632,29 @@ class PlanResolutionSuite extends AnalysisTest {
   test("Test CTAS #2") {
     val s1 =
       """
-        |CREATE EXTERNAL TABLE IF NOT EXISTS mydb.page_view
-        |COMMENT 'This is the staging page view table'
-        |ROW FORMAT SERDE 'parquet.hive.serde.ParquetHiveSerDe'
-        | STORED AS
-        | INPUTFORMAT 'parquet.hive.DeprecatedParquetInputFormat'
-        | OUTPUTFORMAT 'parquet.hive.DeprecatedParquetOutputFormat'
-        |LOCATION '/user/external/page_view'
-        |TBLPROPERTIES ('p1'='v1', 'p2'='v2')
-        |AS SELECT * FROM src
-      """.stripMargin
+        CREATE EXTERNAL TABLE IF NOT EXISTS mydb.page_view
+        COMMENT 'This is the staging page view table'
+        ROW FORMAT SERDE 'parquet.hive.serde.ParquetHiveSerDe'
+         STORED AS
+         INPUTFORMAT 'parquet.hive.DeprecatedParquetInputFormat'
+         OUTPUTFORMAT 'parquet.hive.DeprecatedParquetOutputFormat'
+        LOCATION '/user/external/page_view'
+        TBLPROPERTIES ('p1'='v1', 'p2'='v2')
+        AS SELECT * FROM src
+      """
 
     val s2 =
       """
-        |CREATE EXTERNAL TABLE IF NOT EXISTS mydb.page_view
-        |LOCATION '/user/external/page_view'
-        |TBLPROPERTIES ('p1'='v1', 'p2'='v2')
-        |ROW FORMAT SERDE 'parquet.hive.serde.ParquetHiveSerDe'
-        | STORED AS
-        | INPUTFORMAT 'parquet.hive.DeprecatedParquetInputFormat'
-        | OUTPUTFORMAT 'parquet.hive.DeprecatedParquetOutputFormat'
-        |COMMENT 'This is the staging page view table'
-        |AS SELECT * FROM src
-      """.stripMargin
+        CREATE EXTERNAL TABLE IF NOT EXISTS mydb.page_view
+        LOCATION '/user/external/page_view'
+        TBLPROPERTIES ('p1'='v1', 'p2'='v2')
+        ROW FORMAT SERDE 'parquet.hive.serde.ParquetHiveSerDe'
+         STORED AS
+         INPUTFORMAT 'parquet.hive.DeprecatedParquetInputFormat'
+         OUTPUTFORMAT 'parquet.hive.DeprecatedParquetOutputFormat'
+        COMMENT 'This is the staging page view table'
+        AS SELECT * FROM src
+      """
 
     checkParsing(s1)
     checkParsing(s2)
@@ -2703,7 +2703,7 @@ class PlanResolutionSuite extends AnalysisTest {
   test("Test CTAS #4") {
     val s4 =
       """CREATE TABLE page_view
-        |STORED BY 'storage.handler.class.name' AS SELECT * FROM src""".stripMargin
+        STORED BY 'storage.handler.class.name' AS SELECT * FROM src"""
     checkError(
       exception = intercept[AnalysisException] {
         extractTableDesc(s4)
@@ -2718,14 +2718,14 @@ class PlanResolutionSuite extends AnalysisTest {
 
   test("Test CTAS #5") {
     val s5 = """CREATE TABLE ctas2
-               | ROW FORMAT SERDE "org.apache.hadoop.hive.serde2.columnar.ColumnarSerDe"
-               | WITH SERDEPROPERTIES("serde_p1"="p1","serde_p2"="p2")
-               | STORED AS RCFile
-               | TBLPROPERTIES("tbl_p1"="p11", "tbl_p2"="p22")
-               | AS
-               |   SELECT key, value
-               |   FROM src
-               |   ORDER BY key, value""".stripMargin
+                ROW FORMAT SERDE "org.apache.hadoop.hive.serde2.columnar.ColumnarSerDe"
+                WITH SERDEPROPERTIES("serde_p1"="p1","serde_p2"="p2")
+                STORED AS RCFile
+                TBLPROPERTIES("tbl_p1"="p11", "tbl_p2"="p22")
+                AS
+                  SELECT key, value
+                  FROM src
+                  ORDER BY key, value"""
     val (desc, exists) = extractTableDesc(s5)
     assert(exists == false)
     assert(desc.identifier.database == Some("default"))
@@ -2904,12 +2904,12 @@ class PlanResolutionSuite extends AnalysisTest {
     val query2 = s"$baseQuery SERDE 'org.apache.poof.serde.Baff' WITH SERDEPROPERTIES ('k1'='v1')"
     val query3 =
       s"""
-         |$baseQuery DELIMITED FIELDS TERMINATED BY 'x' ESCAPED BY 'y'
-         |COLLECTION ITEMS TERMINATED BY 'a'
-         |MAP KEYS TERMINATED BY 'b'
-         |LINES TERMINATED BY '\n'
-         |NULL DEFINED AS 'c'
-      """.stripMargin
+         $baseQuery DELIMITED FIELDS TERMINATED BY 'x' ESCAPED BY 'y'
+         COLLECTION ITEMS TERMINATED BY 'a'
+         MAP KEYS TERMINATED BY 'b'
+         LINES TERMINATED BY '\n'
+         NULL DEFINED AS 'c'
+      """
     val (desc1, _) = extractTableDesc(query1)
     val (desc2, _) = extractTableDesc(query2)
     val (desc3, _) = extractTableDesc(query3)
@@ -2971,14 +2971,14 @@ class PlanResolutionSuite extends AnalysisTest {
   test("create table(hive) - everything!") {
     val query =
       """
-        |CREATE EXTERNAL TABLE IF NOT EXISTS dbx.my_table (id int, name string)
-        |COMMENT 'no comment'
-        |PARTITIONED BY (month int)
-        |ROW FORMAT SERDE 'org.apache.poof.serde.Baff' WITH SERDEPROPERTIES ('k1'='v1')
-        |STORED AS INPUTFORMAT 'winput' OUTPUTFORMAT 'wowput'
-        |LOCATION '/path/to/mercury'
-        |TBLPROPERTIES ('k1'='v1', 'k2'='v2')
-      """.stripMargin
+        CREATE EXTERNAL TABLE IF NOT EXISTS dbx.my_table (id int, name string)
+        COMMENT 'no comment'
+        PARTITIONED BY (month int)
+        ROW FORMAT SERDE 'org.apache.poof.serde.Baff' WITH SERDEPROPERTIES ('k1'='v1')
+        STORED AS INPUTFORMAT 'winput' OUTPUTFORMAT 'wowput'
+        LOCATION '/path/to/mercury'
+        TBLPROPERTIES ('k1'='v1', 'k2'='v2')
+      """
     val (desc, allowExisting) = extractTableDesc(query)
     assert(allowExisting)
     assert(desc.identifier.database == Some("dbx"))

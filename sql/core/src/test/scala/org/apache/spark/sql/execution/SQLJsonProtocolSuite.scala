@@ -39,26 +39,26 @@ class SQLJsonProtocolSuite extends SparkFunSuite with LocalSparkSession {
 
         val SQLExecutionStartJsonString =
           s"""
-             |{
-             |  "Event":"$event",
-             |  ${if (newExecutionStartJson) """"rootExecutionId": "1",""" else ""}
-             |  "executionId":0,
-             |  "description":"test desc",
-             |  "details":"test detail",
-             |  "physicalPlanDescription":"test plan",
-             |  "sparkPlanInfo": {
-             |    "nodeName":"TestNode",
-             |    "simpleString":"test string",
-             |    "children":[],
-             |    "metadata":{},
-             |    "metrics":[]
-             |  },
-             |  "time":0,
-             |  "modifiedConfigs": {
-             |    "k1":"v1"
-             |  }
-             |}
-          """.stripMargin
+             {
+               "Event":"$event",
+               ${if (newExecutionStartJson) """"rootExecutionId": "1",""" else ""}
+               "executionId":0,
+               "description":"test desc",
+               "details":"test detail",
+               "physicalPlanDescription":"test plan",
+               "sparkPlanInfo": {
+                 "nodeName":"TestNode",
+                 "simpleString":"test string",
+                 "children":[],
+                 "metadata":{},
+                 "metrics":[]
+               },
+               "time":0,
+               "modifiedConfigs": {
+                 "k1":"v1"
+               }
+             }
+          """
 
         val reconstructedEvent = JsonProtocol.sparkEventFromJson(SQLExecutionStartJsonString)
         if (newExecutionStartEvent) {
@@ -94,13 +94,13 @@ class SQLJsonProtocolSuite extends SparkFunSuite with LocalSparkSession {
     // scalastyle:off line.size.limit
     assert(parse(json) == parse(
       """
-        |{
-        |  "Event" : "org.apache.spark.sql.execution.ui.SparkListenerSQLExecutionEnd",
-        |  "executionId" : 1,
-        |  "time" : 10,
-        |  "errorMessage" : "{\"errorClass\":\"java.lang.Exception\",\"messageParameters\":{\"message\":\"test\"}}"
-        |}
-      """.stripMargin))
+        {
+          "Event" : "org.apache.spark.sql.execution.ui.SparkListenerSQLExecutionEnd",
+          "executionId" : 1,
+          "time" : 10,
+          "errorMessage" : "{\"errorClass\":\"java.lang.Exception\",\"messageParameters\":{\"message\":\"test\"}}"
+        }
+      """))
     // scalastyle:on
     val readBack = JsonProtocol.sparkEventFromJson(json)
     event.duration = 0
@@ -114,12 +114,12 @@ class SQLJsonProtocolSuite extends SparkFunSuite with LocalSparkSession {
     // parse old event log using new SparkListenerSQLExecutionEnd
     val executionEnd =
       """
-        |{
-        |  "Event" : "org.apache.spark.sql.execution.ui.SparkListenerSQLExecutionEnd",
-        |  "executionId" : 1,
-        |  "time" : 10
-        |}
-      """.stripMargin
+        {
+          "Event" : "org.apache.spark.sql.execution.ui.SparkListenerSQLExecutionEnd",
+          "executionId" : 1,
+          "time" : 10
+        }
+      """
     val readBack = JsonProtocol.sparkEventFromJson(executionEnd)
     assert(readBack == SparkListenerSQLExecutionEnd(1, 10))
 
@@ -127,13 +127,13 @@ class SQLJsonProtocolSuite extends SparkFunSuite with LocalSparkSession {
     // scalastyle:off line.size.limit
     val newExecutionEnd =
       """
-        |{
-        |  "Event" : "org.apache.spark.sql.execution.OldVersionSQLExecutionEnd",
-        |  "executionId" : 1,
-        |  "time" : 10,
-        |  "errorMessage" : "{\"errorClass\":\"java.lang.Exception\",\"messageParameters\":{\"message\":\"test\"}}"
-        |}
-      """.stripMargin
+        {
+          "Event" : "org.apache.spark.sql.execution.OldVersionSQLExecutionEnd",
+          "executionId" : 1,
+          "time" : 10,
+          "errorMessage" : "{\"errorClass\":\"java.lang.Exception\",\"messageParameters\":{\"message\":\"test\"}}"
+        }
+      """
     // scalastyle:on
     val readBack2 = JsonProtocol.sparkEventFromJson(newExecutionEnd)
     assert(readBack2 == OldVersionSQLExecutionEnd(1, 10))

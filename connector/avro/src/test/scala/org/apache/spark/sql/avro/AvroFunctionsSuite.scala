@@ -224,15 +224,15 @@ class AvroFunctionsSuite extends QueryTest with SharedSparkSession {
     val df = spark.range(10).select(struct($"id", $"id".cast("string").as("str")).as("struct"))
     for (supportedAvroType <- Seq("""["null", "int", "long"]""", """["int", "long"]""")) {
       val avroTypeStruct = s"""
-        |{
-        |  "type": "record",
-        |  "name": "struct",
-        |  "fields": [
-        |    {"name": "id", "type": $supportedAvroType},
-        |    {"name": "str", "type": ["null", "string"]}
-        |  ]
-        |}
-      """.stripMargin
+        {
+          "type": "record",
+          "name": "struct",
+          "fields": [
+            {"name": "id", "type": $supportedAvroType},
+            {"name": "str", "type": ["null", "string"]}
+          ]
+        }
+      """
       val avroStructDF = df.select(functions.to_avro($"struct", avroTypeStruct).as("avro"))
       checkAnswer(avroStructDF.select(
         functions.from_avro($"avro", avroTypeStruct)), df)

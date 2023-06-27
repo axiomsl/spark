@@ -35,31 +35,31 @@ class HiveTableScanSuite extends HiveComparisonTest with SQLTestUtils with TestH
 
   createQueryTest("partition_based_table_scan_with_different_serde",
     """
-      |CREATE TABLE part_scan_test (key STRING, value STRING) PARTITIONED BY (ds STRING)
-      |ROW FORMAT SERDE
-      |'org.apache.hadoop.hive.serde2.columnar.LazyBinaryColumnarSerDe'
-      |STORED AS RCFILE;
-      |
-      |FROM src
-      |INSERT INTO TABLE part_scan_test PARTITION (ds='2010-01-01')
-      |SELECT 100,100 LIMIT 1;
-      |
-      |ALTER TABLE part_scan_test SET SERDE
-      |'org.apache.hadoop.hive.serde2.columnar.ColumnarSerDe';
-      |
-      |FROM src INSERT INTO TABLE part_scan_test PARTITION (ds='2010-01-02')
-      |SELECT 200,200 LIMIT 1;
-      |
-      |SELECT * from part_scan_test;
-    """.stripMargin)
+      CREATE TABLE part_scan_test (key STRING, value STRING) PARTITIONED BY (ds STRING)
+      ROW FORMAT SERDE
+      'org.apache.hadoop.hive.serde2.columnar.LazyBinaryColumnarSerDe'
+      STORED AS RCFILE;
+
+      FROM src
+      INSERT INTO TABLE part_scan_test PARTITION (ds='2010-01-01')
+      SELECT 100,100 LIMIT 1;
+
+      ALTER TABLE part_scan_test SET SERDE
+      'org.apache.hadoop.hive.serde2.columnar.ColumnarSerDe';
+
+      FROM src INSERT INTO TABLE part_scan_test PARTITION (ds='2010-01-02')
+      SELECT 200,200 LIMIT 1;
+
+      SELECT * from part_scan_test;
+    """)
 
   // In unit test, kv1.txt is a small file and will be loaded as table src
   // Since the small file will be considered as a single split, we assume
   // Hive / SparkSQL HQL has the same output even for SORT BY
   createQueryTest("file_split_for_small_table",
     """
-      |SELECT key, value FROM src SORT BY key, value
-    """.stripMargin)
+      SELECT key, value FROM src SORT BY key, value
+    """)
 
   test("Spark-4041: lowercase issue") {
     TestHive.sql("CREATE TABLE tb (KEY INT, VALUE STRING) STORED AS ORC")
@@ -76,7 +76,7 @@ class HiveTableScanSuite extends HiveComparisonTest with SQLTestUtils with TestH
         ROW FORMAT DELIMITED
         FIELDS TERMINATED BY ','
         LINES TERMINATED BY '\n'
-      """.stripMargin)
+      """)
     val location =
       Utils.getSparkClassLoader.getResource("data/files/issue-4077-data.txt").getFile()
 
@@ -115,20 +115,20 @@ class HiveTableScanSuite extends HiveComparisonTest with SQLTestUtils with TestH
       withTable(table) {
         sql(
           s"""
-             |CREATE TABLE $table(id string)
-             |USING hive
-             |PARTITIONED BY (p1 string,p2 string,p3 string,p4 string,p5 string)
-           """.stripMargin)
+             CREATE TABLE $table(id string)
+             USING hive
+             PARTITIONED BY (p1 string,p2 string,p3 string,p4 string,p5 string)
+           """)
         sql(
           s"""
-             |FROM $view v
-             |INSERT INTO TABLE $table
-             |PARTITION (p1='a',p2='b',p3='c',p4='d',p5='e')
-             |SELECT v.id
-             |INSERT INTO TABLE $table
-             |PARTITION (p1='a',p2='c',p3='c',p4='d',p5='e')
-             |SELECT v.id
-           """.stripMargin)
+             FROM $view v
+             INSERT INTO TABLE $table
+             PARTITION (p1='a',p2='b',p3='c',p4='d',p5='e')
+             SELECT v.id
+             INSERT INTO TABLE $table
+             PARTITION (p1='a',p2='c',p3='c',p4='d',p5='e')
+             SELECT v.id
+           """)
 
         Seq("true", "false").foreach { hivePruning =>
           withSQLConf(SQLConf.HIVE_METASTORE_PARTITION_PRUNING.key -> hivePruning) {
@@ -160,20 +160,20 @@ class HiveTableScanSuite extends HiveComparisonTest with SQLTestUtils with TestH
       withTable(table) {
         sql(
           s"""
-             |CREATE TABLE $table(id string)
-             |USING hive
-             |PARTITIONED BY (p1 string,p2 string,p3 string,p4 string,p5 string)
-           """.stripMargin)
+             CREATE TABLE $table(id string)
+             USING hive
+             PARTITIONED BY (p1 string,p2 string,p3 string,p4 string,p5 string)
+           """)
         sql(
           s"""
-             |FROM $view v
-             |INSERT INTO TABLE $table
-             |PARTITION (p1='a',p2='b',p3='c',p4='d',p5='e')
-             |SELECT v.id
-             |INSERT INTO TABLE $table
-             |PARTITION (p1='a',p2='c',p3='c',p4='d',p5='e')
-             |SELECT v.id
-           """.stripMargin)
+             FROM $view v
+             INSERT INTO TABLE $table
+             PARTITION (p1='a',p2='b',p3='c',p4='d',p5='e')
+             SELECT v.id
+             INSERT INTO TABLE $table
+             PARTITION (p1='a',p2='c',p3='c',p4='d',p5='e')
+             SELECT v.id
+           """)
         val scan = getHiveTableScanExec(s"SELECT * FROM $table")
         val numDataCols = scan.relation.dataCols.length
         scan.rawPartitions.foreach(p => assert(p.getCols.size == numDataCols))
@@ -186,10 +186,10 @@ class HiveTableScanSuite extends HiveComparisonTest with SQLTestUtils with TestH
     withTable(table) {
       sql(
         s"""
-           |CREATE TABLE $table (id int)
-           |USING hive
-           |PARTITIONED BY (a int, b int)
-         """.stripMargin)
+           CREATE TABLE $table (id int)
+           USING hive
+           PARTITIONED BY (a int, b int)
+         """)
       val scan1 = getHiveTableScanExec(s"SELECT * FROM $table WHERE a = 1 AND b = 2")
       val scan2 = getHiveTableScanExec(s"SELECT * FROM $table WHERE b = 2 AND a = 1")
       assert(scan1.sameResult(scan2))
@@ -234,9 +234,9 @@ class HiveTableScanSuite extends HiveComparisonTest with SQLTestUtils with TestH
 
         sql(
           """
-            |ALTER TABLE df PARTITION (k=10) SET SERDE
-            |'org.apache.hadoop.hive.serde2.columnar.ColumnarSerDe';
-          """.stripMargin)
+            ALTER TABLE df PARTITION (k=10) SET SERDE
+            'org.apache.hadoop.hive.serde2.columnar.ColumnarSerDe';
+          """)
 
         val scan3 = getHiveTableScanExec("SELECT * FROM df WHERE df.k < 30")
         assert(scan3.simpleString(100).replaceAll("#\\d+L", "") ==

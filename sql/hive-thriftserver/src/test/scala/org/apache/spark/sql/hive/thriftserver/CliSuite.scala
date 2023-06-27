@@ -125,17 +125,17 @@ class CliSuite extends SparkFunSuite {
       val cliScript = "../../bin/spark-sql".split("/").mkString(File.separator)
       val jdbcUrl = s"jdbc:derby:;databaseName=$metastore;create=true"
       s"""$cliScript
-         |  --master local
-         |  --driver-java-options -Dderby.system.durability=test
-         |  $extraHive
-         |  --conf spark.ui.enabled=false
-         |  --conf ${SQLConf.LEGACY_EMPTY_CURRENT_DB_IN_CLI.key}=true
-         |  --hiveconf ${ConfVars.METASTORECONNECTURLKEY}=$jdbcUrl
-         |  --hiveconf ${ConfVars.SCRATCHDIR}=$scratchDirPath
-         |  --hiveconf conf1=conftest
-         |  --hiveconf conf2=1
-         |  $warehouseConf
-       """.stripMargin.split("\\s+").toSeq ++ extraArgs
+           --master local
+           --driver-java-options -Dderby.system.durability=test
+           $extraHive
+           --conf spark.ui.enabled=false
+           --conf ${SQLConf.LEGACY_EMPTY_CURRENT_DB_IN_CLI.key}=true
+           --hiveconf ${ConfVars.METASTORECONNECTURLKEY}=$jdbcUrl
+           --hiveconf ${ConfVars.SCRATCHDIR}=$scratchDirPath
+           --hiveconf conf1=conftest
+           --hiveconf conf2=1
+           $warehouseConf
+       """.split("\\s+").toSeq ++ extraArgs
     }
 
     var next = 0
@@ -200,18 +200,18 @@ class CliSuite extends SparkFunSuite {
     } catch { case cause: Throwable =>
       val message =
         s"""
-           |=======================
-           |CliSuite failure output
-           |=======================
-           |Spark SQL CLI command line: ${command.mkString(" ")}
-           |Exception: $cause
-           |Failed to capture next expected output "${expectedAnswers(next)}" within $timeout.
-           |
-           |${buffer.mkString("\n")}
-           |===========================
-           |End CliSuite failure output
-           |===========================
-         """.stripMargin
+           =======================
+           CliSuite failure output
+           =======================
+           Spark SQL CLI command line: ${command.mkString(" ")}
+           Exception: $cause
+           Failed to capture next expected output "${expectedAnswers(next)}" within $timeout.
+
+           ${buffer.mkString("\n")}
+           ===========================
+           End CliSuite failure output
+           ===========================
+         """
       logError(message, cause)
       fail(message, cause)
     } finally {
@@ -304,7 +304,7 @@ class CliSuite extends SparkFunSuite {
       "SHOW TABLES;"
         -> "hive_test",
       s"""LOAD DATA LOCAL INPATH '$dataFilePath'
-         |OVERWRITE INTO TABLE hive_test;""".stripMargin
+         OVERWRITE INTO TABLE hive_test;"""
         -> "",
       "CACHE TABLE hive_test;"
         -> "",
@@ -344,12 +344,12 @@ class CliSuite extends SparkFunSuite {
 
     runCliWithin(3.minute, Seq("--jars", s"$jarFile"))(
       """CREATE TABLE t1(key string, val string)
-        |ROW FORMAT SERDE 'org.apache.hive.hcatalog.data.JsonSerDe';""".stripMargin
+        ROW FORMAT SERDE 'org.apache.hive.hcatalog.data.JsonSerDe';"""
         -> "",
       "CREATE TABLE sourceTable (key INT, val STRING) USING hive;"
         -> "",
       s"""LOAD DATA LOCAL INPATH '$dataFilePath'
-         |OVERWRITE INTO TABLE sourceTable;""".stripMargin
+         OVERWRITE INTO TABLE sourceTable;"""
         -> "",
       "INSERT INTO TABLE t1 SELECT key, val FROM sourceTable;"
         -> "",
@@ -370,12 +370,12 @@ class CliSuite extends SparkFunSuite {
       3.minute,
       Seq("--conf", s"spark.hadoop.${ConfVars.HIVEAUXJARS}=$hiveContribJar"))(
       """CREATE TABLE addJarWithHiveAux(key string, val string)
-        |ROW FORMAT SERDE 'org.apache.hive.hcatalog.data.JsonSerDe';""".stripMargin
+        ROW FORMAT SERDE 'org.apache.hive.hcatalog.data.JsonSerDe';"""
         -> "",
       "CREATE TABLE sourceTableForWithHiveAux (key INT, val STRING) USING hive;"
         -> "",
       s"""LOAD DATA LOCAL INPATH '$dataFilePath'
-         |OVERWRITE INTO TABLE sourceTableForWithHiveAux;""".stripMargin
+         OVERWRITE INTO TABLE sourceTableForWithHiveAux;"""
         -> "",
       "INSERT INTO TABLE addJarWithHiveAux SELECT key, val FROM sourceTableForWithHiveAux;"
         -> "",
@@ -489,12 +489,12 @@ class CliSuite extends SparkFunSuite {
       3.minute)(
       s"ADD JAR ${hiveContribJar};" -> "",
       """CREATE TABLE addJarWithSQL(key string, val string)
-        |ROW FORMAT SERDE 'org.apache.hive.hcatalog.data.JsonSerDe';""".stripMargin
+        ROW FORMAT SERDE 'org.apache.hive.hcatalog.data.JsonSerDe';"""
         -> "",
       "CREATE TABLE sourceTableForWithSQL(key INT, val STRING) USING hive;"
         -> "",
       s"""LOAD DATA LOCAL INPATH '$dataFilePath'
-         |OVERWRITE INTO TABLE sourceTableForWithSQL;""".stripMargin
+         OVERWRITE INTO TABLE sourceTableForWithSQL;"""
         -> "",
       "INSERT INTO TABLE addJarWithSQL SELECT key, val FROM sourceTableForWithSQL;"
         -> "",
@@ -526,33 +526,33 @@ class CliSuite extends SparkFunSuite {
   test("SPARK-30049 Should not complain for quotes in commented lines") {
     runCliWithin(1.minute)(
       """SELECT concat('test', 'comment') -- someone's comment here
-        |;""".stripMargin -> "testcomment"
+        ;""" -> "testcomment"
     )
   }
 
   test("SPARK-31102 spark-sql fails to parse when contains comment") {
     runCliWithin(1.minute)(
       """SELECT concat('test', 'comment'),
-        |    -- someone's comment here
-        | 2;""".stripMargin -> "testcomment"
+            -- someone's comment here
+         2;""" -> "testcomment"
     )
   }
 
   test("SPARK-30049 Should not complain for quotes in commented with multi-lines") {
     runCliWithin(1.minute)(
       """SELECT concat('test', 'comment') -- someone's comment here \
-        | comment continues here with single ' quote \
-        | extra ' \
-        |;""".stripMargin -> "testcomment"
+         comment continues here with single ' quote \
+         extra ' \
+        ;""" -> "testcomment"
     )
   }
 
   test("SPARK-31595 Should allow unescaped quote mark in quoted string") {
     runCliWithin(1.minute)(
-      "SELECT '\"legal string a';select 1 + 234;".stripMargin -> "235"
+      "SELECT '\"legal string a';select 1 + 234;" -> "235"
     )
     runCliWithin(1.minute)(
-      "SELECT \"legal 'string b\";select 22222 + 1;".stripMargin -> "22223"
+      "SELECT \"legal 'string b\";select 22222 + 1;" -> "22223"
     )
   }
 
@@ -622,23 +622,23 @@ class CliSuite extends SparkFunSuite {
   test("SPARK-37471: spark-sql support nested bracketed comment ") {
     runCliWithin(1.minute)(
       """
-        |/* SELECT /*+ HINT() */ 4; */
-        |SELECT 1;
-        |""".stripMargin -> "SELECT 1"
+        /* SELECT /*+ HINT() */ 4; */
+        SELECT 1;
+        """ -> "SELECT 1"
     )
   }
 
   test("SPARK-37555: spark-sql should pass last unclosed comment to backend") {
     runCliWithin(5.minute)(
       // Only unclosed comment.
-      "/* SELECT /*+ HINT() 4; */;".stripMargin -> "Syntax error at or near ';'",
+      "/* SELECT /*+ HINT() 4; */;" -> "Syntax error at or near ';'",
       // Unclosed nested bracketed comment.
-      "/* SELECT /*+ HINT() 4; */ SELECT 1;".stripMargin -> "1",
+      "/* SELECT /*+ HINT() 4; */ SELECT 1;" -> "1",
       // Unclosed comment with query.
       "/* Here is a unclosed bracketed comment SELECT 1;"->
         "Found an unclosed bracketed comment. Please, append */ at the end of the comment.",
       // Whole comment.
-      "/* SELECT /*+ HINT() */ 4; */;".stripMargin -> ""
+      "/* SELECT /*+ HINT() */ 4; */;" -> ""
     )
   }
 
@@ -719,59 +719,59 @@ class CliSuite extends SparkFunSuite {
       format = ErrorMessageFormat.PRETTY,
       errorMessage =
         """[DIVIDE_BY_ZERO] Division by zero. Use `try_divide` to tolerate divisor being 0 and return NULL instead. If necessary set "spark.sql.ansi.enabled" to "false" to bypass this error.
-          |== SQL(line 1, position 8) ==
-          |select 1 / 0
-          |       ^^^^^
-          |""".stripMargin,
+          == SQL(line 1, position 8) ==
+          select 1 / 0
+                 ^^^^^
+          """,
       silent = true)
     check(
       format = ErrorMessageFormat.PRETTY,
       errorMessage =
         """[DIVIDE_BY_ZERO] Division by zero. Use `try_divide` to tolerate divisor being 0 and return NULL instead. If necessary set "spark.sql.ansi.enabled" to "false" to bypass this error.
-          |== SQL(line 1, position 8) ==
-          |select 1 / 0
-          |       ^^^^^
-          |
-          |org.apache.spark.SparkArithmeticException: [DIVIDE_BY_ZERO] Division by zero. Use `try_divide` to tolerate divisor being 0 and return NULL instead. If necessary set "spark.sql.ansi.enabled" to "false" to bypass this error.
-          |""".stripMargin,
+          == SQL(line 1, position 8) ==
+          select 1 / 0
+                 ^^^^^
+
+          org.apache.spark.SparkArithmeticException: [DIVIDE_BY_ZERO] Division by zero. Use `try_divide` to tolerate divisor being 0 and return NULL instead. If necessary set "spark.sql.ansi.enabled" to "false" to bypass this error.
+          """,
       silent = false)
     Seq(true, false).foreach { silent =>
       check(
         format = ErrorMessageFormat.MINIMAL,
         errorMessage =
           """{
-            |  "errorClass" : "DIVIDE_BY_ZERO",
-            |  "sqlState" : "22012",
-            |  "messageParameters" : {
-            |    "config" : "\"spark.sql.ansi.enabled\""
-            |  },
-            |  "queryContext" : [ {
-            |    "objectType" : "",
-            |    "objectName" : "",
-            |    "startIndex" : 8,
-            |    "stopIndex" : 12,
-            |    "fragment" : "1 / 0"
-            |  } ]
-            |}""".stripMargin,
+              "errorClass" : "DIVIDE_BY_ZERO",
+              "sqlState" : "22012",
+              "messageParameters" : {
+                "config" : "\"spark.sql.ansi.enabled\""
+              },
+              "queryContext" : [ {
+                "objectType" : "",
+                "objectName" : "",
+                "startIndex" : 8,
+                "stopIndex" : 12,
+                "fragment" : "1 / 0"
+              } ]
+            }""",
         silent)
       check(
         format = ErrorMessageFormat.STANDARD,
         errorMessage =
           """{
-            |  "errorClass" : "DIVIDE_BY_ZERO",
-            |  "messageTemplate" : "Division by zero. Use `try_divide` to tolerate divisor being 0 and return NULL instead. If necessary set <config> to \"false\" to bypass this error.",
-            |  "sqlState" : "22012",
-            |  "messageParameters" : {
-            |    "config" : "\"spark.sql.ansi.enabled\""
-            |  },
-            |  "queryContext" : [ {
-            |    "objectType" : "",
-            |    "objectName" : "",
-            |    "startIndex" : 8,
-            |    "stopIndex" : 12,
-            |    "fragment" : "1 / 0"
-            |  } ]
-            |}""".stripMargin,
+              "errorClass" : "DIVIDE_BY_ZERO",
+              "messageTemplate" : "Division by zero. Use `try_divide` to tolerate divisor being 0 and return NULL instead. If necessary set <config> to \"false\" to bypass this error.",
+              "sqlState" : "22012",
+              "messageParameters" : {
+                "config" : "\"spark.sql.ansi.enabled\""
+              },
+              "queryContext" : [ {
+                "objectType" : "",
+                "objectName" : "",
+                "startIndex" : 8,
+                "stopIndex" : 12,
+                "fragment" : "1 / 0"
+              } ]
+            }""",
         silent)
     }
   }

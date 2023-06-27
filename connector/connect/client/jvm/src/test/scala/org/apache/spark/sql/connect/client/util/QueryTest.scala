@@ -84,25 +84,25 @@ object QueryTest extends Assertions {
         case e: Exception =>
           val errorMessage =
             s"""
-             |Exception thrown while executing query:
-             |${df.analyze}
-             |== Exception ==
-             |$e
-             |${org.apache.spark.sql.catalyst.util.stackTraceToString(e)}
-        """.stripMargin
+             Exception thrown while executing query:
+             ${df.analyze}
+             == Exception ==
+             $e
+             ${org.apache.spark.sql.catalyst.util.stackTraceToString(e)}
+        """
           return Some(errorMessage)
       }
 
     sameRows(expectedAnswer, sparkAnswer, isSorted).map { results =>
       s"""
-         |Results do not match for query:
-         |Timezone: ${TimeZone.getDefault}
-         |Timezone Env: ${sys.env.getOrElse("TZ", "")}
-         |
-         |${df.analyze}
-         |== Results ==
-         |$results
-     """.stripMargin
+         Results do not match for query:
+         Timezone: ${TimeZone.getDefault}
+         Timezone Env: ${sys.env.getOrElse("TZ", "")}
+
+         ${df.analyze}
+         == Results ==
+         $results
+     """
     }
   }
 
@@ -154,15 +154,15 @@ object QueryTest extends Assertions {
         .getOrElse("struct<>")
 
     s"""
-       |== Results ==
-       |${sideBySide(
+       == Results ==
+       ${sideBySide(
         s"== Correct Answer - ${expectedAnswer.size} ==" +:
           getRowType(expectedAnswer.headOption) +:
           prepareAnswer(expectedAnswer, isSorted).map(_.toString()),
         s"== Spark Answer - ${sparkAnswer.size} ==" +:
           getRowType(sparkAnswer.headOption) +:
           prepareAnswer(sparkAnswer, isSorted).map(_.toString())).mkString("\n")}
-  """.stripMargin
+  """
   }
 
   def includesRows(expectedRows: Seq[Row], sparkAnswer: Seq[Row]): Option[String] = {

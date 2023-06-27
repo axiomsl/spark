@@ -154,49 +154,49 @@ class TableScanSuite extends DataSourceTest with SharedSparkSession {
     super.beforeAll()
     sql(
       """
-        |CREATE TEMPORARY VIEW oneToTen
-        |USING org.apache.spark.sql.sources.SimpleScanSource
-        |OPTIONS (
-        |  From '1',
-        |  To '10',
-        |  option_with_underscores 'someval',
-        |  option.with.dots 'someval'
-        |)
-      """.stripMargin)
+        CREATE TEMPORARY VIEW oneToTen
+        USING org.apache.spark.sql.sources.SimpleScanSource
+        OPTIONS (
+          From '1',
+          To '10',
+          option_with_underscores 'someval',
+          option.with.dots 'someval'
+        )
+      """)
 
     sql(
       """
-        |CREATE TEMPORARY VIEW tableWithSchema (
-        |`string$%Field` stRIng,
-        |binaryField binary,
-        |`booleanField` boolean,
-        |ByteField tinyint,
-        |shortField smaLlint,
-        |int_Field iNt,
-        |`longField_:,<>=+/~^` Bigint,
-        |floatField flOat,
-        |doubleField doubLE,
-        |decimalField1 decimal,
-        |decimalField2 decimal(9,2),
-        |dateField dAte,
-        |timestampField tiMestamp,
-        |varcharField varchaR(12),
-        |charField ChaR(18),
-        |arrayFieldSimple Array<inT>,
-        |arrayFieldComplex Array<Map<String, Struct<key:bigInt>>>,
-        |mapFieldSimple MAP<iNt, StRing>,
-        |mapFieldComplex Map<Map<stRING, fLOAT>, Struct<key:bigInt>>,
-        |structFieldSimple StRuct<key:INt, Value:STrINg>,
-        |structFieldComplex StRuct<key:Array<String>, Value:struct<`value_(2)`:Array<date>>>
-        |)
-        |USING org.apache.spark.sql.sources.AllDataTypesScanSource
-        |OPTIONS (
-        |  From '1',
-        |  To '10',
-        |  option_with_underscores 'someval',
-        |  option.with.dots 'someval'
-        |)
-      """.stripMargin)
+        CREATE TEMPORARY VIEW tableWithSchema (
+        `string$%Field` stRIng,
+        binaryField binary,
+        `booleanField` boolean,
+        ByteField tinyint,
+        shortField smaLlint,
+        int_Field iNt,
+        `longField_:,<>=+/~^` Bigint,
+        floatField flOat,
+        doubleField doubLE,
+        decimalField1 decimal,
+        decimalField2 decimal(9,2),
+        dateField dAte,
+        timestampField tiMestamp,
+        varcharField varchaR(12),
+        charField ChaR(18),
+        arrayFieldSimple Array<inT>,
+        arrayFieldComplex Array<Map<String, Struct<key:bigInt>>>,
+        mapFieldSimple MAP<iNt, StRing>,
+        mapFieldComplex Map<Map<stRING, fLOAT>, Struct<key:bigInt>>,
+        structFieldSimple StRuct<key:INt, Value:STrINg>,
+        structFieldComplex StRuct<key:Array<String>, Value:struct<`value_(2)`:Array<date>>>
+        )
+        USING org.apache.spark.sql.sources.AllDataTypesScanSource
+        OPTIONS (
+          From '1',
+          To '10',
+          option_with_underscores 'someval',
+          option.with.dots 'someval'
+        )
+      """)
   }
 
   sqlTest(
@@ -265,27 +265,27 @@ class TableScanSuite extends DataSourceTest with SharedSparkSession {
         checkAnswer(
           sql(
             """SELECT
-            | `string$%Field`,
-            | cast(binaryField as string),
-            | booleanField,
-            | byteField,
-            | shortField,
-            | int_Field,
-            | `longField_:,<>=+/~^`,
-            | floatField,
-            | doubleField,
-            | decimalField1,
-            | decimalField2,
-            | dateField,
-            | timestampField,
-            | varcharField,
-            | charField,
-            | arrayFieldSimple,
-            | arrayFieldComplex,
-            | mapFieldSimple,
-            | mapFieldComplex,
-            | structFieldSimple,
-            | structFieldComplex FROM tableWithSchema""".stripMargin),
+             `string$%Field`,
+             cast(binaryField as string),
+             booleanField,
+             byteField,
+             shortField,
+             int_Field,
+             `longField_:,<>=+/~^`,
+             floatField,
+             doubleField,
+             decimalField1,
+             decimalField2,
+             dateField,
+             timestampField,
+             varcharField,
+             charField,
+             arrayFieldSimple,
+             arrayFieldComplex,
+             mapFieldSimple,
+             mapFieldComplex,
+             structFieldSimple,
+             structFieldComplex FROM tableWithSchema"""),
         tableWithSchemaExpected
       )
     }
@@ -352,13 +352,13 @@ class TableScanSuite extends DataSourceTest with SharedSparkSession {
   test("defaultSource") {
     sql(
       """
-        |CREATE TEMPORARY VIEW oneToTenDef
-        |USING org.apache.spark.sql.sources
-        |OPTIONS (
-        |  from '1',
-        |  to '10'
-        |)
-      """.stripMargin)
+        CREATE TEMPORARY VIEW oneToTenDef
+        USING org.apache.spark.sql.sources
+        OPTIONS (
+          from '1',
+          to '10'
+        )
+      """)
 
     checkAnswer(
       sql("SELECT * FROM oneToTenDef"),
@@ -372,13 +372,13 @@ class TableScanSuite extends DataSourceTest with SharedSparkSession {
       val schemaNotMatch = intercept[Exception] {
         sql(
           s"""
-             |CREATE $tableType relationProviderWithSchema (i string)
-             |USING org.apache.spark.sql.sources.SimpleScanSource
-             |OPTIONS (
-             |  From '1',
-             |  To '10'
-             |)
-           """.stripMargin)
+             CREATE $tableType relationProviderWithSchema (i string)
+             USING org.apache.spark.sql.sources.SimpleScanSource
+             OPTIONS (
+               From '1',
+               To '10'
+             )
+           """)
       }
       assert(schemaNotMatch.getMessage.contains(
         "The user-specified schema doesn't match the actual schema"))
@@ -386,13 +386,13 @@ class TableScanSuite extends DataSourceTest with SharedSparkSession {
       val schemaNeeded = intercept[Exception] {
         sql(
           s"""
-             |CREATE $tableType schemaRelationProviderWithoutSchema
-             |USING org.apache.spark.sql.sources.AllDataTypesScanSource
-             |OPTIONS (
-             |  From '1',
-             |  To '10'
-             |)
-           """.stripMargin)
+             CREATE $tableType schemaRelationProviderWithoutSchema
+             USING org.apache.spark.sql.sources.AllDataTypesScanSource
+             OPTIONS (
+               From '1',
+               To '10'
+             )
+           """)
       }
       assert(schemaNeeded.getMessage.contains("A schema needs to be specified when using"))
     }
@@ -404,13 +404,13 @@ class TableScanSuite extends DataSourceTest with SharedSparkSession {
       withTable (tableName) {
         sql(
           s"""
-             |CREATE $tableType $tableName
-             |USING org.apache.spark.sql.sources.SimpleScanSource
-             |OPTIONS (
-             |  From '1',
-             |  To '10'
-             |)
-           """.stripMargin)
+             CREATE $tableType $tableName
+             USING org.apache.spark.sql.sources.SimpleScanSource
+             OPTIONS (
+               From '1',
+               To '10'
+             )
+           """)
         checkAnswer(spark.table(tableName), spark.range(1, 11).toDF())
       }
     }
@@ -419,15 +419,15 @@ class TableScanSuite extends DataSourceTest with SharedSparkSession {
   test("SPARK-5196 schema field with comment") {
     sql(
       """
-       |CREATE TEMPORARY VIEW student(name string comment "SN", age int comment "SA", grade int)
-       |USING org.apache.spark.sql.sources.AllDataTypesScanSource
-       |OPTIONS (
-       |  from '1',
-       |  to '10',
-       |  option_with_underscores 'someval',
-       |  option.with.dots 'someval'
-       |)
-       """.stripMargin)
+       CREATE TEMPORARY VIEW student(name string comment "SN", age int comment "SA", grade int)
+       USING org.apache.spark.sql.sources.AllDataTypesScanSource
+       OPTIONS (
+         from '1',
+         to '10',
+         option_with_underscores 'someval',
+         option.with.dots 'someval'
+       )
+       """)
 
     val planned = sql("SELECT * FROM student").queryExecution.executedPlan
     val comments = planned.schema.fields.map(_.getComment().getOrElse("NO_COMMENT")).mkString(",")
@@ -439,8 +439,8 @@ class TableScanSuite extends DataSourceTest with SharedSparkSession {
     withSQLConf(SQLConf.DATETIME_JAVA8API_ENABLED.key -> "true") {
       withTable (tableName) {
         sql(s"""
-          |CREATE TABLE $tableName (col TIMESTAMP)
-          |USING org.apache.spark.sql.sources.LegacyTimestampSource""".stripMargin)
+          CREATE TABLE $tableName (col TIMESTAMP)
+          USING org.apache.spark.sql.sources.LegacyTimestampSource""")
         checkAnswer(
           spark.table(tableName),
           Row(java.sql.Timestamp.valueOf("2022-03-08 12:13:14").toInstant) :: Nil)

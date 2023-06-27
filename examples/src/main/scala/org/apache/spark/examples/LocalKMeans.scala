@@ -65,9 +65,9 @@ object LocalKMeans {
   def showWarning(): Unit = {
     System.err.println(
       """WARN: This is a naive implementation of KMeans Clustering and is given as an example!
-        |Please use org.apache.spark.ml.clustering.KMeans
-        |for more conventional use.
-      """.stripMargin)
+        Please use org.apache.spark.ml.clustering.KMeans
+        for more conventional use.
+      """)
   }
 
   def main(args: Array[String]): Unit = {

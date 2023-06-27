@@ -112,11 +112,11 @@ class CTEHintSuite extends QueryTest with SharedSparkSession {
       verifyJoinHint(
         sql(
           """
-            |WITH cte AS (
-            |  SELECT /*+ BROADCAST(a) */ * FROM a JOIN b ON a.a1 = b.b1
-            |)
-            |SELECT * FROM cte
-            |""".stripMargin),
+            WITH cte AS (
+              SELECT /*+ BROADCAST(a) */ * FROM a JOIN b ON a.a1 = b.b1
+            )
+            SELECT * FROM cte
+            """),
         JoinHint(
           Some(HintInfo(strategy = Some(BROADCAST))),
           None) :: Nil
@@ -124,11 +124,11 @@ class CTEHintSuite extends QueryTest with SharedSparkSession {
       verifyJoinHint(
         sql(
           """
-            |WITH cte AS (
-            |  SELECT /*+ SHUFFLE_HASH(a) */ * FROM a JOIN b ON a.a1 = b.b1
-            |)
-            |SELECT * FROM cte
-            |""".stripMargin),
+            WITH cte AS (
+              SELECT /*+ SHUFFLE_HASH(a) */ * FROM a JOIN b ON a.a1 = b.b1
+            )
+            SELECT * FROM cte
+            """),
         JoinHint(
           Some(HintInfo(strategy = Some(SHUFFLE_HASH))),
           None) :: Nil
@@ -136,12 +136,12 @@ class CTEHintSuite extends QueryTest with SharedSparkSession {
       verifyJoinHintWithWarnings(
         sql(
           """
-            |WITH cte AS (
-            |  SELECT /*+ SHUFFLE_HASH MERGE(a, c) BROADCAST(a, b)*/ * FROM a, b, c
-            |  WHERE a.a1 = b.b1 AND b.b1 = c.c1
-            |)
-            |SELECT * FROM cte
-            |""".stripMargin),
+            WITH cte AS (
+              SELECT /*+ SHUFFLE_HASH MERGE(a, c) BROADCAST(a, b)*/ * FROM a, b, c
+              WHERE a.a1 = b.b1 AND b.b1 = c.c1
+            )
+            SELECT * FROM cte
+            """),
         JoinHint(
           None,
           Some(HintInfo(strategy = Some(SHUFFLE_MERGE)))) ::
@@ -154,11 +154,11 @@ class CTEHintSuite extends QueryTest with SharedSparkSession {
       verifyJoinHint(
         sql(
           """
-            |WITH cte AS (
-            |  SELECT /*+ SHUFFLE_REPLICATE_NL(a) SHUFFLE_HASH(b) */ * FROM a JOIN b ON a.a1 = b.b1
-            |)
-            |SELECT * FROM cte
-            |""".stripMargin),
+            WITH cte AS (
+              SELECT /*+ SHUFFLE_REPLICATE_NL(a) SHUFFLE_HASH(b) */ * FROM a JOIN b ON a.a1 = b.b1
+            )
+            SELECT * FROM cte
+            """),
         JoinHint(
           Some(HintInfo(strategy = Some(SHUFFLE_REPLICATE_NL))),
           Some(HintInfo(strategy = Some(SHUFFLE_HASH)))) :: Nil

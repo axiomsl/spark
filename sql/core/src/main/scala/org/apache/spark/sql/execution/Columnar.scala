@@ -161,15 +161,15 @@ case class ColumnarToRowExec(child: SparkPlan) extends ColumnarToRowTransition w
     val nextBatch = ctx.freshName("nextBatch")
     val nextBatchFuncName = ctx.addNewFunction(nextBatch,
       s"""
-         |private void $nextBatch() throws java.io.IOException {
-         |  if ($input.hasNext()) {
-         |    $batch = ($columnarBatchClz)$input.next();
-         |    $numInputBatches.add(1);
-         |    $numOutputRows.add($batch.numRows());
-         |    $idx = 0;
-         |    ${columnAssigns.mkString("", "\n", "\n")}
-         |  }
-         |}""".stripMargin)
+         private void $nextBatch() throws java.io.IOException {
+           if ($input.hasNext()) {
+             $batch = ($columnarBatchClz)$input.next();
+             $numInputBatches.add(1);
+             $numOutputRows.add($batch.numRows());
+             $idx = 0;
+             ${columnAssigns.mkString("", "\n", "\n")}
+           }
+         }""")
 
     ctx.currentVars = null
     val rowidx = ctx.freshName("rowIdx")
@@ -185,22 +185,22 @@ case class ColumnarToRowExec(child: SparkPlan) extends ColumnarToRowTransition w
       "// shouldStop check is eliminated"
     }
     s"""
-       |if ($batch == null) {
-       |  $nextBatchFuncName();
-       |}
-       |while ($limitNotReachedCond $batch != null) {
-       |  int $numRows = $batch.numRows();
-       |  int $localEnd = $numRows - $idx;
-       |  for (int $localIdx = 0; $localIdx < $localEnd; $localIdx++) {
-       |    int $rowidx = $idx + $localIdx;
-       |    ${consume(ctx, columnsBatchInput).trim}
-       |    $shouldStop
-       |  }
-       |  $idx = $numRows;
-       |  $batch = null;
-       |  $nextBatchFuncName();
-       |}
-     """.stripMargin
+       if ($batch == null) {
+         $nextBatchFuncName();
+       }
+       while ($limitNotReachedCond $batch != null) {
+         int $numRows = $batch.numRows();
+         int $localEnd = $numRows - $idx;
+         for (int $localIdx = 0; $localIdx < $localEnd; $localIdx++) {
+           int $rowidx = $idx + $localIdx;
+           ${consume(ctx, columnsBatchInput).trim}
+           $shouldStop
+         }
+         $idx = $numRows;
+         $batch = null;
+         $nextBatchFuncName();
+       }
+     """
   }
 
   override def inputRDDs(): Seq[RDD[InternalRow]] = {

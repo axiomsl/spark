@@ -144,15 +144,15 @@ object RecoverableNetworkWordCount {
       System.err.println(s"Your arguments were ${args.mkString("[", ", ", "]")}")
       System.err.println(
         """
-          |Usage: RecoverableNetworkWordCount <hostname> <port> <checkpoint-directory>
-          |     <output-file>. <hostname> and <port> describe the TCP server that Spark
-          |     Streaming would connect to receive data. <checkpoint-directory> directory to
-          |     HDFS-compatible file system which checkpoint data <output-file> file to which the
-          |     word counts will be appended
-          |
-          |In local mode, <master> should be 'local[n]' with n > 1
-          |Both <checkpoint-directory> and <output-file> must be absolute paths
-        """.stripMargin
+          Usage: RecoverableNetworkWordCount <hostname> <port> <checkpoint-directory>
+               <output-file>. <hostname> and <port> describe the TCP server that Spark
+               Streaming would connect to receive data. <checkpoint-directory> directory to
+               HDFS-compatible file system which checkpoint data <output-file> file to which the
+               word counts will be appended
+
+          In local mode, <master> should be 'local[n]' with n > 1
+          Both <checkpoint-directory> and <output-file> must be absolute paths
+        """
       )
       System.exit(1)
     }

@@ -38,8 +38,8 @@ class ParquetHiveCompatibilitySuite extends ParquetCompatibilityTest with TestHi
 
     logInfo(
       s"""Schema of the Parquet file written by parquet-avro:
-         |$schema
-       """.stripMargin)
+         $schema
+       """)
   }
 
   private def testParquetHiveCompatibility(row: Row, hiveTypes: String*): Unit = {
@@ -57,16 +57,16 @@ class ParquetHiveCompatibilitySuite extends ParquetCompatibilityTest with TestHi
 
             val ddl =
               s"""CREATE TABLE parquet_compat(
-                 |${fields.mkString(",\n")}
-                 |)
-                 |STORED AS PARQUET
-                 |LOCATION '$path'
-               """.stripMargin
+                 ${fields.mkString(",\n")}
+                 )
+                 STORED AS PARQUET
+                 LOCATION '$path'
+               """
 
             logInfo(
               s"""Creating testing Parquet table with the following DDL:
-                 |$ddl
-               """.stripMargin)
+                 $ddl
+               """)
 
             spark.sql(ddl)
 

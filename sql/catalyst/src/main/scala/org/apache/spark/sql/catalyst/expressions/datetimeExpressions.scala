@@ -1314,14 +1314,14 @@ abstract class ToTimestamp
         val formatterName = ctx.addReferenceObj("formatter", fmt, df)
         nullSafeCodeGen(ctx, ev, (datetimeStr, _) =>
           s"""
-             |try {
-             |  ${ev.value} = $formatterName.$parseMethod($datetimeStr.toString()) $downScaleCode;
-             |} catch (java.time.DateTimeException e) {
-             |  ${parseErrorBranch}
-             |} catch (java.text.ParseException e) {
-             |  ${parseErrorBranch}
-             |}
-             |""".stripMargin)
+             try {
+               ${ev.value} = $formatterName.$parseMethod($datetimeStr.toString()) $downScaleCode;
+             } catch (java.time.DateTimeException e) {
+               $parseErrorBranch
+             } catch (java.text.ParseException e) {
+               $parseErrorBranch
+             }
+             """)
       }.getOrElse {
         val zid = ctx.addReferenceObj("zoneId", zoneId, classOf[ZoneId].getName)
         val tf = TimestampFormatter.getClass.getName.stripSuffix("$")
@@ -1329,19 +1329,19 @@ abstract class ToTimestamp
         val timestampFormatter = ctx.freshName("timestampFormatter")
         nullSafeCodeGen(ctx, ev, (string, format) =>
           s"""
-             |$tf $timestampFormatter = $tf$$.MODULE$$.apply(
-             |  $format.toString(),
-             |  $zid,
-             |  $ldf$$.MODULE$$.SIMPLE_DATE_FORMAT(),
-             |  true);
-             |try {
-             |  ${ev.value} = $timestampFormatter.$parseMethod($string.toString()) $downScaleCode;
-             |} catch (java.time.DateTimeException e) {
-             |    ${parseErrorBranch}
-             |} catch (java.text.ParseException e) {
-             |    ${parseErrorBranch}
-             |}
-             |""".stripMargin)
+             $tf $timestampFormatter = $tf$$.MODULE$$.apply(
+               $format.toString(),
+               $zid,
+               $ldf$$.MODULE$$.SIMPLE_DATE_FORMAT(),
+               true);
+             try {
+               ${ev.value} = $timestampFormatter.$parseMethod($string.toString()) $downScaleCode;
+             } catch (java.time.DateTimeException e) {
+                 $parseErrorBranch
+             } catch (java.text.ParseException e) {
+                 $parseErrorBranch
+             }
+             """)
       }
       case TimestampType | TimestampNTZType =>
         val eval1 = left.genCode(ctx)

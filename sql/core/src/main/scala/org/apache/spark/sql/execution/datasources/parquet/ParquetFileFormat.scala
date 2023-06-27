@@ -389,8 +389,8 @@ object ParquetFileFormat extends Logging {
           .recover { case cause: Throwable =>
             logWarning(
               s"""Failed to parse serialized Spark schema in Parquet key-value metadata:
-                 |\t$serializedSchema
-               """.stripMargin,
+                 \t$serializedSchema
+               """,
               cause)
           }
           .map(_.asInstanceOf[StructType])

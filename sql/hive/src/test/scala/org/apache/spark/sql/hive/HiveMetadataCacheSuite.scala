@@ -80,10 +80,10 @@ class HiveMetadataCacheSuite extends QueryTest with SQLTestUtils with TestHiveSi
               .parquet(dir.getAbsolutePath)
 
             spark.sql(s"""
-              |create external table test (id long)
-              |partitioned by (f1 int, f2 int)
-              |stored as parquet
-              |location "${dir.toURI}"""".stripMargin)
+              create external table test (id long)
+              partitioned by (f1 int, f2 int)
+              stored as parquet
+              location "${dir.toURI}"""")
             spark.sql("msck repair table test")
 
             val df = spark.sql("select * from test")

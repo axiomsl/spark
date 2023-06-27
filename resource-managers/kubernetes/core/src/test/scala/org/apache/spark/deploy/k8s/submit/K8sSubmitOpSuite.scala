@@ -155,16 +155,16 @@ class K8sSubmitOpSuite extends SparkFunSuite with BeforeAndAfter {
 
   private def getPodStatus(podName: String, id: String): String = {
     "Application status (driver): " +
-      s"""|${"\n\t"} pod name: $podName
-          |${"\t"} namespace: N/A
-          |${"\t"} labels: spark-app-selector -> spark-app-id, spark-role -> driver
-          |${"\t"} pod uid: driver-pod-$id
-          |${"\t"} creation time: N/A
-          |${"\t"} service account name: test$id
-          |${"\t"} volumes: N/A
-          |${"\t"} node name: testNode$id
-          |${"\t"} start time: N/A
-          |${"\t"} phase: Running
-          |${"\t"} container status: N/A""".stripMargin
+      s"""${"\n\t"} pod name: $podName
+          ${"\t"} namespace: N/A
+          ${"\t"} labels: spark-app-selector -> spark-app-id, spark-role -> driver
+          ${"\t"} pod uid: driver-pod-$id
+          ${"\t"} creation time: N/A
+          ${"\t"} service account name: test$id
+          ${"\t"} volumes: N/A
+          ${"\t"} node name: testNode$id
+          ${"\t"} start time: N/A
+          ${"\t"} phase: Running
+          ${"\t"} container status: N/A"""
   }
 }

@@ -85,9 +85,9 @@ abstract class ParquetSchemaTest extends ParquetTest with SharedSparkSession {
       assert(
         actual === expected,
         s"""Schema mismatch.
-           |Expected schema: ${expected.json}
-           |Actual schema:   ${actual.json}
-         """.stripMargin)
+           Expected schema: ${expected.json}
+           Actual schema:   ${actual.json}
+         """)
 
       if (expectedParquetColumn.isDefined) {
         compareParquetColumn(actualParquetColumn, expectedParquetColumn.get)
@@ -214,10 +214,10 @@ class ParquetSchemaInferenceSuite extends ParquetSchemaTest {
   testSchemaInference[Tuple1[Long]](
     "timestamp nanos",
     """
-      |message root {
-      |  required int64 _1 (TIMESTAMP(NANOS,true));
-      |}
-    """.stripMargin,
+      message root {
+        required int64 _1 (TIMESTAMP(NANOS,true));
+      }
+    """,
     binaryAsString = false,
     int96AsTimestamp = true,
     writeLegacyParquetFormat = true,
@@ -240,15 +240,15 @@ class ParquetSchemaInferenceSuite extends ParquetSchemaTest {
   testSchemaInference[(Boolean, Int, Long, Float, Double, Array[Byte])](
     "basic types",
     """
-      |message root {
-      |  required boolean _1;
-      |  required int32   _2;
-      |  required int64   _3;
-      |  required float   _4;
-      |  required double  _5;
-      |  optional binary  _6;
-      |}
-    """.stripMargin,
+      message root {
+        required boolean _1;
+        required int32   _2;
+        required int64   _3;
+        required float   _4;
+        required double  _5;
+        optional binary  _6;
+      }
+    """,
     binaryAsString = false,
     int96AsTimestamp = true,
     writeLegacyParquetFormat = true,
@@ -280,14 +280,14 @@ class ParquetSchemaInferenceSuite extends ParquetSchemaTest {
   testSchemaInference[(Byte, Short, Int, Long, java.sql.Date)](
     "logical integral types",
     """
-      |message root {
-      |  required int32 _1 (INT_8);
-      |  required int32 _2 (INT_16);
-      |  required int32 _3 (INT_32);
-      |  required int64 _4 (INT_64);
-      |  optional int32 _5 (DATE);
-      |}
-    """.stripMargin,
+      message root {
+        required int32 _1 (INT_8);
+        required int32 _2 (INT_16);
+        required int32 _3 (INT_32);
+        required int64 _4 (INT_64);
+        optional int32 _5 (DATE);
+      }
+    """,
     binaryAsString = true,
     int96AsTimestamp = true,
     writeLegacyParquetFormat = true,
@@ -316,10 +316,10 @@ class ParquetSchemaInferenceSuite extends ParquetSchemaTest {
   testSchemaInference[Tuple1[String]](
     "string",
     """
-      |message root {
-      |  optional binary _1 (UTF8);
-      |}
-    """.stripMargin,
+      message root {
+        optional binary _1 (UTF8);
+      }
+    """,
     binaryAsString = true,
     int96AsTimestamp = true,
     writeLegacyParquetFormat = true,
@@ -340,10 +340,10 @@ class ParquetSchemaInferenceSuite extends ParquetSchemaTest {
   testSchemaInference[Tuple1[String]](
     "binary enum as string",
     """
-      |message root {
-      |  optional binary _1 (ENUM);
-      |}
-    """.stripMargin,
+      message root {
+        optional binary _1 (ENUM);
+      }
+    """,
     binaryAsString = true,
     int96AsTimestamp = true,
     writeLegacyParquetFormat = true,
@@ -364,12 +364,12 @@ class ParquetSchemaInferenceSuite extends ParquetSchemaTest {
   testSchemaInference[Tuple1[Seq[Int]]](
     "non-nullable array - non-standard",
     """
-      |message root {
-      |  optional group _1 (LIST) {
-      |    repeated int32 array;
-      |  }
-      |}
-    """.stripMargin,
+      message root {
+        optional group _1 (LIST) {
+          repeated int32 array;
+        }
+      }
+    """,
     binaryAsString = true,
     int96AsTimestamp = true,
     writeLegacyParquetFormat = true,
@@ -398,14 +398,14 @@ class ParquetSchemaInferenceSuite extends ParquetSchemaTest {
   testSchemaInference[Tuple1[Seq[Int]]](
     "non-nullable array - standard",
     """
-      |message root {
-      |  optional group _1 (LIST) {
-      |    repeated group list {
-      |      required int32 element;
-      |    }
-      |  }
-      |}
-    """.stripMargin,
+      message root {
+        optional group _1 (LIST) {
+          repeated group list {
+            required int32 element;
+          }
+        }
+      }
+    """,
     binaryAsString = true,
     int96AsTimestamp = true,
     writeLegacyParquetFormat = false,
@@ -434,14 +434,14 @@ class ParquetSchemaInferenceSuite extends ParquetSchemaTest {
   testSchemaInference[Tuple1[Seq[Integer]]](
     "nullable array - non-standard",
     """
-      |message root {
-      |  optional group _1 (LIST) {
-      |    repeated group bag {
-      |      optional int32 array;
-      |    }
-      |  }
-      |}
-    """.stripMargin,
+      message root {
+        optional group _1 (LIST) {
+          repeated group bag {
+            optional int32 array;
+          }
+        }
+      }
+    """,
     binaryAsString = true,
     int96AsTimestamp = true,
     writeLegacyParquetFormat = true,
@@ -470,14 +470,14 @@ class ParquetSchemaInferenceSuite extends ParquetSchemaTest {
   testSchemaInference[Tuple1[Seq[Integer]]](
     "nullable array - standard",
     """
-      |message root {
-      |  optional group _1 (LIST) {
-      |    repeated group list {
-      |      optional int32 element;
-      |    }
-      |  }
-      |}
-    """.stripMargin,
+      message root {
+        optional group _1 (LIST) {
+          repeated group list {
+            optional int32 element;
+          }
+        }
+      }
+    """,
     binaryAsString = true,
     int96AsTimestamp = true,
     writeLegacyParquetFormat = false,
@@ -506,15 +506,15 @@ class ParquetSchemaInferenceSuite extends ParquetSchemaTest {
   testSchemaInference[Tuple1[Map[Int, String]]](
     "map - standard",
     """
-      |message root {
-      |  optional group _1 (MAP) {
-      |    repeated group key_value {
-      |      required int32 key;
-      |      optional binary value (UTF8);
-      |    }
-      |  }
-      |}
-    """.stripMargin,
+      message root {
+        optional group _1 (MAP) {
+          repeated group key_value {
+            required int32 key;
+            optional binary value (UTF8);
+          }
+        }
+      }
+    """,
     binaryAsString = true,
     int96AsTimestamp = true,
     writeLegacyParquetFormat = false,
@@ -548,15 +548,15 @@ class ParquetSchemaInferenceSuite extends ParquetSchemaTest {
   testSchemaInference[Tuple1[Map[Int, String]]](
     "map - non-standard",
     """
-      |message root {
-      |  optional group _1 (MAP) {
-      |    repeated group key_value (MAP_KEY_VALUE) {
-      |      required int32 key;
-      |      optional binary value (UTF8);
-      |    }
-      |  }
-      |}
-    """.stripMargin,
+      message root {
+        optional group _1 (MAP) {
+          repeated group key_value (MAP_KEY_VALUE) {
+            required int32 key;
+            optional binary value (UTF8);
+          }
+        }
+      }
+    """,
     binaryAsString = true,
     int96AsTimestamp = true,
     writeLegacyParquetFormat = true,
@@ -590,18 +590,18 @@ class ParquetSchemaInferenceSuite extends ParquetSchemaTest {
   testSchemaInference[Tuple1[Map[(String, String), String]]](
     "map - group type key",
     """
-      |message root {
-      |  optional group _1 (MAP) {
-      |    repeated group key_value (MAP_KEY_VALUE) {
-      |      required group key {
-      |        optional binary _1 (UTF8);
-      |        optional binary _2 (UTF8);
-      |      }
-      |      optional binary value (UTF8);
-      |    }
-      |  }
-      |}
-    """.stripMargin,
+      message root {
+        optional group _1 (MAP) {
+          repeated group key_value (MAP_KEY_VALUE) {
+            required group key {
+              optional binary _1 (UTF8);
+              optional binary _2 (UTF8);
+            }
+            optional binary value (UTF8);
+          }
+        }
+      }
+    """,
     binaryAsString = true,
     int96AsTimestamp = true,
     writeLegacyParquetFormat = true,
@@ -652,13 +652,13 @@ class ParquetSchemaInferenceSuite extends ParquetSchemaTest {
   testSchemaInference[Tuple1[(Int, String)]](
     "struct",
     """
-      |message root {
-      |  optional group _1 {
-      |    required int32 _1;
-      |    optional binary _2 (UTF8);
-      |  }
-      |}
-    """.stripMargin,
+      message root {
+        optional group _1 {
+          required int32 _1;
+          optional binary _2 (UTF8);
+        }
+      }
+    """,
     binaryAsString = true,
     int96AsTimestamp = true,
     writeLegacyParquetFormat = false,
@@ -695,25 +695,25 @@ class ParquetSchemaInferenceSuite extends ParquetSchemaTest {
   testSchemaInference[Tuple1[Map[Int, (String, Seq[(Int, Double)])]]](
     "deeply nested type - non-standard",
     """
-      |message root {
-      |  optional group _1 (MAP_KEY_VALUE) {
-      |    repeated group key_value {
-      |      required int32 key;
-      |      optional group value {
-      |        optional binary _1 (UTF8);
-      |        optional group _2 (LIST) {
-      |          repeated group bag {
-      |            optional group array {
-      |              required int32 _1;
-      |              required double _2;
-      |            }
-      |          }
-      |        }
-      |      }
-      |    }
-      |  }
-      |}
-    """.stripMargin,
+      message root {
+        optional group _1 (MAP_KEY_VALUE) {
+          repeated group key_value {
+            required int32 key;
+            optional group value {
+              optional binary _1 (UTF8);
+              optional group _2 (LIST) {
+                repeated group bag {
+                  optional group array {
+                    required int32 _1;
+                    required double _2;
+                  }
+                }
+              }
+            }
+          }
+        }
+      }
+    """,
     binaryAsString = true,
     int96AsTimestamp = true,
     writeLegacyParquetFormat = true,
@@ -803,25 +803,25 @@ class ParquetSchemaInferenceSuite extends ParquetSchemaTest {
   testSchemaInference[Tuple1[Map[Int, (String, Seq[(Int, Double)])]]](
     "deeply nested type - standard",
     """
-      |message root {
-      |  optional group _1 (MAP) {
-      |    repeated group key_value {
-      |      required int32 key;
-      |      optional group value {
-      |        optional binary _1 (UTF8);
-      |        optional group _2 (LIST) {
-      |          repeated group list {
-      |            optional group element {
-      |              required int32 _1;
-      |              required double _2;
-      |            }
-      |          }
-      |        }
-      |      }
-      |    }
-      |  }
-      |}
-    """.stripMargin,
+      message root {
+        optional group _1 (MAP) {
+          repeated group key_value {
+            required int32 key;
+            optional group value {
+              optional binary _1 (UTF8);
+              optional group _2 (LIST) {
+                repeated group list {
+                  optional group element {
+                    required int32 _1;
+                    required double _2;
+                  }
+                }
+              }
+            }
+          }
+        }
+      }
+    """,
     binaryAsString = true,
     int96AsTimestamp = true,
     writeLegacyParquetFormat = false,
@@ -910,16 +910,16 @@ class ParquetSchemaInferenceSuite extends ParquetSchemaTest {
   testSchemaInference[(Option[Int], Map[Int, Option[Double]])](
     "optional types",
     """
-      |message root {
-      |  optional int32 _1;
-      |  optional group _2 (MAP) {
-      |    repeated group key_value {
-      |      required int32 key;
-      |      optional double value;
-      |    }
-      |  }
-      |}
-    """.stripMargin,
+      message root {
+        optional int32 _1;
+        optional group _2 (MAP) {
+          repeated group key_value {
+            required int32 key;
+            optional double value;
+          }
+        }
+      }
+    """,
     binaryAsString = true,
     int96AsTimestamp = true,
     writeLegacyParquetFormat = false,
@@ -1097,13 +1097,13 @@ class ParquetSchemaSuite extends ParquetSchemaTest {
         ArrayType(IntegerType, containsNull = true),
         nullable = true))),
     """message root {
-      |  optional group f1 (LIST) {
-      |    repeated group list {
-      |      optional int32 element;
-      |    }
-      |  }
-      |}
-    """.stripMargin,
+        optional group f1 (LIST) {
+          repeated group list {
+            optional int32 element;
+          }
+        }
+      }
+    """,
     binaryAsString = true,
     int96AsTimestamp = true,
     expectedParquetColumn = Some(ParquetColumn(
@@ -1136,13 +1136,13 @@ class ParquetSchemaSuite extends ParquetSchemaTest {
         ArrayType(IntegerType, containsNull = true),
         nullable = true))),
     """message root {
-      |  optional group f1 (LIST) {
-      |    repeated group element {
-      |      optional int32 num;
-      |    }
-      |  }
-      |}
-    """.stripMargin,
+        optional group f1 (LIST) {
+          repeated group element {
+            optional int32 num;
+          }
+        }
+      }
+    """,
     binaryAsString = true,
     int96AsTimestamp = true,
     expectedParquetColumn = Some(ParquetColumn(
@@ -1172,13 +1172,13 @@ class ParquetSchemaSuite extends ParquetSchemaTest {
     StructType(Seq(
       StructField("f1", ArrayType(IntegerType, containsNull = false), nullable = true))),
     """message root {
-      |  optional group f1 (LIST) {
-      |    repeated group list {
-      |      required int32 element;
-      |    }
-      |  }
-      |}
-    """.stripMargin,
+        optional group f1 (LIST) {
+          repeated group list {
+            required int32 element;
+          }
+        }
+      }
+    """,
     binaryAsString = true,
     int96AsTimestamp = true,
     expectedParquetColumn = Some(ParquetColumn(
@@ -1208,13 +1208,13 @@ class ParquetSchemaSuite extends ParquetSchemaTest {
     StructType(Seq(
       StructField("f1", ArrayType(IntegerType, containsNull = false), nullable = true))),
     """message root {
-      |  optional group f1 (LIST) {
-      |    repeated group element {
-      |      required int32 num;
-      |    }
-      |  }
-      |}
-    """.stripMargin,
+        optional group f1 (LIST) {
+          repeated group element {
+            required int32 num;
+          }
+        }
+      }
+    """,
     binaryAsString = true,
     int96AsTimestamp = true,
     expectedParquetColumn = Some(ParquetColumn(
@@ -1244,11 +1244,11 @@ class ParquetSchemaSuite extends ParquetSchemaTest {
     StructType(Seq(
       StructField("f1", ArrayType(IntegerType, containsNull = false), nullable = true))),
     """message root {
-      |  optional group f1 (LIST) {
-      |    repeated int32 element;
-      |  }
-      |}
-    """.stripMargin,
+        optional group f1 (LIST) {
+          repeated int32 element;
+        }
+      }
+    """,
     binaryAsString = true,
     int96AsTimestamp = true,
     expectedParquetColumn = Some(ParquetColumn(
@@ -1285,14 +1285,14 @@ class ParquetSchemaSuite extends ParquetSchemaTest {
           containsNull = false),
         nullable = true))),
     """message root {
-      |  optional group f1 (LIST) {
-      |    repeated group element {
-      |      required binary str (UTF8);
-      |      required int32 num;
-      |    }
-      |  }
-      |}
-    """.stripMargin,
+        optional group f1 (LIST) {
+          repeated group element {
+            required binary str (UTF8);
+            required int32 num;
+          }
+        }
+      }
+    """,
     binaryAsString = true,
     int96AsTimestamp = true,
     expectedParquetColumn = Some(ParquetColumn(
@@ -1348,13 +1348,13 @@ class ParquetSchemaSuite extends ParquetSchemaTest {
           containsNull = false),
         nullable = true))),
     """message root {
-      |  optional group f1 (LIST) {
-      |    repeated group array {
-      |      required binary str (UTF8);
-      |    }
-      |  }
-      |}
-    """.stripMargin,
+        optional group f1 (LIST) {
+          repeated group array {
+            required binary str (UTF8);
+          }
+        }
+      }
+    """,
     binaryAsString = true,
     int96AsTimestamp = true,
     expectedParquetColumn = Some(ParquetColumn(
@@ -1406,13 +1406,13 @@ class ParquetSchemaSuite extends ParquetSchemaTest {
           containsNull = false),
         nullable = true))),
     """message root {
-      |  optional group f1 (LIST) {
-      |    repeated group f1_tuple {
-      |      required binary str (UTF8);
-      |    }
-      |  }
-      |}
-    """.stripMargin,
+        optional group f1 (LIST) {
+          repeated group f1_tuple {
+            required binary str (UTF8);
+          }
+        }
+      }
+    """,
     binaryAsString = true,
     int96AsTimestamp = true,
     expectedParquetColumn = Some(ParquetColumn(
@@ -1459,9 +1459,9 @@ class ParquetSchemaSuite extends ParquetSchemaTest {
     new StructType()
       .add("f1", ArrayType(IntegerType, containsNull = false), nullable = false),
     """message root {
-      |  repeated int32 f1;
-      |}
-    """.stripMargin,
+        repeated int32 f1;
+      }
+    """,
     binaryAsString = true,
     int96AsTimestamp = true,
     expectedParquetColumn = Some(ParquetColumn(
@@ -1499,12 +1499,12 @@ class ParquetSchemaSuite extends ParquetSchemaTest {
         .add("f1", ArrayType(elementType, containsNull = false), nullable = false)
     },
     """message root {
-      |  repeated group f1 {
-      |    optional binary c1 (UTF8);
-      |    required int32 c2;
-      |  }
-      |}
-    """.stripMargin,
+        repeated group f1 {
+          optional binary c1 (UTF8);
+          required int32 c2;
+        }
+      }
+    """,
     binaryAsString = true,
     int96AsTimestamp = true,
     expectedParquetColumn = Some(ParquetColumn(
@@ -1562,13 +1562,13 @@ class ParquetSchemaSuite extends ParquetSchemaTest {
         ArrayType(IntegerType, containsNull = true),
         nullable = true))),
     """message root {
-      |  optional group f1 (LIST) {
-      |    repeated group list {
-      |      optional int32 element;
-      |    }
-      |  }
-      |}
-    """.stripMargin,
+        optional group f1 (LIST) {
+          repeated group list {
+            optional int32 element;
+          }
+        }
+      }
+    """,
     writeLegacyParquetFormat = false)
 
   testCatalystToParquet(
@@ -1579,13 +1579,13 @@ class ParquetSchemaSuite extends ParquetSchemaTest {
         ArrayType(IntegerType, containsNull = true),
         nullable = true))),
     """message root {
-      |  optional group f1 (LIST) {
-      |    repeated group bag {
-      |      optional int32 array;
-      |    }
-      |  }
-      |}
-    """.stripMargin,
+        optional group f1 (LIST) {
+          repeated group bag {
+            optional int32 array;
+          }
+        }
+      }
+    """,
     writeLegacyParquetFormat = true)
 
   testCatalystToParquet(
@@ -1596,13 +1596,13 @@ class ParquetSchemaSuite extends ParquetSchemaTest {
         ArrayType(IntegerType, containsNull = false),
         nullable = true))),
     """message root {
-      |  optional group f1 (LIST) {
-      |    repeated group list {
-      |      required int32 element;
-      |    }
-      |  }
-      |}
-    """.stripMargin,
+        optional group f1 (LIST) {
+          repeated group list {
+            required int32 element;
+          }
+        }
+      }
+    """,
     writeLegacyParquetFormat = false)
 
   testCatalystToParquet(
@@ -1613,11 +1613,11 @@ class ParquetSchemaSuite extends ParquetSchemaTest {
         ArrayType(IntegerType, containsNull = false),
         nullable = true))),
     """message root {
-      |  optional group f1 (LIST) {
-      |    repeated int32 array;
-      |  }
-      |}
-    """.stripMargin,
+        optional group f1 (LIST) {
+          repeated int32 array;
+        }
+      }
+    """,
     writeLegacyParquetFormat = true)
 
   // ====================================================
@@ -1632,14 +1632,14 @@ class ParquetSchemaSuite extends ParquetSchemaTest {
         MapType(IntegerType, StringType, valueContainsNull = false),
         nullable = true))),
     """message root {
-      |  optional group f1 (MAP) {
-      |    repeated group key_value {
-      |      required int32 key;
-      |      required binary value (UTF8);
-      |    }
-      |  }
-      |}
-    """.stripMargin,
+        optional group f1 (MAP) {
+          repeated group key_value {
+            required int32 key;
+            required binary value (UTF8);
+          }
+        }
+      }
+    """,
     binaryAsString = true,
     int96AsTimestamp = true,
     expectedParquetColumn = Some(ParquetColumn(
@@ -1677,14 +1677,14 @@ class ParquetSchemaSuite extends ParquetSchemaTest {
         MapType(IntegerType, StringType, valueContainsNull = false),
         nullable = true))),
     """message root {
-      |  optional group f1 (MAP_KEY_VALUE) {
-      |    repeated group key_value {
-      |      required int32 num;
-      |      required binary str (UTF8);
-      |    }
-      |  }
-      |}
-    """.stripMargin,
+        optional group f1 (MAP_KEY_VALUE) {
+          repeated group key_value {
+            required int32 num;
+            required binary str (UTF8);
+          }
+        }
+      }
+    """,
     binaryAsString = true,
     int96AsTimestamp = true,
     expectedParquetColumn = Some(ParquetColumn(
@@ -1722,14 +1722,14 @@ class ParquetSchemaSuite extends ParquetSchemaTest {
         MapType(IntegerType, StringType, valueContainsNull = false),
         nullable = true))),
     """message root {
-      |  optional group f1 (MAP) {
-      |    repeated group key_value (MAP_KEY_VALUE) {
-      |      required int32 key;
-      |      required binary value (UTF8);
-      |    }
-      |  }
-      |}
-    """.stripMargin,
+        optional group f1 (MAP) {
+          repeated group key_value (MAP_KEY_VALUE) {
+            required int32 key;
+            required binary value (UTF8);
+          }
+        }
+      }
+    """,
     binaryAsString = true,
     int96AsTimestamp = true,
     expectedParquetColumn = Some(ParquetColumn(
@@ -1767,14 +1767,14 @@ class ParquetSchemaSuite extends ParquetSchemaTest {
         MapType(IntegerType, StringType, valueContainsNull = true),
         nullable = true))),
     """message root {
-      |  optional group f1 (MAP) {
-      |    repeated group key_value {
-      |      required int32 key;
-      |      optional binary value (UTF8);
-      |    }
-      |  }
-      |}
-    """.stripMargin,
+        optional group f1 (MAP) {
+          repeated group key_value {
+            required int32 key;
+            optional binary value (UTF8);
+          }
+        }
+      }
+    """,
     binaryAsString = true,
     int96AsTimestamp = true,
     expectedParquetColumn = Some(ParquetColumn(
@@ -1812,14 +1812,14 @@ class ParquetSchemaSuite extends ParquetSchemaTest {
         MapType(IntegerType, StringType, valueContainsNull = true),
         nullable = true))),
     """message root {
-      |  optional group f1 (MAP_KEY_VALUE) {
-      |    repeated group key_value {
-      |      required int32 num;
-      |      optional binary str (UTF8);
-      |    }
-      |  }
-      |}
-    """.stripMargin,
+        optional group f1 (MAP_KEY_VALUE) {
+          repeated group key_value {
+            required int32 num;
+            optional binary str (UTF8);
+          }
+        }
+      }
+    """,
     binaryAsString = true,
     int96AsTimestamp = true,
     expectedParquetColumn = Some(ParquetColumn(
@@ -1857,14 +1857,14 @@ class ParquetSchemaSuite extends ParquetSchemaTest {
         MapType(IntegerType, StringType, valueContainsNull = true),
         nullable = true))),
     """message root {
-      |  optional group f1 (MAP) {
-      |    repeated group key_value (MAP_KEY_VALUE) {
-      |      required int32 key;
-      |      optional binary value (UTF8);
-      |    }
-      |  }
-      |}
-    """.stripMargin,
+        optional group f1 (MAP) {
+          repeated group key_value (MAP_KEY_VALUE) {
+            required int32 key;
+            optional binary value (UTF8);
+          }
+        }
+      }
+    """,
     binaryAsString = true,
     int96AsTimestamp = true,
     expectedParquetColumn = Some(ParquetColumn(
@@ -1906,14 +1906,14 @@ class ParquetSchemaSuite extends ParquetSchemaTest {
         MapType(IntegerType, StringType, valueContainsNull = false),
         nullable = true))),
     """message root {
-      |  optional group f1 (MAP) {
-      |    repeated group key_value {
-      |      required int32 key;
-      |      required binary value (UTF8);
-      |    }
-      |  }
-      |}
-    """.stripMargin,
+        optional group f1 (MAP) {
+          repeated group key_value {
+            required int32 key;
+            required binary value (UTF8);
+          }
+        }
+      }
+    """,
     writeLegacyParquetFormat = false)
 
   testCatalystToParquet(
@@ -1924,14 +1924,14 @@ class ParquetSchemaSuite extends ParquetSchemaTest {
         MapType(IntegerType, StringType, valueContainsNull = false),
         nullable = true))),
     """message root {
-      |  optional group f1 (MAP) {
-      |    repeated group key_value (MAP_KEY_VALUE) {
-      |      required int32 key;
-      |      required binary value (UTF8);
-      |    }
-      |  }
-      |}
-    """.stripMargin,
+        optional group f1 (MAP) {
+          repeated group key_value (MAP_KEY_VALUE) {
+            required int32 key;
+            required binary value (UTF8);
+          }
+        }
+      }
+    """,
     writeLegacyParquetFormat = true)
 
   testCatalystToParquet(
@@ -1942,14 +1942,14 @@ class ParquetSchemaSuite extends ParquetSchemaTest {
         MapType(IntegerType, StringType, valueContainsNull = true),
         nullable = true))),
     """message root {
-      |  optional group f1 (MAP) {
-      |    repeated group key_value {
-      |      required int32 key;
-      |      optional binary value (UTF8);
-      |    }
-      |  }
-      |}
-    """.stripMargin,
+        optional group f1 (MAP) {
+          repeated group key_value {
+            required int32 key;
+            optional binary value (UTF8);
+          }
+        }
+      }
+    """,
     writeLegacyParquetFormat = false)
 
   testCatalystToParquet(
@@ -1960,23 +1960,23 @@ class ParquetSchemaSuite extends ParquetSchemaTest {
         MapType(IntegerType, StringType, valueContainsNull = true),
         nullable = true))),
     """message root {
-      |  optional group f1 (MAP) {
-      |    repeated group key_value (MAP_KEY_VALUE) {
-      |      required int32 key;
-      |      optional binary value (UTF8);
-      |    }
-      |  }
-      |}
-    """.stripMargin,
+        optional group f1 (MAP) {
+          repeated group key_value (MAP_KEY_VALUE) {
+            required int32 key;
+            optional binary value (UTF8);
+          }
+        }
+      }
+    """,
     writeLegacyParquetFormat = true)
 
   testParquetToCatalyst(
     "SPARK-36935: test case insensitive when converting Parquet schema",
     StructType(Seq(StructField("F1", ShortType))),
     """message root {
-      |  optional int32 f1;
-      |}
-    """.stripMargin,
+        optional int32 f1;
+      }
+    """,
     binaryAsString = true,
     int96AsTimestamp = true,
     sparkReadSchema = Some(StructType(Seq(StructField("F1", ShortType)))),
@@ -1997,9 +1997,9 @@ class ParquetSchemaSuite extends ParquetSchemaTest {
     "SPARK-36935: test case sensitive when converting Parquet schema",
     StructType(Seq(StructField("f1", IntegerType))),
     """message root {
-      |  optional int32 f1;
-      |}
-    """.stripMargin,
+        optional int32 f1;
+      }
+    """,
     binaryAsString = true,
     int96AsTimestamp = true,
     caseSensitive = true,
@@ -2031,24 +2031,24 @@ class ParquetSchemaSuite extends ParquetSchemaTest {
                 StructField("H2", FloatType, nullable = false))))))),
           valueContainsNull = true)))),
     """message root {
-      |  optional group f1 (MAP_KEY_VALUE) {
-      |    repeated group key_value {
-      |      required int32 key;
-      |      optional group value {
-      |        optional binary g1 (UTF8);
-      |        optional group g2 (LIST) {
-      |          repeated group list {
-      |            optional group element {
-      |              required int32 h1;
-      |              required double h2;
-      |            }
-      |          }
-      |        }
-      |      }
-      |    }
-      |  }
-      |}
-    """.stripMargin,
+        optional group f1 (MAP_KEY_VALUE) {
+          repeated group key_value {
+            required int32 key;
+            optional group value {
+              optional binary g1 (UTF8);
+              optional group g2 (LIST) {
+                repeated group list {
+                  optional group element {
+                    required int32 h1;
+                    required double h2;
+                  }
+                }
+              }
+            }
+          }
+        }
+      }
+    """,
     binaryAsString = true,
     int96AsTimestamp = true,
     sparkReadSchema =
@@ -2153,9 +2153,9 @@ class ParquetSchemaSuite extends ParquetSchemaTest {
     "DECIMAL(1, 0) - standard",
     StructType(Seq(StructField("f1", DecimalType(1, 0)))),
     """message root {
-      |  optional int32 f1 (DECIMAL(1, 0));
-      |}
-    """.stripMargin,
+        optional int32 f1 (DECIMAL(1, 0));
+      }
+    """,
     binaryAsString = true,
     int96AsTimestamp = true,
     writeLegacyParquetFormat = false)
@@ -2164,9 +2164,9 @@ class ParquetSchemaSuite extends ParquetSchemaTest {
     "DECIMAL(8, 3) - standard",
     StructType(Seq(StructField("f1", DecimalType(8, 3)))),
     """message root {
-      |  optional int32 f1 (DECIMAL(8, 3));
-      |}
-    """.stripMargin,
+        optional int32 f1 (DECIMAL(8, 3));
+      }
+    """,
     binaryAsString = true,
     int96AsTimestamp = true,
     writeLegacyParquetFormat = false)
@@ -2175,9 +2175,9 @@ class ParquetSchemaSuite extends ParquetSchemaTest {
     "DECIMAL(9, 3) - standard",
     StructType(Seq(StructField("f1", DecimalType(9, 3)))),
     """message root {
-      |  optional int32 f1 (DECIMAL(9, 3));
-      |}
-    """.stripMargin,
+        optional int32 f1 (DECIMAL(9, 3));
+      }
+    """,
     binaryAsString = true,
     int96AsTimestamp = true,
     writeLegacyParquetFormat = false)
@@ -2186,9 +2186,9 @@ class ParquetSchemaSuite extends ParquetSchemaTest {
     "DECIMAL(18, 3) - standard",
     StructType(Seq(StructField("f1", DecimalType(18, 3)))),
     """message root {
-      |  optional int64 f1 (DECIMAL(18, 3));
-      |}
-    """.stripMargin,
+        optional int64 f1 (DECIMAL(18, 3));
+      }
+    """,
     binaryAsString = true,
     int96AsTimestamp = true,
     writeLegacyParquetFormat = false)
@@ -2197,9 +2197,9 @@ class ParquetSchemaSuite extends ParquetSchemaTest {
     "DECIMAL(19, 3) - standard",
     StructType(Seq(StructField("f1", DecimalType(19, 3)))),
     """message root {
-      |  optional fixed_len_byte_array(9) f1 (DECIMAL(19, 3));
-      |}
-    """.stripMargin,
+        optional fixed_len_byte_array(9) f1 (DECIMAL(19, 3));
+      }
+    """,
     binaryAsString = true,
     int96AsTimestamp = true,
     writeLegacyParquetFormat = false)
@@ -2208,9 +2208,9 @@ class ParquetSchemaSuite extends ParquetSchemaTest {
     "DECIMAL(1, 0) - prior to 1.4.x",
     StructType(Seq(StructField("f1", DecimalType(1, 0)))),
     """message root {
-      |  optional fixed_len_byte_array(1) f1 (DECIMAL(1, 0));
-      |}
-    """.stripMargin,
+        optional fixed_len_byte_array(1) f1 (DECIMAL(1, 0));
+      }
+    """,
     binaryAsString = true,
     int96AsTimestamp = true,
     writeLegacyParquetFormat = true)
@@ -2219,9 +2219,9 @@ class ParquetSchemaSuite extends ParquetSchemaTest {
     "DECIMAL(8, 3) - prior to 1.4.x",
     StructType(Seq(StructField("f1", DecimalType(8, 3)))),
     """message root {
-      |  optional fixed_len_byte_array(4) f1 (DECIMAL(8, 3));
-      |}
-    """.stripMargin,
+        optional fixed_len_byte_array(4) f1 (DECIMAL(8, 3));
+      }
+    """,
     binaryAsString = true,
     int96AsTimestamp = true,
     writeLegacyParquetFormat = true)
@@ -2230,9 +2230,9 @@ class ParquetSchemaSuite extends ParquetSchemaTest {
     "DECIMAL(9, 3) - prior to 1.4.x",
     StructType(Seq(StructField("f1", DecimalType(9, 3)))),
     """message root {
-      |  optional fixed_len_byte_array(5) f1 (DECIMAL(9, 3));
-      |}
-    """.stripMargin,
+        optional fixed_len_byte_array(5) f1 (DECIMAL(9, 3));
+      }
+    """,
     binaryAsString = true,
     int96AsTimestamp = true,
     writeLegacyParquetFormat = true)
@@ -2241,9 +2241,9 @@ class ParquetSchemaSuite extends ParquetSchemaTest {
     "DECIMAL(18, 3) - prior to 1.4.x",
     StructType(Seq(StructField("f1", DecimalType(18, 3)))),
     """message root {
-      |  optional fixed_len_byte_array(8) f1 (DECIMAL(18, 3));
-      |}
-    """.stripMargin,
+        optional fixed_len_byte_array(8) f1 (DECIMAL(18, 3));
+      }
+    """,
     binaryAsString = true,
     int96AsTimestamp = true,
     writeLegacyParquetFormat = true)
@@ -2252,9 +2252,9 @@ class ParquetSchemaSuite extends ParquetSchemaTest {
     "Timestamp written and read as INT64 with TIMESTAMP_MILLIS",
     StructType(Seq(StructField("f1", TimestampType))),
     """message root {
-      |  optional INT64 f1 (TIMESTAMP_MILLIS);
-      |}
-    """.stripMargin,
+        optional INT64 f1 (TIMESTAMP_MILLIS);
+      }
+    """,
     binaryAsString = true,
     int96AsTimestamp = false,
     writeLegacyParquetFormat = true,
@@ -2264,9 +2264,9 @@ class ParquetSchemaSuite extends ParquetSchemaTest {
     "Timestamp written and read as INT64 with TIMESTAMP_MICROS",
     StructType(Seq(StructField("f1", TimestampType))),
     """message root {
-      |  optional INT64 f1 (TIMESTAMP_MICROS);
-      |}
-    """.stripMargin,
+        optional INT64 f1 (TIMESTAMP_MICROS);
+      }
+    """,
     binaryAsString = true,
     int96AsTimestamp = false,
     writeLegacyParquetFormat = true,
@@ -2276,18 +2276,18 @@ class ParquetSchemaSuite extends ParquetSchemaTest {
     "SPARK-36825: Year-month interval written and read as INT32",
     StructType(Seq(StructField("f1", YearMonthIntervalType()))),
     """message root {
-      |  optional INT32 f1;
-      |}
-    """.stripMargin,
+        optional INT32 f1;
+      }
+    """,
     writeLegacyParquetFormat = false)
 
   testCatalystToParquet(
     "SPARK-36825: Day-time interval written and read as INT64",
     StructType(Seq(StructField("f1", DayTimeIntervalType()))),
     """message root {
-      |  optional INT64 f1;
-      |}
-    """.stripMargin,
+        optional INT64 f1;
+      }
+    """,
     writeLegacyParquetFormat = false)
 
   // The behavior of reading/writing TimestampNTZ type is independent of the configurations
@@ -2299,9 +2299,9 @@ class ParquetSchemaSuite extends ParquetSchemaTest {
           s"int96AsTimestamp as $int96AsTimestamp, outputTimestampType: $outputTsType",
         StructType(Seq(StructField("f1", TimestampNTZType))),
         """message root {
-          |  optional INT64 f1 (TIMESTAMP(MICROS,false));
-          |}
-        """.stripMargin,
+            optional INT64 f1 (TIMESTAMP(MICROS,false));
+          }
+        """,
         binaryAsString = true,
         int96AsTimestamp = int96AsTimestamp,
         writeLegacyParquetFormat = true,
@@ -2313,9 +2313,9 @@ class ParquetSchemaSuite extends ParquetSchemaTest {
         s"int96AsTimestamp as $int96AsTimestamp",
       StructType(Seq(StructField("f1", TimestampNTZType))),
       """message root {
-        |  optional INT64 f1 (TIMESTAMP(MILLIS,false));
-        |}
-        """.stripMargin,
+          optional INT64 f1 (TIMESTAMP(MILLIS,false));
+        }
+        """,
       binaryAsString = true,
       int96AsTimestamp = int96AsTimestamp,
       inferTimestampNTZ = true)
@@ -2331,17 +2331,17 @@ class ParquetSchemaSuite extends ParquetSchemaTest {
       )
     ),
     """message spark_schema {
-      |  optional int64 f1 (TIMESTAMP(MICROS,false));
-      |  optional group f2 (LIST) {
-      |    repeated group list {
-      |      optional int64 element (TIMESTAMP(MICROS,false));
-      |    }
-      |  }
-      |  optional group f3 {
-      |    optional int64 f4 (TIMESTAMP(MICROS,false));
-      |  }
-      |}
-      """.stripMargin,
+        optional int64 f1 (TIMESTAMP(MICROS,false));
+        optional group f2 (LIST) {
+          repeated group list {
+            optional int64 element (TIMESTAMP(MICROS,false));
+          }
+        }
+        optional group f3 {
+          optional int64 f4 (TIMESTAMP(MICROS,false));
+        }
+      }
+      """,
     writeLegacyParquetFormat = false,
     inferTimestampNTZ = true)
 
@@ -2359,17 +2359,17 @@ class ParquetSchemaSuite extends ParquetSchemaTest {
         )
       ),
       """message spark_schema {
-        |  optional int64 f1 (TIMESTAMP(MICROS,false));
-        |  optional group f2 (LIST) {
-        |    repeated group list {
-        |      optional int64 element (TIMESTAMP(MICROS,false));
-        |    }
-        |  }
-        |  optional group f3 {
-        |    optional int64 f4 (TIMESTAMP(MICROS,false));
-        |  }
-        |}
-        """.stripMargin,
+          optional int64 f1 (TIMESTAMP(MICROS,false));
+          optional group f2 (LIST) {
+            repeated group list {
+              optional int64 element (TIMESTAMP(MICROS,false));
+            }
+          }
+          optional group f3 {
+            optional int64 f4 (TIMESTAMP(MICROS,false));
+          }
+        }
+        """,
       binaryAsString = true,
       int96AsTimestamp = false,
       inferTimestampNTZ = inferTimestampNTZ)
@@ -2404,10 +2404,10 @@ class ParquetSchemaSuite extends ParquetSchemaTest {
       } catch { case cause: Throwable =>
         fail(
           s"""Expected clipped schema:
-             |$expectedSchema
-             |Actual clipped schema:
-             |$actual
-           """.stripMargin,
+             $expectedSchema
+             Actual clipped schema:
+             $actual
+           """,
           cause)
       }
     }
@@ -2418,12 +2418,12 @@ class ParquetSchemaSuite extends ParquetSchemaTest {
 
     parquetSchema =
       """message root {
-        |  required group f0 {
-        |    optional int32 f00;
-        |    optional int32 f01;
-        |  }
-        |}
-      """.stripMargin,
+          required group f0 {
+            optional int32 f00;
+            optional int32 f01;
+          }
+        }
+      """,
 
     catalystSchema = {
       val f0Type = new StructType().add("f00", IntegerType, nullable = true)
@@ -2434,27 +2434,27 @@ class ParquetSchemaSuite extends ParquetSchemaTest {
 
     expectedSchema =
       """message root {
-        |  required group f0 {
-        |    optional int32 f00;
-        |  }
-        |  optional int32 f1;
-        |}
-      """.stripMargin)
+          required group f0 {
+            optional int32 f00;
+          }
+          optional int32 f1;
+        }
+      """)
 
   testSchemaClipping(
     "parquet-protobuf style array",
 
     parquetSchema =
       """message root {
-        |  required group f0 {
-        |    repeated binary f00 (UTF8);
-        |    repeated group f01 {
-        |      optional int32 f010;
-        |      optional double f011;
-        |    }
-        |  }
-        |}
-      """.stripMargin,
+          required group f0 {
+            repeated binary f00 (UTF8);
+            repeated group f01 {
+              optional int32 f010;
+              optional double f011;
+            }
+          }
+        }
+      """,
 
     catalystSchema = {
       val f00Type = ArrayType(StringType, containsNull = false)
@@ -2475,40 +2475,40 @@ class ParquetSchemaSuite extends ParquetSchemaTest {
 
     expectedSchema =
       """message root {
-        |  required group f0 {
-        |    repeated binary f00 (UTF8);
-        |    repeated group f01 {
-        |      optional double f011;
-        |    }
-        |  }
-        |
-        |  optional group f1 (LIST) {
-        |    repeated group list {
-        |      optional int32 element;
-        |    }
-        |  }
-        |}
-      """.stripMargin)
+          required group f0 {
+            repeated binary f00 (UTF8);
+            repeated group f01 {
+              optional double f011;
+            }
+          }
+
+          optional group f1 (LIST) {
+            repeated group list {
+              optional int32 element;
+            }
+          }
+        }
+      """)
 
   testSchemaClipping(
     "parquet-thrift style array",
 
     parquetSchema =
       """message root {
-        |  required group f0 {
-        |    optional group f00 (LIST) {
-        |      repeated binary f00_tuple (UTF8);
-        |    }
-        |
-        |    optional group f01 (LIST) {
-        |      repeated group f01_tuple {
-        |        optional int32 f010;
-        |        optional double f011;
-        |      }
-        |    }
-        |  }
-        |}
-      """.stripMargin,
+          required group f0 {
+            optional group f00 (LIST) {
+              repeated binary f00_tuple (UTF8);
+            }
+
+            optional group f01 (LIST) {
+              repeated group f01_tuple {
+                optional int32 f010;
+                optional double f011;
+              }
+            }
+          }
+        }
+      """,
 
     catalystSchema = {
       val f01ElementType = new StructType()
@@ -2524,40 +2524,40 @@ class ParquetSchemaSuite extends ParquetSchemaTest {
 
     expectedSchema =
       """message root {
-        |  required group f0 {
-        |    optional group f00 (LIST) {
-        |      repeated binary f00_tuple (UTF8);
-        |    }
-        |
-        |    optional group f01 (LIST) {
-        |      repeated group f01_tuple {
-        |        optional double f011;
-        |        optional int64 f012;
-        |      }
-        |    }
-        |  }
-        |}
-      """.stripMargin)
+          required group f0 {
+            optional group f00 (LIST) {
+              repeated binary f00_tuple (UTF8);
+            }
+
+            optional group f01 (LIST) {
+              repeated group f01_tuple {
+                optional double f011;
+                optional int64 f012;
+              }
+            }
+          }
+        }
+      """)
 
   testSchemaClipping(
     "parquet-avro style array",
 
     parquetSchema =
       """message root {
-        |  required group f0 {
-        |    optional group f00 (LIST) {
-        |      repeated binary array (UTF8);
-        |    }
-        |
-        |    optional group f01 (LIST) {
-        |      repeated group array {
-        |        optional int32 f010;
-        |        optional double f011;
-        |      }
-        |    }
-        |  }
-        |}
-      """.stripMargin,
+          required group f0 {
+            optional group f00 (LIST) {
+              repeated binary array (UTF8);
+            }
+
+            optional group f01 (LIST) {
+              repeated group array {
+                optional int32 f010;
+                optional double f011;
+              }
+            }
+          }
+        }
+      """,
 
     catalystSchema = {
       val f01ElementType = new StructType()
@@ -2573,44 +2573,44 @@ class ParquetSchemaSuite extends ParquetSchemaTest {
 
     expectedSchema =
       """message root {
-        |  required group f0 {
-        |    optional group f00 (LIST) {
-        |      repeated binary array (UTF8);
-        |    }
-        |
-        |    optional group f01 (LIST) {
-        |      repeated group array {
-        |        optional double f011;
-        |        optional int64 f012;
-        |      }
-        |    }
-        |  }
-        |}
-      """.stripMargin)
+          required group f0 {
+            optional group f00 (LIST) {
+              repeated binary array (UTF8);
+            }
+
+            optional group f01 (LIST) {
+              repeated group array {
+                optional double f011;
+                optional int64 f012;
+              }
+            }
+          }
+        }
+      """)
 
   testSchemaClipping(
     "parquet-hive style array",
 
     parquetSchema =
       """message root {
-        |  optional group f0 {
-        |    optional group f00 (LIST) {
-        |      repeated group bag {
-        |        optional binary array_element;
-        |      }
-        |    }
-        |
-        |    optional group f01 (LIST) {
-        |      repeated group bag {
-        |        optional group array_element {
-        |          optional int32 f010;
-        |          optional double f011;
-        |        }
-        |      }
-        |    }
-        |  }
-        |}
-      """.stripMargin,
+          optional group f0 {
+            optional group f00 (LIST) {
+              repeated group bag {
+                optional binary array_element;
+              }
+            }
+
+            optional group f01 (LIST) {
+              repeated group bag {
+                optional group array_element {
+                  optional int32 f010;
+                  optional double f011;
+                }
+              }
+            }
+          }
+        }
+      """,
 
     catalystSchema = {
       val f01ElementType = new StructType()
@@ -2626,40 +2626,40 @@ class ParquetSchemaSuite extends ParquetSchemaTest {
 
     expectedSchema =
       """message root {
-        |  optional group f0 {
-        |    optional group f00 (LIST) {
-        |      repeated group bag {
-        |        optional binary array_element;
-        |      }
-        |    }
-        |
-        |    optional group f01 (LIST) {
-        |      repeated group bag {
-        |        optional group array_element {
-        |          optional double f011;
-        |          optional int64 f012;
-        |        }
-        |      }
-        |    }
-        |  }
-        |}
-      """.stripMargin)
+          optional group f0 {
+            optional group f00 (LIST) {
+              repeated group bag {
+                optional binary array_element;
+              }
+            }
+
+            optional group f01 (LIST) {
+              repeated group bag {
+                optional group array_element {
+                  optional double f011;
+                  optional int64 f012;
+                }
+              }
+            }
+          }
+        }
+      """)
 
   testSchemaClipping(
     "2-level list of required struct",
 
     parquetSchema =
       s"""message root {
-         |  required group f0 {
-         |    required group f00 (LIST) {
-         |      repeated group element {
-         |        required int32 f000;
-         |        optional int64 f001;
-         |      }
-         |    }
-         |  }
-         |}
-       """.stripMargin,
+           required group f0 {
+             required group f00 (LIST) {
+               repeated group element {
+                 required int32 f000;
+                 optional int64 f001;
+               }
+             }
+           }
+         }
+       """,
 
     catalystSchema = {
       val f00ElementType =
@@ -2675,40 +2675,40 @@ class ParquetSchemaSuite extends ParquetSchemaTest {
 
     expectedSchema =
       s"""message root {
-         |  required group f0 {
-         |    required group f00 (LIST) {
-         |      repeated group element {
-         |        optional int64 f001;
-         |        required double f002;
-         |      }
-         |    }
-         |  }
-         |}
-       """.stripMargin)
+           required group f0 {
+             required group f00 (LIST) {
+               repeated group element {
+                 optional int64 f001;
+                 required double f002;
+               }
+             }
+           }
+         }
+       """)
 
   testSchemaClipping(
     "standard array",
 
     parquetSchema =
       """message root {
-        |  required group f0 {
-        |    optional group f00 (LIST) {
-        |      repeated group list {
-        |        required binary element (UTF8);
-        |      }
-        |    }
-        |
-        |    optional group f01 (LIST) {
-        |      repeated group list {
-        |        required group element {
-        |          optional int32 f010;
-        |          optional double f011;
-        |        }
-        |      }
-        |    }
-        |  }
-        |}
-      """.stripMargin,
+          required group f0 {
+            optional group f00 (LIST) {
+              repeated group list {
+                required binary element (UTF8);
+              }
+            }
+
+            optional group f01 (LIST) {
+              repeated group list {
+                required group element {
+                  optional int32 f010;
+                  optional double f011;
+                }
+              }
+            }
+          }
+        }
+      """,
 
     catalystSchema = {
       val f01ElementType = new StructType()
@@ -2724,36 +2724,36 @@ class ParquetSchemaSuite extends ParquetSchemaTest {
 
     expectedSchema =
       """message root {
-        |  required group f0 {
-        |    optional group f00 (LIST) {
-        |      repeated group list {
-        |        required binary element (UTF8);
-        |      }
-        |    }
-        |
-        |    optional group f01 (LIST) {
-        |      repeated group list {
-        |        required group element {
-        |          optional double f011;
-        |          optional int64 f012;
-        |        }
-        |      }
-        |    }
-        |  }
-        |}
-      """.stripMargin)
+          required group f0 {
+            optional group f00 (LIST) {
+              repeated group list {
+                required binary element (UTF8);
+              }
+            }
+
+            optional group f01 (LIST) {
+              repeated group list {
+                required group element {
+                  optional double f011;
+                  optional int64 f012;
+                }
+              }
+            }
+          }
+        }
+      """)
 
   testSchemaClipping(
     "empty requested schema",
 
     parquetSchema =
       """message root {
-        |  required group f0 {
-        |    required int32 f00;
-        |    required int64 f01;
-        |  }
-        |}
-      """.stripMargin,
+          required group f0 {
+            required int32 f00;
+            required int64 f01;
+          }
+        }
+      """,
 
     catalystSchema = new StructType(),
 
@@ -2765,12 +2765,12 @@ class ParquetSchemaSuite extends ParquetSchemaTest {
 
     parquetSchema =
       """message root {
-        |  required group f0 {
-        |    required int32 f00;
-        |    required int64 f01;
-        |  }
-        |}
-      """.stripMargin,
+          required group f0 {
+            required int32 f00;
+            required int64 f01;
+          }
+        }
+      """,
 
     catalystSchema =
       new StructType()
@@ -2783,29 +2783,29 @@ class ParquetSchemaSuite extends ParquetSchemaTest {
 
     expectedSchema =
       """message root {
-        |  required group f0 {
-        |    optional float f02;
-        |    optional double f03;
-        |  }
-        |}
-      """.stripMargin)
+          required group f0 {
+            optional float f02;
+            optional double f03;
+          }
+        }
+      """)
 
   testSchemaClipping(
     "parquet-avro style map",
 
     parquetSchema =
       """message root {
-        |  required group f0 (MAP) {
-        |    repeated group key_value (MAP_KEY_VALUE) {
-        |      required int32 key;
-        |      required group value {
-        |        required int32 value_f0;
-        |        required int64 value_f1;
-        |      }
-        |    }
-        |  }
-        |}
-      """.stripMargin,
+          required group f0 (MAP) {
+            repeated group key_value (MAP_KEY_VALUE) {
+              required int32 key;
+              required group value {
+                required int32 value_f0;
+                required int64 value_f1;
+              }
+            }
+          }
+        }
+      """,
 
     catalystSchema = {
       val valueType =
@@ -2820,34 +2820,34 @@ class ParquetSchemaSuite extends ParquetSchemaTest {
 
     expectedSchema =
       """message root {
-        |  required group f0 (MAP) {
-        |    repeated group key_value (MAP_KEY_VALUE) {
-        |      required int32 key;
-        |      required group value {
-        |        required int64 value_f1;
-        |        required double value_f2;
-        |      }
-        |    }
-        |  }
-        |}
-      """.stripMargin)
+          required group f0 (MAP) {
+            repeated group key_value (MAP_KEY_VALUE) {
+              required int32 key;
+              required group value {
+                required int64 value_f1;
+                required double value_f2;
+              }
+            }
+          }
+        }
+      """)
 
   testSchemaClipping(
     "standard map",
 
     parquetSchema =
       """message root {
-        |  required group f0 (MAP) {
-        |    repeated group key_value {
-        |      required int32 key;
-        |      required group value {
-        |        required int32 value_f0;
-        |        required int64 value_f1;
-        |      }
-        |    }
-        |  }
-        |}
-      """.stripMargin,
+          required group f0 (MAP) {
+            repeated group key_value {
+              required int32 key;
+              required group value {
+                required int32 value_f0;
+                required int64 value_f1;
+              }
+            }
+          }
+        }
+      """,
 
     catalystSchema = {
       val valueType =
@@ -2862,34 +2862,34 @@ class ParquetSchemaSuite extends ParquetSchemaTest {
 
     expectedSchema =
       """message root {
-        |  required group f0 (MAP) {
-        |    repeated group key_value {
-        |      required int32 key;
-        |      required group value {
-        |        required int64 value_f1;
-        |        required double value_f2;
-        |      }
-        |    }
-        |  }
-        |}
-      """.stripMargin)
+          required group f0 (MAP) {
+            repeated group key_value {
+              required int32 key;
+              required group value {
+                required int64 value_f1;
+                required double value_f2;
+              }
+            }
+          }
+        }
+      """)
 
   testSchemaClipping(
     "standard map with complex key",
 
     parquetSchema =
       """message root {
-        |  required group f0 (MAP) {
-        |    repeated group key_value {
-        |      required group key {
-        |        required int32 value_f0;
-        |        required int64 value_f1;
-        |      }
-        |      required int32 value;
-        |    }
-        |  }
-        |}
-      """.stripMargin,
+          required group f0 (MAP) {
+            repeated group key_value {
+              required group key {
+                required int32 value_f0;
+                required int64 value_f1;
+              }
+              required int32 value;
+            }
+          }
+        }
+      """,
 
     catalystSchema = {
       val keyType =
@@ -2904,28 +2904,28 @@ class ParquetSchemaSuite extends ParquetSchemaTest {
 
     expectedSchema =
       """message root {
-        |  required group f0 (MAP) {
-        |    repeated group key_value {
-        |      required group key {
-        |        required int64 value_f1;
-        |        required double value_f2;
-        |      }
-        |      required int32 value;
-        |    }
-        |  }
-        |}
-      """.stripMargin)
+          required group f0 (MAP) {
+            repeated group key_value {
+              required group key {
+                required int64 value_f1;
+                required double value_f2;
+              }
+              required int32 value;
+            }
+          }
+        }
+      """)
 
   testSchemaClipping(
     "case-insensitive resolution: no ambiguity",
     parquetSchema =
       """message root {
-        |  required group A {
-        |    optional int32 B;
-        |  }
-        |  optional int32 c;
-        |}
-      """.stripMargin,
+          required group A {
+            optional int32 B;
+          }
+          optional int32 c;
+        }
+      """,
     catalystSchema = {
       val nestedType = new StructType().add("b", IntegerType, nullable = true)
       new StructType()
@@ -2934,24 +2934,24 @@ class ParquetSchemaSuite extends ParquetSchemaTest {
     },
     expectedSchema =
       """message root {
-        |  required group A {
-        |    optional int32 B;
-        |  }
-        |  optional int32 c;
-        |}
-      """.stripMargin,
+          required group A {
+            optional int32 B;
+          }
+          optional int32 c;
+        }
+      """,
     caseSensitive = false)
 
     test("Clipping - case-insensitive resolution: more than one field is matched") {
       val parquetSchema =
         """message root {
-          |  required group A {
-          |    optional int32 B;
-          |  }
-          |  optional int32 c;
-          |  optional int32 a;
-          |}
-        """.stripMargin
+            required group A {
+              optional int32 B;
+            }
+            optional int32 c;
+            optional int32 a;
+          }
+        """
       val catalystSchema = {
         val nestedType = new StructType().add("b", IntegerType, nullable = true)
         new StructType()

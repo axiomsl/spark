@@ -30,16 +30,16 @@ private[sql] object SparkConnectClientParser {
    */
   def usage(): String =
     s"""
-       |Options:
-       |   --remote REMOTE          URI of the Spark Connect Server to connect to.
-       |   --host HOST              Host where the Spark Connect Server is running.
-       |   --port PORT              Port where the Spark Connect Server is running.
-       |   --enable-ssl             Connect to the server using SSL.
-       |   --token TOKEN            Token to use for authentication.
-       |   --user_id USER_ID        Id of the user connecting.
-       |   --user_name USER_NAME    Name of the user connecting.
-       |   --option KEY=VALUE       Key-value pair that is used to further configure the session.
-     """.stripMargin
+       Options:
+          --remote REMOTE          URI of the Spark Connect Server to connect to.
+          --host HOST              Host where the Spark Connect Server is running.
+          --port PORT              Port where the Spark Connect Server is running.
+          --enable-ssl             Connect to the server using SSL.
+          --token TOKEN            Token to use for authentication.
+          --user_id USER_ID        Id of the user connecting.
+          --user_name USER_NAME    Name of the user connecting.
+          --option KEY=VALUE       Key-value pair that is used to further configure the session.
+     """
 
   /**
    * Parse the command line and configure the builder.

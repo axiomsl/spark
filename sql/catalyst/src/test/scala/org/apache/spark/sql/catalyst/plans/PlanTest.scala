@@ -177,11 +177,11 @@ trait PlanTestBase extends PredicateHelper with SQLHelper with SQLConfHelper { s
     if (normalized1 != normalized2) {
       fail(
         s"""
-          |== FAIL: Plans do not match ===
-          |${sideBySide(
+          == FAIL: Plans do not match ===
+          ${sideBySide(
             rewriteNameFromAttrNullability(normalized1).treeString,
             rewriteNameFromAttrNullability(normalized2).treeString).mkString("\n")}
-         """.stripMargin)
+         """)
     }
   }
 

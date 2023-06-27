@@ -44,48 +44,48 @@ class HiveParquetSourceSuite extends ParquetPartitioningTest with ParquetTest {
 
     sql(
       s"""
-        |CREATE TEMPORARY VIEW partitioned_parquet
-        |USING org.apache.spark.sql.parquet
-        |OPTIONS (
-        |  path '${partitionedTableDir.toURI}'
-        |)
-      """.stripMargin)
+        CREATE TEMPORARY VIEW partitioned_parquet
+        USING org.apache.spark.sql.parquet
+        OPTIONS (
+          path '${partitionedTableDir.toURI}'
+        )
+      """)
 
     sql(
       s"""
-        |CREATE TEMPORARY VIEW partitioned_parquet_with_key
-        |USING org.apache.spark.sql.parquet
-        |OPTIONS (
-        |  path '${partitionedTableDirWithKey.toURI}'
-        |)
-      """.stripMargin)
+        CREATE TEMPORARY VIEW partitioned_parquet_with_key
+        USING org.apache.spark.sql.parquet
+        OPTIONS (
+          path '${partitionedTableDirWithKey.toURI}'
+        )
+      """)
 
     sql(
       s"""
-        |CREATE TEMPORARY VIEW normal_parquet
-        |USING org.apache.spark.sql.parquet
-        |OPTIONS (
-        |  path '${new File(partitionedTableDir, "p=1").toURI}'
-        |)
-      """.stripMargin)
+        CREATE TEMPORARY VIEW normal_parquet
+        USING org.apache.spark.sql.parquet
+        OPTIONS (
+          path '${new File(partitionedTableDir, "p=1").toURI}'
+        )
+      """)
 
     sql(
       s"""
-        |CREATE TEMPORARY VIEW partitioned_parquet_with_key_and_complextypes
-        |USING org.apache.spark.sql.parquet
-        |OPTIONS (
-        |  path '${partitionedTableDirWithKeyAndComplexTypes.toURI}'
-        |)
-      """.stripMargin)
+        CREATE TEMPORARY VIEW partitioned_parquet_with_key_and_complextypes
+        USING org.apache.spark.sql.parquet
+        OPTIONS (
+          path '${partitionedTableDirWithKeyAndComplexTypes.toURI}'
+        )
+      """)
 
     sql(
       s"""
-        |CREATE TEMPORARY VIEW partitioned_parquet_with_complextypes
-        |USING org.apache.spark.sql.parquet
-        |OPTIONS (
-        |  path '${partitionedTableDirWithComplexTypes.toURI}'
-        |)
-      """.stripMargin)
+        CREATE TEMPORARY VIEW partitioned_parquet_with_complextypes
+        USING org.apache.spark.sql.parquet
+        OPTIONS (
+          path '${partitionedTableDirWithComplexTypes.toURI}'
+        )
+      """)
   }
 
   test("SPARK-6016 make sure to use the latest footers") {
@@ -124,12 +124,12 @@ class HiveParquetSourceSuite extends ParquetPartitioningTest with ParquetTest {
         withSQLConf(conf: _*) {
           sql(
             s"""CREATE TABLE array_of_struct
-               |STORED AS PARQUET LOCATION '${dir.toURI}'
-               |AS SELECT
-               |  '1st' AS a,
-               |  '2nd' AS b,
-               |  ARRAY(NAMED_STRUCT('a', 'val_a', 'b', 'val_b')) AS c
-             """.stripMargin)
+               STORED AS PARQUET LOCATION '${dir.toURI}'
+               AS SELECT
+                 '1st' AS a,
+                 '2nd' AS b,
+                 ARRAY(NAMED_STRUCT('a', 'val_a', 'b', 'val_b')) AS c
+             """)
 
           checkAnswer(
             spark.read.parquet(dir.getCanonicalPath),
@@ -150,9 +150,9 @@ class HiveParquetSourceSuite extends ParquetPartitioningTest with ParquetTest {
           withTable(tableName) {
             sql(
               s"""
-                 |CREATE TABLE $tableName STORED AS PARQUET
-                 |AS SELECT tmp.key, tmp.value FROM single tmp
-               """.stripMargin)
+                 CREATE TABLE $tableName STORED AS PARQUET
+                 AS SELECT tmp.key, tmp.value FROM single tmp
+               """)
 
             val df = spark.sql(s"SELECT * FROM $tableName WHERE key=0")
             checkAnswer(df, singleRowDF)
@@ -221,54 +221,54 @@ class HiveParquetSourceSuite extends ParquetPartitioningTest with ParquetTest {
 
             val parquetTblStatement1 =
               s"""
-                 |CREATE EXTERNAL TABLE parq_tbl1(
-                 |  c1 int,
-                 |  c2 int,
-                 |  c3 string)
-                 |STORED AS parquet
-                 |LOCATION '${s"${path.getCanonicalPath}/l1/"}'""".stripMargin
+                 CREATE EXTERNAL TABLE parq_tbl1(
+                   c1 int,
+                   c2 int,
+                   c3 string)
+                 STORED AS parquet
+                 LOCATION '${s"${path.getCanonicalPath}/l1/"}'"""
             sql(parquetTblStatement1)
 
             val parquetTblInsertL1 =
-              s"INSERT INTO TABLE parq_tbl1 VALUES (1, 1, 'parq1'), (2, 2, 'parq2')".stripMargin
+              s"INSERT INTO TABLE parq_tbl1 VALUES (1, 1, 'parq1'), (2, 2, 'parq2')"
             sql(parquetTblInsertL1)
 
             val parquetTblStatement2 =
               s"""
-                 |CREATE EXTERNAL TABLE parq_tbl2(
-                 |  c1 int,
-                 |  c2 int,
-                 |  c3 string)
-                 |STORED AS parquet
-                 |LOCATION '${s"${path.getCanonicalPath}/l1/l2/"}'""".stripMargin
+                 CREATE EXTERNAL TABLE parq_tbl2(
+                   c1 int,
+                   c2 int,
+                   c3 string)
+                 STORED AS parquet
+                 LOCATION '${s"${path.getCanonicalPath}/l1/l2/"}'"""
             sql(parquetTblStatement2)
 
             val parquetTblInsertL2 =
-              s"INSERT INTO TABLE parq_tbl2 VALUES (3, 3, 'parq3'), (4, 4, 'parq4')".stripMargin
+              s"INSERT INTO TABLE parq_tbl2 VALUES (3, 3, 'parq3'), (4, 4, 'parq4')"
             sql(parquetTblInsertL2)
 
             val parquetTblStatement3 =
               s"""
-                 |CREATE EXTERNAL TABLE parq_tbl3(
-                 |  c1 int,
-                 |  c2 int,
-                 |  c3 string)
-                 |STORED AS parquet
-                 |LOCATION '${s"${path.getCanonicalPath}/l1/l2/l3/"}'""".stripMargin
+                 CREATE EXTERNAL TABLE parq_tbl3(
+                   c1 int,
+                   c2 int,
+                   c3 string)
+                 STORED AS parquet
+                 LOCATION '${s"${path.getCanonicalPath}/l1/l2/l3/"}'"""
             sql(parquetTblStatement3)
 
             val parquetTblInsertL3 =
-              s"INSERT INTO TABLE parq_tbl3 VALUES (5, 5, 'parq5'), (6, 6, 'parq6')".stripMargin
+              s"INSERT INTO TABLE parq_tbl3 VALUES (5, 5, 'parq5'), (6, 6, 'parq6')"
             sql(parquetTblInsertL3)
 
             val topDirStatement =
               s"""
-                 |CREATE EXTERNAL TABLE tbl1(
-                 |  c1 int,
-                 |  c2 int,
-                 |  c3 string)
-                 |STORED AS parquet
-                 |LOCATION '${s"${path.getCanonicalPath}"}'""".stripMargin
+                 CREATE EXTERNAL TABLE tbl1(
+                   c1 int,
+                   c2 int,
+                   c3 string)
+                 STORED AS parquet
+                 LOCATION '${s"${path.getCanonicalPath}"}'"""
             sql(topDirStatement)
             if (parquetConversion == "true") {
               checkAnswer(sql("SELECT * FROM tbl1"), Nil)
@@ -281,12 +281,12 @@ class HiveParquetSourceSuite extends ParquetPartitioningTest with ParquetTest {
 
             val l1DirStatement =
               s"""
-                 |CREATE EXTERNAL TABLE tbl2(
-                 |  c1 int,
-                 |  c2 int,
-                 |  c3 string)
-                 |STORED AS parquet
-                 |LOCATION '${s"${path.getCanonicalPath}/l1/"}'""".stripMargin
+                 CREATE EXTERNAL TABLE tbl2(
+                   c1 int,
+                   c2 int,
+                   c3 string)
+                 STORED AS parquet
+                 LOCATION '${s"${path.getCanonicalPath}/l1/"}'"""
             sql(l1DirStatement)
             if (parquetConversion == "true") {
               checkAnswer(sql("SELECT * FROM tbl2"), (1 to 2).map(i => Row(i, i, s"parq$i")))
@@ -299,12 +299,12 @@ class HiveParquetSourceSuite extends ParquetPartitioningTest with ParquetTest {
 
             val l2DirStatement =
               s"""
-                 |CREATE EXTERNAL TABLE tbl3(
-                 |  c1 int,
-                 |  c2 int,
-                 |  c3 string)
-                 |STORED AS parquet
-                 |LOCATION '${s"${path.getCanonicalPath}/l1/l2/"}'""".stripMargin
+                 CREATE EXTERNAL TABLE tbl3(
+                   c1 int,
+                   c2 int,
+                   c3 string)
+                 STORED AS parquet
+                 LOCATION '${s"${path.getCanonicalPath}/l1/l2/"}'"""
             sql(l2DirStatement)
             if (parquetConversion == "true") {
               checkAnswer(sql("SELECT * FROM tbl3"), (3 to 4).map(i => Row(i, i, s"parq$i")))
@@ -317,12 +317,12 @@ class HiveParquetSourceSuite extends ParquetPartitioningTest with ParquetTest {
 
             val wildcardTopDirStatement =
               s"""
-                 |CREATE EXTERNAL TABLE tbl4(
-                 |  c1 int,
-                 |  c2 int,
-                 |  c3 string)
-                 |STORED AS parquet
-                 |LOCATION '${new File(s"${path}/*").toURI}'""".stripMargin
+                 CREATE EXTERNAL TABLE tbl4(
+                   c1 int,
+                   c2 int,
+                   c3 string)
+                 STORED AS parquet
+                 LOCATION '${new File(s"${path}/*").toURI}'"""
             sql(wildcardTopDirStatement)
             if (parquetConversion == "true") {
               checkAnswer(sql("SELECT * FROM tbl4"), (1 to 2).map(i => Row(i, i, s"parq$i")))
@@ -335,12 +335,12 @@ class HiveParquetSourceSuite extends ParquetPartitioningTest with ParquetTest {
 
             val wildcardL1DirStatement =
               s"""
-                 |CREATE EXTERNAL TABLE tbl5(
-                 |  c1 int,
-                 |  c2 int,
-                 |  c3 string)
-                 |STORED AS parquet
-                 |LOCATION '${new File(s"${path}/l1/*").toURI}'""".stripMargin
+                 CREATE EXTERNAL TABLE tbl5(
+                   c1 int,
+                   c2 int,
+                   c3 string)
+                 STORED AS parquet
+                 LOCATION '${new File(s"${path}/l1/*").toURI}'"""
             sql(wildcardL1DirStatement)
             if (parquetConversion == "true") {
               checkAnswer(sql("SELECT * FROM tbl5"), (1 to 4).map(i => Row(i, i, s"parq$i")))
@@ -353,12 +353,12 @@ class HiveParquetSourceSuite extends ParquetPartitioningTest with ParquetTest {
 
             val wildcardL2DirStatement =
               s"""
-                 |CREATE EXTERNAL TABLE tbl6(
-                 |  c1 int,
-                 |  c2 int,
-                 |  c3 string)
-                 |STORED AS parquet
-                 |LOCATION '${new File(s"${path}/l1/l2/*").toURI}'""".stripMargin
+                 CREATE EXTERNAL TABLE tbl6(
+                   c1 int,
+                   c2 int,
+                   c3 string)
+                 STORED AS parquet
+                 LOCATION '${new File(s"${path}/l1/l2/*").toURI}'"""
             sql(wildcardL2DirStatement)
             checkAnswer(sql("SELECT * FROM tbl6"), (3 to 6).map(i => Row(i, i, s"parq$i")))
           }

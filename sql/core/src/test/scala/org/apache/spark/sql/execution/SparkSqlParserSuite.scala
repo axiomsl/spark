@@ -568,13 +568,13 @@ class SparkSqlParserSuite extends AnalysisTest with SharedSparkSession {
   test("SPARK-32608: script transform with row format delimit") {
     val rowFormat =
       """
-        |  ROW FORMAT DELIMITED
-        |  FIELDS TERMINATED BY ','
-        |  COLLECTION ITEMS TERMINATED BY '#'
-        |  MAP KEYS TERMINATED BY '@'
-        |  LINES TERMINATED BY '\n'
-        |  NULL DEFINED AS 'null'
-      """.stripMargin
+          ROW FORMAT DELIMITED
+          FIELDS TERMINATED BY ','
+          COLLECTION ITEMS TERMINATED BY '#'
+          MAP KEYS TERMINATED BY '@'
+          LINES TERMINATED BY '\n'
+          NULL DEFINED AS 'null'
+      """
 
     val ioSchema =
       ScriptInputOutputSchema(
@@ -592,12 +592,12 @@ class SparkSqlParserSuite extends AnalysisTest with SharedSparkSession {
 
     assertEqual(
       s"""
-         |SELECT TRANSFORM(a, b, c)
-         |  $rowFormat
-         |  USING 'cat' AS (a, b, c)
-         |  $rowFormat
-         |FROM testData
-      """.stripMargin,
+         SELECT TRANSFORM(a, b, c)
+           $rowFormat
+           USING 'cat' AS (a, b, c)
+           $rowFormat
+         FROM testData
+      """,
       ScriptTransformation(
         "cat",
         Seq(AttributeReference("a", StringType)(),
@@ -609,14 +609,14 @@ class SparkSqlParserSuite extends AnalysisTest with SharedSparkSession {
 
     assertEqual(
       s"""
-         |SELECT TRANSFORM(a, sum(b), max(c))
-         |  $rowFormat
-         |  USING 'cat' AS (a, b, c)
-         |  $rowFormat
-         |FROM testData
-         |GROUP BY a
-         |HAVING sum(b) > 10
-      """.stripMargin,
+         SELECT TRANSFORM(a, sum(b), max(c))
+           $rowFormat
+           USING 'cat' AS (a, b, c)
+           $rowFormat
+         FROM testData
+         GROUP BY a
+         HAVING sum(b) > 10
+      """,
       ScriptTransformation(
         "cat",
         Seq(AttributeReference("a", StringType)(),
@@ -640,13 +640,13 @@ class SparkSqlParserSuite extends AnalysisTest with SharedSparkSession {
 
     assertEqual(
       s"""
-         |SELECT TRANSFORM(a, sum(b) OVER w, max(c) OVER w)
-         |  $rowFormat
-         |  USING 'cat' AS (a, b, c)
-         |  $rowFormat
-         |FROM testData
-         |WINDOW w AS (PARTITION BY a ORDER BY b)
-      """.stripMargin,
+         SELECT TRANSFORM(a, sum(b) OVER w, max(c) OVER w)
+           $rowFormat
+           USING 'cat' AS (a, b, c)
+           $rowFormat
+         FROM testData
+         WINDOW w AS (PARTITION BY a ORDER BY b)
+      """,
       ScriptTransformation(
         "cat",
         Seq(AttributeReference("a", StringType)(),
@@ -674,16 +674,16 @@ class SparkSqlParserSuite extends AnalysisTest with SharedSparkSession {
 
     assertEqual(
       s"""
-         |SELECT TRANSFORM(a, sum(b), max(c))
-         |  $rowFormat
-         |  USING 'cat' AS (a, b, c)
-         |  $rowFormat
-         |FROM testData
-         |LATERAL VIEW explode(array(array(1,2,3))) myTable AS myCol
-         |LATERAL VIEW explode(myTable.myCol) myTable2 AS myCol2
-         |GROUP BY a, myCol, myCol2
-         |HAVING sum(b) > 10
-      """.stripMargin,
+         SELECT TRANSFORM(a, sum(b), max(c))
+           $rowFormat
+           USING 'cat' AS (a, b, c)
+           $rowFormat
+         FROM testData
+         LATERAL VIEW explode(array(array(1,2,3))) myTable AS myCol
+         LATERAL VIEW explode(myTable.myCol) myTable2 AS myCol2
+         GROUP BY a, myCol, myCol2
+         HAVING sum(b) > 10
+      """,
       ScriptTransformation(
         "cat",
         Seq(AttributeReference("a", StringType)(),
@@ -726,16 +726,16 @@ class SparkSqlParserSuite extends AnalysisTest with SharedSparkSession {
     // test input format TOK_TABLEROWFORMATLINES
     val sql1 =
       s"""SELECT TRANSFORM(a, b, c, d, e)
-         |  ROW FORMAT DELIMITED
-         |  FIELDS TERMINATED BY ','
-         |  LINES TERMINATED BY '@'
-         |  NULL DEFINED AS 'null'
-         |  USING 'cat' AS (value)
-         |  ROW FORMAT DELIMITED
-         |  FIELDS TERMINATED BY '&'
-         |  LINES TERMINATED BY '\n'
-         |  NULL DEFINED AS 'NULL'
-         |FROM v""".stripMargin
+           ROW FORMAT DELIMITED
+           FIELDS TERMINATED BY ','
+           LINES TERMINATED BY '@'
+           NULL DEFINED AS 'null'
+           USING 'cat' AS (value)
+           ROW FORMAT DELIMITED
+           FIELDS TERMINATED BY '&'
+           LINES TERMINATED BY '\n'
+           NULL DEFINED AS 'NULL'
+         FROM v"""
     checkError(
       exception = parseException(sql1),
       errorClass = "_LEGACY_ERROR_TEMP_0064",
@@ -748,16 +748,16 @@ class SparkSqlParserSuite extends AnalysisTest with SharedSparkSession {
     // test output format TOK_TABLEROWFORMATLINES
     val sql2 =
       s"""SELECT TRANSFORM(a, b, c, d, e)
-         |  ROW FORMAT DELIMITED
-         |  FIELDS TERMINATED BY ','
-         |  LINES TERMINATED BY '\n'
-         |  NULL DEFINED AS 'null'
-         |  USING 'cat' AS (value)
-         |  ROW FORMAT DELIMITED
-         |  FIELDS TERMINATED BY '&'
-         |  LINES TERMINATED BY '@'
-         |  NULL DEFINED AS 'NULL'
-         |FROM v""".stripMargin
+           ROW FORMAT DELIMITED
+           FIELDS TERMINATED BY ','
+           LINES TERMINATED BY '\n'
+           NULL DEFINED AS 'null'
+           USING 'cat' AS (value)
+           ROW FORMAT DELIMITED
+           FIELDS TERMINATED BY '&'
+           LINES TERMINATED BY '@'
+           NULL DEFINED AS 'NULL'
+         FROM v"""
     checkError(
       exception = parseException(sql2),
       errorClass = "_LEGACY_ERROR_TEMP_0064",

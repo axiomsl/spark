@@ -173,11 +173,11 @@ abstract class RealBrowserUISeleniumSuite(val driverProp: String)
     def fireDataTable(searchBox: String): Unit = {
       webDriver.executeScript(
         s"""
-           |var keyEvent = $$.Event('keyup');
-           |// 13 means enter key.
-           |keyEvent.keyCode = keyEvent.which = 13;
-           |$searchBox.trigger(keyEvent);
-         """.stripMargin)
+           var keyEvent = $$.Event('keyup');
+           // 13 means enter key.
+           keyEvent.keyCode = keyEvent.which = 13;
+           $searchBox.trigger(keyEvent);
+         """)
     }
   }
 

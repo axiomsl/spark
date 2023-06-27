@@ -148,10 +148,10 @@ class SQLQuerySuite extends QueryTest with SharedSparkSession with AdaptiveSpark
       checkAnswer(
         sql(
           """
-            |SELECT x.str, COUNT(*)
-            |FROM df x JOIN df y ON x.str = y.str
-            |GROUP BY x.str
-        """.stripMargin),
+            SELECT x.str, COUNT(*)
+            FROM df x JOIN df y ON x.str = y.str
+            GROUP BY x.str
+        """),
         Row("1", 1) :: Row("2", 1) :: Row("3", 1) :: Nil)
     }
   }
@@ -160,9 +160,9 @@ class SQLQuerySuite extends QueryTest with SharedSparkSession with AdaptiveSpark
     checkAnswer(
       sql(
         """
-          |SELECT r.*
-          |FROM testData l join testData2 r on (l.key = r.a)
-        """.stripMargin),
+          SELECT r.*
+          FROM testData l join testData2 r on (l.key = r.a)
+        """),
       Row(1, 1) :: Row(1, 2) :: Row(2, 1) :: Row(2, 2) :: Row(3, 1) :: Row(3, 2) :: Nil)
   }
 
@@ -178,10 +178,10 @@ class SQLQuerySuite extends QueryTest with SharedSparkSession with AdaptiveSpark
       checkAnswer(
         sql(
           """
-            |SELECT x.str, SUM(x.strCount)
-            |FROM df x JOIN df y ON x.str = y.str
-            |GROUP BY x.str
-        """.stripMargin),
+            SELECT x.str, SUM(x.strCount)
+            FROM df x JOIN df y ON x.str = y.str
+            GROUP BY x.str
+        """),
         Row("1", 1) :: Row("2", 1) :: Row("3", 1) :: Nil)
     }
   }
@@ -238,13 +238,13 @@ class SQLQuerySuite extends QueryTest with SharedSparkSession with AdaptiveSpark
       checkAnswer(
         sql(
           """
-            |select attribute, sum(cnt)
-            |from (
-            |  select nested.attribute, count(*) as cnt
-            |  from rows
-            |  group by nested.attribute) a
-            |group by attribute
-        """.stripMargin),
+            select attribute, sum(cnt)
+            from (
+              select nested.attribute, count(*) as cnt
+              from rows
+              group by nested.attribute) a
+            group by attribute
+        """),
         Row(1, 1) :: Nil)
     }
   }
@@ -297,9 +297,9 @@ class SQLQuerySuite extends QueryTest with SharedSparkSession with AdaptiveSpark
     if (!hasGeneratedAgg) {
       fail(
         s"""
-           |Codegen is enabled, but query $sqlText does not have HashAggregate in the plan.
-           |${df.queryExecution.simpleString}
-         """.stripMargin)
+           Codegen is enabled, but query $sqlText does not have HashAggregate in the plan.
+           ${df.queryExecution.simpleString}
+         """)
     }
     // Then, check results.
     checkAnswer(df, expectedResults)
@@ -362,17 +362,17 @@ class SQLQuerySuite extends QueryTest with SharedSparkSession with AdaptiveSpark
       // Some combinations.
       testCodeGen(
         """
-          |SELECT
-          |  value,
-          |  sum(key),
-          |  max(key),
-          |  min(key),
-          |  avg(key),
-          |  count(key),
-          |  count(distinct key)
-          |FROM testData3x
-          |GROUP BY value
-        """.stripMargin,
+          SELECT
+            value,
+            sum(key),
+            max(key),
+            min(key),
+            avg(key),
+            count(key),
+            count(distinct key)
+          FROM testData3x
+          GROUP BY value
+        """,
         (1 to 100).map(i => Row(i.toString, i*3, i, i, i, 3, 1)))
       testCodeGen(
         "SELECT max(key), min(key), avg(key), count(key), count(distinct key) FROM testData3x",
@@ -470,9 +470,9 @@ class SQLQuerySuite extends QueryTest with SharedSparkSession with AdaptiveSpark
 
       checkAnswer(sql(
         """
-          |SELECT time FROM timestamps
-          |WHERE time IN ('1969-12-31 16:00:00.001','1969-12-31 16:00:00.002')
-      """.stripMargin),
+          SELECT time FROM timestamps
+          WHERE time IN ('1969-12-31 16:00:00.001','1969-12-31 16:00:00.002')
+      """),
         Seq(Row(Timestamp.valueOf("1969-12-31 16:00:00.001")),
           Row(Timestamp.valueOf("1969-12-31 16:00:00.002"))))
 
@@ -570,9 +570,9 @@ class SQLQuerySuite extends QueryTest with SharedSparkSession with AdaptiveSpark
 
     checkAnswer(
       sql("""
-        |with q1 as (select * from testData where key= '5'),
-        |q2 as (select * from testData where key = '4')
-        |select * from q1 union all select * from q2""".stripMargin),
+        with q1 as (select * from testData where key= '5'),
+        q2 as (select * from testData where key = '4')
+        select * from q1 union all select * from q2"""),
       Row(5, "5") :: Row(4, "4") :: Nil)
 
     // inner CTE relation refers to outer CTE relation.
@@ -580,14 +580,14 @@ class SQLQuerySuite extends QueryTest with SharedSparkSession with AdaptiveSpark
       checkAnswer(
         sql(
           """
-            |with temp1 as (select 1 col),
-            |temp2 as (
-            |  with temp1 as (select col + 1 AS col from temp1),
-            |  temp3 as (select col + 1 from temp1)
-            |  select * from temp3
-            |)
-            |select * from temp2
-            |""".stripMargin),
+            with temp1 as (select 1 col),
+            temp2 as (
+              with temp1 as (select col + 1 AS col from temp1),
+              temp3 as (select col + 1 from temp1)
+              select * from temp3
+            )
+            select * from temp2
+            """),
         Row(3))
       }
   }
@@ -609,9 +609,9 @@ class SQLQuerySuite extends QueryTest with SharedSparkSession with AdaptiveSpark
   test("from follow multiple brackets") {
     checkAnswer(sql(
       """
-        |select key from ((select * from testData)
-        |  union all (select * from testData)) x limit 1
-      """.stripMargin),
+        select key from ((select * from testData)
+          union all (select * from testData)) x limit 1
+      """),
       Row(1)
     )
 
@@ -622,10 +622,10 @@ class SQLQuerySuite extends QueryTest with SharedSparkSession with AdaptiveSpark
 
     checkAnswer(sql(
       """
-        |select key from
-        |  (select * from testData union all select * from testData) x
-        |  limit 1
-      """.stripMargin),
+        select key from
+          (select * from testData union all select * from testData) x
+          limit 1
+      """),
       Row(1)
     )
   }
@@ -715,10 +715,10 @@ class SQLQuerySuite extends QueryTest with SharedSparkSession with AdaptiveSpark
       checkAnswer(
         sql(
           """
-          |SELECT * FROM
-          |  (SELECT * FROM testdata2 WHERE a = 1) x JOIN
-          |  (SELECT * FROM testdata2 WHERE a = 1) y
-          |WHERE x.a = y.a""".stripMargin),
+          SELECT * FROM
+            (SELECT * FROM testdata2 WHERE a = 1) x JOIN
+            (SELECT * FROM testdata2 WHERE a = 1) y
+          WHERE x.a = y.a"""),
         Row(1, 1, 1, 1) ::
         Row(1, 1, 1, 2) ::
         Row(1, 2, 1, 1) ::
@@ -730,10 +730,10 @@ class SQLQuerySuite extends QueryTest with SharedSparkSession with AdaptiveSpark
     checkAnswer(
       sql(
         """
-          |SELECT * FROM
-          |  (SELECT * FROM testData2 WHERE a = 1) x JOIN
-          |  (SELECT * FROM testData2 WHERE a = 2) y
-          |WHERE x.a = y.a""".stripMargin),
+          SELECT * FROM
+            (SELECT * FROM testData2 WHERE a = 1) x JOIN
+            (SELECT * FROM testData2 WHERE a = 2) y
+          WHERE x.a = y.a"""),
       Nil)
   }
 
@@ -741,16 +741,16 @@ class SQLQuerySuite extends QueryTest with SharedSparkSession with AdaptiveSpark
     checkAnswer(
       sql(
         """
-          |SELECT * FROM
-          |  (SELECT * FROM testData UNION ALL
-          |   SELECT * FROM testData UNION ALL
-          |   SELECT * FROM testData UNION ALL
-          |   SELECT * FROM testData) x JOIN
-          |  (SELECT * FROM testData UNION ALL
-          |   SELECT * FROM testData UNION ALL
-          |   SELECT * FROM testData UNION ALL
-          |   SELECT * FROM testData) y
-          |WHERE x.key = y.key""".stripMargin),
+          SELECT * FROM
+            (SELECT * FROM testData UNION ALL
+             SELECT * FROM testData UNION ALL
+             SELECT * FROM testData UNION ALL
+             SELECT * FROM testData) x JOIN
+            (SELECT * FROM testData UNION ALL
+             SELECT * FROM testData UNION ALL
+             SELECT * FROM testData UNION ALL
+             SELECT * FROM testData) y
+          WHERE x.key = y.key"""),
       testData.rdd.flatMap { row =>
         Seq.fill(16)(new GenericRow(Seq(row, row).flatMap(_.toSeq).toArray))
       }.collect().toSeq)
@@ -797,11 +797,11 @@ class SQLQuerySuite extends QueryTest with SharedSparkSession with AdaptiveSpark
     checkAnswer(
       sql(
         """
-          |SELECT * FROM
-          |  (SELECT * FROM upperCaseData WHERE N <= 4) leftTable FULL OUTER JOIN
-          |  (SELECT * FROM upperCaseData WHERE N >= 3) rightTable
-          |    ON leftTable.N = rightTable.N
-        """.stripMargin),
+          SELECT * FROM
+            (SELECT * FROM upperCaseData WHERE N <= 4) leftTable FULL OUTER JOIN
+            (SELECT * FROM upperCaseData WHERE N >= 3) rightTable
+              ON leftTable.N = rightTable.N
+        """),
       Row(1, "A", null, null) ::
       Row(2, "B", null, null) ::
       Row(3, "C", 3, "C") ::
@@ -847,11 +847,11 @@ class SQLQuerySuite extends QueryTest with SharedSparkSession with AdaptiveSpark
     checkAnswer(
       sql(
         """
-          |SeleCT * from
-          |  (select * from upperCaseData WherE N <= 4) leftTable fuLL OUtER joiN
-          |  (sElEcT * FROM upperCaseData whERe N >= 3) rightTable
-          |    oN leftTable.N = rightTable.N
-        """.stripMargin),
+          SeleCT * from
+            (select * from upperCaseData WherE N <= 4) leftTable fuLL OUtER joiN
+            (sElEcT * FROM upperCaseData whERe N >= 3) rightTable
+              oN leftTable.N = rightTable.N
+        """),
       Row(1, "A", null, null) ::
       Row(2, "B", null, null) ::
       Row(3, "C", 3, "C") ::
@@ -1161,10 +1161,10 @@ class SQLQuerySuite extends QueryTest with SharedSparkSession with AdaptiveSpark
     checkAnswer(
       sql(
         """SELECT a.key, b.key, c.key
-          |FROM testData a
-          |JOIN testData b ON a.key = b.key
-          |JOIN testData c ON a.key = c.key
-        """.stripMargin),
+          FROM testData a
+          JOIN testData b ON a.key = b.key
+          JOIN testData c ON a.key = c.key
+        """),
       (1 to 100).map(i => Row(i, i, i)))
   }
 
@@ -1198,9 +1198,9 @@ class SQLQuerySuite extends QueryTest with SharedSparkSession with AdaptiveSpark
     checkAnswer(
       sql(
         """SELECT a.key, b.key, c.key
-          |FROM testData a,testData b,testData c
-          |where a.key = b.key and a.key = c.key
-        """.stripMargin),
+          FROM testData a,testData b,testData c
+          where a.key = b.key and a.key = c.key
+        """),
       (1 to 100).map(i => Row(i, i, i)))
   }
 
@@ -1320,71 +1320,71 @@ class SQLQuerySuite extends QueryTest with SharedSparkSession with AdaptiveSpark
       checkAnswer(
         sql(
           """
-            |SELECT a
-            |FROM orderByData
-            |GROUP BY a
-            |ORDER BY sum(b)
-        """.stripMargin),
+            SELECT a
+            FROM orderByData
+            GROUP BY a
+            ORDER BY sum(b)
+        """),
         Row("4") :: Row("1") :: Row("3") :: Row("2") :: Nil)
 
       checkAnswer(
         sql(
           """
-            |SELECT sum(b)
-            |FROM orderByData
-            |GROUP BY a
-            |ORDER BY sum(b)
-        """.stripMargin),
+            SELECT sum(b)
+            FROM orderByData
+            GROUP BY a
+            ORDER BY sum(b)
+        """),
         Row(3) :: Row(7) :: Row(11) :: Row(15) :: Nil)
 
       checkAnswer(
         sql(
           """
-            |SELECT sum(b)
-            |FROM orderByData
-            |GROUP BY a
-            |ORDER BY sum(b), max(b)
-        """.stripMargin),
+            SELECT sum(b)
+            FROM orderByData
+            GROUP BY a
+            ORDER BY sum(b), max(b)
+        """),
         Row(3) :: Row(7) :: Row(11) :: Row(15) :: Nil)
 
       checkAnswer(
         sql(
           """
-            |SELECT a, sum(b)
-            |FROM orderByData
-            |GROUP BY a
-            |ORDER BY sum(b)
-        """.stripMargin),
+            SELECT a, sum(b)
+            FROM orderByData
+            GROUP BY a
+            ORDER BY sum(b)
+        """),
         Row("4", 3) :: Row("1", 7) :: Row("3", 11) :: Row("2", 15) :: Nil)
 
       checkAnswer(
         sql(
           """
-            |SELECT a, sum(b)
-            |FROM orderByData
-            |GROUP BY a
-            |ORDER BY sum(b) + 1
-          """.stripMargin),
+            SELECT a, sum(b)
+            FROM orderByData
+            GROUP BY a
+            ORDER BY sum(b) + 1
+          """),
         Row("4", 3) :: Row("1", 7) :: Row("3", 11) :: Row("2", 15) :: Nil)
 
       checkAnswer(
         sql(
           """
-            |SELECT count(*)
-            |FROM orderByData
-            |GROUP BY a
-            |ORDER BY count(*)
-          """.stripMargin),
+            SELECT count(*)
+            FROM orderByData
+            GROUP BY a
+            ORDER BY count(*)
+          """),
         Row(2) :: Row(2) :: Row(2) :: Row(2) :: Nil)
 
       checkAnswer(
         sql(
           """
-            |SELECT a
-            |FROM orderByData
-            |GROUP BY a
-            |ORDER BY a, count(*), sum(b)
-          """.stripMargin),
+            SELECT a
+            FROM orderByData
+            GROUP BY a
+            ORDER BY a, count(*), sum(b)
+          """),
         Row("1") :: Row("2") :: Row("3") :: Row("4") :: Nil)
     }
   }
@@ -1538,23 +1538,23 @@ class SQLQuerySuite extends QueryTest with SharedSparkSession with AdaptiveSpark
         intercept[AnalysisException] {
           spark.sql(
             s"""
-              |CREATE TEMPORARY VIEW db.t
-              |USING parquet
-              |OPTIONS (
-              |  path '$path'
-              |)
-             """.stripMargin)
+              CREATE TEMPORARY VIEW db.t
+              USING parquet
+              OPTIONS (
+                path '$path'
+              )
+             """)
         }.getMessage
 
         // If you use backticks to quote the name then it's OK.
         spark.sql(
           s"""
-            |CREATE TEMPORARY VIEW `db.t`
-            |USING parquet
-            |OPTIONS (
-            |  path '$path'
-            |)
-           """.stripMargin)
+            CREATE TEMPORARY VIEW `db.t`
+            USING parquet
+            OPTIONS (
+              path '$path'
+            )
+           """)
         checkAnswer(spark.table("`db.t`"), df)
       }
     }
@@ -1591,29 +1591,29 @@ class SQLQuerySuite extends QueryTest with SharedSparkSession with AdaptiveSpark
 
       checkAnswer(sql(
         """
-          |SELECT MAX(value) as value, key as col2
-          |FROM src
-          |GROUP BY key
-          |ORDER BY value desc, key
-        """.stripMargin),
+          SELECT MAX(value) as value, key as col2
+          FROM src
+          GROUP BY key
+          ORDER BY value desc, key
+        """),
         Seq(Row(3, 1), Row(3, 2), Row(3, 3), Row(null, 4), Row(null, 5)))
 
       checkAnswer(sql(
         """
-          |SELECT MAX(value) as value, key as col2
-          |FROM src
-          |GROUP BY key
-          |ORDER BY value desc, key desc
-        """.stripMargin),
+          SELECT MAX(value) as value, key as col2
+          FROM src
+          GROUP BY key
+          ORDER BY value desc, key desc
+        """),
         Seq(Row(3, 3), Row(3, 2), Row(3, 1), Row(null, 5), Row(null, 4)))
 
       checkAnswer(sql(
         """
-          |SELECT MAX(value) as value, key as col2
-          |FROM src
-          |GROUP BY key
-          |ORDER BY value asc, key desc
-        """.stripMargin),
+          SELECT MAX(value) as value, key as col2
+          FROM src
+          GROUP BY key
+          ORDER BY value asc, key desc
+        """),
         Seq(Row(null, 5), Row(null, 4), Row(3, 3), Row(3, 2), Row(3, 1)))
     }
   }
@@ -1738,52 +1738,52 @@ class SQLQuerySuite extends QueryTest with SharedSparkSession with AdaptiveSpark
 
       checkAnswer(sql(
         """
-          | SELECT min(struct(record.*)) FROM
-          |   (select struct(a,b) as record from testData2) tmp
-      """.stripMargin),
+           SELECT min(struct(record.*)) FROM
+             (select struct(a,b) as record from testData2) tmp
+      """),
         Row(Row(1, 1)) :: Nil)
 
       // Try with an alias on the select list
       checkAnswer(sql(
         """
-          | SELECT max(struct(record.*)) as r FROM
-          |   (select struct(a,b) as record from testData2) tmp
-      """.stripMargin).select($"r.*"),
+           SELECT max(struct(record.*)) as r FROM
+             (select struct(a,b) as record from testData2) tmp
+      """).select($"r.*"),
         Row(3, 2) :: Nil)
 
       // With GROUP BY
       checkAnswer(sql(
         """
-          | SELECT min(struct(record.*)) FROM
-          |   (select a as a, struct(a,b) as record from testData2) tmp
-          | GROUP BY a
-      """.stripMargin),
+           SELECT min(struct(record.*)) FROM
+             (select a as a, struct(a,b) as record from testData2) tmp
+           GROUP BY a
+      """),
         Row(Row(1, 1)) :: Row(Row(2, 1)) :: Row(Row(3, 1)) :: Nil)
 
       // With GROUP BY and alias
       checkAnswer(sql(
         """
-          | SELECT max(struct(record.*)) as r FROM
-          |   (select a as a, struct(a,b) as record from testData2) tmp
-          | GROUP BY a
-      """.stripMargin).select($"r.*"),
+           SELECT max(struct(record.*)) as r FROM
+             (select a as a, struct(a,b) as record from testData2) tmp
+           GROUP BY a
+      """).select($"r.*"),
         Row(1, 2) :: Row(2, 2) :: Row(3, 2) :: Nil)
 
       // With GROUP BY and alias and additional fields in the struct
       checkAnswer(sql(
         """
-          | SELECT max(struct(a, record.*, b)) as r FROM
-          |   (select a as a, b as b, struct(a,b) as record from testData2) tmp
-          | GROUP BY a
-      """.stripMargin).select($"r.*"),
+           SELECT max(struct(a, record.*, b)) as r FROM
+             (select a as a, b as b, struct(a,b) as record from testData2) tmp
+           GROUP BY a
+      """).select($"r.*"),
         Row(1, 1, 2, 2) :: Row(2, 2, 2, 2) :: Row(3, 3, 2, 2) :: Nil)
 
       // Create a data set that contains nested structs.
       val nestedStructData = sql(
         """
-          | SELECT struct(r1, r2) as record FROM
-          |   (SELECT struct(a, b) as r1, struct(b, a) as r2 FROM testData2) tmp
-      """.stripMargin)
+           SELECT struct(r1, r2) as record FROM
+             (SELECT struct(a, b) as r1, struct(b, a) as r2 FROM testData2) tmp
+      """)
 
       checkAnswer(nestedStructData.select($"record.*"),
         Row(Row(1, 1), Row(1, 1)) :: Row(Row(1, 2), Row(2, 1)) :: Row(Row(2, 1), Row(1, 2)) ::
@@ -1823,9 +1823,9 @@ class SQLQuerySuite extends QueryTest with SharedSparkSession with AdaptiveSpark
       withSQLConf(SQLConf.SUPPORT_QUOTED_REGEX_COLUMN_NAME.key -> "false") {
         val specialCharacterPath = sql(
           """
-          | SELECT struct(`col$.a_`, `a.b.c.`) as `r&&b.c` FROM
-          |   (SELECT struct(a, b) as `col$.a_`, struct(b, a) as `a.b.c.` FROM testData2) tmp
-      """.stripMargin)
+           SELECT struct(`col$.a_`, `a.b.c.`) as `r&&b.c` FROM
+             (SELECT struct(a, b) as `col$.a_`, struct(b, a) as `a.b.c.` FROM testData2) tmp
+      """)
         withTempView("specialCharacterTable") {
           specialCharacterPath.createOrReplaceTempView("specialCharacterTable")
           checkAnswer(
@@ -1980,11 +1980,11 @@ class SQLQuerySuite extends QueryTest with SharedSparkSession with AdaptiveSpark
     // UNION was incorrectly considered non-nullable:
     checkAnswer(
       sql("""SELECT count(v) FROM (
-            |  SELECT v FROM (
-            |    SELECT 'foo' AS v UNION ALL
-            |    SELECT NULL AS v
-            |  ) my_union WHERE isnull(v)
-            |) my_subview""".stripMargin),
+              SELECT v FROM (
+                SELECT 'foo' AS v UNION ALL
+                SELECT NULL AS v
+              ) my_union WHERE isnull(v)
+            ) my_subview"""),
       Seq(Row(0)))
   }
 
@@ -1995,12 +1995,12 @@ class SQLQuerySuite extends QueryTest with SharedSparkSession with AdaptiveSpark
     checkAnswer(
       sql(
         """
-          |SELECT a FROM (
-          |  SELECT ISNULL(v) AS a, RAND() FROM (
-          |    SELECT 'foo' AS v UNION ALL SELECT null AS v
-          |  ) my_union
-          |) my_view
-        """.stripMargin),
+          SELECT a FROM (
+            SELECT ISNULL(v) AS a, RAND() FROM (
+              SELECT 'foo' AS v UNION ALL SELECT null AS v
+            ) my_union
+          ) my_view
+        """),
       Row(false) :: Row(true) :: Nil)
   }
 
@@ -2130,20 +2130,20 @@ class SQLQuerySuite extends QueryTest with SharedSparkSession with AdaptiveSpark
     withTempDir { dir =>
       val json =
         """
-          |{"h": {"b": {"c": [{"e": "adfgd"}], "a": [{"e": "testing", "count": 3}],
-          |"b": [{"e": "test", "count": 1}]}}, "d": {"b": {"c": [{"e": "adfgd"}],
-          |"a": [{"e": "testing", "count": 3}], "b": [{"e": "test", "count": 1}]}},
-          |"c": {"b": {"c": [{"e": "adfgd"}], "a": [{"count": 3}],
-          |"b": [{"e": "test", "count": 1}]}}, "a": {"b": {"c": [{"e": "adfgd"}],
-          |"a": [{"count": 3}], "b": [{"e": "test", "count": 1}]}},
-          |"e": {"b": {"c": [{"e": "adfgd"}], "a": [{"e": "testing", "count": 3}],
-          |"b": [{"e": "test", "count": 1}]}}, "g": {"b": {"c": [{"e": "adfgd"}],
-          |"a": [{"e": "testing", "count": 3}], "b": [{"e": "test", "count": 1}]}},
-          |"f": {"b": {"c": [{"e": "adfgd"}], "a": [{"e": "testing", "count": 3}],
-          |"b": [{"e": "test", "count": 1}]}}, "b": {"b": {"c": [{"e": "adfgd"}],
-          |"a": [{"count": 3}], "b": [{"e": "test", "count": 1}]}}}'
-          |
-        """.stripMargin
+          {"h": {"b": {"c": [{"e": "adfgd"}], "a": [{"e": "testing", "count": 3}],
+          "b": [{"e": "test", "count": 1}]}}, "d": {"b": {"c": [{"e": "adfgd"}],
+          "a": [{"e": "testing", "count": 3}], "b": [{"e": "test", "count": 1}]}},
+          "c": {"b": {"c": [{"e": "adfgd"}], "a": [{"count": 3}],
+          "b": [{"e": "test", "count": 1}]}}, "a": {"b": {"c": [{"e": "adfgd"}],
+          "a": [{"count": 3}], "b": [{"e": "test", "count": 1}]}},
+          "e": {"b": {"c": [{"e": "adfgd"}], "a": [{"e": "testing", "count": 3}],
+          "b": [{"e": "test", "count": 1}]}}, "g": {"b": {"c": [{"e": "adfgd"}],
+          "a": [{"e": "testing", "count": 3}], "b": [{"e": "test", "count": 1}]}},
+          "f": {"b": {"c": [{"e": "adfgd"}], "a": [{"e": "testing", "count": 3}],
+          "b": [{"e": "test", "count": 1}]}}, "b": {"b": {"c": [{"e": "adfgd"}],
+          "a": [{"count": 3}], "b": [{"e": "test", "count": 1}]}}}'
+
+        """
       spark.read.json(Seq(json).toDS()).write.mode("overwrite").parquet(dir.toString)
       spark.read.parquet(dir.toString).collect()
     }
@@ -2176,21 +2176,21 @@ class SQLQuerySuite extends QueryTest with SharedSparkSession with AdaptiveSpark
   test("check code injection is prevented") {
     // The end of comment (*/) should be escaped.
     var literal =
-      """|*/
-         |{
-         |  new Object() {
-         |    void f() { throw new RuntimeException("This exception is injected."); }
-         |  }.f();
-         |}
-         |/*""".stripMargin
+      """*/
+         {
+           new Object() {
+             void f() { throw new RuntimeException("This exception is injected."); }
+           }.f();
+         }
+         /*"""
     var expected =
-      """|*/
-         |{
-         |  new Object() {
-         |    void f() { throw new RuntimeException("This exception is injected."); }
-         |  }.f();
-         |}
-         |/*""".stripMargin
+      """*/
+         {
+           new Object() {
+             void f() { throw new RuntimeException("This exception is injected."); }
+           }.f();
+         }
+         /*"""
     checkAnswer(
       sql(s"SELECT '$literal' AS DUMMY"),
       Row(s"$expected") :: Nil)
@@ -2198,241 +2198,241 @@ class SQLQuerySuite extends QueryTest with SharedSparkSession with AdaptiveSpark
     // `\u002A` is `*` and `\u002F` is `/`
     // so if the end of comment consists of those characters in queries, we need to escape them.
     literal =
-      """|\\u002A/
-         |{
-         |  new Object() {
-         |    void f() { throw new RuntimeException("This exception is injected."); }
-         |  }.f();
-         |}
-         |/*""".stripMargin
+      """\\u002A/
+         {
+           new Object() {
+             void f() { throw new RuntimeException("This exception is injected."); }
+           }.f();
+         }
+         /*"""
     expected =
-      s"""|${"\\u002A/"}
-          |{
-          |  new Object() {
-          |    void f() { throw new RuntimeException("This exception is injected."); }
-          |  }.f();
-          |}
-          |/*""".stripMargin
+      s"""${"\\u002A/"}
+          {
+            new Object() {
+              void f() { throw new RuntimeException("This exception is injected."); }
+            }.f();
+          }
+          /*"""
     checkAnswer(
       sql(s"SELECT '$literal' AS DUMMY"),
       Row(s"$expected") :: Nil)
 
     literal =
-      """|\\\\u002A/
-         |{
-         |  new Object() {
-         |    void f() { throw new RuntimeException("This exception is injected."); }
-         |  }.f();
-         |}
-         |/*""".stripMargin
+      """\\\\u002A/
+         {
+           new Object() {
+             void f() { throw new RuntimeException("This exception is injected."); }
+           }.f();
+         }
+         /*"""
     expected =
-      """|\\u002A/
-         |{
-         |  new Object() {
-         |    void f() { throw new RuntimeException("This exception is injected."); }
-         |  }.f();
-         |}
-         |/*""".stripMargin
+      """\\u002A/
+         {
+           new Object() {
+             void f() { throw new RuntimeException("This exception is injected."); }
+           }.f();
+         }
+         /*"""
     checkAnswer(
       sql(s"SELECT '$literal' AS DUMMY"),
       Row(s"$expected") :: Nil)
 
     literal =
-      """|\\u002a/
-         |{
-         |  new Object() {
-         |    void f() { throw new RuntimeException("This exception is injected."); }
-         |  }.f();
-         |}
-         |/*""".stripMargin
+      """\\u002a/
+         {
+           new Object() {
+             void f() { throw new RuntimeException("This exception is injected."); }
+           }.f();
+         }
+         /*"""
     expected =
-      s"""|${"\\u002a/"}
-          |{
-          |  new Object() {
-          |    void f() { throw new RuntimeException("This exception is injected."); }
-          |  }.f();
-          |}
-          |/*""".stripMargin
+      s"""${"\\u002a/"}
+          {
+            new Object() {
+              void f() { throw new RuntimeException("This exception is injected."); }
+            }.f();
+          }
+          /*"""
     checkAnswer(
       sql(s"SELECT '$literal' AS DUMMY"),
       Row(s"$expected") :: Nil)
 
     literal =
-      """|\\\\u002a/
-         |{
-         |  new Object() {
-         |    void f() { throw new RuntimeException("This exception is injected."); }
-         |  }.f();
-         |}
-         |/*""".stripMargin
+      """\\\\u002a/
+         {
+           new Object() {
+             void f() { throw new RuntimeException("This exception is injected."); }
+           }.f();
+         }
+         /*"""
     expected =
-      """|\\u002a/
-         |{
-         |  new Object() {
-         |    void f() { throw new RuntimeException("This exception is injected."); }
-         |  }.f();
-         |}
-         |/*""".stripMargin
+      """\\u002a/
+         {
+           new Object() {
+             void f() { throw new RuntimeException("This exception is injected."); }
+           }.f();
+         }
+         /*"""
     checkAnswer(
       sql(s"SELECT '$literal' AS DUMMY"),
       Row(s"$expected") :: Nil)
 
     literal =
-      """|*\\u002F
-         |{
-         |  new Object() {
-         |    void f() { throw new RuntimeException("This exception is injected."); }
-         |  }.f();
-         |}
-         |/*""".stripMargin
+      """*\\u002F
+         {
+           new Object() {
+             void f() { throw new RuntimeException("This exception is injected."); }
+           }.f();
+         }
+         /*"""
     expected =
-      s"""|${"*\\u002F"}
-          |{
-          |  new Object() {
-          |    void f() { throw new RuntimeException("This exception is injected."); }
-          |  }.f();
-          |}
-          |/*""".stripMargin
+      s"""${"*\\u002F"}
+          {
+            new Object() {
+              void f() { throw new RuntimeException("This exception is injected."); }
+            }.f();
+          }
+          /*"""
     checkAnswer(
       sql(s"SELECT '$literal' AS DUMMY"),
       Row(s"$expected") :: Nil)
 
     literal =
-      """|*\\\\u002F
-         |{
-         |  new Object() {
-         |    void f() { throw new RuntimeException("This exception is injected."); }
-         |  }.f();
-         |}
-         |/*""".stripMargin
+      """*\\\\u002F
+         {
+           new Object() {
+             void f() { throw new RuntimeException("This exception is injected."); }
+           }.f();
+         }
+         /*"""
     expected =
-      """|*\\u002F
-         |{
-         |  new Object() {
-         |    void f() { throw new RuntimeException("This exception is injected."); }
-         |  }.f();
-         |}
-         |/*""".stripMargin
+      """*\\u002F
+         {
+           new Object() {
+             void f() { throw new RuntimeException("This exception is injected."); }
+           }.f();
+         }
+         /*"""
     checkAnswer(
       sql(s"SELECT '$literal' AS DUMMY"),
       Row(s"$expected") :: Nil)
 
     literal =
-      """|*\\u002f
-         |{
-         |  new Object() {
-         |    void f() { throw new RuntimeException("This exception is injected."); }
-         |  }.f();
-         |}
-         |/*""".stripMargin
+      """*\\u002f
+         {
+           new Object() {
+             void f() { throw new RuntimeException("This exception is injected."); }
+           }.f();
+         }
+         /*"""
     expected =
-      s"""|${"*\\u002f"}
-          |{
-          |  new Object() {
-          |    void f() { throw new RuntimeException("This exception is injected."); }
-          |  }.f();
-          |}
-          |/*""".stripMargin
+      s"""${"*\\u002f"}
+          {
+            new Object() {
+              void f() { throw new RuntimeException("This exception is injected."); }
+            }.f();
+          }
+          /*"""
     checkAnswer(
       sql(s"SELECT '$literal' AS DUMMY"),
       Row(s"$expected") :: Nil)
 
     literal =
-      """|*\\\\u002f
-         |{
-         |  new Object() {
-         |    void f() { throw new RuntimeException("This exception is injected."); }
-         |  }.f();
-         |}
-         |/*""".stripMargin
+      """*\\\\u002f
+         {
+           new Object() {
+             void f() { throw new RuntimeException("This exception is injected."); }
+           }.f();
+         }
+         /*"""
     expected =
-      """|*\\u002f
-         |{
-         |  new Object() {
-         |    void f() { throw new RuntimeException("This exception is injected."); }
-         |  }.f();
-         |}
-         |/*""".stripMargin
+      """*\\u002f
+         {
+           new Object() {
+             void f() { throw new RuntimeException("This exception is injected."); }
+           }.f();
+         }
+         /*"""
     checkAnswer(
       sql(s"SELECT '$literal' AS DUMMY"),
       Row(s"$expected") :: Nil)
 
     literal =
-      """|\\u002A\\u002F
-         |{
-         |  new Object() {
-         |    void f() { throw new RuntimeException("This exception is injected."); }
-         |  }.f();
-         |}
-         |/*""".stripMargin
+      """\\u002A\\u002F
+         {
+           new Object() {
+             void f() { throw new RuntimeException("This exception is injected."); }
+           }.f();
+         }
+         /*"""
     expected =
-      s"""|${"\\u002A\\u002F"}
-          |{
-          |  new Object() {
-          |    void f() { throw new RuntimeException("This exception is injected."); }
-          |  }.f();
-          |}
-          |/*""".stripMargin
+      s"""${"\\u002A\\u002F"}
+          {
+            new Object() {
+              void f() { throw new RuntimeException("This exception is injected."); }
+            }.f();
+          }
+          /*"""
     checkAnswer(
       sql(s"SELECT '$literal' AS DUMMY"),
       Row(s"$expected") :: Nil)
 
     literal =
-      """|\\\\u002A\\u002F
-         |{
-         |  new Object() {
-         |    void f() { throw new RuntimeException("This exception is injected."); }
-         |  }.f();
-         |}
-         |/*""".stripMargin
+      """\\\\u002A\\u002F
+         {
+           new Object() {
+             void f() { throw new RuntimeException("This exception is injected."); }
+           }.f();
+         }
+         /*"""
     expected =
-      s"""|${"\\\\u002A\\u002F"}
-          |{
-          |  new Object() {
-          |    void f() { throw new RuntimeException("This exception is injected."); }
-          |  }.f();
-          |}
-          |/*""".stripMargin
+      s"""${"\\\\u002A\\u002F"}
+          {
+            new Object() {
+              void f() { throw new RuntimeException("This exception is injected."); }
+            }.f();
+          }
+          /*"""
     checkAnswer(
       sql(s"SELECT '$literal' AS DUMMY"),
       Row(s"$expected") :: Nil)
 
     literal =
-      """|\\u002A\\\\u002F
-         |{
-         |  new Object() {
-         |    void f() { throw new RuntimeException("This exception is injected."); }
-         |  }.f();
-         |}
-         |/*""".stripMargin
+      """\\u002A\\\\u002F
+         {
+           new Object() {
+             void f() { throw new RuntimeException("This exception is injected."); }
+           }.f();
+         }
+         /*"""
     expected =
-      s"""|${"\\u002A\\\\u002F"}
-          |{
-          |  new Object() {
-          |    void f() { throw new RuntimeException("This exception is injected."); }
-          |  }.f();
-          |}
-          |/*""".stripMargin
+      s"""${"\\u002A\\\\u002F"}
+          {
+            new Object() {
+              void f() { throw new RuntimeException("This exception is injected."); }
+            }.f();
+          }
+          /*"""
     checkAnswer(
       sql(s"SELECT '$literal' AS DUMMY"),
       Row(s"$expected") :: Nil)
 
     literal =
-      """|\\\\u002A\\\\u002F
-         |{
-         |  new Object() {
-         |    void f() { throw new RuntimeException("This exception is injected."); }
-         |  }.f();
-         |}
-         |/*""".stripMargin
+      """\\\\u002A\\\\u002F
+         {
+           new Object() {
+             void f() { throw new RuntimeException("This exception is injected."); }
+           }.f();
+         }
+         /*"""
     expected =
-      """|\\u002A\\u002F
-         |{
-         |  new Object() {
-         |    void f() { throw new RuntimeException("This exception is injected."); }
-         |  }.f();
-         |}
-         |/*""".stripMargin
+      """\\u002A\\u002F
+         {
+           new Object() {
+             void f() { throw new RuntimeException("This exception is injected."); }
+           }.f();
+         }
+         /*"""
     checkAnswer(
       sql(s"SELECT '$literal' AS DUMMY"),
       Row(s"$expected") :: Nil)
@@ -2487,15 +2487,15 @@ class SQLQuerySuite extends QueryTest with SharedSparkSession with AdaptiveSpark
       sql("CREATE TABLE tbl(a INT, b INT) USING parquet")
       checkAnswer(sql(
         """
-          |SELECT
-          |  a,
-          |  MAX(b) AS c1,
-          |  b AS c2
-          |FROM tbl
-          |WHERE a = b
-          |GROUP BY a, b
-          |HAVING c1 = 1
-        """.stripMargin), Nil)
+          SELECT
+            a,
+            MAX(b) AS c1,
+            b AS c2
+          FROM tbl
+          WHERE a = b
+          GROUP BY a, b
+          HAVING c1 = 1
+        """), Nil)
     }
   }
 
@@ -2589,14 +2589,14 @@ class SQLQuerySuite extends QueryTest with SharedSparkSession with AdaptiveSpark
   test("SPARK-19334: check code injection is prevented") {
     // The end of comment (*/) should be escaped.
     val badQuery =
-      """|SELECT inline(array(cast(struct(1) AS
-         |  struct<`=
-         |    new Object() {
-         |      {f();}
-         |      public void f() {throw new RuntimeException("This exception is injected.");}
-         |      public int x;
-         |    }.x
-         |  `:int>)))""".stripMargin.replaceAll("\n", "")
+      """SELECT inline(array(cast(struct(1) AS
+           struct<`=
+             new Object() {
+               {f();}
+               public void f() {throw new RuntimeException("This exception is injected.");}
+               public int x;
+             }.x
+           `:int>)))""".replaceAll("\n", "")
 
     checkAnswer(sql(badQuery), Row(1) :: Nil)
   }
@@ -2674,14 +2674,14 @@ class SQLQuerySuite extends QueryTest with SharedSparkSession with AdaptiveSpark
           .createOrReplaceTempView("A")
         val df = sql(
           """
-            |SELECT * from
-            | (SELECT MIN(a) as minA FROM A) AA -- this Aggregate will return UnsafeRows
-            | -- the IN will become InSet with a Set of GenericInternalRows
-            | -- a GenericInternalRow is never equal to an UnsafeRow so the query would
-            | -- returns 0 results, which is incorrect
-            | WHERE minA IN (NAMED_STRUCT('a', 1L, 'b', 1L), NAMED_STRUCT('a', 2L, 'b', 2L),
-            |   NAMED_STRUCT('a', 3L, 'b', 3L))
-          """.stripMargin)
+            SELECT * from
+             (SELECT MIN(a) as minA FROM A) AA -- this Aggregate will return UnsafeRows
+             -- the IN will become InSet with a Set of GenericInternalRows
+             -- a GenericInternalRow is never equal to an UnsafeRow so the query would
+             -- returns 0 results, which is incorrect
+             WHERE minA IN (NAMED_STRUCT('a', 1L, 'b', 1L), NAMED_STRUCT('a', 2L, 'b', 2L),
+               NAMED_STRUCT('a', 3L, 'b', 3L))
+          """)
         checkAnswer(df, Row(Row(1, 1)))
       }
     }
@@ -2760,10 +2760,10 @@ class SQLQuerySuite extends QueryTest with SharedSparkSession with AdaptiveSpark
       Seq(1, 2).toDF("col").createOrReplaceTempView("t2")
       val df = sql(
         """
-          |SELECT *
-          |FROM t1, t2
-          |WHERE t1.col1 = 1 AND 1 = t1.col2 AND t1.col1 = t2.col AND t1.col2 = t2.col
-        """.stripMargin)
+          SELECT *
+          FROM t1, t2
+          WHERE t1.col1 = 1 AND 1 = t1.col2 AND t1.col1 = t2.col AND t1.col2 = t2.col
+        """)
       checkAnswer(df, Row(1, 1, 1))
     }
   }
@@ -2879,12 +2879,12 @@ class SQLQuerySuite extends QueryTest with SharedSparkSession with AdaptiveSpark
         .write.mode("overwrite").format("parquet").saveAsTable("dim_stats")
       val df = sql(
         """
-          |SELECT f.date_id, f.product_id, f.store_id FROM
-          |(SELECT date_id, product_id, store_id
-          |   FROM fact_stats WHERE filterND(date_id)) AS f
-          |JOIN dim_stats s
-          |ON f.store_id = s.store_id WHERE s.country = 'DE'
-        """.stripMargin)
+          SELECT f.date_id, f.product_id, f.store_id FROM
+          (SELECT date_id, product_id, store_id
+             FROM fact_stats WHERE filterND(date_id)) AS f
+          JOIN dim_stats s
+          ON f.store_id = s.store_id WHERE s.country = 'DE'
+        """)
       checkAnswer(df, Seq(Row(3, 99, 1)))
     }
   }
@@ -2902,18 +2902,18 @@ class SQLQuerySuite extends QueryTest with SharedSparkSession with AdaptiveSpark
         Seq(5, 20, 2).foreach { numPartitions =>
           sql(
             s"""
-               |INSERT OVERWRITE TABLE nums
-               |SELECT /*+ REPARTITION($numPartitions) */ *
-               |FROM nums1
-             """.stripMargin)
+               INSERT OVERWRITE TABLE nums
+               SELECT /*+ REPARTITION($numPartitions) */ *
+               FROM nums1
+             """)
           assert(spark.table("nums").inputFiles.length == numPartitions)
 
           sql(
             s"""
-               |INSERT OVERWRITE TABLE nums
-               |SELECT /*+ COALESCE($numPartitions) */ *
-               |FROM nums1
-             """.stripMargin)
+               INSERT OVERWRITE TABLE nums
+               SELECT /*+ COALESCE($numPartitions) */ *
+               FROM nums1
+             """)
           // Coalesce can not increase the number of partitions
           assert(spark.table("nums").inputFiles.length == Seq(numPartitions, numPartitionsSrc).min)
         }
@@ -2951,20 +2951,20 @@ class SQLQuerySuite extends QueryTest with SharedSparkSession with AdaptiveSpark
       withTable("tab1", "tab2") {
         sql(
           """
-            |CREATE TABLE `tab1` (`col1` INT, `TDATE` DATE)
-            |USING CSV
-            |PARTITIONED BY (TDATE)
-          """.stripMargin)
+            CREATE TABLE `tab1` (`col1` INT, `TDATE` DATE)
+            USING CSV
+            PARTITIONED BY (TDATE)
+          """)
         spark.table("tab1").where("TDATE >= '2017-08-15'").createOrReplaceTempView("tmpView1")
         sql("CREATE TABLE `tab2` (`TDATE` DATE) USING parquet")
         sql(
           """
-            |CREATE OR REPLACE TEMPORARY VIEW tmpView2 AS
-            |SELECT N.tdate, col1 AS aliasCol1
-            |FROM tmpView1 N
-            |JOIN tab2 Z
-            |ON N.tdate = Z.tdate
-          """.stripMargin)
+            CREATE OR REPLACE TEMPORARY VIEW tmpView2 AS
+            SELECT N.tdate, col1 AS aliasCol1
+            FROM tmpView1 N
+            JOIN tab2 Z
+            ON N.tdate = Z.tdate
+          """)
         withSQLConf(SQLConf.AUTO_BROADCASTJOIN_THRESHOLD.key -> "0") {
           sql("SELECT * FROM tmpView2 x JOIN tmpView2 y ON x.tdate = y.tdate").collect()
         }
@@ -2977,24 +2977,24 @@ class SQLQuerySuite extends QueryTest with SharedSparkSession with AdaptiveSpark
       withTable("tab1", "tab2") {
         sql(
           """
-            |CREATE TABLE `tab1` (`EX` STRING, `TDATE` DATE)
-            |USING parquet
-            |PARTITIONED BY (tdate)
-          """.stripMargin)
+            CREATE TABLE `tab1` (`EX` STRING, `TDATE` DATE)
+            USING parquet
+            PARTITIONED BY (tdate)
+          """)
         sql("CREATE TABLE `tab2` (`TDATE` DATE) USING parquet")
         sql(
           """
-            |CREATE OR REPLACE TEMPORARY VIEW TMP as
-            |SELECT  N.tdate, EX AS new_ex
-            |FROM tab1 N
-            |JOIN tab2 Z
-            |ON N.tdate = Z.tdate
-          """.stripMargin)
+            CREATE OR REPLACE TEMPORARY VIEW TMP as
+            SELECT  N.tdate, EX AS new_ex
+            FROM tab1 N
+            JOIN tab2 Z
+            ON N.tdate = Z.tdate
+          """)
         sql(
           """
-            |SELECT * FROM TMP x JOIN TMP y
-            |ON x.tdate = y.tdate
-          """.stripMargin).queryExecution.executedPlan
+            SELECT * FROM TMP x JOIN TMP y
+            ON x.tdate = y.tdate
+          """).queryExecution.executedPlan
       }
     }
   }
@@ -3017,9 +3017,9 @@ class SQLQuerySuite extends QueryTest with SharedSparkSession with AdaptiveSpark
         val where = "c2 >= 3 OR c1 >= 0"
         val whereNullSafe =
           """
-            |(c2 IS NOT NULL AND c2 >= 3)
-            |OR (c1 IS NOT NULL AND c1 >= 0)
-          """.stripMargin
+            (c2 IS NOT NULL AND c2 >= 3)
+            OR (c1 IS NOT NULL AND c1 >= 0)
+          """
 
         val df_a = df.filter(where)
         val df_b = df.filter(whereNullSafe)
@@ -3028,8 +3028,8 @@ class SQLQuerySuite extends QueryTest with SharedSparkSession with AdaptiveSpark
         val whereWithIn = "c2 >= 3 OR c1 in (2)"
         val whereWithInNullSafe =
           """
-            |(c2 IS NOT NULL AND c2 >= 3)
-          """.stripMargin
+            (c2 IS NOT NULL AND c2 >= 3)
+          """
         val dfIn_a = df.filter(whereWithIn)
         val dfIn_b = df.filter(whereWithInNullSafe)
         checkAnswer(df.except(dfIn_a), df.except(dfIn_b))
@@ -3262,10 +3262,10 @@ class SQLQuerySuite extends QueryTest with SharedSparkSession with AdaptiveSpark
 
           val queryDf = sql(
             s"""select leftside.a, leftside.b
-               |from cachedview leftside
-               |join cachedview rightside
-               |on leftside.a = rightside.a
-           """.stripMargin)
+               from cachedview leftside
+               join cachedview rightside
+               on leftside.a = rightside.a
+           """)
 
           val inMemoryTableScan = collect(queryDf.queryExecution.executedPlan) {
             case i: InMemoryTableScanExec => i
@@ -3318,18 +3318,18 @@ class SQLQuerySuite extends QueryTest with SharedSparkSession with AdaptiveSpark
         sql("SELECT ''").as[String].map(identity).toDF("x").createOrReplaceTempView("t3")
         sql(
           """
-            |SELECT t1.x
-            |FROM t1
-            |LEFT JOIN (
-            |    SELECT x FROM (
-            |        SELECT x FROM t2
-            |        UNION ALL
-            |        SELECT SUBSTR(x,5) x FROM t3
-            |    ) a
-            |    WHERE LENGTH(x)>0
-            |) t3
-            |ON t1.x=t3.x
-        """.stripMargin).collect()
+            SELECT t1.x
+            FROM t1
+            LEFT JOIN (
+                SELECT x FROM (
+                    SELECT x FROM t2
+                    UNION ALL
+                    SELECT SUBSTR(x,5) x FROM t3
+                ) a
+                WHERE LENGTH(x)>0
+            ) t3
+            ON t1.x=t3.x
+        """).collect()
       }
     }
   }
@@ -3391,9 +3391,9 @@ class SQLQuerySuite extends QueryTest with SharedSparkSession with AdaptiveSpark
     withTable("t") {
       val df = sql(
         """
-          |SELECT value
-          |FROM VALUES array(named_struct('field', named_struct('a', 1, 'b', 2))) AS (value)
-        """.stripMargin)
+          SELECT value
+          FROM VALUES array(named_struct('field', named_struct('a', 1, 'b', 2))) AS (value)
+        """)
       df.write.format("parquet").saveAsTable("t")
 
       val df2 = spark.table("t")
@@ -3411,18 +3411,18 @@ class SQLQuerySuite extends QueryTest with SharedSparkSession with AdaptiveSpark
   test("SPARK-30955: Exclude Generate output when aliasing in nested column pruning") {
     val df1 = sql(
       """
-        |SELECT explodedvalue.*
-        |FROM VALUES array(named_struct('nested', named_struct('a', 1, 'b', 2))) AS (value)
-        |LATERAL VIEW explode(value) AS explodedvalue
-      """.stripMargin)
+        SELECT explodedvalue.*
+        FROM VALUES array(named_struct('nested', named_struct('a', 1, 'b', 2))) AS (value)
+        LATERAL VIEW explode(value) AS explodedvalue
+      """)
     checkAnswer(df1, Row(Row(1, 2)) :: Nil)
 
     val df2 = sql(
       """
-        |SELECT explodedvalue.nested.a
-        |FROM VALUES array(named_struct('nested', named_struct('a', 1, 'b', 2))) AS (value)
-        |LATERAL VIEW explode(value) AS explodedvalue
-      """.stripMargin)
+        SELECT explodedvalue.nested.a
+        FROM VALUES array(named_struct('nested', named_struct('a', 1, 'b', 2))) AS (value)
+        LATERAL VIEW explode(value) AS explodedvalue
+      """)
     checkAnswer(df2, Row(1) :: Nil)
   }
 
@@ -3455,9 +3455,9 @@ class SQLQuerySuite extends QueryTest with SharedSparkSession with AdaptiveSpark
       checkAnswer(
         sql(
           """
-            |select count(x) c, x from t
-            |group by x grouping sets(x)
-          """.stripMargin),
+            select count(x) c, x from t
+            group by x grouping sets(x)
+          """),
         Seq(Row(2, "a"), Row(1, "b")))
     }
   }
@@ -3505,33 +3505,33 @@ class SQLQuerySuite extends QueryTest with SharedSparkSession with AdaptiveSpark
     withTempView("t") {
       sql(
         """
-          |CREATE TEMPORARY VIEW t(a, b, c) AS
-          |SELECT * FROM VALUES
-          |('A', 1, NAMED_STRUCT('row_id', 1, 'json_string', '{"i": 1}')),
-          |('A', 2, NAMED_STRUCT('row_id', 2, 'json_string', '{"i": 1}')),
-          |('A', 2, NAMED_STRUCT('row_id', 2, 'json_string', '{"i": 2}')),
-          |('B', 1, NAMED_STRUCT('row_id', 3, 'json_string', '{"i": 1}')),
-          |('C', 3, NAMED_STRUCT('row_id', 4, 'json_string', '{"i": 1}'))
-        """.stripMargin)
+          CREATE TEMPORARY VIEW t(a, b, c) AS
+          SELECT * FROM VALUES
+          ('A', 1, NAMED_STRUCT('row_id', 1, 'json_string', '{"i": 1}')),
+          ('A', 2, NAMED_STRUCT('row_id', 2, 'json_string', '{"i": 1}')),
+          ('A', 2, NAMED_STRUCT('row_id', 2, 'json_string', '{"i": 2}')),
+          ('B', 1, NAMED_STRUCT('row_id', 3, 'json_string', '{"i": 1}')),
+          ('C', 3, NAMED_STRUCT('row_id', 4, 'json_string', '{"i": 1}'))
+        """)
 
       checkAnswer(
         sql(
           """
-            |SELECT a, c.json_string, SUM(b)
-            |FROM t
-            |GROUP BY a, c.json_string
-            |""".stripMargin),
+            SELECT a, c.json_string, SUM(b)
+            FROM t
+            GROUP BY a, c.json_string
+            """),
         Row("A", "{\"i\": 1}", 3) :: Row("A", "{\"i\": 2}", 2) ::
           Row("B", "{\"i\": 1}", 1) :: Row("C", "{\"i\": 1}", 3) :: Nil)
 
       checkAnswer(
         sql(
           """
-            |SELECT a, c.json_string, SUM(b)
-            |FROM t
-            |GROUP BY a, c.json_string
-            |WITH CUBE
-            |""".stripMargin),
+            SELECT a, c.json_string, SUM(b)
+            FROM t
+            GROUP BY a, c.json_string
+            WITH CUBE
+            """),
         Row("A", "{\"i\": 1}", 3) :: Row("A", "{\"i\": 2}", 2) :: Row("A", null, 5) ::
           Row("B", "{\"i\": 1}", 1) :: Row("B", null, 1) ::
           Row("C", "{\"i\": 1}", 3) :: Row("C", null, 3) ::
@@ -3540,11 +3540,11 @@ class SQLQuerySuite extends QueryTest with SharedSparkSession with AdaptiveSpark
       checkAnswer(
         sql(
           """
-            |SELECT a, get_json_object(c.json_string, '$.i'), SUM(b)
-            |FROM t
-            |GROUP BY a, get_json_object(c.json_string, '$.i')
-            |WITH CUBE
-            |""".stripMargin),
+            SELECT a, get_json_object(c.json_string, '$.i'), SUM(b)
+            FROM t
+            GROUP BY a, get_json_object(c.json_string, '$.i')
+            WITH CUBE
+            """),
         Row("A", "1", 3) :: Row("A", "2", 2) :: Row("A", null, 5) ::
           Row("B", "1", 1) :: Row("B", null, 1) ::
           Row("C", "1", 3) :: Row("C", null, 3) ::
@@ -3553,11 +3553,11 @@ class SQLQuerySuite extends QueryTest with SharedSparkSession with AdaptiveSpark
       checkAnswer(
         sql(
           """
-            |SELECT a, c.json_string AS json_string, SUM(b)
-            |FROM t
-            |GROUP BY a, c.json_string
-            |WITH CUBE
-            |""".stripMargin),
+            SELECT a, c.json_string AS json_string, SUM(b)
+            FROM t
+            GROUP BY a, c.json_string
+            WITH CUBE
+            """),
         Row("A", null, 5) :: Row("A", "{\"i\": 1}", 3) :: Row("A", "{\"i\": 2}", 2) ::
           Row("B", null, 1) :: Row("B", "{\"i\": 1}", 1) ::
           Row("C", null, 3) :: Row("C", "{\"i\": 1}", 3) ::
@@ -3566,11 +3566,11 @@ class SQLQuerySuite extends QueryTest with SharedSparkSession with AdaptiveSpark
       checkAnswer(
         sql(
           """
-            |SELECT a, c.json_string as js, SUM(b)
-            |FROM t
-            |GROUP BY a, c.json_string
-            |WITH CUBE
-            |""".stripMargin),
+            SELECT a, c.json_string as js, SUM(b)
+            FROM t
+            GROUP BY a, c.json_string
+            WITH CUBE
+            """),
         Row("A", null, 5) :: Row("A", "{\"i\": 1}", 3) :: Row("A", "{\"i\": 2}", 2) ::
           Row("B", null, 1) :: Row("B", "{\"i\": 1}", 1) ::
           Row("C", null, 3) :: Row("C", "{\"i\": 1}", 3) ::
@@ -3579,11 +3579,11 @@ class SQLQuerySuite extends QueryTest with SharedSparkSession with AdaptiveSpark
       checkAnswer(
         sql(
           """
-            |SELECT a, c.json_string as js, SUM(b)
-            |FROM t
-            |GROUP BY a, c.json_string
-            |WITH ROLLUP
-            |""".stripMargin),
+            SELECT a, c.json_string as js, SUM(b)
+            FROM t
+            GROUP BY a, c.json_string
+            WITH ROLLUP
+            """),
         Row("A", null, 5) :: Row("A", "{\"i\": 1}", 3) :: Row("A", "{\"i\": 2}", 2) ::
           Row("B", null, 1) :: Row("B", "{\"i\": 1}", 1) ::
           Row("C", null, 3) :: Row("C", "{\"i\": 1}", 3) ::
@@ -3592,11 +3592,11 @@ class SQLQuerySuite extends QueryTest with SharedSparkSession with AdaptiveSpark
       checkAnswer(
         sql(
           """
-            |SELECT a, c.json_string, SUM(b)
-            |FROM t
-            |GROUP BY a, c.json_string
-            |GROUPING sets((a),(a, c.json_string))
-            |""".stripMargin),
+            SELECT a, c.json_string, SUM(b)
+            FROM t
+            GROUP BY a, c.json_string
+            GROUPING sets((a),(a, c.json_string))
+            """),
         Row("A", null, 5) :: Row("A", "{\"i\": 1}", 3) :: Row("A", "{\"i\": 2}", 2) ::
           Row("B", null, 1) :: Row("B", "{\"i\": 1}", 1) ::
           Row("C", null, 3) :: Row("C", "{\"i\": 1}", 3) :: Nil)
@@ -3623,9 +3623,9 @@ class SQLQuerySuite extends QueryTest with SharedSparkSession with AdaptiveSpark
       checkAnswer(
         sql(
           """
-            |SELECT id FROM v3 WHERE EXISTS
-            |  (SELECT v1.d FROM v1 JOIN v2 ON v1.d = v2.d WHERE id > 0)
-            |""".stripMargin), Row(1))
+            SELECT id FROM v3 WHERE EXISTS
+              (SELECT v1.d FROM v1 JOIN v2 ON v1.d = v2.d WHERE id > 0)
+            """), Row(1))
     }
   }
 
@@ -3834,7 +3834,7 @@ class SQLQuerySuite extends QueryTest with SharedSparkSession with AdaptiveSpark
         withTable("t1") {
           sql(
             """CREATE TABLE t1(name STRING, id BINARY, part BINARY)
-              |USING PARQUET PARTITIONED BY (part)""".stripMargin)
+              USING PARQUET PARTITIONED BY (part)""")
           sql("INSERT INTO t1 PARTITION(part = 'Spark SQL') VALUES('a', X'537061726B2053514C')")
           checkAnswer(sql("SELECT name, cast(id as string), cast(part as string) FROM t1"),
             Row("a", "Spark SQL", "Spark SQL"))
@@ -3845,7 +3845,7 @@ class SQLQuerySuite extends QueryTest with SharedSparkSession with AdaptiveSpark
         withTable("t2") {
           sql(
             """CREATE TABLE t2(name STRING, id BINARY, part BINARY)
-              |USING ORC PARTITIONED BY (part)""".stripMargin)
+              USING ORC PARTITIONED BY (part)""")
           sql("INSERT INTO t2 PARTITION(part = 'Spark SQL') VALUES('a', X'537061726B2053514C')")
           checkAnswer(sql("SELECT name, cast(id as string), cast(part as string) FROM t2"),
             Row("a", "Spark SQL", "Spark SQL"))
@@ -3894,13 +3894,13 @@ class SQLQuerySuite extends QueryTest with SharedSparkSession with AdaptiveSpark
 
   test("SPARK-33964: Combine distinct unions that have noop project between them") {
     val df = sql("""
-      |SELECT a, b FROM (
-      |  SELECT a, b FROM testData2
-      |  UNION
-      |  SELECT a, sum(b) FROM testData2 GROUP BY a
-      |  UNION
-      |  SELECT null AS a, sum(b) FROM testData2
-      |)""".stripMargin)
+      SELECT a, b FROM (
+        SELECT a, b FROM testData2
+        UNION
+        SELECT a, sum(b) FROM testData2 GROUP BY a
+        UNION
+        SELECT null AS a, sum(b) FROM testData2
+      )""")
 
     val unions = df.queryExecution.sparkPlan.collect {
       case u: UnionExec => u
@@ -3923,24 +3923,24 @@ class SQLQuerySuite extends QueryTest with SharedSparkSession with AdaptiveSpark
         withTempView(testViewName) {
           sql(
             s"""
-              |CREATE TEMPORARY VIEW $testViewName AS
-              |WITH cte AS (
-              |  SELECT $tempFuncName(0)
-              |)
-              |SELECT * FROM cte
-              |""".stripMargin)
+              CREATE TEMPORARY VIEW $testViewName AS
+              WITH cte AS (
+                SELECT $tempFuncName(0)
+              )
+              SELECT * FROM cte
+              """)
           checkAnswer(sql(s"SELECT * FROM $testViewName"), Row(0))
         }
 
         withTempView(testViewName) {
           sql(
             s"""
-              |CREATE TEMPORARY VIEW $testViewName AS
-              |WITH cte AS (
-              |  SELECT * FROM $tempViewName
-              |)
-              |SELECT * FROM cte
-              |""".stripMargin)
+              CREATE TEMPORARY VIEW $testViewName AS
+              WITH cte AS (
+                SELECT * FROM $tempViewName
+              )
+              SELECT * FROM cte
+              """)
           checkAnswer(sql(s"SELECT * FROM $testViewName"), Row(1))
         }
       }
@@ -3961,12 +3961,12 @@ class SQLQuerySuite extends QueryTest with SharedSparkSession with AdaptiveSpark
         val e = intercept[AnalysisException] {
           sql(
             s"""
-              |CREATE VIEW $testViewName AS
-              |WITH cte AS (
-              |  SELECT * FROM $tempViewName
-              |)
-              |SELECT * FROM cte
-              |""".stripMargin)
+              CREATE VIEW $testViewName AS
+              WITH cte AS (
+                SELECT * FROM $tempViewName
+              )
+              SELECT * FROM cte
+              """)
         }
         assert(e.message.contains("Not allowed to create a permanent view " +
           s"`$SESSION_CATALOG_NAME`.`default`.`$testViewName` by referencing a " +
@@ -3975,12 +3975,12 @@ class SQLQuerySuite extends QueryTest with SharedSparkSession with AdaptiveSpark
         val e2 = intercept[AnalysisException] {
           sql(
             s"""
-              |CREATE VIEW $testViewName AS
-              |WITH cte AS (
-              |  SELECT $tempFuncName(0)
-              |)
-              |SELECT * FROM cte
-              |""".stripMargin)
+              CREATE VIEW $testViewName AS
+              WITH cte AS (
+                SELECT $tempFuncName(0)
+              )
+              SELECT * FROM cte
+              """)
         }
         assert(e2.message.contains("Not allowed to create a permanent view " +
           s"`$SESSION_CATALOG_NAME`.`default`.`$testViewName` by referencing a " +
@@ -4042,9 +4042,9 @@ class SQLQuerySuite extends QueryTest with SharedSparkSession with AdaptiveSpark
 
       val df1 = spark.sql(
         """
-          |SELECT a, b, ROW_NUMBER() OVER(ORDER BY a, b) AS rn
-          |FROM t1 LIMIT 3
-          |""".stripMargin)
+          SELECT a, b, ROW_NUMBER() OVER(ORDER BY a, b) AS rn
+          FROM t1 LIMIT 3
+          """)
       val pushedLocalLimits1 = df1.queryExecution.optimizedPlan.collect {
         case l @ LocalLimit(_, _: Sort) => l
       }
@@ -4053,9 +4053,9 @@ class SQLQuerySuite extends QueryTest with SharedSparkSession with AdaptiveSpark
 
       val df2 = spark.sql(
         """
-          |SELECT b, RANK() OVER(ORDER BY a, b) AS rk, DENSE_RANK(b) OVER(ORDER BY a, b) AS s
-          |FROM t1 LIMIT 2
-          |""".stripMargin)
+          SELECT b, RANK() OVER(ORDER BY a, b) AS rk, DENSE_RANK(b) OVER(ORDER BY a, b) AS s
+          FROM t1 LIMIT 2
+          """)
       val pushedLocalLimits2 = df2.queryExecution.optimizedPlan.collect {
         case l @ LocalLimit(_, _: Sort) => l
       }
@@ -4073,12 +4073,12 @@ class SQLQuerySuite extends QueryTest with SharedSparkSession with AdaptiveSpark
         spark.sql("CREATE TABLE output_table (k INT) USING parquet")
         spark.sql(
           """
-            |INSERT INTO TABLE output_table
-            |SELECT t1.k FROM left_table t1
-            |JOIN empty_right_table t2
-            |ON t1.k = t2.k
-            |LIMIT 3
-          """.stripMargin)
+            INSERT INTO TABLE output_table
+            SELECT t1.k FROM left_table t1
+            JOIN empty_right_table t2
+            ON t1.k = t2.k
+            LIMIT 3
+          """)
       }
     }
   }
@@ -4091,11 +4091,11 @@ class SQLQuerySuite extends QueryTest with SharedSparkSession with AdaptiveSpark
           spark.read.parquet(path.toString).createOrReplaceTempView("t")
           val df = sql(
             """
-              |SELECT *
-              |FROM t AS t1
-              |JOIN t AS t2 ON t2.id = t1.id
-              |JOIN t AS t3 ON t3.id = t2.id
-              |""".stripMargin)
+              SELECT *
+              FROM t AS t1
+              JOIN t AS t2 ON t2.id = t1.id
+              JOIN t AS t3 ON t3.id = t2.id
+              """)
           df.collect()
           val reusedExchanges = collect(df.queryExecution.executedPlan) {
             case r: ReusedExchangeExec => r
@@ -4117,12 +4117,12 @@ class SQLQuerySuite extends QueryTest with SharedSparkSession with AdaptiveSpark
         .saveAsTable("td")
       val df = sql(
         """
-          |SELECT t1.key, t2.key, t3.key
-          |FROM td AS t1
-          |JOIN td AS t2 ON t2.key = t1.key
-          |JOIN td AS t3 ON t3.key = t2.key
-          |WHERE t1.bucket = 1 AND t2.bucket = 1 AND t3.bucket = 1
-          |""".stripMargin)
+          SELECT t1.key, t2.key, t3.key
+          FROM td AS t1
+          JOIN td AS t2 ON t2.key = t1.key
+          JOIN td AS t3 ON t3.key = t2.key
+          WHERE t1.bucket = 1 AND t2.bucket = 1 AND t3.bucket = 1
+          """)
       df.collect()
       val reusedExchanges = collect(df.queryExecution.executedPlan) {
         case r: ReusedExchangeExec => r
@@ -4145,12 +4145,12 @@ class SQLQuerySuite extends QueryTest with SharedSparkSession with AdaptiveSpark
           spark.read.parquet(path.toString).createOrReplaceTempView("t")
           val df = sql(
             """
-              |SELECT t1.id, t2.id, t3.id
-              |FROM t AS t1
-              |JOIN t AS t2 ON t2.id = t1.id
-              |JOIN t AS t3 ON t3.id = t2.id
-              |WHERE t1.p = 1 AND t2.p = 1 AND t3.p = 1
-              |""".stripMargin)
+              SELECT t1.id, t2.id, t3.id
+              FROM t AS t1
+              JOIN t AS t2 ON t2.id = t1.id
+              JOIN t AS t3 ON t3.id = t2.id
+              WHERE t1.p = 1 AND t2.p = 1 AND t3.p = 1
+              """)
           df.collect()
           val reusedExchanges = collect(df.queryExecution.executedPlan) {
             case r: ReusedExchangeExec => r
@@ -4288,20 +4288,20 @@ class SQLQuerySuite extends QueryTest with SharedSparkSession with AdaptiveSpark
       Seq((0, 1), (1, 2)).toDF("c1", "c2").createOrReplaceTempView("t")
       checkAnswer(sql(
         s"""with
-           |start as (
-           |  select c1, c2 from t A where not exists (
-           |    select * from t B where A.c1 = B.c1 - 2
-           |  )
-           |),
-           |
-           |end as (
-           |  select c1, c2 from t A where not exists (
-           |    select * from t B where A.c1 < B.c1
-           |  )
-           |)
-           |
-           |select * from start S join end E on S.c1 = E.c1
-           |""".stripMargin),
+           start as (
+             select c1, c2 from t A where not exists (
+               select * from t B where A.c1 = B.c1 - 2
+             )
+           ),
+
+           end as (
+             select c1, c2 from t A where not exists (
+               select * from t B where A.c1 < B.c1
+             )
+           )
+
+           select * from start S join end E on S.c1 = E.c1
+           """),
         Row(1, 2, 1, 2) :: Nil)
     }
   }
@@ -4312,21 +4312,21 @@ class SQLQuerySuite extends QueryTest with SharedSparkSession with AdaptiveSpark
         sql("CREATE TABLE t1(cal_dt DATE) USING PARQUET")
         sql(
           """
-            |INSERT INTO t1 VALUES
-            |(date'2021-06-27'),
-            |(date'2021-06-28'),
-            |(date'2021-06-29'),
-            |(date'2021-06-30')""".stripMargin)
+            INSERT INTO t1 VALUES
+            (date'2021-06-27'),
+            (date'2021-06-28'),
+            (date'2021-06-29'),
+            (date'2021-06-30')""")
         sql("CREATE VIEW t1_v AS SELECT * FROM t1")
         sql(
           """
-            |CREATE TABLE t2(FLAG INT, CAL_DT DATE)
-            |USING PARQUET
-            |PARTITIONED BY (CAL_DT)""".stripMargin)
+            CREATE TABLE t2(FLAG INT, CAL_DT DATE)
+            USING PARQUET
+            PARTITIONED BY (CAL_DT)""")
         val insert = sql(
           """
-            |INSERT INTO t2 SELECT 2 AS FLAG,CAL_DT FROM t1_v
-            |WHERE CAL_DT BETWEEN '2021-06-29' AND '2021-06-30'""".stripMargin)
+            INSERT INTO t2 SELECT 2 AS FLAG,CAL_DT FROM t1_v
+            WHERE CAL_DT BETWEEN '2021-06-29' AND '2021-06-30'""")
         insert.queryExecution.executedPlan.collectFirst {
           case CommandResultExec(_, DataWritingCommandExec(
             i: InsertIntoHadoopFsRelationCommand, _), _) => i
@@ -4408,9 +4408,9 @@ class SQLQuerySuite extends QueryTest with SharedSparkSession with AdaptiveSpark
       checkAnswer(
         sql(
           """
-            |SELECT `(C3)?+.+`,T.`C1` * `C2` AS CC
-            |FROM (SELECT 3 AS C1,2 AS C2,1 AS C3) T
-            |""".stripMargin),
+            SELECT `(C3)?+.+`,T.`C1` * `C2` AS CC
+            FROM (SELECT 3 AS C1,2 AS C2,1 AS C3) T
+            """),
         Row(3, 2, 6) :: Nil)
     }
   }
@@ -4533,24 +4533,24 @@ class SQLQuerySuite extends QueryTest with SharedSparkSession with AdaptiveSpark
     checkAnswer(
       sql(
         """
-          |SELECT (SELECT IF(x, 1, 0)) AS a
-          |FROM (SELECT true) t(x)
-          |UNION
-          |SELECT 1 AS a
-        """.stripMargin),
+          SELECT (SELECT IF(x, 1, 0)) AS a
+          FROM (SELECT true) t(x)
+          UNION
+          SELECT 1 AS a
+        """),
       Seq(Row(1)))
 
     checkAnswer(
       sql(
         """
-          |SELECT x + 1
-          |FROM   (SELECT id
-          |               + (SELECT Max(id)
-          |                  FROM   range(2)) AS x
-          |        FROM   range(1)) t
-          |UNION
-          |SELECT 1 AS a
-        """.stripMargin),
+          SELECT x + 1
+          FROM   (SELECT id
+                         + (SELECT Max(id)
+                            FROM   range(2)) AS x
+                  FROM   range(1)) t
+          UNION
+          SELECT 1 AS a
+        """),
       Seq(Row(2), Row(1)))
   }
 
@@ -4559,26 +4559,26 @@ class SQLQuerySuite extends QueryTest with SharedSparkSession with AdaptiveSpark
       withView("view1") {
         sql(
           """
-            |CREATE TABLE app (
-            |  uid STRING,
-            |  st TIMESTAMP,
-            |  ds INT
-            |) USING parquet PARTITIONED BY (ds);
-            |""".stripMargin)
+            CREATE TABLE app (
+              uid STRING,
+              st TIMESTAMP,
+              ds INT
+            ) USING parquet PARTITIONED BY (ds);
+            """)
 
         sql(
           """
-            |create or replace temporary view view1 as WITH new_app AS (
-            |  SELECT a.* FROM app a)
-            |SELECT
-            |    uid,
-            |    20230208 AS ds
-            |  FROM
-            |    new_app
-            |  GROUP BY
-            |    1,
-            |    2
-            |""".stripMargin)
+            create or replace temporary view view1 as WITH new_app AS (
+              SELECT a.* FROM app a)
+            SELECT
+                uid,
+                20230208 AS ds
+              FROM
+                new_app
+              GROUP BY
+                1,
+                2
+            """)
         val df = sql("select uid from view1")
         // If the logical plan in `df` is analyzed again, the 'group by 20230208' will be
         // treated as ordinal again and there will be an error about GROUP BY position 20230208
@@ -4592,19 +4592,19 @@ class SQLQuerySuite extends QueryTest with SharedSparkSession with AdaptiveSpark
     "trigger a mis-clarified `window definition not found` issue") {
     sql(
       """
-        |create or replace temporary view test_temp_view as
-        |with step_1 as (
-        |select * , min(a) over w2 as min_a_over_w2 from
-        |(select 1 as a, 2 as b, 3 as c) window w2 as (partition by b order by c)) , step_2 as
-        |(
-        |select *, max(e) over w1 as max_a_over_w1
-        |from (select 1 as e, 2 as f, 3 as g)
-        |join step_1 on true
-        |window w1 as (partition by f order by g)
-        |)
-        |select *
-        |from step_2
-        |""".stripMargin)
+        create or replace temporary view test_temp_view as
+        with step_1 as (
+        select * , min(a) over w2 as min_a_over_w2 from
+        (select 1 as a, 2 as b, 3 as c) window w2 as (partition by b order by c)) , step_2 as
+        (
+        select *, max(e) over w1 as max_a_over_w1
+        from (select 1 as e, 2 as f, 3 as g)
+        join step_1 on true
+        window w1 as (partition by f order by g)
+        )
+        select *
+        from step_2
+        """)
 
     checkAnswer(
       sql("select * from test_temp_view"),

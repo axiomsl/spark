@@ -83,19 +83,19 @@ class ParquetIOSuite extends QueryTest with ParquetTest with SharedSparkSession 
   test("SPARK-11694 Parquet logical types are not being tested properly") {
     val parquetSchema = MessageTypeParser.parseMessageType(
       """message root {
-        |  required int32 a(INT_8);
-        |  required int32 b(INT_16);
-        |  required int32 c(DATE);
-        |  required int32 d(DECIMAL(1,0));
-        |  required int64 e(DECIMAL(10,0));
-        |  required binary f(UTF8);
-        |  required binary g(ENUM);
-        |  required binary h(DECIMAL(32,0));
-        |  required fixed_len_byte_array(32) i(DECIMAL(32,0));
-        |  required int64 j(TIMESTAMP_MILLIS);
-        |  required int64 k(TIMESTAMP_MICROS);
-        |}
-      """.stripMargin)
+          required int32 a(INT_8);
+          required int32 b(INT_16);
+          required int32 c(DATE);
+          required int32 d(DECIMAL(1,0));
+          required int64 e(DECIMAL(10,0));
+          required binary f(UTF8);
+          required binary g(ENUM);
+          required binary h(DECIMAL(32,0));
+          required fixed_len_byte_array(32) i(DECIMAL(32,0));
+          required int64 j(TIMESTAMP_MILLIS);
+          required int64 k(TIMESTAMP_MICROS);
+        }
+      """)
 
     val expectedSparkTypes = Seq(ByteType, ShortType, DateType, DecimalType(1, 0),
       DecimalType(10, 0), StringType, StringType, DecimalType(32, 0), DecimalType(32, 0),
@@ -117,10 +117,10 @@ class ParquetIOSuite extends QueryTest with ParquetTest with SharedSparkSession 
       def makeRawParquetFile(path: Path): Unit = {
         val schemaStr =
           """message root {
-            |  required FIXED_LEN_BYTE_ARRAY(1) a;
-            |  required FIXED_LEN_BYTE_ARRAY(3) b;
-            |}
-        """.stripMargin
+              required FIXED_LEN_BYTE_ARRAY(1) a;
+              required FIXED_LEN_BYTE_ARRAY(3) b;
+            }
+        """
         val schema = MessageTypeParser.parseMessageType(schemaStr)
 
         val writer = createParquetWriter(schema, path, dictionaryEnabled)
@@ -168,14 +168,14 @@ class ParquetIOSuite extends QueryTest with ParquetTest with SharedSparkSession 
   test("Read TimestampNTZ and TimestampLTZ for various logical TIMESTAMP types") {
     val schema = MessageTypeParser.parseMessageType(
       """message root {
-        |  required int64 timestamp_ltz_millis_depr(TIMESTAMP_MILLIS);
-        |  required int64 timestamp_ltz_micros_depr(TIMESTAMP_MICROS);
-        |  required int64 timestamp_ltz_millis(TIMESTAMP(MILLIS,true));
-        |  required int64 timestamp_ltz_micros(TIMESTAMP(MICROS,true));
-        |  required int64 timestamp_ntz_millis(TIMESTAMP(MILLIS,false));
-        |  required int64 timestamp_ntz_micros(TIMESTAMP(MICROS,false));
-        |}
-      """.stripMargin)
+          required int64 timestamp_ltz_millis_depr(TIMESTAMP_MILLIS);
+          required int64 timestamp_ltz_micros_depr(TIMESTAMP_MICROS);
+          required int64 timestamp_ltz_millis(TIMESTAMP(MILLIS,true));
+          required int64 timestamp_ltz_micros(TIMESTAMP(MICROS,true));
+          required int64 timestamp_ntz_millis(TIMESTAMP(MILLIS,false));
+          required int64 timestamp_ntz_micros(TIMESTAMP(MICROS,false));
+        }
+      """)
 
     for (dictEnabled <- Seq(true, false)) {
       withTempDir { dir =>
@@ -565,13 +565,13 @@ class ParquetIOSuite extends QueryTest with ParquetTest with SharedSparkSession 
       def makeRawParquetFile(path: Path, expected: Seq[Seq[String]]): Unit = {
         val schemaStr =
           """message spark_schema {
-            |  required group _1 (LIST) {
-            |    repeated group list {
-            |      required binary element (UTF8);
-            |    }
-            |  }
-            |}
-             """.stripMargin
+              required group _1 (LIST) {
+                repeated group list {
+                  required binary element (UTF8);
+                }
+              }
+            }
+             """
         val schema = MessageTypeParser.parseMessageType(schemaStr)
         val writer = createParquetWriter(schema, path, dictionaryEnabled)
 
@@ -605,13 +605,13 @@ class ParquetIOSuite extends QueryTest with ParquetTest with SharedSparkSession 
       def makeRawParquetFile(path: Path, expected: Seq[Seq[String]]): Unit = {
         val schemaStr =
           """message spark_schema {
-            |  optional group _1 (LIST) {
-            |    repeated group list {
-            |      required binary element (UTF8);
-            |    }
-            |  }
-            |}
-             """.stripMargin
+              optional group _1 (LIST) {
+                repeated group list {
+                  required binary element (UTF8);
+                }
+              }
+            }
+             """
         val schema = MessageTypeParser.parseMessageType(schemaStr)
         val writer = createParquetWriter(schema, path, dictionaryEnabled)
 
@@ -649,13 +649,13 @@ class ParquetIOSuite extends QueryTest with ParquetTest with SharedSparkSession 
       def makeRawParquetFile(path: Path, expected: Seq[Seq[String]]): Unit = {
         val schemaStr =
           """message spark_schema {
-            |  required group _1 (LIST) {
-            |    repeated group list {
-            |      optional binary element (UTF8);
-            |    }
-            |  }
-            |}
-             """.stripMargin
+              required group _1 (LIST) {
+                repeated group list {
+                  optional binary element (UTF8);
+                }
+              }
+            }
+             """
         val schema = MessageTypeParser.parseMessageType(schemaStr)
         val writer = createParquetWriter(schema, path, dictionaryEnabled)
 
@@ -692,9 +692,9 @@ class ParquetIOSuite extends QueryTest with ParquetTest with SharedSparkSession 
       def makeRawParquetFile(path: Path, expected: Seq[Seq[String]]): Unit = {
         val schemaStr =
           """message spark_schema {
-            |  repeated binary element (UTF8);
-            |}
-             """.stripMargin
+              repeated binary element (UTF8);
+            }
+             """
         val schema = MessageTypeParser.parseMessageType(schemaStr)
         val writer = createParquetWriter(schema, path, dictionaryEnabled)
 
@@ -793,12 +793,12 @@ class ParquetIOSuite extends QueryTest with ParquetTest with SharedSparkSession 
   test("SPARK-34817: Support for unsigned Parquet logical types") {
     val parquetSchema = MessageTypeParser.parseMessageType(
       """message root {
-        |  required INT32 a(UINT_8);
-        |  required INT32 b(UINT_16);
-        |  required INT32 c(UINT_32);
-        |  required INT64 d(UINT_64);
-        |}
-      """.stripMargin)
+          required INT32 a(UINT_8);
+          required INT32 b(UINT_16);
+          required INT32 c(UINT_32);
+          required INT64 d(UINT_64);
+        }
+      """)
 
     val expectedSparkTypes = Seq(ShortType, IntegerType, LongType, DecimalType.LongDecimal)
 
@@ -814,10 +814,10 @@ class ParquetIOSuite extends QueryTest with ParquetTest with SharedSparkSession 
   test("SPARK-11692 Support for Parquet logical types, JSON and BSON (embedded types)") {
     val parquetSchema = MessageTypeParser.parseMessageType(
       """message root {
-        |  required binary a(JSON);
-        |  required binary b(BSON);
-        |}
-      """.stripMargin)
+          required binary a(JSON);
+          required binary b(BSON);
+        }
+      """)
 
     val expectedSparkTypes = Seq(StringType, BinaryType)
 
@@ -894,14 +894,14 @@ class ParquetIOSuite extends QueryTest with ParquetTest with SharedSparkSession 
         pageSize: Int): Seq[Option[Int]] = {
       val schemaStr =
         """
-          |message root {
-          |  optional boolean _1;
-          |  optional int32   _2;
-          |  optional int64   _3;
-          |  optional float   _4;
-          |  optional double  _5;
-          |}
-        """.stripMargin
+          message root {
+            optional boolean _1;
+            optional int32   _2;
+            optional int64   _3;
+            optional float   _4;
+            optional double  _5;
+          }
+        """
 
       val schema = MessageTypeParser.parseMessageType(schemaStr)
       val writer = createParquetWriter(schema, path,
@@ -955,14 +955,14 @@ class ParquetIOSuite extends QueryTest with ParquetTest with SharedSparkSession 
     def makeRawParquetFile(path: Path): Unit = {
       val schemaStr =
         """
-          |message root {
-          |  required boolean _1;
-          |  required int32   _2;
-          |  required int64   _3;
-          |  required float   _4;
-          |  required double  _5;
-          |}
-        """.stripMargin
+          message root {
+            required boolean _1;
+            required int32   _2;
+            required int64   _3;
+            required float   _4;
+            required double  _5;
+          }
+        """
       val schema = MessageTypeParser.parseMessageType(schemaStr)
 
 
@@ -996,11 +996,11 @@ class ParquetIOSuite extends QueryTest with ParquetTest with SharedSparkSession 
       def makeRawParquetFile(path: Path): Unit = {
         val schemaStr =
           """message root {
-            |  required INT32 a(UINT_8);
-            |  required INT32 b(UINT_16);
-            |  required INT32 c(UINT_32);
-            |}
-        """.stripMargin
+              required INT32 a(UINT_8);
+              required INT32 b(UINT_16);
+              required INT32 c(UINT_32);
+            }
+        """
         val schema = MessageTypeParser.parseMessageType(schemaStr)
 
         val writer = createParquetWriter(schema, path, dictionaryEnabled)
@@ -1035,9 +1035,9 @@ class ParquetIOSuite extends QueryTest with ParquetTest with SharedSparkSession 
       def makeRawParquetFile(path: Path): Unit = {
         val schemaStr =
           """message root {
-            |  required INT64 a(UINT_64);
-            |}
-        """.stripMargin
+              required INT64 a(UINT_64);
+            }
+        """
         val schema = MessageTypeParser.parseMessageType(schemaStr)
 
         val writer = createParquetWriter(schema, path, dictionaryEnabled)
@@ -1162,9 +1162,9 @@ class ParquetIOSuite extends QueryTest with ParquetTest with SharedSparkSession 
     // is parsed successfully.
     val parquetSchema = MessageTypeParser.parseMessageType(
       """message root {
-        |  required int32 c;
-        |}
-      """.stripMargin)
+          required int32 c;
+        }
+      """)
 
     withTempPath { location =>
       val extraMetadata = Map(ParquetReadSupport.SPARK_METADATA_KEY -> sparkSchema.toString)
@@ -1527,10 +1527,10 @@ class ParquetIOSuite extends QueryTest with ParquetTest with SharedSparkSession 
     withTempPath { file =>
       val jsonData =
         """{
-        |  "a": 1,
-        |  "c": "foo"
-        |}
-        |""".stripMargin
+          "a": 1,
+          "c": "foo"
+        }
+        """
       val jsonSchema = new StructType()
         .add("a", LongType, nullable = false)
         .add("b", StringType, nullable = false)

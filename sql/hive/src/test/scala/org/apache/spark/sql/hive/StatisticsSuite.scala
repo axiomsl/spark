@@ -89,13 +89,13 @@ class StatisticsSuite extends StatisticsCollectionTestBase with TestHiveSingleto
 
           sql(
             s"""
-               |CREATE EXTERNAL TABLE csv_table(page_id INT, impressions INT)
-               |ROW FORMAT SERDE 'org.apache.hadoop.hive.serde2.OpenCSVSerde'
-               |WITH SERDEPROPERTIES (
-               |\"separatorChar\" = \",\",
-               |\"quoteChar\"     = \"\\\"\",
-               |\"escapeChar\"    = \"\\\\\")
-               |LOCATION '${tempDir.toURI}'""".stripMargin)
+               CREATE EXTERNAL TABLE csv_table(page_id INT, impressions INT)
+               ROW FORMAT SERDE 'org.apache.hadoop.hive.serde2.OpenCSVSerde'
+               WITH SERDEPROPERTIES (
+               \"separatorChar\" = \",\",
+               \"quoteChar\"     = \"\\\"\",
+               \"escapeChar\"    = \"\\\\\")
+               LOCATION '${tempDir.toURI}'""")
 
           val relation = spark.table("csv_table").queryExecution.analyzed.children.head
             .asInstanceOf[HiveTableRelation]

@@ -738,14 +738,14 @@ abstract class ParquetQuerySuite extends QueryTest with ParquetTest with SharedS
         .range(1)
         .selectExpr(
           """NAMED_STRUCT(
-            |  'f0', CAST(id AS STRING),
-            |  'f1', NAMED_STRUCT(
-            |    'a', CAST(id + 1 AS INT),
-            |    'b', CAST(id + 2 AS LONG),
-            |    'c', CAST(id + 3.5 AS DOUBLE)
-            |  )
-            |) AS s
-          """.stripMargin)
+              'f0', CAST(id AS STRING),
+              'f1', NAMED_STRUCT(
+                'a', CAST(id + 1 AS INT),
+                'b', CAST(id + 2 AS LONG),
+                'c', CAST(id + 3.5 AS DOUBLE)
+              )
+            ) AS s
+          """)
         .coalesce(1)
 
       df.write.mode(SaveMode.Append).parquet(path)
@@ -772,16 +772,16 @@ abstract class ParquetQuerySuite extends QueryTest with ParquetTest with SharedS
         .range(1)
         .selectExpr(
           """NAMED_STRUCT(
-            |  'f0', CAST(id AS STRING),
-            |  'f1', NAMED_STRUCT(
-            |    'a', CAST(id + 1 AS INT),
-            |    'b', CAST(id + 2 AS LONG),
-            |    'c', CAST(id + 3.5 AS DOUBLE)
-            |  ),
-            |  'f2', CAST(id + 4 AS INT),
-            |  'f3', ARRAY(id + 5, id + 6)
-            |) AS s
-          """.stripMargin
+              'f0', CAST(id AS STRING),
+              'f1', NAMED_STRUCT(
+                'a', CAST(id + 1 AS INT),
+                'b', CAST(id + 2 AS LONG),
+                'c', CAST(id + 3.5 AS DOUBLE)
+              ),
+              'f2', CAST(id + 4 AS INT),
+              'f3', ARRAY(id + 5, id + 6)
+            ) AS s
+          """
         )
         .coalesce(1)
 

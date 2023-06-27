@@ -128,34 +128,34 @@ class InsertSuite extends QueryTest with TestHiveSingleton with BeforeAndAfter
 
     sql(
       s"""
-         |CREATE TABLE table_with_partition(c1 string)
-         |PARTITIONED by (p1 string,p2 string,p3 string,p4 string,p5 string)
-         |location '${tmpDir.toURI.toString}'
-        """.stripMargin)
+         CREATE TABLE table_with_partition(c1 string)
+         PARTITIONED by (p1 string,p2 string,p3 string,p4 string,p5 string)
+         location '${tmpDir.toURI.toString}'
+        """)
     sql(
       """
-        |INSERT OVERWRITE TABLE table_with_partition
-        |partition (p1='a',p2='b',p3='c',p4='c',p5='1')
-        |SELECT 'blarr' FROM tmp_table
-      """.stripMargin)
+        INSERT OVERWRITE TABLE table_with_partition
+        partition (p1='a',p2='b',p3='c',p4='c',p5='1')
+        SELECT 'blarr' FROM tmp_table
+      """)
     sql(
       """
-        |INSERT OVERWRITE TABLE table_with_partition
-        |partition (p1='a',p2='b',p3='c',p4='c',p5='2')
-        |SELECT 'blarr' FROM tmp_table
-      """.stripMargin)
+        INSERT OVERWRITE TABLE table_with_partition
+        partition (p1='a',p2='b',p3='c',p4='c',p5='2')
+        SELECT 'blarr' FROM tmp_table
+      """)
     sql(
       """
-        |INSERT OVERWRITE TABLE table_with_partition
-        |partition (p1='a',p2='b',p3='c',p4='c',p5='3')
-        |SELECT 'blarr' FROM tmp_table
-      """.stripMargin)
+        INSERT OVERWRITE TABLE table_with_partition
+        partition (p1='a',p2='b',p3='c',p4='c',p5='3')
+        SELECT 'blarr' FROM tmp_table
+      """)
     sql(
       """
-        |INSERT OVERWRITE TABLE table_with_partition
-        |partition (p1='a',p2='b',p3='c',p4='c',p5='4')
-        |SELECT 'blarr' FROM tmp_table
-      """.stripMargin)
+        INSERT OVERWRITE TABLE table_with_partition
+        partition (p1='a',p2='b',p3='c',p4='c',p5='4')
+        SELECT 'blarr' FROM tmp_table
+      """)
     def listFolders(path: File, acc: List[String]): List[List[String]] = {
       val dir = path.listFiles()
       val folders = dir.filter { e => e.isDirectory && !e.getName().startsWith(stagingDir) }.toList
@@ -180,27 +180,27 @@ class InsertSuite extends QueryTest with TestHiveSingleton with BeforeAndAfter
     val selQuery = s"select a, b, c, d from $tableName"
     sql(
       s"""
-         |INSERT OVERWRITE TABLE $tableName
-         |partition (b=2, c=3)
-         |SELECT 1, 4
-        """.stripMargin)
+         INSERT OVERWRITE TABLE $tableName
+         partition (b=2, c=3)
+         SELECT 1, 4
+        """)
     checkAnswer(sql(selQuery), Row(1, 2, 3, 4))
 
     sql(
       s"""
-         |INSERT OVERWRITE TABLE $tableName
-         |partition (b=2, c=3)
-         |SELECT 5, 6
-        """.stripMargin)
+         INSERT OVERWRITE TABLE $tableName
+         partition (b=2, c=3)
+         SELECT 5, 6
+        """)
     checkAnswer(sql(selQuery), Row(5, 2, 3, 6))
 
     val e = intercept[AnalysisException] {
       sql(
         s"""
-           |INSERT OVERWRITE TABLE $tableName
-           |partition (b=2, c) IF NOT EXISTS
-           |SELECT 7, 8, 3
-          """.stripMargin)
+           INSERT OVERWRITE TABLE $tableName
+           partition (b=2, c) IF NOT EXISTS
+           SELECT 7, 8, 3
+          """)
     }
     assert(e.getMessage.contains("IF NOT EXISTS with dynamic partitions: c"))
 
@@ -208,20 +208,20 @@ class InsertSuite extends QueryTest with TestHiveSingleton with BeforeAndAfter
     // unless users specify IF NOT EXISTS
     sql(
       s"""
-         |INSERT OVERWRITE TABLE $tableName
-         |partition (b=2, c=3) IF NOT EXISTS
-         |SELECT 9, 10
-        """.stripMargin)
+         INSERT OVERWRITE TABLE $tableName
+         partition (b=2, c=3) IF NOT EXISTS
+         SELECT 9, 10
+        """)
     checkAnswer(sql(selQuery), Row(5, 2, 3, 6))
 
     // ADD PARTITION has the same effect, even if no actual data is inserted.
     sql(s"ALTER TABLE $tableName ADD PARTITION (b=21, c=31)")
     sql(
       s"""
-         |INSERT OVERWRITE TABLE $tableName
-         |partition (b=21, c=31) IF NOT EXISTS
-         |SELECT 20, 24
-        """.stripMargin)
+         INSERT OVERWRITE TABLE $tableName
+         partition (b=21, c=31) IF NOT EXISTS
+         SELECT 20, 24
+        """)
     checkAnswer(sql(selQuery), Row(5, 2, 3, 6))
   }
 
@@ -316,9 +316,9 @@ class InsertSuite extends QueryTest with TestHiveSingleton with BeforeAndAfter
         withSQLConf("hive.exec.dynamic.partition.mode" -> "nonstrict") {
           sql(
             s"""
-              |CREATE TABLE $hiveTable (a INT, d INT)
-              |PARTITIONED BY (b INT, c INT) STORED AS TEXTFILE
-            """.stripMargin)
+              CREATE TABLE $hiveTable (a INT, d INT)
+              PARTITIONED BY (b INT, c INT) STORED AS TEXTFILE
+            """)
           f(hiveTable)
         }
       }
@@ -332,9 +332,9 @@ class InsertSuite extends QueryTest with TestHiveSingleton with BeforeAndAfter
       withTable(dsTable) {
         sql(
           s"""
-             |CREATE TABLE $dsTable (a INT, b INT, c INT, d INT)
-             |USING PARQUET PARTITIONED BY (b, c)
-           """.stripMargin)
+             CREATE TABLE $dsTable (a INT, b INT, c INT, d INT)
+             USING PARQUET PARTITIONED BY (b, c)
+           """)
         f(dsTable)
       }
     }
@@ -503,12 +503,12 @@ class InsertSuite extends QueryTest with TestHiveSingleton with BeforeAndAfter
         withSQLConf("hive.exec.dynamic.partition.mode" -> "nonstrict") {
           sql(
             s"""
-               |CREATE TABLE $hiveTable (a INT, d INT)
-               |PARTITIONED BY (b INT, c INT)
-               |CLUSTERED BY(a)
-               |SORTED BY(a, d) INTO 256 BUCKETS
-               |STORED AS TEXTFILE
-            """.stripMargin)
+               CREATE TABLE $hiveTable (a INT, d INT)
+               PARTITIONED BY (b INT, c INT)
+               CLUSTERED BY(a)
+               SORTED BY(a, d) INTO 256 BUCKETS
+               STORED AS TEXTFILE
+            """)
           f(hiveTable)
         }
       }
@@ -570,21 +570,21 @@ class InsertSuite extends QueryTest with TestHiveSingleton with BeforeAndAfter
 
       sql(
         s"""
-           |INSERT OVERWRITE LOCAL DIRECTORY '${path}'
-           |STORED AS orc
-           |SELECT * FROM src where key < 10
-         """.stripMargin)
+           INSERT OVERWRITE LOCAL DIRECTORY '${path}'
+           STORED AS orc
+           SELECT * FROM src where key < 10
+         """)
 
       // use orc data source to check the data of path is right.
       withTempView("orc_source") {
         sql(
           s"""
-             |CREATE TEMPORARY VIEW orc_source
-             |USING org.apache.spark.sql.hive.orc
-             |OPTIONS (
-             |  PATH '${dir.getCanonicalPath}'
-             |)
-           """.stripMargin)
+             CREATE TEMPORARY VIEW orc_source
+             USING org.apache.spark.sql.hive.orc
+             OPTIONS (
+               PATH '${dir.getCanonicalPath}'
+             )
+           """)
 
         checkAnswer(
           sql("select * from orc_source"),
@@ -602,17 +602,17 @@ class InsertSuite extends QueryTest with TestHiveSingleton with BeforeAndAfter
 
         sql(
           s"""
-             |INSERT OVERWRITE LOCAL DIRECTORY '${path}'
-             |ROW FORMAT DELIMITED FIELDS TERMINATED BY ','
-             |SELECT * FROM test_insert_table
-           """.stripMargin)
+             INSERT OVERWRITE LOCAL DIRECTORY '${path}'
+             ROW FORMAT DELIMITED FIELDS TERMINATED BY ','
+             SELECT * FROM test_insert_table
+           """)
 
         sql(
           s"""
-             |INSERT OVERWRITE LOCAL DIRECTORY '${path}'
-             |STORED AS orc
-             |SELECT * FROM test_insert_table
-           """.stripMargin)
+             INSERT OVERWRITE LOCAL DIRECTORY '${path}'
+             STORED AS orc
+             SELECT * FROM test_insert_table
+           """)
 
         // use orc data source to check the data of path is right.
         checkAnswer(
@@ -631,17 +631,17 @@ class InsertSuite extends QueryTest with TestHiveSingleton with BeforeAndAfter
 
         sql(
           s"""
-             |INSERT OVERWRITE DIRECTORY '${pathUri}'
-             |ROW FORMAT DELIMITED FIELDS TERMINATED BY ','
-             |SELECT * FROM test_insert_table
-           """.stripMargin)
+             INSERT OVERWRITE DIRECTORY '${pathUri}'
+             ROW FORMAT DELIMITED FIELDS TERMINATED BY ','
+             SELECT * FROM test_insert_table
+           """)
 
         sql(
           s"""
-             |INSERT OVERWRITE DIRECTORY '${pathUri}'
-             |STORED AS orc
-             |SELECT * FROM test_insert_table
-           """.stripMargin)
+             INSERT OVERWRITE DIRECTORY '${pathUri}'
+             STORED AS orc
+             SELECT * FROM test_insert_table
+           """)
 
         // use orc data source to check the data of path is right.
         checkAnswer(
@@ -663,14 +663,14 @@ class InsertSuite extends QueryTest with TestHiveSingleton with BeforeAndAfter
 
           sql(
             s"""
-               |FROM test_insert_table
-               |INSERT OVERWRITE DIRECTORY '${pathUri}'
-               |STORED AS orc
-               |SELECT id
-               |INSERT OVERWRITE DIRECTORY '${pathUri2}'
-               |STORED AS orc
-               |SELECT *
-             """.stripMargin)
+               FROM test_insert_table
+               INSERT OVERWRITE DIRECTORY '${pathUri}'
+               STORED AS orc
+               SELECT id
+               INSERT OVERWRITE DIRECTORY '${pathUri2}'
+               STORED AS orc
+               SELECT *
+             """)
 
           // use orc data source to check the data of path is right.
           checkAnswer(
@@ -692,10 +692,10 @@ class InsertSuite extends QueryTest with TestHiveSingleton with BeforeAndAfter
       val e = intercept[IllegalArgumentException] {
         sql(
           s"""
-             |INSERT OVERWRITE LOCAL DIRECTORY 'abc://a'
-             |ROW FORMAT DELIMITED FIELDS TERMINATED BY ','
-             |SELECT * FROM test_insert_table
-           """.stripMargin)
+             INSERT OVERWRITE LOCAL DIRECTORY 'abc://a'
+             ROW FORMAT DELIMITED FIELDS TERMINATED BY ','
+             SELECT * FROM test_insert_table
+           """)
       }.getMessage
 
       assert(e.contains("Wrong FS: abc://a, expected: file:///"))
@@ -708,9 +708,9 @@ class InsertSuite extends QueryTest with TestHiveSingleton with BeforeAndAfter
       checkError(
         exception = intercept[ParseException] { sql(
           s"""INSERT OVERWRITE DIRECTORY 'file://tmp'
-             |USING json
-             |ROW FORMAT DELIMITED FIELDS TERMINATED BY ','
-             |SELECT * FROM test_insert_table""".stripMargin)
+             USING json
+             ROW FORMAT DELIMITED FIELDS TERMINATED BY ','
+             SELECT * FROM test_insert_table""")
         },
         errorClass = "PARSE_SYNTAX_ERROR",
         parameters = Map("error" -> "'ROW'", "hint" -> ""))
@@ -724,13 +724,13 @@ class InsertSuite extends QueryTest with TestHiveSingleton with BeforeAndAfter
         exception = intercept[ParseException] {
           sql(
             s"""INSERT OVERWRITE DIRECTORY 'file://tmp2'
-               |USING json
-               |ROW FORMAT DELIMITED FIELDS TERMINATED BY ','
-               |SELECT * FROM test_insert_table
-               |INSERT OVERWRITE DIRECTORY 'file://tmp2'
-               |USING json
-               |ROW FORMAT DELIMITED FIELDS TERMINATED BY ','
-               |SELECT * FROM test_insert_table""".stripMargin)
+               USING json
+               ROW FORMAT DELIMITED FIELDS TERMINATED BY ','
+               SELECT * FROM test_insert_table
+               INSERT OVERWRITE DIRECTORY 'file://tmp2'
+               USING json
+               ROW FORMAT DELIMITED FIELDS TERMINATED BY ','
+               SELECT * FROM test_insert_table""")
         },
         errorClass = "PARSE_SYNTAX_ERROR",
         parameters = Map("error" -> "'ROW'", "hint" -> ""))
@@ -758,15 +758,15 @@ class InsertSuite extends QueryTest with TestHiveSingleton with BeforeAndAfter
 
         spark.sql(
           """
-            |CREATE TABLE tab2 (word string, length int)
-            |PARTITIONED BY (first string)
-          """.stripMargin)
+            CREATE TABLE tab2 (word string, length int)
+            PARTITIONED BY (first string)
+          """)
 
         spark.sql(
           """
-            |INSERT INTO TABLE tab2 PARTITION(first)
-            |SELECT word, length, cast(first as string) as first FROM tab1
-          """.stripMargin)
+            INSERT INTO TABLE tab2 PARTITION(first)
+            SELECT word, length, cast(first as string) as first FROM tab1
+          """)
 
         checkAnswer(spark.table("tab2"), Row("a", 3, "b"))
       }
@@ -794,10 +794,10 @@ class InsertSuite extends QueryTest with TestHiveSingleton with BeforeAndAfter
               val e = intercept[AnalysisException] {
                 sql(
                   s"""
-                     |INSERT OVERWRITE $local DIRECTORY '${dir.toURI}'
-                     |STORED AS $format
-                     |SELECT 'id', 'id2' ${if (caseSensitivity) "id" else "ID"}
-                   """.stripMargin)
+                     INSERT OVERWRITE $local DIRECTORY '${dir.toURI}'
+                     STORED AS $format
+                     SELECT 'id', 'id2' ${if (caseSensitivity) "id" else "ID"}
+                   """)
               }
               checkError(
                 exception = e,
@@ -838,16 +838,16 @@ class InsertSuite extends QueryTest with TestHiveSingleton with BeforeAndAfter
     withTable("t1") {
       spark.sql(
         """
-          |CREATE TABLE t1 (c1 int)
-          |PARTITIONED BY (d string)
-          """.stripMargin)
+          CREATE TABLE t1 (c1 int)
+          PARTITIONED BY (d string)
+          """)
 
       val e = intercept[AnalysisException] {
         spark.sql(
           """
-            |INSERT OVERWRITE TABLE t1 PARTITION(d='')
-            |SELECT 1
-          """.stripMargin)
+            INSERT OVERWRITE TABLE t1 PARTITION(d='')
+            SELECT 1
+          """)
       }.getMessage
 
       assert(!e.contains("get partition: Value for key d is null or empty"))
@@ -861,33 +861,33 @@ class InsertSuite extends QueryTest with TestHiveSingleton with BeforeAndAfter
         Seq(true, false).foreach { isHiveTable =>
           val createSpark = if (isHiveTable) {
             """
-              |CREATE TABLE TEST1(
-              |v1 BIGINT,
-              |s1 INT)
-              |PARTITIONED BY (pk BIGINT)
-              |CLUSTERED BY (v1)
-              |SORTED BY (s1)
-              |INTO 200 BUCKETS
-              |STORED AS PARQUET
-              |""".stripMargin
+              CREATE TABLE TEST1(
+              v1 BIGINT,
+              s1 INT)
+              PARTITIONED BY (pk BIGINT)
+              CLUSTERED BY (v1)
+              SORTED BY (s1)
+              INTO 200 BUCKETS
+              STORED AS PARQUET
+              """
           } else {
             """
-              |CREATE TABLE test1(
-              |v1 BIGINT,
-              |s1 INT)
-              |USING PARQUET
-              |PARTITIONED BY (pk BIGINT)
-              |CLUSTERED BY (v1)
-              |SORTED BY (s1)
-              |INTO 200 BUCKETS
-              |""".stripMargin
+              CREATE TABLE test1(
+              v1 BIGINT,
+              s1 INT)
+              USING PARQUET
+              PARTITIONED BY (pk BIGINT)
+              CLUSTERED BY (v1)
+              SORTED BY (s1)
+              INTO 200 BUCKETS
+              """
           }
 
           val insertString =
             """
-              |INSERT INTO test1
-              |SELECT * FROM VALUES(1,1,1)
-              |""".stripMargin
+              INSERT INTO test1
+              SELECT * FROM VALUES(1,1,1)
+              """
 
           val dropString = "DROP TABLE IF EXISTS test1"
 

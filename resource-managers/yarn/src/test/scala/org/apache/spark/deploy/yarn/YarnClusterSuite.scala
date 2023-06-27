@@ -66,31 +66,31 @@ class YarnClusterSuite extends BaseYarnClusterSuite {
   override def newYarnConfig(): YarnConfiguration = new YarnConfiguration()
 
   private val TEST_PYFILE = """
-    |import mod1, mod2
-    |import sys
-    |from operator import add
-    |
-    |from pyspark import SparkConf , SparkContext
-    |if __name__ == "__main__":
-    |    if len(sys.argv) != 2:
-    |        print >> sys.stderr, "Usage: test.py [result file]"
-    |        exit(-1)
-    |    sc = SparkContext(conf=SparkConf())
-    |    status = open(sys.argv[1],'w')
-    |    result = "failure"
-    |    rdd = sc.parallelize(range(10)).map(lambda x: x * mod1.func() * mod2.func())
-    |    cnt = rdd.count()
-    |    if cnt == 10:
-    |        result = "success"
-    |    status.write(result)
-    |    status.close()
-    |    sc.stop()
-    """.stripMargin
+    import mod1, mod2
+    import sys
+    from operator import add
+
+    from pyspark import SparkConf , SparkContext
+    if __name__ == "__main__":
+        if len(sys.argv) != 2:
+            print >> sys.stderr, "Usage: test.py [result file]"
+            exit(-1)
+        sc = SparkContext(conf=SparkConf())
+        status = open(sys.argv[1],'w')
+        result = "failure"
+        rdd = sc.parallelize(range(10)).map(lambda x: x * mod1.func() * mod2.func())
+        cnt = rdd.count()
+        if cnt == 10:
+            result = "success"
+        status.write(result)
+        status.close()
+        sc.stop()
+    """
 
   private val TEST_PYMODULE = """
-    |def func():
-    |    return 42
-    """.stripMargin
+    def func():
+        return 42
+    """
 
   test("run Spark in yarn-client mode") {
     testBasicYarnApp(true)
@@ -135,13 +135,13 @@ class YarnClusterSuite extends BaseYarnClusterSuite {
     // Create a custom hadoop config file, to make sure it's contents are propagated to the driver.
     val customConf = Utils.createTempDir()
     val coreSite = """<?xml version="1.0" encoding="UTF-8"?>
-      |<configuration>
-      |  <property>
-      |    <name>spark.test.key</name>
-      |    <value>testvalue</value>
-      |  </property>
-      |</configuration>
-      |""".stripMargin
+      <configuration>
+        <property>
+          <name>spark.test.key</name>
+          <value>testvalue</value>
+        </property>
+      </configuration>
+      """
     Files.write(coreSite, new File(customConf, "core-site.xml"), StandardCharsets.UTF_8)
 
     val result = File.createTempFile("result", null, tempDir)
@@ -298,12 +298,12 @@ class YarnClusterSuite extends BaseYarnClusterSuite {
     val logOutFile = new File(tempDir, "logs")
     Files.write(
       s"""rootLogger.level = debug
-         |rootLogger.appenderRef.file.ref = file
-         |appender.file.type = File
-         |appender.file.name = file
-         |appender.file.fileName = $logOutFile
-         |appender.file.layout.type = PatternLayout
-         |""".stripMargin,
+         rootLogger.appenderRef.file.ref = file
+         appender.file.type = File
+         appender.file.name = file
+         appender.file.fileName = $logOutFile
+         appender.file.layout.type = PatternLayout
+         """,
       log4jConf, StandardCharsets.UTF_8)
     // Since this test is trying to extract log output from the SparkSubmit process itself,
     // standard options to the Spark process don't take effect. Leverage the java-opts file which
@@ -532,10 +532,10 @@ private object YarnClusterDriverUseSparkHadoopUtilConf extends Logging with Matc
       // scalastyle:off println
       System.err.println(
         s"""
-        |Invalid command line: ${args.mkString(" ")}
-        |
-        |Usage: YarnClusterDriverUseSparkHadoopUtilConf [hadoopConfKey=value]+ [result file]
-        """.stripMargin)
+        Invalid command line: ${args.mkString(" ")}
+
+        Usage: YarnClusterDriverUseSparkHadoopUtilConf [hadoopConfKey=value]+ [result file]
+        """)
       // scalastyle:on println
       System.exit(1)
     }
@@ -572,10 +572,10 @@ private object YarnClusterDriver extends Logging with Matchers {
       // scalastyle:off println
       System.err.println(
         s"""
-        |Invalid command line: ${args.mkString(" ")}
-        |
-        |Usage: YarnClusterDriver [result file]
-        """.stripMargin)
+        Invalid command line: ${args.mkString(" ")}
+
+        Usage: YarnClusterDriver [result file]
+        """)
       // scalastyle:on println
       System.exit(1)
     }
@@ -681,10 +681,10 @@ private object YarnClasspathTest extends Logging {
     if (args.length != 2) {
       error(
         s"""
-        |Invalid command line: ${args.mkString(" ")}
-        |
-        |Usage: YarnClasspathTest [driver result file] [executor result file]
-        """.stripMargin)
+        Invalid command line: ${args.mkString(" ")}
+
+        Usage: YarnClasspathTest [driver result file] [executor result file]
+        """)
       // scalastyle:on println
     }
 
@@ -720,10 +720,10 @@ private object YarnAddJarTest extends Logging {
       // scalastyle:off println
       System.err.println(
         s"""
-           |Invalid command line: ${args.mkString(" ")}
-           |
-           |Usage: YarnAddJarTest [result file] [expected ivy settings path] [prefix match]
-        """.stripMargin)
+           Invalid command line: ${args.mkString(" ")}
+
+           Usage: YarnAddJarTest [result file] [expected ivy settings path] [prefix match]
+        """)
       // scalastyle:on println
       System.exit(1)
     }

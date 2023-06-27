@@ -93,9 +93,9 @@ trait CodegenSupport extends SparkPlan {
     this.parent = parent
     ctx.freshNamePrefix = variablePrefix
     s"""
-       |${ctx.registerComment(s"PRODUCE: ${this.simpleString(conf.maxToStringFields)}")}
-       |${doProduce(ctx)}
-     """.stripMargin
+       ${ctx.registerComment(s"PRODUCE: ${this.simpleString(conf.maxToStringFields)}")}
+       ${doProduce(ctx)}
+     """
   }
 
   /**
@@ -132,9 +132,9 @@ trait CodegenSupport extends SparkPlan {
         ctx.currentVars = colVars
         val ev = GenerateUnsafeProjection.createCode(ctx, colExprs, false)
         val code = code"""
-          |$evaluateInputs
-          |${ev.code}
-         """.stripMargin
+          $evaluateInputs
+          ${ev.code}
+         """
         ExprCode(code, FalseLiteral, ev.value)
       } else {
         // There are no columns
@@ -196,10 +196,10 @@ trait CodegenSupport extends SparkPlan {
       parent.doConsume(ctx, inputVars, rowVar)
     }
     s"""
-       |${ctx.registerComment(s"CONSUME: ${parent.simpleString(conf.maxToStringFields)}")}
-       |$evaluated
-       |$consumeFunc
-     """.stripMargin
+       ${ctx.registerComment(s"CONSUME: ${parent.simpleString(conf.maxToStringFields)}")}
+       $evaluated
+       $consumeFunc
+     """
   }
 
   /**
@@ -219,14 +219,14 @@ trait CodegenSupport extends SparkPlan {
 
     val doConsumeFuncName = ctx.addNewFunction(doConsume,
       s"""
-         | private void $doConsume(${params.mkString(", ")}) throws java.io.IOException {
-         |   ${parent.doConsume(ctx, inputVarsInFunc, rowVar)}
-         | }
-       """.stripMargin)
+          private void $doConsume(${params.mkString(", ")}) throws java.io.IOException {
+            ${parent.doConsume(ctx, inputVarsInFunc, rowVar)}
+          }
+       """)
 
     s"""
-       | $doConsumeFuncName(${args.mkString(", ")});
-     """.stripMargin
+        $doConsumeFuncName(${args.mkString(", ")});
+     """
   }
 
   /**
@@ -479,13 +479,13 @@ trait InputRDDCodegen extends CodegenSupport {
       ""
     }
     s"""
-       | while ($limitNotReachedCond $input.hasNext()) {
-       |   InternalRow $row = (InternalRow) $input.next();
-       |   ${updateNumOutputRowsMetrics}
-       |   ${consume(ctx, outputVars, if (createUnsafeProjection) null else row).trim}
-       |   ${shouldStopCheckCode}
-       | }
-     """.stripMargin
+        while ($limitNotReachedCond $input.hasNext()) {
+          InternalRow $row = (InternalRow) $input.next();
+          ${updateNumOutputRowsMetrics}
+          ${consume(ctx, outputVars, if (createUnsafeProjection) null else row).trim}
+          ${shouldStopCheckCode}
+        }
+     """
   }
 }
 
@@ -676,7 +676,7 @@ case class WholeStageCodegenExec(child: SparkPlan)(val codegenStageId: Int)
 
       ${ctx.registerComment(
         s"""Codegened pipeline for stage (id=$codegenStageId)
-           |${this.treeString.trim}""".stripMargin,
+           ${this.treeString.trim}""",
          "wsc_codegenPipeline")}
       ${ctx.registerComment(s"codegenStageId=$codegenStageId", "wsc_codegenStageId", true)}
       final class $className extends ${classOf[BufferedRowIterator].getName} {
@@ -801,9 +801,9 @@ case class WholeStageCodegenExec(child: SparkPlan)(val codegenStageId: Int)
       ""
     }
     s"""
-      |${row.code}
-      |append(${row.value}$doCopy);
-     """.stripMargin.trim
+      ${row.code}
+      append(${row.value}$doCopy);
+     """.trim
   }
 
   override def generateTreeString(

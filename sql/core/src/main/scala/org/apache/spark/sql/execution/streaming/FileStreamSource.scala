@@ -86,7 +86,7 @@ class FileStreamSource(
   private val fileSortOrder = if (sourceOptions.latestFirst) {
       logWarning(
         """'latestFirst' is true. New files will be processed first, which may affect the watermark
-          |value. In addition, 'maxFileAge' will be ignored.""".stripMargin)
+          value. In addition, 'maxFileAge' will be ignored.""")
       implicitly[Ordering[Long]].reverse
     } else {
       implicitly[Ordering[Long]]
@@ -182,12 +182,12 @@ class FileStreamSource(
 
     logTrace(
       s"""
-         |Number of new files = ${newFiles.size}
-         |Number of files selected for batch = ${batchFiles.size}
-         |Number of unread files = ${Option(unreadFiles).map(_.size).getOrElse(0)}
-         |Number of seen files = ${seenFiles.size}
-         |Number of files purged from tracking map = $numPurged
-       """.stripMargin)
+         Number of new files = ${newFiles.size}
+         Number of files selected for batch = ${batchFiles.size}
+         Number of unread files = ${Option(unreadFiles).map(_.size).getOrElse(0)}
+         Number of seen files = ${seenFiles.size}
+         Number of files purged from tracking map = $numPurged
+       """)
 
     if (batchFiles.nonEmpty) {
       metadataLogCurrentOffset += 1

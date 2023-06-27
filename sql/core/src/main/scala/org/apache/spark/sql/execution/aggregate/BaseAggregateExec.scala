@@ -38,13 +38,13 @@ trait BaseAggregateExec extends UnaryExecNode with PartitioningPreservingUnaryEx
 
   override def verboseStringWithOperatorId(): String = {
     s"""
-       |$formattedNodeName
-       |${ExplainUtils.generateFieldString("Input", child.output)}
-       |${ExplainUtils.generateFieldString("Keys", groupingExpressions)}
-       |${ExplainUtils.generateFieldString("Functions", aggregateExpressions)}
-       |${ExplainUtils.generateFieldString("Aggregate Attributes", aggregateAttributes)}
-       |${ExplainUtils.generateFieldString("Results", resultExpressions)}
-       |""".stripMargin
+       $formattedNodeName
+       ${ExplainUtils.generateFieldString("Input", child.output)}
+       ${ExplainUtils.generateFieldString("Keys", groupingExpressions)}
+       ${ExplainUtils.generateFieldString("Functions", aggregateExpressions)}
+       ${ExplainUtils.generateFieldString("Aggregate Attributes", aggregateAttributes)}
+       ${ExplainUtils.generateFieldString("Results", resultExpressions)}
+       """
   }
 
   protected def inputAttributes: Seq[Attribute] = {

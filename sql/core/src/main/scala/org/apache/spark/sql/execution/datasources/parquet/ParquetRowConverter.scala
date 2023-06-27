@@ -148,27 +148,27 @@ private[parquet] class ParquetRowConverter(
   assert(
     parquetType.getFieldCount <= catalystType.length,
     s"""Field count of the Parquet schema is greater than the field count of the Catalyst schema:
-       |
-       |Parquet schema:
-       |$parquetType
-       |Catalyst schema:
-       |${catalystType.prettyJson}
-     """.stripMargin)
+
+       Parquet schema:
+       $parquetType
+       Catalyst schema:
+       ${catalystType.prettyJson}
+     """)
 
   assert(
     !catalystType.existsRecursively(_.isInstanceOf[UserDefinedType[_]]),
     s"""User-defined types in Catalyst schema should have already been expanded:
-       |${catalystType.prettyJson}
-     """.stripMargin)
+       ${catalystType.prettyJson}
+     """)
 
   logDebug(
     s"""Building row converter for the following schema:
-       |
-       |Parquet form:
-       |$parquetType
-       |Catalyst form:
-       |${catalystType.prettyJson}
-     """.stripMargin)
+
+       Parquet form:
+       $parquetType
+       Catalyst form:
+       ${catalystType.prettyJson}
+     """)
 
   /**
    * Updater used together with field converters within a [[ParquetRowConverter]].  It propagates

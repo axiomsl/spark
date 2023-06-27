@@ -45,11 +45,11 @@ object SampledRDDs {
         .action((x, c) => c.copy(input = x))
       note(
         """
-        |For example, the following command runs this app:
-        |
-        | bin/spark-submit --class org.apache.spark.examples.mllib.SampledRDDs \
-        |  examples/target/scala-*/spark-examples-*.jar
-        """.stripMargin)
+        For example, the following command runs this app:
+
+         bin/spark-submit --class org.apache.spark.examples.mllib.SampledRDDs \
+          examples/target/scala-*/spark-examples-*.jar
+        """)
     }
 
     parser.parse(args, defaultParams) match {

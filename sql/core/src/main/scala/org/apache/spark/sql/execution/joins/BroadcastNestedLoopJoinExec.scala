@@ -462,14 +462,14 @@ case class BroadcastNestedLoopJoinExec(
     val numOutput = metricTerm(ctx, "numOutputRows")
 
     s"""
-       |for (int $arrayIndex = 0; $arrayIndex < $buildRowArrayTerm.length; $arrayIndex++) {
-       |  UnsafeRow $buildRow = (UnsafeRow) $buildRowArrayTerm[$arrayIndex];
-       |  $checkCondition {
-       |    $numOutput.add(1);
-       |    ${consume(ctx, resultVars)}
-       |  }
-       |}
-     """.stripMargin
+       for (int $arrayIndex = 0; $arrayIndex < $buildRowArrayTerm.length; $arrayIndex++) {
+         UnsafeRow $buildRow = (UnsafeRow) $buildRowArrayTerm[$arrayIndex];
+         $checkCondition {
+           $numOutput.add(1);
+           ${consume(ctx, resultVars)}
+         }
+       }
+     """
   }
 
   private def codegenOuter(ctx: CodegenContext, input: Seq[ExprCode]): String = {
@@ -488,30 +488,30 @@ case class BroadcastNestedLoopJoinExec(
 
     if (buildRowArray.isEmpty) {
       s"""
-         |UnsafeRow $buildRow = null;
-         |$numOutput.add(1);
-         |${consume(ctx, resultVars)}
-       """.stripMargin
+         UnsafeRow $buildRow = null;
+         $numOutput.add(1);
+         ${consume(ctx, resultVars)}
+       """
     } else {
       s"""
-         |boolean $foundMatch = false;
-         |for (int $arrayIndex = 0; $arrayIndex < $buildRowArrayTerm.length; $arrayIndex++) {
-         |  UnsafeRow $buildRow = (UnsafeRow) $buildRowArrayTerm[$arrayIndex];
-         |  boolean $shouldOutputRow = false;
-         |  $checkCondition {
-         |    $shouldOutputRow = true;
-         |    $foundMatch = true;
-         |  }
-         |  if ($arrayIndex == $buildRowArrayTerm.length - 1 && !$foundMatch) {
-         |    $buildRow = null;
-         |    $shouldOutputRow = true;
-         |  }
-         |  if ($shouldOutputRow) {
-         |    $numOutput.add(1);
-         |    ${consume(ctx, resultVars)}
-         |  }
-         |}
-       """.stripMargin
+         boolean $foundMatch = false;
+         for (int $arrayIndex = 0; $arrayIndex < $buildRowArrayTerm.length; $arrayIndex++) {
+           UnsafeRow $buildRow = (UnsafeRow) $buildRowArrayTerm[$arrayIndex];
+           boolean $shouldOutputRow = false;
+           $checkCondition {
+             $shouldOutputRow = true;
+             $foundMatch = true;
+           }
+           if ($arrayIndex == $buildRowArrayTerm.length - 1 && !$foundMatch) {
+             $buildRow = null;
+             $shouldOutputRow = true;
+           }
+           if ($shouldOutputRow) {
+             $numOutput.add(1);
+             ${consume(ctx, resultVars)}
+           }
+         }
+       """
     }
   }
 
@@ -529,9 +529,9 @@ case class BroadcastNestedLoopJoinExec(
         // or
         // 2. build side is empty for LeftAnti join.
         s"""
-           |$numOutput.add(1);
-           |${consume(ctx, input)}
-         """.stripMargin
+           $numOutput.add(1);
+           ${consume(ctx, input)}
+         """
       } else {
         // Return nothing if join condition is empty and
         // 1. build side is empty for LeftSemi join
@@ -545,19 +545,19 @@ case class BroadcastNestedLoopJoinExec(
       val arrayIndex = ctx.freshName("arrayIndex")
 
       s"""
-         |boolean $foundMatch = false;
-         |for (int $arrayIndex = 0; $arrayIndex < $buildRowArrayTerm.length; $arrayIndex++) {
-         |  UnsafeRow $buildRow = (UnsafeRow) $buildRowArrayTerm[$arrayIndex];
-         |  $checkCondition {
-         |    $foundMatch = true;
-         |    break;
-         |  }
-         |}
-         |if ($foundMatch == $exists) {
-         |  $numOutput.add(1);
-         |  ${consume(ctx, input)}
-         |}
-     """.stripMargin
+         boolean $foundMatch = false;
+         for (int $arrayIndex = 0; $arrayIndex < $buildRowArrayTerm.length; $arrayIndex++) {
+           UnsafeRow $buildRow = (UnsafeRow) $buildRowArrayTerm[$arrayIndex];
+           $checkCondition {
+             $foundMatch = true;
+             break;
+           }
+         }
+         if ($foundMatch == $exists) {
+           $numOutput.add(1);
+           ${consume(ctx, input)}
+         }
+     """
     }
   }
 
