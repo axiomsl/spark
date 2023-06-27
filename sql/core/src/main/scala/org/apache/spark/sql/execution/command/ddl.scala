@@ -244,12 +244,12 @@ case class DropTableCommand(
         case _ =>
       }
 
-      try {
-        sparkSession.sharedState.cacheManager.uncacheQuery(
-          sparkSession.table(tableName), cascade = true)
-      } catch {
-        case NonFatal(e) => log.warn(e.toString, e)
-      }
+//      try {
+//        sparkSession.sharedState.cacheManager.uncacheQuery(
+//          sparkSession.table(tableName), cascade = true)
+//      } catch {
+//        case NonFatal(e) => log.warn(e.toString, e)
+//      }
       catalog.refreshTable(tableName)
       catalog.dropTable(tableName, ifExists, purge)
     } else if (ifExists) {
