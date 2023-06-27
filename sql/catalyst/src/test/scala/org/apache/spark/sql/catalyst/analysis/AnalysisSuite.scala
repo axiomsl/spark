@@ -1132,56 +1132,56 @@ class AnalysisSuite extends AnalysisTest with Matchers {
 
     assertAnalysisSuccess(parsePlan(
       """
-        |SELECT grouping__id FROM (
-        |  SELECT a, b, count(1), grouping__id FROM TaBlE2
-        |   GROUP BY a, b WITH CUBE
-        |)
-      """.stripMargin), false)
+        SELECT grouping__id FROM (
+          SELECT a, b, count(1), grouping__id FROM TaBlE2
+           GROUP BY a, b WITH CUBE
+        )
+      """), false)
 
     assertAnalysisSuccess(parsePlan(
       """
-        |SELECT grouping__id FROM (
-        |  SELECT a, b, count(1), grouping__id FROM TaBlE2
-        |    GROUP BY a, b GROUPING SETS ((a, b), ())
-        |)
-      """.stripMargin), false)
+        SELECT grouping__id FROM (
+          SELECT a, b, count(1), grouping__id FROM TaBlE2
+            GROUP BY a, b GROUPING SETS ((a, b), ())
+        )
+      """), false)
 
     assertAnalysisSuccess(parsePlan(
       """
-        |SELECT a, b, count(1) FROM TaBlE2
-        |  GROUP BY CUBE(a, b) HAVING grouping__id > 0
-      """.stripMargin), false)
+        SELECT a, b, count(1) FROM TaBlE2
+          GROUP BY CUBE(a, b) HAVING grouping__id > 0
+      """), false)
 
     assertAnalysisSuccess(parsePlan(
       """
-        |SELECT * FROM (
-        |  SELECT a, b, count(1), grouping__id FROM TaBlE2
-        |    GROUP BY a, b GROUPING SETS ((a, b), ())
-        |) WHERE grouping__id > 0
-      """.stripMargin), false)
+        SELECT * FROM (
+          SELECT a, b, count(1), grouping__id FROM TaBlE2
+            GROUP BY a, b GROUPING SETS ((a, b), ())
+        ) WHERE grouping__id > 0
+      """), false)
 
     assertAnalysisSuccess(parsePlan(
       """
-        |SELECT * FROM (
-        |  SELECT a, b, count(1), grouping__id FROM TaBlE2
-        |    GROUP BY a, b GROUPING SETS ((a, b), ())
-        |) ORDER BY grouping__id > 0
-      """.stripMargin), false)
+        SELECT * FROM (
+          SELECT a, b, count(1), grouping__id FROM TaBlE2
+            GROUP BY a, b GROUPING SETS ((a, b), ())
+        ) ORDER BY grouping__id > 0
+      """), false)
 
     assertAnalysisSuccess(parsePlan(
       """
-        |SELECT a, b, count(1) FROM TaBlE2
-        |  GROUP BY a, b GROUPING SETS ((a, b), ())
-        |    ORDER BY grouping__id > 0
-      """.stripMargin), false)
+        SELECT a, b, count(1) FROM TaBlE2
+          GROUP BY a, b GROUPING SETS ((a, b), ())
+            ORDER BY grouping__id > 0
+      """), false)
 
     assertAnalysisError(parsePlan(
       """
-        |SELECT grouping__id FROM (
-        |  SELECT a, b, count(1), grouping__id FROM TaBlE2
-        |    GROUP BY a, b
-        |)
-      """.stripMargin),
+        SELECT grouping__id FROM (
+          SELECT a, b, count(1), grouping__id FROM TaBlE2
+            GROUP BY a, b
+        )
+      """),
       Seq("grouping_id() can only be used with GroupingSets/Cube/Rollup"),
       false)
   }
@@ -1189,27 +1189,27 @@ class AnalysisSuite extends AnalysisTest with Matchers {
   test("SPARK-36275: Resolve aggregate functions should work with nested fields") {
     assertAnalysisSuccess(parsePlan(
       """
-        |SELECT c.x, SUM(c.y)
-        |FROM VALUES NAMED_STRUCT('x', 'A', 'y', 1), NAMED_STRUCT('x', 'A', 'y', 2) AS t(c)
-        |GROUP BY c.x
-        |HAVING c.x > 1
-        |""".stripMargin))
+        SELECT c.x, SUM(c.y)
+        FROM VALUES NAMED_STRUCT('x', 'A', 'y', 1), NAMED_STRUCT('x', 'A', 'y', 2) AS t(c)
+        GROUP BY c.x
+        HAVING c.x > 1
+        """))
 
     assertAnalysisSuccess(parsePlan(
       """
-        |SELECT c.x, SUM(c.y)
-        |FROM VALUES NAMED_STRUCT('x', 'A', 'y', 1), NAMED_STRUCT('x', 'A', 'y', 2) AS t(c)
-        |GROUP BY c.x
-        |ORDER BY c.x
-        |""".stripMargin))
+        SELECT c.x, SUM(c.y)
+        FROM VALUES NAMED_STRUCT('x', 'A', 'y', 1), NAMED_STRUCT('x', 'A', 'y', 2) AS t(c)
+        GROUP BY c.x
+        ORDER BY c.x
+        """))
 
     assertAnalysisErrorClass(parsePlan(
      """
-        |SELECT c.x
-        |FROM VALUES NAMED_STRUCT('x', 'A', 'y', 1), NAMED_STRUCT('x', 'A', 'y', 2) AS t(c)
-        |GROUP BY c.x
-        |ORDER BY c.x + c.y
-        |""".stripMargin),
+        SELECT c.x
+        FROM VALUES NAMED_STRUCT('x', 'A', 'y', 1), NAMED_STRUCT('x', 'A', 'y', 2) AS t(c)
+        GROUP BY c.x
+        ORDER BY c.x + c.y
+        """),
       "UNRESOLVED_COLUMN.WITH_SUGGESTION",
       Map("objectName" -> "`c`.`y`", "proposal" -> "`x`"),
       Array(ExpectedContext("c.y", 123, 125))
@@ -1220,11 +1220,11 @@ class AnalysisSuite extends AnalysisTest with Matchers {
     assertAnalysisErrorClass(
       inputPlan = parsePlan(
         s"""
-           |WITH t as (SELECT true c)
-           |SELECT t.c
-           |FROM t
-           |GROUP BY t.c
-           |HAVING mean(t.c) > 0d""".stripMargin),
+           WITH t as (SELECT true c)
+           SELECT t.c
+           FROM t
+           GROUP BY t.c
+           HAVING mean(t.c) > 0d"""),
       expectedErrorClass = "DATATYPE_MISMATCH.UNEXPECTED_INPUT_TYPE",
       expectedMessageParameters = Map(
         "sqlExpr" -> "\"mean(c)\"",
@@ -1239,11 +1239,11 @@ class AnalysisSuite extends AnalysisTest with Matchers {
     assertAnalysisErrorClass(
       inputPlan = parsePlan(
         s"""
-           |WITH t as (SELECT true c, false d)
-           |SELECT (t.c AND t.d) c
-           |FROM t
-           |GROUP BY t.c, t.d
-           |HAVING mean(c) > 0d""".stripMargin),
+           WITH t as (SELECT true c, false d)
+           SELECT (t.c AND t.d) c
+           FROM t
+           GROUP BY t.c, t.d
+           HAVING mean(c) > 0d"""),
       expectedErrorClass = "DATATYPE_MISMATCH.UNEXPECTED_INPUT_TYPE",
       expectedMessageParameters = Map(
         "sqlExpr" -> "\"mean(c)\"",
@@ -1257,11 +1257,11 @@ class AnalysisSuite extends AnalysisTest with Matchers {
     assertAnalysisErrorClass(
       inputPlan = parsePlan(
         s"""
-           |WITH t as (SELECT true c)
-           |SELECT t.c
-           |FROM t
-           |GROUP BY t.c
-           |HAVING abs(t.c) > 0d""".stripMargin),
+           WITH t as (SELECT true c)
+           SELECT t.c
+           FROM t
+           GROUP BY t.c
+           HAVING abs(t.c) > 0d"""),
       expectedErrorClass = "DATATYPE_MISMATCH.UNEXPECTED_INPUT_TYPE",
       expectedMessageParameters = Map(
         "sqlExpr" -> "\"abs(c)\"",
@@ -1277,11 +1277,11 @@ class AnalysisSuite extends AnalysisTest with Matchers {
     assertAnalysisErrorClass(
       inputPlan = parsePlan(
         s"""
-         |WITH t as (SELECT true c, false d)
-         |SELECT (t.c AND t.d) c
-         |FROM t
-         |GROUP BY t.c, t.d
-         |HAVING abs(c) > 0d""".stripMargin),
+         WITH t as (SELECT true c, false d)
+         SELECT (t.c AND t.d) c
+         FROM t
+         GROUP BY t.c, t.d
+         HAVING abs(c) > 0d"""),
       expectedErrorClass = "DATATYPE_MISMATCH.UNEXPECTED_INPUT_TYPE",
       expectedMessageParameters = Map(
         "sqlExpr" -> "\"abs(c)\"",
@@ -1298,11 +1298,11 @@ class AnalysisSuite extends AnalysisTest with Matchers {
   test("SPARK-39354: should be [TABLE_OR_VIEW_NOT_FOUND]") {
     assertAnalysisErrorClass(parsePlan(
       s"""
-         |WITH t1 as (SELECT 1 user_id, CAST("2022-06-02" AS DATE) dt)
-         |SELECT *
-         |FROM t1
-         |JOIN t2 ON t1.user_id = t2.user_id
-         |WHERE t1.dt >= DATE_SUB('2020-12-27', 90)""".stripMargin),
+         WITH t1 as (SELECT 1 user_id, CAST("2022-06-02" AS DATE) dt)
+         SELECT *
+         FROM t1
+         JOIN t2 ON t1.user_id = t2.user_id
+         WHERE t1.dt >= DATE_SUB('2020-12-27', 90)"""),
       "TABLE_OR_VIEW_NOT_FOUND", Map("relationName" -> "`t2`"),
       Array(ExpectedContext("t2", 84, 85)))
   }
@@ -1366,10 +1366,10 @@ class AnalysisSuite extends AnalysisTest with Matchers {
   test("SPARK-41489: type of filter expression should be a bool") {
     assertAnalysisErrorClass(parsePlan(
       s"""
-         |WITH t1 as (SELECT 1 user_id)
-         |SELECT *
-         |FROM t1
-         |WHERE 'true'""".stripMargin),
+         WITH t1 as (SELECT 1 user_id)
+         SELECT *
+         FROM t1
+         WHERE 'true'"""),
       expectedErrorClass = "DATATYPE_MISMATCH.FILTER_NOT_BOOLEAN",
       expectedMessageParameters = Map(
         "sqlExpr" -> "\"true\"", "filter" -> "\"true\"", "type" -> "\"STRING\"")
