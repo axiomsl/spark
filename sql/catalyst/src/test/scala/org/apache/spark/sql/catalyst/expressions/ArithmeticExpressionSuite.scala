@@ -522,6 +522,77 @@ class ArithmeticExpressionSuite extends SparkFunSuite with ExpressionEvalHelper 
     checkEvaluation(least, Seq(1, 2))
   }
 
+  test("function LeastNullIntolerant") {
+    val row = create_row(1, 2, "a", "b", "c")
+    val c1 = 'a.int.at(0)
+    val c2 = 'a.int.at(1)
+    val c3 = 'a.string.at(2)
+    val c4 = 'a.string.at(3)
+    val c5 = 'a.string.at(4)
+    checkEvaluation(LeastNullIntolerant(Seq(Literal.create(null, IntegerType), Literal(2))),
+      null, row)
+    checkEvaluation(LeastNullIntolerant(Seq(c4, c3, c5)), "a", row)
+    checkEvaluation(LeastNullIntolerant(Seq(c1, c2)), 1, row)
+    checkEvaluation(LeastNullIntolerant(Seq(c1, c2, Literal(-1))), -1, row)
+    checkEvaluation(LeastNullIntolerant(Seq(c4, c5, c3, c3, Literal("a"))), "a", row)
+
+    val nullLiteral = Literal.create(null, IntegerType)
+    checkEvaluation(LeastNullIntolerant(Seq(nullLiteral, nullLiteral)), null)
+    checkEvaluation(
+      LeastNullIntolerant(Seq(Literal(null), Literal(null))), null, InternalRow.empty
+    )
+    checkEvaluation(LeastNullIntolerant(Seq(Literal(-1.0), Literal(2.5))), -1.0, InternalRow.empty)
+    checkEvaluation(LeastNullIntolerant(Seq(Literal(-1), Literal(2))), -1, InternalRow.empty)
+    checkEvaluation(
+      LeastNullIntolerant(Seq(Literal((-1.0).toFloat), Literal(2.5.toFloat))), (-1.0).toFloat,
+      InternalRow.empty
+    )
+    checkEvaluation(
+      LeastNullIntolerant(Seq(Literal(Long.MaxValue), Literal(Long.MinValue))), Long.MinValue,
+      InternalRow.empty
+    )
+    checkEvaluation(
+      LeastNullIntolerant(Seq(Literal(1.toByte), Literal(2.toByte))), 1.toByte, InternalRow.empty)
+    checkEvaluation(
+      LeastNullIntolerant(Seq(Literal(1.toShort), Literal(2.toByte.toShort))), 1.toShort,
+      InternalRow.empty)
+    checkEvaluation(LeastNullIntolerant(Seq(Literal("abc"), Literal("aaaa"))), "aaaa",
+      InternalRow.empty)
+    checkEvaluation(LeastNullIntolerant(Seq(Literal(true), Literal(false))), false,
+      InternalRow.empty)
+    checkEvaluation(
+      LeastNullIntolerant(Seq(
+        Literal(BigDecimal("1234567890987654321123456")),
+        Literal(BigDecimal("1234567890987654321123458")))),
+      BigDecimal("1234567890987654321123456"), InternalRow.empty)
+    checkEvaluation(
+      LeastNullIntolerant(Seq(Literal(Date.valueOf("2015-01-01")),
+        Literal(Date.valueOf("2015-07-01")))),
+      Date.valueOf("2015-01-01"), InternalRow.empty)
+    checkEvaluation(
+      LeastNullIntolerant(Seq(
+        Literal(Timestamp.valueOf("2015-07-01 08:00:00")),
+        Literal(Timestamp.valueOf("2015-07-01 10:00:00")))),
+      Timestamp.valueOf("2015-07-01 08:00:00"), InternalRow.empty)
+
+    // Type checking error
+    assert(
+      LeastNullIntolerant(Seq(Literal(1), Literal("1"))).checkInputDataTypes() ==
+        TypeCheckFailure("The expressions should all have the same type, " +
+          "got LeastNullIntolerant(int, string)."))
+
+    DataTypeTestUtils.ordered.foreach { dt =>
+      checkConsistencyBetweenInterpretedAndCodegen(Least, dt, 2)
+    }
+
+    //    ArrayType not supported yet
+    //    val least = LeastNullIntolerant(Seq(
+    //      Literal.create(Seq(1, 2), ArrayType(IntegerType, containsNull = false)),
+    //      Literal.create(Seq(1, 3, null), ArrayType(IntegerType, containsNull = true))))
+    //    assert(least.dataType === ArrayType(IntegerType, containsNull = true))
+    //    checkEvaluation(least, Seq(1, 2))
+  }
+
   test("function greatest") {
     val row = create_row(1, 2, "a", "b", "c")
     val c1 = $"a".int.at(0)
@@ -537,6 +608,7 @@ class ArithmeticExpressionSuite extends SparkFunSuite with ExpressionEvalHelper 
     val nullLiteral = Literal.create(null, IntegerType)
     checkEvaluation(Greatest(Seq(nullLiteral, nullLiteral)), null)
     checkEvaluation(Greatest(Seq(Literal(null), Literal(null))), null, InternalRow.empty)
+    checkEvaluation(Greatest(Seq(nullLiteral, Literal(5))), 5, InternalRow.empty)
     checkEvaluation(Greatest(Seq(Literal(-1.0), Literal(2.5))), 2.5, InternalRow.empty)
     checkEvaluation(Greatest(Seq(Literal(-1), Literal(2))), 2, InternalRow.empty)
     checkEvaluation(
@@ -583,6 +655,73 @@ class ArithmeticExpressionSuite extends SparkFunSuite with ExpressionEvalHelper 
     checkEvaluation(greatest, Seq(1, 3, null))
   }
 
+  test("function GreatestNullIntolerant") {
+    val row = create_row(1, 2, "a", "b", "c")
+    val c1 = 'a.int.at(0)
+    val c2 = 'a.int.at(1)
+    val c3 = 'a.string.at(2)
+    val c4 = 'a.string.at(3)
+    val c5 = 'a.string.at(4)
+    checkEvaluation(GreatestNullIntolerant(Seq(Literal.create(null, IntegerType), Literal(2))),
+      null, row)
+    checkEvaluation(GreatestNullIntolerant(Seq(c4, c5, c3)), "c", row)
+    checkEvaluation(GreatestNullIntolerant(Seq(c2, c1)), 2, row)
+    checkEvaluation(GreatestNullIntolerant(Seq(c1, c2, Literal(2))), 2, row)
+    checkEvaluation(GreatestNullIntolerant(Seq(c4, c5, c3, Literal("ccc"))), "ccc", row)
+
+    val nullLiteral = Literal.create(null, IntegerType)
+    checkEvaluation(GreatestNullIntolerant(Seq(nullLiteral, nullLiteral)), null)
+    checkEvaluation(GreatestNullIntolerant(Seq(Literal(null), Literal(null))), null,
+      InternalRow.empty)
+    checkEvaluation(GreatestNullIntolerant(Seq(Literal(-1.0), Literal(2.5))), 2.5,
+      InternalRow.empty)
+    checkEvaluation(GreatestNullIntolerant(Seq(Literal(-1), Literal(2))), 2, InternalRow.empty)
+    checkEvaluation(
+      GreatestNullIntolerant(Seq(Literal((-1.0).toFloat), Literal(2.5.toFloat))), 2.5.toFloat,
+      InternalRow.empty)
+    checkEvaluation(GreatestNullIntolerant(
+      Seq(Literal(Long.MaxValue), Literal(Long.MinValue))), Long.MaxValue, InternalRow.empty)
+    checkEvaluation(
+      GreatestNullIntolerant(Seq(Literal(1.toByte), Literal(2.toByte))), 2.toByte,
+      InternalRow.empty)
+    checkEvaluation(
+      GreatestNullIntolerant(Seq(Literal(1.toShort), Literal(2.toByte.toShort))), 2.toShort,
+      InternalRow.empty)
+    checkEvaluation(GreatestNullIntolerant(Seq(Literal("abc"), Literal("aaaa"))), "abc",
+      InternalRow.empty)
+    checkEvaluation(GreatestNullIntolerant(Seq(Literal(true), Literal(false))), true,
+      InternalRow.empty)
+    checkEvaluation(
+      GreatestNullIntolerant(Seq(
+        Literal(BigDecimal("1234567890987654321123456")),
+        Literal(BigDecimal("1234567890987654321123458")))),
+      BigDecimal("1234567890987654321123458"), InternalRow.empty)
+    checkEvaluation(GreatestNullIntolerant(
+      Seq(Literal(Date.valueOf("2015-01-01")), Literal(Date.valueOf("2015-07-01")))),
+      Date.valueOf("2015-07-01"), InternalRow.empty)
+    checkEvaluation(
+      GreatestNullIntolerant(Seq(
+        Literal(Timestamp.valueOf("2015-07-01 08:00:00")),
+        Literal(Timestamp.valueOf("2015-07-01 10:00:00")))),
+      Timestamp.valueOf("2015-07-01 10:00:00"), InternalRow.empty)
+
+    // Type checking error
+    assert(
+      GreatestNullIntolerant(Seq(Literal(1), Literal("1"))).checkInputDataTypes() ==
+        TypeCheckFailure("The expressions should all have the same type, " +
+          "got GreatestNullIntolerant(int, string)."))
+
+    DataTypeTestUtils.ordered.foreach { dt =>
+      checkConsistencyBetweenInterpretedAndCodegen(Greatest, dt, 2)
+    }
+    //  ArrayType is not supported
+    //    val greatest = GreatestNullIntolerant(Seq(
+    //      Literal.create(Seq(1, 2), ArrayType(IntegerType, containsNull = false)),
+    //      Literal.create(Seq(1, 3, null), ArrayType(IntegerType, containsNull = true))))
+    //    assert(greatest.dataType === ArrayType(IntegerType, containsNull = true))
+    //    checkEvaluation(greatest, Seq(1, 3, null))
+  }
+
   test("SPARK-22499: Least and greatest should not generate codes beyond 64KB") {
     val N = 2000
     val strings = (1 to N).map(x => "s" * x)
@@ -592,6 +731,15 @@ class ArithmeticExpressionSuite extends SparkFunSuite with ExpressionEvalHelper 
     checkEvaluation(Greatest(inputsExpr), "s" * N, EmptyRow)
   }
 
+  test("LeastNullIntolerant and GreatestNullIntolerant should not generate codes beyond 64KB") {
+    val N = 2000
+    val strings = (1 to N).map(x => "s" * x)
+    val inputsExpr = strings.map(Literal.create(_, StringType))
+
+    checkEvaluation(LeastNullIntolerant(inputsExpr), "s" * 1, EmptyRow)
+    checkEvaluation(GreatestNullIntolerant(inputsExpr), "s" * N, EmptyRow)
+  }
+
   test("SPARK-22704: Least and greatest use less global variables") {
     val ctx1 = new CodegenContext()
     Least(Seq(Literal(1), Literal(1))).genCode(ctx1)
@@ -599,6 +747,16 @@ class ArithmeticExpressionSuite extends SparkFunSuite with ExpressionEvalHelper 
 
     val ctx2 = new CodegenContext()
     Greatest(Seq(Literal(1), Literal(1))).genCode(ctx2)
+    assert(ctx2.inlinedMutableStates.size == 1)
+  }
+
+  test("LeastNullIntolerant and GreatestNullIntolerant use less global variables") {
+    val ctx1 = new CodegenContext()
+    LeastNullIntolerant(Seq(Literal(1), Literal(1))).genCode(ctx1)
+    assert(ctx1.inlinedMutableStates.size == 1)
+
+    val ctx2 = new CodegenContext()
+    GreatestNullIntolerant(Seq(Literal(1), Literal(1))).genCode(ctx2)
     assert(ctx2.inlinedMutableStates.size == 1)
   }
 

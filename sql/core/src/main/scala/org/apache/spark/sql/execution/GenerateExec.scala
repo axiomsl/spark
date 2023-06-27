@@ -159,7 +159,7 @@ case class GenerateExec(
     val data = e.genCode(ctx)
 
     // Generate looping variables.
-    val index = ctx.freshName("index")
+    val index = ctx.freshName("idx")
 
     // Add a check if the generate outer flag is true.
     val checks = optionalCode(outer, s"($index == -1)")
@@ -199,13 +199,13 @@ case class GenerateExec(
 
       case MapType(keyType, valueType, valueContainsNull) =>
         // Materialize the key and the value arrays before we enter the loop.
-        val keyArray = ctx.freshName("keyArray")
-        val valueArray = ctx.freshName("valueArray")
+        val keyArray = ctx.freshName("keyArr")
+        val valueArray = ctx.freshName("valueArr")
         val initArrayData =
           s"""
-             |ArrayData $keyArray = ${data.isNull} ? null : ${data.value}.keyArray();
-             |ArrayData $valueArray = ${data.isNull} ? null : ${data.value}.valueArray();
-           """.stripMargin
+             ArrayData $keyArray = ${data.isNull} ? null : ${data.value}.keyArray();
+             ArrayData $valueArray = ${data.isNull} ? null : ${data.value}.valueArray();
+           """
         val values = Seq(
           codeGenAccessor(ctx, keyArray, "key", index, keyType, nullable = false, checks),
           codeGenAccessor(ctx, valueArray, "value", index, valueType, valueContainsNull, checks))
@@ -215,7 +215,7 @@ case class GenerateExec(
     // In case of outer=true we need to make sure the loop is executed at-least once when the
     // array/map contains no input. We do this by setting the looping index to -1 if there is no
     // input, evaluation of the array is prevented by a check in the accessor code.
-    val numElements = ctx.freshName("numElements")
+    val numElements = ctx.freshName("numElms")
     val init = if (outer) {
       s"$numElements == 0 ? -1 : 0"
     } else {
@@ -246,8 +246,8 @@ case class GenerateExec(
     val data = e.genCode(ctx)
 
     // Generate looping variables.
-    val iterator = ctx.freshName("iterator")
-    val hasNext = ctx.freshName("hasNext")
+    val iterator = ctx.freshName("iter")
+    val hasNext = ctx.freshName("hasN")
     val current = ctx.freshName("row")
 
     // Add a check if the generate outer flag is true.

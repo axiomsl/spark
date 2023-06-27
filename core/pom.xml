@@ -597,8 +597,8 @@
               <!-- Execute the shell script to generate the spark build information. -->
               <target>
                 <exec executable="${shell}">
-                  <arg value="${project.basedir}/../build/${spark-build-info-script}"/>
-                  <arg value="${project.build.directory}/extra-resources"/>
+                  <arg value="../build/${spark-build-info-script}"/>
+                  <arg value="target/extra-resources"/>
                   <arg value="${project.version}"/>
                 </exec>
               </target>

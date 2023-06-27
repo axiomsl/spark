@@ -176,7 +176,7 @@ private[sql] class RocksDBStateStoreProvider
     this.storeConf = storeConf
     this.hadoopConf = hadoopConf
 
-    require((keySchema.length == 0 && numColsPrefixKey == 0) ||
+    require((keySchema.isEmpty && numColsPrefixKey == 0) ||
       (keySchema.length > numColsPrefixKey), "The number of columns in the key must be " +
       "greater than the number of columns for prefix key!")
 

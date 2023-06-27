@@ -249,7 +249,31 @@ private[spark] object ThreadUtils {
    */
   def newDaemonSingleThreadExecutor(threadName: String): ThreadPoolExecutor = {
     val threadFactory = new ThreadFactoryBuilder().setDaemon(true).setNameFormat(threadName).build()
-    Executors.newFixedThreadPool(1, threadFactory).asInstanceOf[ThreadPoolExecutor]
+    new ThreadPoolExecutor(
+      1, 1, 0L, TimeUnit.MILLISECONDS, new LinkedBlockingQueue[Runnable], threadFactory) {
+      override def execute(runnable: Runnable): Unit = {
+        super.execute(new Runnable {
+          val callerThreadMDC: util.Map[String, String] = getMDCMap
+
+          override def run(): Unit = {
+            val threadMDC = getMDCMap
+            MDC.setContextMap(callerThreadMDC)
+            try {
+              runnable.run()
+            } finally {
+              MDC.setContextMap(threadMDC)
+            }
+          }
+        })
+      }
+
+      private def getMDCMap: util.Map[String, String] = {
+        MDC.getCopyOfContextMap match {
+          case null => new util.HashMap[String, String]()
+          case m => m
+        }
+      }
+    }
   }
 
   /**
@@ -270,7 +294,31 @@ private[spark] object ThreadUtils {
       TimeUnit.MILLISECONDS,
       new ArrayBlockingQueue[Runnable](taskQueueCapacity),
       threadFactory,
-      rejectedExecutionHandler)
+      rejectedExecutionHandler) {
+
+      override def execute(runnable: Runnable): Unit = {
+        super.execute(new Runnable {
+          val callerThreadMDC: util.Map[String, String] = getMDCMap
+
+          override def run(): Unit = {
+            val threadMDC = getMDCMap
+            MDC.setContextMap(callerThreadMDC)
+            try {
+              runnable.run()
+            } finally {
+              MDC.setContextMap(threadMDC)
+            }
+          }
+        })
+      }
+
+      private def getMDCMap: util.Map[String, String] = {
+        MDC.getCopyOfContextMap match {
+          case null => new util.HashMap[String, String]()
+          case m => m
+        }
+      }
+    }
   }
 
   /**

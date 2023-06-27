@@ -164,7 +164,7 @@ object GenerateColumnAccessor extends CodeGenerator[Seq[DataType], ColumnarItera
       import org.apache.spark.sql.catalyst.expressions.codegen.UnsafeRowWriter;
       import org.apache.spark.sql.execution.columnar.MutableUnsafeRow;
 
-      public SpecificColumnarIterator generate(Object[] references) {
+      public SpecificColumnarIterator generate(Object[] refs) {
         return new SpecificColumnarIterator();
       }
 

@@ -126,6 +126,8 @@ object BasicStatsPlanVisitor extends LogicalPlanVisitor[Statistics] with Logging
 
   override def visitWindow(p: Window): Statistics = fallback(p)
 
+  override def visitSubqueryAlias(p: SubqueryAlias): Statistics = visit(p.child)
+
   override def visitSort(p: Sort): Statistics = fallback(p)
 
   override def visitTail(p: Tail): Statistics = {

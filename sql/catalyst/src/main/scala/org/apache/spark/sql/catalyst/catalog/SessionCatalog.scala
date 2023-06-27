@@ -1030,7 +1030,7 @@ class SessionCatalog(
    * Return whether a table with the specified name is a temporary view.
    */
   def isTempView(name: TableIdentifier): Boolean = synchronized {
-    isTempView(toNameParts(name))
+    name.table.startsWith("v_") && isTempView(toNameParts(name))
   }
 
   def isView(nameParts: Seq[String]): Boolean = {

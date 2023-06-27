@@ -1215,18 +1215,18 @@ abstract class TreeNode[BaseType <: TreeNode[BaseType]] extends Product with Tre
   }
 
   private def shouldConvertToJson(product: Product): Boolean = product match {
-    case exprId: ExprId => true
-    case field: StructField => true
-    case id: CatalystIdentifier => true
-    case alias: AliasIdentifier => true
-    case join: JoinType => true
-    case spec: BucketSpec => true
-    case catalog: CatalogTable => true
-    case partition: Partitioning => true
-    case resource: FunctionResource => true
-    case broadcast: BroadcastMode => true
-    case table: CatalogTableType => true
-    case storage: CatalogStorageFormat => true
+    case _: ExprId => true
+    case _: StructField => true
+    case _: CatalystIdentifier => true
+    case _: AliasIdentifier => true
+    case _: JoinType => true
+    case _: BucketSpec => true
+    case _: CatalogTable => true
+    case _: Partitioning => true
+    case _: FunctionResource => true
+    case _: BroadcastMode => true
+    case _: CatalogTableType => true
+    case _: CatalogStorageFormat => true
     // Write out product that contains TreeNode, since there are some Tuples such as cteRelations
     // in With, branches in CaseWhen which are essential to understand the plan.
     case p if p.productIterator.exists(_.isInstanceOf[TreeNode[_]]) => true
