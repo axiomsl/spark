@@ -106,7 +106,11 @@ public abstract class UnsafeWriter {
   public abstract void write(int ordinal, Decimal input, int precision, int scale);
 
   public final void write(int ordinal, UTF8String input) {
-    writeUnalignedBytes(ordinal, input.getBaseObject(), input.getBaseOffset(), input.numBytes());
+    try {
+      writeUnalignedBytes(ordinal, input.getBaseObject(), input.getBaseOffset(), input.numBytes());
+    } catch (NullPointerException e) {
+      throw new RuntimeException("field ordinal: [" + ordinal + "]", e);
+    }
   }
 
   public final void write(int ordinal, byte[] input) {
