@@ -116,6 +116,13 @@ class CSVFileFormat extends TextBasedFileFormat with DataSourceRegister {
           "The field for corrupt records must be string type and nullable")
       }
     }
+    dataSchema.getFieldIndex(parsedOptions.columnNameOfCorruptRecordCause).foreach { corruptFieldIndex =>
+      val f = dataSchema(corruptFieldIndex)
+      if (f.dataType != StringType || !f.nullable) {
+        throw new AnalysisException(
+          "The field for corrupt records must be string type and nullable")
+      }
+    }
 
     if (requiredSchema.length == 1 &&
       requiredSchema.head.name == parsedOptions.columnNameOfCorruptRecord) {
@@ -136,8 +143,10 @@ class CSVFileFormat extends TextBasedFileFormat with DataSourceRegister {
     (file: PartitionedFile) => {
       val conf = broadcastedHadoopConf.value.value
       val parser = new UnivocityParser(
-        StructType(dataSchema.filterNot(_.name == parsedOptions.columnNameOfCorruptRecord)),
-        StructType(requiredSchema.filterNot(_.name == parsedOptions.columnNameOfCorruptRecord)),
+        StructType(dataSchema.filterNot(_.name == parsedOptions.columnNameOfCorruptRecord)
+          .filterNot(_.name == parsedOptions.columnNameOfCorruptRecordCause)),
+        StructType(requiredSchema.filterNot(_.name == parsedOptions.columnNameOfCorruptRecord)
+          .filterNot(_.name == parsedOptions.columnNameOfCorruptRecordCause)),
         parsedOptions)
       CSVDataSource(parsedOptions).readFile(
         conf,

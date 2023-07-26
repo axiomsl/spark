@@ -72,6 +72,8 @@ private[sql] class JSONOptions(
     parameters.get("mode").map(ParseMode.fromString).getOrElse(PermissiveMode)
   val columnNameOfCorruptRecord =
     parameters.getOrElse("columnNameOfCorruptRecord", defaultColumnNameOfCorruptRecord)
+  val columnNameOfCorruptRecordCause =
+    parameters.getOrElse("columnNameOfCorruptRecordCause", defaultColumnNameOfCorruptRecord + "Cause")
 
   // Whether to ignore column of all null values or empty array/struct during schema inference
   val dropFieldIfAllNull = parameters.get("dropFieldIfAllNull").map(_.toBoolean).getOrElse(false)

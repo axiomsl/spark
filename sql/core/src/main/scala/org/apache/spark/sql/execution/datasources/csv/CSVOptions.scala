@@ -115,6 +115,8 @@ class CSVOptions(
 
   val columnNameOfCorruptRecord =
     parameters.getOrElse("columnNameOfCorruptRecord", defaultColumnNameOfCorruptRecord)
+  val columnNameOfCorruptRecordCause =
+    parameters.getOrElse("columnNameOfCorruptRecordCause", defaultColumnNameOfCorruptRecord + "Cause")
 
   val nullValue = parameters.getOrElse("nullValue", "")
 

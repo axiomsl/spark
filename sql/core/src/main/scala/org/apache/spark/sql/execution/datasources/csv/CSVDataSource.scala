@@ -211,9 +211,11 @@ object TextInputCSVDataSource extends CSVDataSource {
       // be not extracted.
       CSVUtils.extractHeader(lines, parser.options).foreach { header =>
         val actualRequiredSchema =
-          StructType(requiredSchema.filterNot(_.name == parser.options.columnNameOfCorruptRecord))
+          StructType(requiredSchema.filterNot(_.name == parser.options.columnNameOfCorruptRecord)
+            .filterNot(_.name == parser.options.columnNameOfCorruptRecordCause))
         val actualDataSchema =
-          StructType(dataSchema.filterNot(_.name == parser.options.columnNameOfCorruptRecord))
+          StructType(dataSchema.filterNot(_.name == parser.options.columnNameOfCorruptRecord)
+            .filterNot(_.name == parser.options.columnNameOfCorruptRecordCause))
         val schema = if (columnPruning) actualRequiredSchema else actualDataSchema
         val columnNames = parser.tokenizer.parseLine(header)
         CSVDataSource.checkHeaderColumnNames(
@@ -302,9 +304,11 @@ object MultiLineCSVDataSource extends CSVDataSource {
       columnPruning: Boolean): Iterator[InternalRow] = {
     def checkHeader(header: Array[String]): Unit = {
       val actualRequiredSchema =
-        StructType(requiredSchema.filterNot(_.name == parser.options.columnNameOfCorruptRecord))
+        StructType(requiredSchema.filterNot(_.name == parser.options.columnNameOfCorruptRecord)
+          .filterNot(_.name == parser.options.columnNameOfCorruptRecordCause))
       val actualDataSchema =
-        StructType(dataSchema.filterNot(_.name == parser.options.columnNameOfCorruptRecord))
+        StructType(dataSchema.filterNot(_.name == parser.options.columnNameOfCorruptRecord)
+          .filterNot(_.name == parser.options.columnNameOfCorruptRecordCause))
       val schema = if (columnPruning) actualRequiredSchema else actualDataSchema
       CSVDataSource.checkHeaderColumnNames(
         schema,
