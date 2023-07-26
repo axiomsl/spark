@@ -71,7 +71,20 @@ class FailureSafeParser[IN](
     } catch {
       case e: BadRecordException => mode match {
         case PermissiveMode =>
-          Iterator(toResultRow(e.partialResult(), e.record, () => UTF8String.fromString(ExceptionUtils.getRootCause(e.cause).toString)))
+          Iterator(toResultRow(e.partialResult(), e.record,
+            () => {
+              val cause = e.cause
+              if (cause != null) {
+                val causeString = Option(ExceptionUtils.getRootCause(e.cause))
+                  .map( _.toString )
+                  .getOrElse(cause.toString)
+                UTF8String.fromString(causeString)
+              } else {
+                UTF8String.fromString("NA")
+              }
+            }
+          )
+          )
         case DropMalformedMode =>
           Iterator.empty
         case FailFastMode =>
