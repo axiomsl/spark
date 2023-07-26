@@ -132,6 +132,9 @@ class CSVOptions(
 
   val columnNameOfCorruptRecord =
     parameters.getOrElse(COLUMN_NAME_OF_CORRUPT_RECORD, defaultColumnNameOfCorruptRecord)
+  val columnNameOfCorruptRecordCause =
+    parameters.getOrElse(COLUMN_NAME_OF_CORRUPT_RECORD_CAUSE,
+      defaultColumnNameOfCorruptRecord + "Cause")
 
   val nullValue = parameters.getOrElse(NULL_VALUE, "")
 
@@ -359,6 +362,7 @@ object CSVOptions extends DataSourceOptions {
   val LINE_SEP = newOption("lineSep")
   val INPUT_BUFFER_SIZE = newOption("inputBufferSize")
   val COLUMN_NAME_OF_CORRUPT_RECORD = newOption("columnNameOfCorruptRecord")
+  val COLUMN_NAME_OF_CORRUPT_RECORD_CAUSE = newOption("columnNameOfCorruptRecordCause")
   val NULL_VALUE = newOption("nullValue")
   val NAN_VALUE = newOption("nanValue")
   val POSITIVE_INF = newOption("positiveInf")

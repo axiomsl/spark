@@ -17,6 +17,8 @@
 
 package org.apache.spark.sql.catalyst.util
 
+import org.apache.commons.lang3.exception.ExceptionUtils
+
 import org.apache.spark.sql.catalyst.InternalRow
 import org.apache.spark.sql.catalyst.expressions.GenericInternalRow
 import org.apache.spark.sql.errors.QueryExecutionErrors
@@ -27,10 +29,13 @@ class FailureSafeParser[IN](
     rawParser: IN => Iterable[InternalRow],
     mode: ParseMode,
     schema: StructType,
-    columnNameOfCorruptRecord: String) {
+    columnNameOfCorruptRecord: String,
+    columnNameOfCorruptRecordCause: String) {
 
   private val corruptFieldIndex = schema.getFieldIndex(columnNameOfCorruptRecord)
-  private val actualSchema = StructType(schema.filterNot(_.name == columnNameOfCorruptRecord))
+  private val corruptErrorFieldIndex = schema.getFieldIndex(columnNameOfCorruptRecordCause)
+  private val actualSchema = StructType(schema.filterNot(_.name == columnNameOfCorruptRecord)
+    .filterNot(_.name == columnNameOfCorruptRecordCause))
   private val resultRow = new GenericInternalRow(schema.length)
   private val nullResult = new GenericInternalRow(schema.length)
 
@@ -38,9 +43,10 @@ class FailureSafeParser[IN](
   // schema doesn't contain a field for corrupted record, we just return the partial result or a
   // row with all fields null. If the given schema contains a field for corrupted record, we will
   // set the bad record to this field, and set other fields according to the partial result or null.
-  private val toResultRow: (Option[InternalRow], () => UTF8String) => InternalRow = {
+  private val toResultRow: (Option[InternalRow], () => UTF8String,
+    () => UTF8String) => InternalRow = {
     if (corruptFieldIndex.isDefined) {
-      (row, badRecord) => {
+      (row, badRecord, badRecordException) => {
         var i = 0
         while (i < actualSchema.length) {
           val from = actualSchema(i)
@@ -48,25 +54,39 @@ class FailureSafeParser[IN](
           i += 1
         }
         resultRow(corruptFieldIndex.get) = badRecord()
+        if (corruptErrorFieldIndex.isDefined) {
+          resultRow(corruptErrorFieldIndex.get) = badRecordException()
+        }
         resultRow
       }
     } else {
-      (row, _) => row.getOrElse(nullResult)
+      (row, _, _) => row.getOrElse(nullResult)
     }
   }
 
   def parse(input: IN): Iterator[InternalRow] = {
     try {
-      rawParser.apply(input).iterator.map(row => toResultRow(Some(row), () => null))
+      rawParser.apply(input).iterator.map(row => toResultRow(Some(row), () => null, () => null))
     } catch {
       case e: BadRecordException => mode match {
         case PermissiveMode =>
-          Iterator(toResultRow(e.partialResult(), e.record))
+          Iterator(toResultRow(e.partialResult(), e.record,
+            () => {
+              val cause = e.cause
+              if (cause != null) {
+                val causeString = Option(ExceptionUtils.getRootCause(e.cause))
+                  .map(_.toString)
+                  .getOrElse(cause.toString)
+                UTF8String.fromString(causeString)
+              } else {
+                UTF8String.fromString("NA")
+              }
+            }))
         case DropMalformedMode =>
           Iterator.empty
         case FailFastMode =>
           throw QueryExecutionErrors.malformedRecordsDetectedInRecordParsingError(
-            toResultRow(e.partialResult(), e.record).toString, e)
+            toResultRow(e.partialResult(), e.record, () => null).toString, e)
       }
     }
   }

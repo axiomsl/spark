@@ -113,13 +113,16 @@ class CSVFileFormat extends TextBasedFileFormat with DataSourceRegister {
     // Such filters will be applied later on the upper layer.
     val actualFilters =
       filters.filterNot(_.references.contains(parsedOptions.columnNameOfCorruptRecord))
+        .filterNot(_.references.contains(parsedOptions.columnNameOfCorruptRecordCause))
 
     (file: PartitionedFile) => {
       val conf = broadcastedHadoopConf.value.value
       val actualDataSchema = StructType(
-        dataSchema.filterNot(_.name == parsedOptions.columnNameOfCorruptRecord))
+        dataSchema.filterNot(_.name == parsedOptions.columnNameOfCorruptRecord)
+          .filterNot(_.name == parsedOptions.columnNameOfCorruptRecordCause))
       val actualRequiredSchema = StructType(
-        requiredSchema.filterNot(_.name == parsedOptions.columnNameOfCorruptRecord))
+        requiredSchema.filterNot(_.name == parsedOptions.columnNameOfCorruptRecord)
+          .filterNot(_.name == parsedOptions.columnNameOfCorruptRecordCause))
       val parser = new UnivocityParser(
         actualDataSchema,
         actualRequiredSchema,
