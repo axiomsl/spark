@@ -63,6 +63,7 @@ trait CodegenSupport extends SparkPlan {
         case "project" => "prj"
         case "inputadapter" => "inadp"
         case "filter" => "flt"
+        case "columnartorow" => "ctr"
         case t => t
       }
   }
