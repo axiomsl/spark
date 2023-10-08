@@ -57,8 +57,6 @@ import org.apache.spark.sql.internal.connector.V1Function
 import org.apache.spark.sql.types._
 import org.apache.spark.sql.types.DayTimeIntervalType.DAY
 import org.apache.spark.sql.util.CaseInsensitiveStringMap
-import org.apache.spark.sql.util.{CaseInsensitiveStringMap, SchemaUtils}
-import org.apache.spark.util.collection.{Utils => CUtils}
 
 /**
  * A trivial [[Analyzer]] with a dummy [[SessionCatalog]] and
@@ -2584,7 +2582,7 @@ class Analyzer(override val catalogManager: CatalogManager) extends RuleExecutor
           buildAggExprList(e, agg, extraAggExprs)
         }
       }
-      (extraAggExprs, transformed)
+      (extraAggExprs.toSeq, transformed)
     }
 
     private def buildAggExprList(
@@ -2746,7 +2744,7 @@ class Analyzer(override val catalogManager: CatalogManager) extends RuleExecutor
         val generators = aggList.filter(hasGenerator).map(trimAlias)
         throw QueryCompilationErrors.moreThanOneGeneratorError(generators, "aggregate")
 
-      case Aggregate(groupList, aggList, child) if aggList.forall {
+      case agg @ Aggregate(groupList, aggList, child) if aggList.forall {
           case AliasedGenerator(_, _, _) => true
           case other => other.resolved
         } && aggList.exists(hasGenerator) =>
@@ -2990,7 +2988,7 @@ class Analyzer(override val catalogManager: CatalogManager) extends RuleExecutor
             throw QueryCompilationErrors.windowAggregateFunctionWithFilterNotSupportedError()
 
           // Extract Windowed AggregateExpression
-          case WindowExpression(
+          case we @ WindowExpression(
               ae @ AggregateExpression(function, _, _, _, _),
               spec: WindowSpecDefinition) =>
             val newChildren = function.children.map(extractExpr)
@@ -3038,7 +3036,7 @@ class Analyzer(override val catalogManager: CatalogManager) extends RuleExecutor
         // We need to use transformDown because we want to trigger
         // "case alias @ Alias(window: WindowExpression, _)" first.
         _.transformDown {
-          case alias @ Alias(_: WindowExpression, _) =>
+          case alias @ Alias(window: WindowExpression, _) =>
             // If a WindowExpression has an assigned alias, just use it.
             extractedWindowExprBuffer += alias
             alias.toAttribute
@@ -3083,7 +3081,7 @@ class Analyzer(override val catalogManager: CatalogManager) extends RuleExecutor
       val windowOps =
         groupedWindowExpressions.foldLeft(child) {
           case (last, ((partitionSpec, orderSpec, _), windowExpressions)) =>
-            Window(windowExpressions, partitionSpec, orderSpec, last)
+            Window(windowExpressions.toSeq, partitionSpec, orderSpec, last)
         }
 
       // Finally, we create a Project to output windowOps's output
@@ -3104,7 +3102,7 @@ class Analyzer(override val catalogManager: CatalogManager) extends RuleExecutor
 
       // Aggregate with Having clause. This rule works with an unresolved Aggregate because
       // a resolved Aggregate will not have Window Functions.
-      case UnresolvedHaving(condition, a @ Aggregate(groupingExprs, aggregateExprs, child))
+      case f @ UnresolvedHaving(condition, a @ Aggregate(groupingExprs, aggregateExprs, child))
         if child.resolved &&
           hasWindowFunction(aggregateExprs) &&
           a.expressions.forall(_.resolved) =>

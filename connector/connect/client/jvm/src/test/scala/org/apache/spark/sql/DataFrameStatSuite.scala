@@ -22,7 +22,7 @@ import java.util.Random
 import io.grpc.StatusRuntimeException
 import org.scalatest.matchers.must.Matchers._
 
-import org.apache.spark.sql.connect.client.util.RemoteSparkSession
+import org.apache.spark.sql.test.RemoteSparkSession
 
 class DataFrameStatSuite extends RemoteSparkSession {
   private def toLetter(i: Int): String = (i + 97).toChar.toString

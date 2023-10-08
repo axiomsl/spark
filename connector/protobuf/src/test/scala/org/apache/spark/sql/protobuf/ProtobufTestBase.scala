@@ -70,7 +70,4 @@ trait ProtobufTestBase extends SQLTestUtils {
         throw new RuntimeException(s"Could not find FileDescriptor for '$messageName'")
     }
   }
-
-  protected def structFromDDL(ddl: String): StructType =
-    DataType.fromDDL(ddl).asInstanceOf[StructType]
 }

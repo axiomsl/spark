@@ -238,47 +238,6 @@ object ResolveDefaultColumns extends QueryErrorsBase with ResolveDefaultColumnsU
     getDefaultValueExprOrNullLit(field, useNullAsDefault)
   }
 
-  // Fails if the given catalog does not support column default value.
-  def validateCatalogForDefaultValue(
-      schema: StructType,
-      catalog: TableCatalog,
-      ident: Identifier): Unit = {
-    if (SQLConf.get.enableDefaultColumns &&
-      schema.exists(_.metadata.contains(CURRENT_DEFAULT_COLUMN_METADATA_KEY)) &&
-      !catalog.capabilities().contains(TableCatalogCapability.SUPPORT_COLUMN_DEFAULT_VALUE)) {
-      throw QueryCompilationErrors.unsupportedTableOperationError(
-        catalog, ident, "column default value")
-    }
-  }
-
-  // Fails if the given table provider of the session catalog does not support column default value.
-  def validateTableProviderForDefaultValue(
-      schema: StructType,
-      tableProvider: Option[String],
-      statementType: String,
-      addNewColumnToExistingTable: Boolean): Unit = {
-    if (SQLConf.get.enableDefaultColumns &&
-      schema.exists(_.metadata.contains(CURRENT_DEFAULT_COLUMN_METADATA_KEY))) {
-      val keywords: Array[String] = SQLConf.get.getConf(SQLConf.DEFAULT_COLUMN_ALLOWED_PROVIDERS)
-        .toLowerCase().split(",").map(_.trim)
-      val allowedTableProviders: Array[String] = keywords.map(_.stripSuffix("*"))
-      val addColumnExistingTableBannedProviders: Array[String] =
-        keywords.filter(_.endsWith("*")).map(_.stripSuffix("*"))
-      val givenTableProvider: String = tableProvider.getOrElse("").toLowerCase()
-      // Make sure that the target table has a provider that supports default column values.
-      if (!allowedTableProviders.contains(givenTableProvider)) {
-        throw QueryCompilationErrors.defaultReferencesNotAllowedInDataSource(
-          statementType, givenTableProvider)
-      }
-      if (addNewColumnToExistingTable &&
-        givenTableProvider.nonEmpty &&
-        addColumnExistingTableBannedProviders.contains(givenTableProvider)) {
-        throw QueryCompilationErrors.addNewDefaultColumnToExistingTableNotAllowed(
-          statementType, givenTableProvider)
-      }
-    }
-  }
-
   /**
    * Parses and analyzes the DEFAULT column text in `field`, returning an error upon failure.
    *
@@ -469,21 +428,6 @@ object ResolveDefaultColumns extends QueryErrorsBase with ResolveDefaultColumnsU
     getExistenceDefaultsBitmask(schema)
   def hasExistenceDefaultValues(schema: StructType): Boolean =
     existenceDefaultValues(schema).exists(_ != null)
-
-  /** If any fields in a schema have default values, appends them to the result. */
-  def getDescribeMetadata(schema: StructType): Seq[(String, String, String)] = {
-    val rows = new ArrayBuffer[(String, String, String)]()
-    if (schema.fields.exists(_.metadata.contains(CURRENT_DEFAULT_COLUMN_METADATA_KEY))) {
-      rows.append(("", "", ""))
-      rows.append(("# Column Default Values", "", ""))
-      schema.foreach { column =>
-        column.getCurrentDefaultValue().map { value =>
-          rows.append((column.name, column.dataType.simpleString, value))
-        }
-      }
-    }
-    rows.toSeq
-  }
 
   /**
    * This is an Analyzer for processing default column values using built-in functions only.

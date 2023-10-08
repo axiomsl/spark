@@ -55,9 +55,6 @@ private[hive] case class HiveSimpleUDF(
   // It's stateful because `evaluator.inputs` is stateful.
   override def stateful: Boolean = true
 
-  // It's stateful because `evaluator.inputs` is stateful.
-  override def stateful: Boolean = true
-
   override def nullable: Boolean = true
 
   override def foldable: Boolean = evaluator.isUDFDeterministic && children.forall(_.foldable)

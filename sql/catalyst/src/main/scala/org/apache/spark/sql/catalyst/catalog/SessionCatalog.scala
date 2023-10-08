@@ -22,10 +22,11 @@ import java.util.Locale
 import java.util.concurrent.{Callable, ConcurrentHashMap, TimeUnit}
 import javax.annotation.concurrent.GuardedBy
 
+import scala.util.{Failure, Success, Try}
+
 import com.google.common.cache.{Cache, CacheBuilder}
 import org.apache.hadoop.conf.Configuration
 import org.apache.hadoop.fs.Path
-import scala.util.{Failure, Success, Try}
 
 import org.apache.spark.internal.Logging
 import org.apache.spark.sql.catalyst._
@@ -243,7 +244,7 @@ class SessionCatalog(
 
   private def requireDbExists(db: String): Unit = {
     if (!databaseExists(db)) {
-      throw NoSuchDatabaseException(db)
+      throw new NoSuchDatabaseException(db)
     }
   }
 

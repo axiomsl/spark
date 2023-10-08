@@ -20,7 +20,6 @@ package org.apache.spark.sql.execution.columnar
 import org.apache.commons.lang3.StringUtils
 
 import org.apache.spark.TaskContext
-import org.apache.spark.{SparkEnv, TaskContext}
 import org.apache.spark.internal.Logging
 import org.apache.spark.network.util.JavaUtils
 import org.apache.spark.rdd.RDD

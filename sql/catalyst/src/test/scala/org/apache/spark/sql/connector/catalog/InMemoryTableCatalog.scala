@@ -103,15 +103,6 @@ class BasicInMemoryTableCatalog extends TableCatalog {
     createTable(ident, schema, partitions, properties)
   }
 
-  override def createTable(
-      ident: Identifier,
-      columns: Array[Column],
-      partitions: Array[Transform],
-      properties: util.Map[String, String]): Table = {
-    val schema = CatalogV2Util.v2ColumnsToStructType(columns)
-    createTable(ident, schema, partitions, properties)
-  }
-
   def createTable(
       ident: Identifier,
       schema: StructType,

@@ -88,7 +88,7 @@ class FailureSafeParser[IN](
               )
             }
           } else {
-            Iterator(toResultRow(e.partialResult(), e.record,
+            Iterator(toResultRow(None, e.record,
               () => {
                 val cause = e.cause
                 if (cause != null) {
@@ -110,7 +110,17 @@ class FailureSafeParser[IN](
               // have the record content.
               throw QueryExecutionErrors.cannotParseJsonArraysAsStructsError(e.record().toString)
             case _ => throw QueryExecutionErrors.malformedRecordsDetectedInRecordParsingError(
-              toResultRow(e.partialResults().headOption, e.record).toString, e)
+              toResultRow(e.partialResults().headOption, e.record, () => {
+                val cause = e.cause
+                if (cause != null) {
+                  val causeString = Option(ExceptionUtils.getRootCause(e.cause))
+                    .map(_.toString)
+                    .getOrElse(cause.toString)
+                  UTF8String.fromString(causeString)
+                } else {
+                  UTF8String.fromString("NA")
+                }
+              }).toString, e)
           }
       }
     }

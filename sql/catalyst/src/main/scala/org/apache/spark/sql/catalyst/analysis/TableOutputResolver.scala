@@ -467,12 +467,6 @@ object TableOutputResolver {
     } else {
       tableAttr.dataType
     }
-    val attrTypeHasCharVarchar = CharVarcharUtils.hasCharVarchar(tableAttr.dataType)
-    val attrTypeWithoutCharVarchar = if (attrTypeHasCharVarchar) {
-      CharVarcharUtils.replaceCharVarcharWithString(tableAttr.dataType)
-    } else {
-      tableAttr.dataType
-    }
     lazy val outputField = if (isCompatible(tableAttr, queryExpr)) {
       if (requiresNullChecks(queryExpr, tableAttr, conf)) {
         val assert = AssertNotNull(queryExpr, colPath)
@@ -499,26 +493,6 @@ object TableOutputResolver {
       byName, conf, addError, colPath)
 
     if (canWriteExpr) outputField else None
-  }
-
-  private def cast(
-      expr: Expression,
-      expectedType: DataType,
-      conf: SQLConf,
-      colName: String): Expression = {
-
-    conf.storeAssignmentPolicy match {
-      case StoreAssignmentPolicy.ANSI =>
-        val cast = Cast(expr, expectedType, Option(conf.sessionLocalTimeZone), ansiEnabled = true)
-        cast.setTagValue(Cast.BY_TABLE_INSERTION, ())
-        checkCastOverflowInTableInsert(cast, colName)
-
-      case StoreAssignmentPolicy.LEGACY =>
-        Cast(expr, expectedType, Option(conf.sessionLocalTimeZone), ansiEnabled = false)
-
-      case _ =>
-        Cast(expr, expectedType, Option(conf.sessionLocalTimeZone))
-    }
   }
 
   private def cast(

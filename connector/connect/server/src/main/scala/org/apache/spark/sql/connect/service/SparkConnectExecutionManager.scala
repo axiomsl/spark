@@ -148,7 +148,7 @@ private[connect] class SparkConnectExecutionManager() extends Logging {
     scheduledExecutor = None
     executions.clear()
     abandonedTombstones.invalidateAll()
-    if (!lastExecutionTime.isDefined) {
+    if (lastExecutionTime.isEmpty) {
       lastExecutionTime = Some(System.currentTimeMillis())
     }
   }
@@ -199,7 +199,7 @@ private[connect] class SparkConnectExecutionManager() extends Logging {
         }
       }
     }
-    if (!toRemove.isEmpty) {
+    if (toRemove.nonEmpty) {
       // .. and remove them.
       toRemove.foreach { executeHolder =>
         val info = executeHolder.getExecuteInfo

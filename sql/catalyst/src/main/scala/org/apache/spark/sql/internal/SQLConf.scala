@@ -1257,14 +1257,6 @@ object SQLConf {
       .booleanConf
       .createWithDefault(false)
 
-  val HIVE_METASTORE_DROP_PARTITION_BY_NAME =
-    buildConf("spark.sql.hive.dropPartitionByName.enabled")
-      .doc("When true, Spark will get partition name rather than partition object " +
-           "to drop partition, which can improve the performance of drop partition.")
-      .version("3.4.0")
-      .booleanConf
-      .createWithDefault(false)
-
   val HIVE_METASTORE_PARTITION_PRUNING =
     buildConf("spark.sql.hive.metastorePartitionPruning")
       .doc("When true, some predicates will be pushed down into the Hive metastore so that " +
@@ -4164,14 +4156,6 @@ object SQLConf {
      .version("3.2.0")
     .booleanConf
     .createWithDefault(false)
-
-  val LEGACY_EMPTY_CURRENT_DB_IN_CLI =
-    buildConf("spark.sql.legacy.emptyCurrentDBInCli")
-      .internal()
-      .doc("When false, spark-sql CLI prints the the current database in prompt")
-      .version("3.4.0")
-      .booleanConf
-      .createWithDefault(false)
 
   val LEGACY_EMPTY_CURRENT_DB_IN_CLI =
     buildConf("spark.sql.legacy.emptyCurrentDBInCli")
