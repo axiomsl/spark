@@ -83,10 +83,10 @@ object V2ScanRelationPushDown extends Rule[LogicalPlan] with PredicateHelper {
 
       logInfo(
         s"""
-           |Pushing operators to ${sHolder.relation.name}
-           |Pushed Filters: $pushedFiltersStr
-           |Post-Scan Filters: ${postScanFilters.mkString(",")}
-         """.stripMargin)
+           Pushing operators to ${sHolder.relation.name}
+           Pushed Filters: $pushedFiltersStr
+           Post-Scan Filters: ${postScanFilters.mkString(",")}
+         """)
 
       val filterCondition = postScanFilters.reduceLeftOption(And)
       filterCondition.map(Filter(_, sHolder)).getOrElse(sHolder)
@@ -211,12 +211,12 @@ object V2ScanRelationPushDown extends Rule[LogicalPlan] with PredicateHelper {
       holder.output = newOutput
       logInfo(
         s"""
-           |Pushing operators to ${holder.relation.name}
-           |Pushed Aggregate Functions:
-           | ${translatedAgg.aggregateExpressions().mkString(", ")}
-           |Pushed Group by:
-           | ${translatedAgg.groupByExpressions.mkString(", ")}
-         """.stripMargin)
+           Pushing operators to ${holder.relation.name}
+           Pushed Aggregate Functions:
+            ${translatedAgg.aggregateExpressions().mkString(", ")}
+           Pushed Group by:
+            ${translatedAgg.groupByExpressions.mkString(", ")}
+         """)
 
       if (canCompletePushDown) {
         val projectExpressions = finalResultExprs.map { expr =>
@@ -358,8 +358,8 @@ object V2ScanRelationPushDown extends Rule[LogicalPlan] with PredicateHelper {
 
       logInfo(
         s"""
-           |Output: ${output.mkString(", ")}
-         """.stripMargin)
+           Output: ${output.mkString(", ")}
+         """)
 
       val wrappedScan = getWrappedScan(scan, sHolder)
 

@@ -485,9 +485,10 @@ private[yarn] class YarnAllocator(
       val starting = getOrUpdateNumExecutorsStartingForRPId(rpId).get
       val pending = pendingAllocatePerResourceProfileId.getOrElse(rpId, Seq.empty).size
       val running = getOrUpdateRunningExecutorForRPId(rpId).size
-      logDebug(s"Updating resource requests for ResourceProfile id: $rpId, target: " +
-        s"$targetNum, pending: $pending, running: $running, executorsStarting: $starting")
-      (rpId, targetNum - pending - running - starting)
+      val missing = targetNum - pending - running - starting
+      logInfo(s"Updating resource requests for ResourceProfile id: $rpId, t: " +
+        s"$targetNum, p: $pending, r: $running, es: $starting; m: $missing")
+      (rpId, missing)
     }.toMap
 
     missingPerProfile.foreach { case (rpId, missing) =>

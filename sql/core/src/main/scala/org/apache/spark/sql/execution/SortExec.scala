@@ -153,10 +153,10 @@ case class SortExec(
     val addToSorter = ctx.freshName("addToSorter")
     val addToSorterFuncName = ctx.addNewFunction(addToSorter,
       s"""
-        | private void $addToSorter() throws java.io.IOException {
-        |   ${child.asInstanceOf[CodegenSupport].produce(ctx, this)}
-        | }
-      """.stripMargin.trim)
+         private void $addToSorter() throws java.io.IOException {
+           ${child.asInstanceOf[CodegenSupport].produce(ctx, this)}
+         }
+      """.trim)
 
     val outputRow = ctx.freshName("outputRow")
     val peakMemory = metricTerm(ctx, "peakMemory")
@@ -164,30 +164,30 @@ case class SortExec(
     val spillSizeBefore = ctx.freshName("spillSizeBefore")
     val sortTime = metricTerm(ctx, "sortTime")
     s"""
-       | if ($needToSort) {
-       |   long $spillSizeBefore = $metrics.memoryBytesSpilled();
-       |   $addToSorterFuncName();
-       |   $sortedIterator = $sorterVariable.sort();
-       |   $sortTime.add($sorterVariable.getSortTimeNanos() / $NANOS_PER_MILLIS);
-       |   $peakMemory.add($sorterVariable.getPeakMemoryUsage());
-       |   $spillSize.add($metrics.memoryBytesSpilled() - $spillSizeBefore);
-       |   $metrics.incPeakExecutionMemory($sorterVariable.getPeakMemoryUsage());
-       |   $needToSort = false;
-       | }
-       |
-       | while ($limitNotReachedCond $sortedIterator.hasNext()) {
-       |   UnsafeRow $outputRow = (UnsafeRow)$sortedIterator.next();
-       |   ${consume(ctx, null, outputRow)}
-       |   if (shouldStop()) return;
-       | }
-     """.stripMargin.trim
+        if ($needToSort) {
+          long $spillSizeBefore = $metrics.memoryBytesSpilled();
+          $addToSorterFuncName();
+          $sortedIterator = $sorterVariable.sort();
+          $sortTime.add($sorterVariable.getSortTimeNanos() / $NANOS_PER_MILLIS);
+          $peakMemory.add($sorterVariable.getPeakMemoryUsage());
+          $spillSize.add($metrics.memoryBytesSpilled() - $spillSizeBefore);
+          $metrics.incPeakExecutionMemory($sorterVariable.getPeakMemoryUsage());
+          $needToSort = false;
+        }
+
+        while ($limitNotReachedCond $sortedIterator.hasNext()) {
+          UnsafeRow $outputRow = (UnsafeRow)$sortedIterator.next();
+          ${consume(ctx, null, outputRow)}
+          if (shouldStop()) return;
+        }
+     """.trim
   }
 
   override def doConsume(ctx: CodegenContext, input: Seq[ExprCode], row: ExprCode): String = {
     s"""
-       |${row.code}
-       |$sorterVariable.insertRow((UnsafeRow)${row.value});
-     """.stripMargin
+       ${row.code}
+       $sorterVariable.insertRow((UnsafeRow)${row.value});
+     """
   }
 
   /**

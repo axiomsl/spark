@@ -179,13 +179,13 @@ case class DataSource(
             if (inferredOpt.isDefined) {
               logDebug(
                 s"""Type of partition column: $partitionColumn not found in specified schema
-                   |for $format.
-                   |User Specified Schema
-                   |=====================
-                   |${userSpecifiedSchema.orNull}
-                   |
-                   |Falling back to inferred dataType if it exists.
-                 """.stripMargin)
+                   for $format.
+                   User Specified Schema
+                   =====================
+                   ${userSpecifiedSchema.orNull}
+
+                   Falling back to inferred dataType if it exists.
+                 """)
             }
             inferredOpt
           }.getOrElse {

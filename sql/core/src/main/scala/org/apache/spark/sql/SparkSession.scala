@@ -1341,12 +1341,12 @@ object SparkSession extends Logging {
     if (session.isDefined) {
       logWarning(
         s"""An existing Spark session exists as the active or default session.
-           |This probably means another suite leaked it. Attempting to stop it before continuing.
-           |This existing Spark session was created at:
-           |
-           |${session.get.creationSite.longForm}
-           |
-         """.stripMargin)
+           This probably means another suite leaked it. Attempting to stop it before continuing.
+           This existing Spark session was created at:
+
+           ${session.get.creationSite.longForm}
+
+         """)
       session.get.stop()
       SparkSession.clearActiveSession()
       SparkSession.clearDefaultSession()

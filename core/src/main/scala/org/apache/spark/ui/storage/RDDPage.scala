@@ -68,13 +68,13 @@ private[ui] class RDDPage(parent: SparkUITab, store: AppStatusStore) extends Web
         {
           Unparsed {
             """
-              |$(function() {
-              |  if (/.*&block.sort=.*$/.test(location.search)) {
-              |    var topOffset = $("#blocks-section").offset().top;
-              |    $("html,body").animate({scrollTop: topOffset}, 200);
-              |  }
-              |});
-            """.stripMargin
+              $(function() {
+                if (/.*&block.sort=.*$/.test(location.search)) {
+                  var topOffset = $("#blocks-section").offset().top;
+                  $("html,body").animate({scrollTop: topOffset}, 200);
+                }
+              });
+            """
           }
         }
       </script>

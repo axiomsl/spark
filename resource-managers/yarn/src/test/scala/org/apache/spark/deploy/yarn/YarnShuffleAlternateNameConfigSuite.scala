@@ -57,13 +57,13 @@ abstract class YarnShuffleAlternateNameConfigSuite extends YarnShuffleIntegratio
   override def beforeAll(): Unit = {
     val configFileContent =
       s"""<?xml version="1.0" encoding="UTF-8"?>
-         |<configuration>
-         |  <property>
-         |    <name>${NETWORK_AUTH_ENABLED.key}</name>
-         |    <value>false</value>
-         |  </property>
-         |</configuration>
-         |""".stripMargin
+         <configuration>
+           <property>
+             <name>${NETWORK_AUTH_ENABLED.key}</name>
+             <value>false</value>
+           </property>
+         </configuration>
+         """
     val jarFile = TestUtils.createJarWithFiles(Map(
       YarnTestAccessor.getShuffleServiceConfOverlayResourceName -> configFileContent
     ))

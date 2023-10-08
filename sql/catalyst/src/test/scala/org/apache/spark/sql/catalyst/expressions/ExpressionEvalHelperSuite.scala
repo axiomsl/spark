@@ -61,9 +61,9 @@ case class BadCodegenExpression() extends LeafExpression {
   override protected def doGenCode(ctx: CodegenContext, ev: ExprCode): ExprCode = {
     ev.copy(code =
       code"""
-        |int some_variable = 11;
-        |int ${ev.value} = 10;
-      """.stripMargin)
+        int some_variable = 11;
+        int ${ev.value} = 10;
+      """)
   }
   override def dataType: DataType = IntegerType
 }
@@ -91,9 +91,9 @@ case class BadCodegenAndEvalExpression() extends LeafExpression {
     // it should be java.util.NoSuchElementException in generated code.
     ev.copy(code =
       code"""
-            |int ${ev.value} = 10;
-            |throw new NoSuchElementException("compile failed!");
-      """.stripMargin)
+            int ${ev.value} = 10;
+            throw new NoSuchElementException("compile failed!");
+      """)
   }
   override def dataType: DataType = IntegerType
 }

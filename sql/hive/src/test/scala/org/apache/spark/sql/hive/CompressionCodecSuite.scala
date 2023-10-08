@@ -109,12 +109,12 @@ class CompressionCodecSuite extends TestHiveSingleton with ParquetTest with Befo
     val partitionCreate = if (isPartitioned) "PARTITIONED BY (p string)" else ""
     sql(
       s"""
-        |CREATE TABLE $tableName(a int)
-        |$partitionCreate
-        |STORED AS $format
-        |LOCATION '${rootDir.toURI.toString.stripSuffix("/")}/$tableName'
-        |$tblProperties
-      """.stripMargin)
+        CREATE TABLE $tableName(a int)
+        $partitionCreate
+        STORED AS $format
+        LOCATION '${rootDir.toURI.toString.stripSuffix("/")}/$tableName'
+        $tblProperties
+      """)
   }
 
   private def writeDataToTable(
@@ -123,10 +123,10 @@ class CompressionCodecSuite extends TestHiveSingleton with ParquetTest with Befo
     val partitionInsert = partitionValue.map(p => s"partition (p='$p')").mkString
     sql(
       s"""
-        |INSERT INTO TABLE $tableName
-        |$partitionInsert
-        |SELECT * FROM table_source
-      """.stripMargin)
+        INSERT INTO TABLE $tableName
+        $partitionInsert
+        SELECT * FROM table_source
+      """)
   }
 
   private def writeDataToTableUsingCTAS(

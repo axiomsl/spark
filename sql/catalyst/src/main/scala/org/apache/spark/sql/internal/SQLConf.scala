@@ -1257,6 +1257,14 @@ object SQLConf {
       .booleanConf
       .createWithDefault(false)
 
+  val HIVE_METASTORE_DROP_PARTITION_BY_NAME =
+    buildConf("spark.sql.hive.dropPartitionByName.enabled")
+      .doc("When true, Spark will get partition name rather than partition object " +
+           "to drop partition, which can improve the performance of drop partition.")
+      .version("3.4.0")
+      .booleanConf
+      .createWithDefault(false)
+
   val HIVE_METASTORE_PARTITION_PRUNING =
     buildConf("spark.sql.hive.metastorePartitionPruning")
       .doc("When true, some predicates will be pushed down into the Hive metastore so that " +
@@ -2915,6 +2923,7 @@ object SQLConf {
 
   val PYTHON_UDF_ARROW_ENABLED =
     buildConf("spark.sql.execution.pythonUDF.arrow.enabled")
+      .internal()
       .doc("Enable Arrow optimization in regular Python UDFs. This optimization " +
         "can only be enabled when the given function takes at least one argument.")
       .version("3.4.0")
@@ -3026,6 +3035,14 @@ object SQLConf {
     .version("2.3.0")
     .booleanConf
     .createWithDefault(false)
+
+  val ALLOW_CREATING_MANAGED_TABLE_USING_NONEMPTY_LOCATION =
+    buildConf("spark.sql.legacy.allowCreatingManagedTableUsingNonemptyLocation")
+      .internal()
+      .doc("When this option is set to true, creating managed tables with nonempty location " +
+        "is allowed. Otherwise, an analysis exception is thrown. ")
+      .booleanConf
+      .createWithDefault(false)
 
   val VALIDATE_PARTITION_COLUMNS =
     buildConf("spark.sql.sources.validatePartitionColumns")
@@ -4156,6 +4173,14 @@ object SQLConf {
       .booleanConf
       .createWithDefault(false)
 
+  val LEGACY_EMPTY_CURRENT_DB_IN_CLI =
+    buildConf("spark.sql.legacy.emptyCurrentDBInCli")
+      .internal()
+      .doc("When false, spark-sql CLI prints the the current database in prompt")
+      .version("3.4.0")
+      .booleanConf
+      .createWithDefault(false)
+
   val LEGACY_KEEP_COMMAND_OUTPUT_SCHEMA =
     buildConf("spark.sql.legacy.keepCommandOutputSchema")
       .internal()
@@ -4442,9 +4467,6 @@ object SQLConf {
     val configs = Seq(
       RemovedConfig("spark.sql.fromJsonForceNullableSchema", "3.0.0", "true",
         "It was removed to prevent errors like SPARK-23173 for non-default value."),
-      RemovedConfig(
-        "spark.sql.legacy.allowCreatingManagedTableUsingNonemptyLocation", "3.0.0", "false",
-        "It was removed to prevent loss of user data for non-default value."),
       RemovedConfig("spark.sql.legacy.compareDateTimestampInTimestamp", "3.0.0", "true",
         "It was removed to prevent errors like SPARK-23549 for non-default value."),
       RemovedConfig("spark.sql.parquet.int64AsTimestampMillis", "3.0.0", "false",
@@ -5035,6 +5057,9 @@ class SQLConf extends Serializable with Logging with SqlApiConf {
   def eltOutputAsString: Boolean = getConf(ELT_OUTPUT_AS_STRING)
 
   def validatePartitionColumns: Boolean = getConf(VALIDATE_PARTITION_COLUMNS)
+
+  def allowCreatingManagedTableUsingNonemptyLocation: Boolean =
+    getConf(ALLOW_CREATING_MANAGED_TABLE_USING_NONEMPTY_LOCATION)
 
   def partitionOverwriteMode: PartitionOverwriteMode.Value =
     PartitionOverwriteMode.withName(getConf(PARTITION_OVERWRITE_MODE))

@@ -188,10 +188,10 @@ class MySQLIntegrationSuite extends DockerJDBCIntegrationSuite {
     // query option in the create table path.
     sql(
       s"""
-         |CREATE OR REPLACE TEMPORARY VIEW queryOption
-         |USING org.apache.spark.sql.jdbc
-         |OPTIONS (url '$jdbcUrl', query '$query')
-       """.stripMargin.replaceAll("\n", " "))
+         CREATE OR REPLACE TEMPORARY VIEW queryOption
+         USING org.apache.spark.sql.jdbc
+         OPTIONS (url '$jdbcUrl', query '$query')
+       """.replaceAll("\n", " "))
     assert(sql("select x, y from queryOption").collect.toSet == expectedResult)
   }
 }

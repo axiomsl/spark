@@ -115,9 +115,9 @@ class PlannerSuite extends SharedSparkSession with AdaptiveSparkPlanHelper {
 
         val planned = sql(
           """
-            |SELECT l.a, l.b
-            |FROM testData2 l JOIN (SELECT * FROM testLimit LIMIT 1) r ON (l.a = r.key)
-          """.stripMargin).queryExecution.sparkPlan
+            SELECT l.a, l.b
+            FROM testData2 l JOIN (SELECT * FROM testLimit LIMIT 1) r ON (l.a = r.key)
+          """).queryExecution.sparkPlan
 
         val broadcastHashJoins = planned.collect { case join: BroadcastHashJoinExec => join }
         val sortMergeJoins = planned.collect { case join: SortMergeJoinExec => join }
@@ -272,11 +272,11 @@ class PlannerSuite extends SharedSparkSession with AdaptiveSparkPlanHelper {
         {
           val plan = sql(
             """
-              |SELECT *
-              |FROM
-              |  normal JOIN small ON (normal.key = small.key)
-              |  JOIN tiny ON (small.key = tiny.key)
-            """.stripMargin
+              SELECT *
+              FROM
+                normal JOIN small ON (normal.key = small.key)
+                JOIN tiny ON (small.key = tiny.key)
+            """
           ).queryExecution.executedPlan
           val numExchanges = collect(plan) {
             case exchange: ShuffleExchangeExec => exchange
@@ -287,11 +287,11 @@ class PlannerSuite extends SharedSparkSession with AdaptiveSparkPlanHelper {
         {
           val plan = sql(
             """
-              |SELECT *
-              |FROM
-              |  normal JOIN small ON (normal.key = small.key)
-              |  JOIN tiny ON (normal.key = tiny.key)
-            """.stripMargin
+              SELECT *
+              FROM
+                normal JOIN small ON (normal.key = small.key)
+                JOIN tiny ON (normal.key = tiny.key)
+            """
           ).queryExecution.executedPlan
           // This second query joins on different keys:
           val numExchanges = collect(plan) {
@@ -885,10 +885,10 @@ class PlannerSuite extends SharedSparkSession with AdaptiveSparkPlanHelper {
     // CheckOverflow expressions.
     val df = sql(
       """
-        |SELECT id,
-        |       (SELECT 1.3000000 * AVG(CAST(id AS DECIMAL(10, 3))) FROM range(13)) AS ref
-        |FROM   range(5)
-        |""".stripMargin)
+        SELECT id,
+               (SELECT 1.3000000 * AVG(CAST(id AS DECIMAL(10, 3))) FROM range(13)) AS ref
+        FROM   range(5)
+        """)
 
     val Seq(subquery) = stripAQEPlan(df.queryExecution.executedPlan).subqueriesAll
     subquery.foreach { node =>
@@ -909,12 +909,12 @@ class PlannerSuite extends SharedSparkSession with AdaptiveSparkPlanHelper {
         spark.range(20).selectExpr("id AS key", "0").repartition($"key").createTempView("df2")
         val planned = sql(
           """
-            |SELECT * FROM
-            |  (SELECT key AS k from df1) t1
-            |INNER JOIN
-            |  (SELECT key AS k from df2) t2
-            |ON t1.k = t2.k
-          """.stripMargin).queryExecution.executedPlan
+            SELECT * FROM
+              (SELECT key AS k from df1) t1
+            INNER JOIN
+              (SELECT key AS k from df2) t2
+            ON t1.k = t2.k
+          """).queryExecution.executedPlan
         val exchanges = collect(planned) { case s: ShuffleExchangeExec => s }
         assert(exchanges.size == 2)
       }
@@ -930,14 +930,14 @@ class PlannerSuite extends SharedSparkSession with AdaptiveSparkPlanHelper {
         spark.range(30).repartition($"id").createTempView("t3")
         val planned = sql(
           """
-            |SELECT t3.id as t3id
-            |FROM (
-            |    SELECT t1.id as t1id, t2.id as t2id
-            |    FROM t1, t2
-            |    WHERE t1.id = t2.id
-            |) t12, t3
-            |WHERE t1id = t3.id
-          """.stripMargin).queryExecution.executedPlan
+            SELECT t3.id as t3id
+            FROM (
+                SELECT t1.id as t1id, t2.id as t2id
+                FROM t1, t2
+                WHERE t1.id = t2.id
+            ) t12, t3
+            WHERE t1id = t3.id
+          """).queryExecution.executedPlan
         val exchanges = collect(planned) { case s: ShuffleExchangeExec => s }
         assert(exchanges.size == 3)
 
@@ -960,14 +960,14 @@ class PlannerSuite extends SharedSparkSession with AdaptiveSparkPlanHelper {
         spark.range(30).repartition($"id").createTempView("t3")
         val planned = sql(
           """
-            |SELECT t1id, t3.id as t3id
-            |FROM (
-            |    SELECT t1.id as t1id
-            |    FROM t1 LEFT SEMI JOIN t2
-            |    ON t1.id = t2.id
-            |) t12 INNER JOIN t3
-            |WHERE t1id = t3.id
-          """.stripMargin).queryExecution.executedPlan
+            SELECT t1id, t3.id as t3id
+            FROM (
+                SELECT t1.id as t1id
+                FROM t1 LEFT SEMI JOIN t2
+                ON t1.id = t2.id
+            ) t12 INNER JOIN t3
+            WHERE t1id = t3.id
+          """).queryExecution.executedPlan
         val exchanges = collect(planned) { case s: ShuffleExchangeExec => s }
         assert(exchanges.size == 3)
 
@@ -1009,14 +1009,14 @@ class PlannerSuite extends SharedSparkSession with AdaptiveSparkPlanHelper {
         spark.range(30).select(col("id").as("id3")).createTempView("t3")
         val planned = sql(
           """
-            |SELECT t3.id3 as t3id
-            |FROM (
-            |    SELECT t1.id1 as t1id, t2.id2 as t2id
-            |    FROM t1, t2
-            |    WHERE t1.id1 * 10 = t2.id2 * 10
-            |) t12, t3
-            |WHERE t1id * 10 = t3.id3 * 10
-          """.stripMargin).queryExecution.executedPlan
+            SELECT t3.id3 as t3id
+            FROM (
+                SELECT t1.id1 as t1id, t2.id2 as t2id
+                FROM t1, t2
+                WHERE t1.id1 * 10 = t2.id2 * 10
+            ) t12, t3
+            WHERE t1id * 10 = t3.id3 * 10
+          """).queryExecution.executedPlan
         val sortNodes = collect(planned) { case s: SortExec => s }
         assert(sortNodes.size == 3)
         val exchangeNodes = collect(planned) { case e: ShuffleExchangeExec => e }
@@ -1057,14 +1057,14 @@ class PlannerSuite extends SharedSparkSession with AdaptiveSparkPlanHelper {
         spark.range(20).repartition($"id").createTempView("t2")
         val planned = sql(
           """
-            |SELECT t1id, t2id
-            |FROM (
-            |  SELECT t1.id as t1id, t2.id as t2id
-            |  FROM t1 INNER JOIN t2
-            |  WHERE t1.id = t2.id
-            |) t12
-            |GROUP BY t1id, t2id
-          """.stripMargin).queryExecution.executedPlan
+            SELECT t1id, t2id
+            FROM (
+              SELECT t1.id as t1id, t2.id as t2id
+              FROM t1 INNER JOIN t2
+              WHERE t1.id = t2.id
+            ) t12
+            GROUP BY t1id, t2id
+          """).queryExecution.executedPlan
         val exchanges = collect(planned) { case s: ShuffleExchangeExec => s }
         assert(exchanges.size == 2)
 
@@ -1087,14 +1087,14 @@ class PlannerSuite extends SharedSparkSession with AdaptiveSparkPlanHelper {
         spark.range(30).repartition($"id").createTempView("t3")
         val planned = sql(
           """
-            |SELECT t2id, t3.id as t3id
-            |FROM (
-            |    SELECT t1.id as t1id, t2.id as t2id
-            |    FROM t1, t2
-            |    WHERE t1.id = t2.id
-            |) t12, t3
-            |WHERE t2id = t3.id
-          """.stripMargin).queryExecution.executedPlan
+            SELECT t2id, t3.id as t3id
+            FROM (
+                SELECT t1.id as t1id, t2.id as t2id
+                FROM t1, t2
+                WHERE t1.id = t2.id
+            ) t12, t3
+            WHERE t2id = t3.id
+          """).queryExecution.executedPlan
 
         val sortNodes = collect(planned) { case s: SortExec => s }
         assert(sortNodes.size == 3)
@@ -1118,10 +1118,10 @@ class PlannerSuite extends SharedSparkSession with AdaptiveSparkPlanHelper {
         spark.range(20).repartition($"id").createTempView("t2")
         val planned = sql(
           """
-            | SELECT t12.id, t1.id
-            | FROM (SELECT t1.id FROM t1, t2 WHERE t1.id * 2 = t2.id) t12, t1
-            | where 2 * t12.id = t1.id
-        """.stripMargin).queryExecution.executedPlan
+             SELECT t12.id, t1.id
+             FROM (SELECT t1.id FROM t1, t2 WHERE t1.id * 2 = t2.id) t12, t1
+             where 2 * t12.id = t1.id
+        """).queryExecution.executedPlan
 
         // t12 is already sorted on `t1.id * 2`. and we need to sort it on `2 * t12.id`
         // for 2nd join. So sorting on t12 can be avoided
@@ -1145,12 +1145,12 @@ class PlannerSuite extends SharedSparkSession with AdaptiveSparkPlanHelper {
         spark.range(20).selectExpr("id AS key", "0").repartition($"key").createTempView("df2")
         val planned = sql(
           """
-            |SELECT * FROM
-            |  (SELECT key + 1 AS k1 from df1) t1
-            |INNER JOIN
-            |  (SELECT key + 1 AS k2 from df2) t2
-            |ON t1.k1 = t2.k2
-            |""".stripMargin).queryExecution.executedPlan
+            SELECT * FROM
+              (SELECT key + 1 AS k1 from df1) t1
+            INNER JOIN
+              (SELECT key + 1 AS k2 from df2) t2
+            ON t1.k1 = t2.k2
+            """).queryExecution.executedPlan
         val exchanges = collect(planned) { case s: ShuffleExchangeExec => s }
 
         // Make sure aliases to an expression (key + 1) are not replaced.
@@ -1241,10 +1241,10 @@ class PlannerSuite extends SharedSparkSession with AdaptiveSparkPlanHelper {
         spark.range(20).repartition($"id").createTempView("t2")
         val planned = sql(
           """
-            | SELECT t1.id as t1id, t2.id as t2id
-            | FROM t1, t2
-            | WHERE t1.id = t2.id
-          """.stripMargin).queryExecution.executedPlan
+             SELECT t1.id as t1id, t2.id as t2id
+             FROM t1, t2
+             WHERE t1.id = t2.id
+          """).queryExecution.executedPlan
 
         assert(planned.outputPartitioning match {
           case PartitioningCollection(Seq(HashPartitioning(Seq(k1: AttributeReference), _),
@@ -1254,10 +1254,10 @@ class PlannerSuite extends SharedSparkSession with AdaptiveSparkPlanHelper {
 
         val planned2 = sql(
           """
-            | SELECT t1.id as t1id
-            | FROM t1, t2
-            | WHERE t1.id = t2.id
-          """.stripMargin).queryExecution.executedPlan
+             SELECT t1.id as t1id
+             FROM t1, t2
+             WHERE t1.id = t2.id
+          """).queryExecution.executedPlan
         assert(planned2.outputPartitioning match {
           case HashPartitioning(Seq(k1: AttributeReference), _) if k1.name == "t1id" =>
             true

@@ -139,8 +139,11 @@ class UnivocityParser(
 
   // Retrieve the raw record string.
   private def getCurrentInput: UTF8String = {
-    val currentContent = tokenizer.getContext.currentParsedContent()
-    if (currentContent == null) null else UTF8String.fromString(currentContent.stripLineEnd)
+    val context = tokenizer.getContext
+    if (context != null) {
+      val currentContent = context.currentParsedContent()
+      if (currentContent == null) null else UTF8String.fromString(currentContent.stripLineEnd)
+    } else null
   }
 
   // This parser first picks some tokens from the input tokens, according to the required schema,
@@ -399,7 +402,8 @@ private[sql] object UnivocityParser {
       input => parser.convert(input),
       parser.options.parseMode,
       schema,
-      parser.options.columnNameOfCorruptRecord)
+      parser.options.columnNameOfCorruptRecord,
+      parser.options.columnNameOfCorruptRecordCause)
 
     val handleHeader: () => Unit =
       () => headerChecker.checkHeaderColumnNames(tokenizer)
@@ -452,7 +456,8 @@ private[sql] object UnivocityParser {
       input => parser.parse(input),
       parser.options.parseMode,
       schema,
-      parser.options.columnNameOfCorruptRecord)
+      parser.options.columnNameOfCorruptRecord,
+      parser.options.columnNameOfCorruptRecordCause)
     filteredLines.flatMap(safeParser.parse)
   }
 }

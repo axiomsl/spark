@@ -79,12 +79,12 @@ class MultiDatabaseSuite extends QueryTest with SQLTestUtils with TestHiveSingle
 
           sql(
             s"""
-              |CREATE TABLE t1
-              |USING parquet
-              |OPTIONS (
-              |  path '${dir.toURI}'
-              |)
-            """.stripMargin)
+              CREATE TABLE t1
+              USING parquet
+              OPTIONS (
+                path '${dir.toURI}'
+              )
+            """)
           assert(getTableNames(Option(db)).contains("t1"))
           checkAnswer(spark.table("t1"), df)
         }
@@ -104,12 +104,12 @@ class MultiDatabaseSuite extends QueryTest with SQLTestUtils with TestHiveSingle
 
         sql(
           s"""
-              |CREATE TABLE $db.t1
-              |USING parquet
-              |OPTIONS (
-              |  path '${dir.toURI}'
-              |)
-            """.stripMargin)
+              CREATE TABLE $db.t1
+              USING parquet
+              OPTIONS (
+                path '${dir.toURI}'
+              )
+            """)
         assert(getTableNames(Option(db)).contains("t1"))
         checkAnswer(spark.table(s"$db.t1"), df)
       }
@@ -212,10 +212,10 @@ class MultiDatabaseSuite extends QueryTest with SQLTestUtils with TestHiveSingle
         activateDatabase(db) {
           sql(
             s"""CREATE EXTERNAL TABLE t (id BIGINT)
-               |PARTITIONED BY (p INT)
-               |STORED AS PARQUET
-               |LOCATION '${dir.toURI}'
-             """.stripMargin)
+               PARTITIONED BY (p INT)
+               STORED AS PARQUET
+               LOCATION '${dir.toURI}'
+             """)
 
           checkAnswer(spark.table("t"), spark.emptyDataFrame)
 
@@ -244,10 +244,10 @@ class MultiDatabaseSuite extends QueryTest with SQLTestUtils with TestHiveSingle
 
         sql(
           s"""CREATE EXTERNAL TABLE $db.t (id BIGINT)
-               |PARTITIONED BY (p INT)
-               |STORED AS PARQUET
-               |LOCATION '${dir.toURI}'
-             """.stripMargin)
+               PARTITIONED BY (p INT)
+               STORED AS PARQUET
+               LOCATION '${dir.toURI}'
+             """)
 
         checkAnswer(spark.table(s"$db.t"), spark.emptyDataFrame)
 
@@ -290,12 +290,12 @@ class MultiDatabaseSuite extends QueryTest with SQLTestUtils with TestHiveSingle
         val message = intercept[AnalysisException] {
           sql(
             s"""
-            |CREATE TABLE `d:b`.`t:a` (a int)
-            |USING parquet
-            |OPTIONS (
-            |  path '${dir.toURI}'
-            |)
-            """.stripMargin)
+            CREATE TABLE `d:b`.`t:a` (a int)
+            USING parquet
+            OPTIONS (
+              path '${dir.toURI}'
+            )
+            """)
         }.getMessage
         assert(message.contains("`t:a` is not a valid name for tables/databases. " +
           "Valid names only contain alphabet characters, numbers and _."))
@@ -305,12 +305,12 @@ class MultiDatabaseSuite extends QueryTest with SQLTestUtils with TestHiveSingle
         val e = intercept[AnalysisException] {
           sql(
             s"""
-              |CREATE TABLE `d:b`.`table` (a int)
-              |USING parquet
-              |OPTIONS (
-              |  path '${dir.toURI}'
-              |)
-              """.stripMargin)
+              CREATE TABLE `d:b`.`table` (a int)
+              USING parquet
+              OPTIONS (
+                path '${dir.toURI}'
+              )
+              """)
         }
         checkError(e,
           errorClass = "SCHEMA_NOT_FOUND",

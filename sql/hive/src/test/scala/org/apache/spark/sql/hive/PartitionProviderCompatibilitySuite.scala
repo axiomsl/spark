@@ -40,10 +40,10 @@ class PartitionProviderCompatibilitySuite
       .save(dir.getAbsolutePath)
 
     spark.sql(s"""
-      |create table $tableName (fieldOne long, partCol int)
-      |using ${spark.sessionState.conf.defaultDataSourceName}
-      |options (path "${dir.toURI}")
-      |partitioned by (partCol)""".stripMargin)
+      create table $tableName (fieldOne long, partCol int)
+      using ${spark.sessionState.conf.defaultDataSourceName}
+      options (path "${dir.toURI}")
+      partitioned by (partCol)""")
   }
 
   private def verifyIsLegacyTable(tableName: String): Unit = {
@@ -153,8 +153,8 @@ class PartitionProviderCompatibilitySuite
           setupPartitionedDatasourceTable("test", dir)
           spark.sql(
             """insert overwrite table test
-              |partition (partCol=1)
-              |select * from range(100)""".stripMargin)
+              partition (partCol=1)
+              select * from range(100)""")
           assert(spark.sql("select * from test").count() == 104)
 
           // Overwriting entire table
@@ -173,24 +173,24 @@ class PartitionProviderCompatibilitySuite
           spark.catalog.recoverPartitions("test")
           spark.sql(
             """insert overwrite table test
-              |partition (partCol=1)
-              |select * from range(100)""".stripMargin)
+              partition (partCol=1)
+              select * from range(100)""")
           assert(spark.sql("select * from test").count() == 104)
 
           // Test overwriting a partition that has a custom location
           withTempDir { dir2 =>
             sql(
               s"""alter table test partition (partCol=1)
-                |set location '${dir2.toURI}'""".stripMargin)
+                set location '${dir2.toURI}'""")
             assert(sql("select * from test").count() == 4)
             sql(
               """insert overwrite table test
-                |partition (partCol=1)
-                |select * from range(30)""".stripMargin)
+                partition (partCol=1)
+                select * from range(30)""")
             sql(
               """insert overwrite table test
-                |partition (partCol=1)
-                |select * from range(20)""".stripMargin)
+                partition (partCol=1)
+                select * from range(20)""")
             assert(sql("select * from test").count() == 24)
           }
         }
@@ -266,22 +266,22 @@ class PartitionProviderCompatibilitySuite
         withTempDir { dir =>
           // custom locations sanity check
           spark.sql(s"""
-            |alter table test partition (A=0, B='%')
-            |set location '${dir.toURI}'""".stripMargin)
+            alter table test partition (A=0, B='%')
+            set location '${dir.toURI}'""")
           assert(spark.sql("select * from test").count() == 28)  // moved to empty dir
 
           // rename partition sanity check
           spark.sql(s"""
-            |alter table test partition (A=5, B='%')
-            |rename to partition (A=100, B='%')""".stripMargin)
+            alter table test partition (A=5, B='%')
+            rename to partition (A=100, B='%')""")
           assert(spark.sql("select * from test where a = 5 and b = '%'").count() == 0)
           assert(spark.sql("select * from test where a = 100 and b = '%'").count() == 1)
 
           // try with A=0 which has a custom location
           spark.sql("insert into test partition (A=0, B='%') select 1")
           spark.sql(s"""
-            |alter table test partition (A=0, B='%')
-            |rename to partition (A=101, B='%')""".stripMargin)
+            alter table test partition (A=0, B='%')
+            rename to partition (A=101, B='%')""")
           assert(spark.sql("select * from test where a = 0 and b = '%'").count() == 0)
           assert(spark.sql("select * from test where a = 101 and b = '%'").count() == 1)
         }
@@ -363,10 +363,10 @@ class PartitionProviderCompatibilitySuite
     val c = Utils.createTempDir(namePrefix = "c")
     try {
       spark.sql(s"""
-        |create table test (id long, P1 int, P2 int)
-        |using ${spark.sessionState.conf.defaultDataSourceName}
-        |options (path "${base.toURI}")
-        |partitioned by (P1, P2)""".stripMargin)
+        create table test (id long, P1 int, P2 int)
+        using ${spark.sessionState.conf.defaultDataSourceName}
+        options (path "${base.toURI}")
+        partitioned by (P1, P2)""")
       spark.sql(s"alter table test add partition (P1=0, P2=0) location '${a.toURI}'")
       spark.sql(s"alter table test add partition (P1=0, P2=1) location '${b.toURI}'")
       spark.sql(s"alter table test add partition (P1=1, P2=0) location '${c.toURI}'")

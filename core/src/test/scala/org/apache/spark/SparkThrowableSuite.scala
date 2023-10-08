@@ -479,33 +479,33 @@ class SparkThrowableSuite extends SparkFunSuite {
     // scalastyle:off line.size.limit
     assert(SparkThrowableHelper.getMessage(e, MINIMAL) ===
       """{
-        |  "errorClass" : "DIVIDE_BY_ZERO",
-        |  "sqlState" : "22012",
-        |  "messageParameters" : {
-        |    "config" : "CONFIG"
-        |  },
-        |  "queryContext" : [ {
-        |    "objectType" : "VIEW",
-        |    "objectName" : "v1",
-        |    "startIndex" : 3,
-        |    "fragment" : "1 / 0"
-        |  } ]
-        |}""".stripMargin)
+          "errorClass" : "DIVIDE_BY_ZERO",
+          "sqlState" : "22012",
+          "messageParameters" : {
+            "config" : "CONFIG"
+          },
+          "queryContext" : [ {
+            "objectType" : "VIEW",
+            "objectName" : "v1",
+            "startIndex" : 3,
+            "fragment" : "1 / 0"
+          } ]
+        }""")
     assert(SparkThrowableHelper.getMessage(e, STANDARD) ===
       """{
-        |  "errorClass" : "DIVIDE_BY_ZERO",
-        |  "messageTemplate" : "Division by zero. Use `try_divide` to tolerate divisor being 0 and return NULL instead. If necessary set <config> to \"false\" to bypass this error.",
-        |  "sqlState" : "22012",
-        |  "messageParameters" : {
-        |    "config" : "CONFIG"
-        |  },
-        |  "queryContext" : [ {
-        |    "objectType" : "VIEW",
-        |    "objectName" : "v1",
-        |    "startIndex" : 3,
-        |    "fragment" : "1 / 0"
-        |  } ]
-        |}""".stripMargin)
+          "errorClass" : "DIVIDE_BY_ZERO",
+          "messageTemplate" : "Division by zero. Use `try_divide` to tolerate divisor being 0 and return NULL instead. If necessary set <config> to \"false\" to bypass this error.",
+          "sqlState" : "22012",
+          "messageParameters" : {
+            "config" : "CONFIG"
+          },
+          "queryContext" : [ {
+            "objectType" : "VIEW",
+            "objectName" : "v1",
+            "startIndex" : 3,
+            "fragment" : "1 / 0"
+          } ]
+        }""")
       // scalastyle:on line.size.limit
     // STANDARD w/ errorSubClass but w/o queryContext
     val e2 = new SparkIllegalArgumentException(
@@ -513,12 +513,12 @@ class SparkThrowableSuite extends SparkFunSuite {
       messageParameters = Map("saveMode" -> "UNSUPPORTED_MODE"))
     assert(SparkThrowableHelper.getMessage(e2, STANDARD) ===
       """{
-        |  "errorClass" : "UNSUPPORTED_SAVE_MODE.EXISTENT_PATH",
-        |  "messageTemplate" : "The save mode <saveMode> is not supported for: an existent path.",
-        |  "messageParameters" : {
-        |    "saveMode" : "UNSUPPORTED_MODE"
-        |  }
-        |}""".stripMargin)
+          "errorClass" : "UNSUPPORTED_SAVE_MODE.EXISTENT_PATH",
+          "messageTemplate" : "The save mode <saveMode> is not supported for: an existent path.",
+          "messageParameters" : {
+            "saveMode" : "UNSUPPORTED_MODE"
+          }
+        }""")
     // Legacy mode when an exception does not have any error class
     class LegacyException extends Throwable with SparkThrowable {
       override def getErrorClass: String = null
@@ -527,11 +527,11 @@ class SparkThrowableSuite extends SparkFunSuite {
     val e3 = new LegacyException
     assert(SparkThrowableHelper.getMessage(e3, MINIMAL) ===
       """{
-        |  "errorClass" : "LEGACY",
-        |  "messageParameters" : {
-        |    "message" : "Test message"
-        |  }
-        |}""".stripMargin)
+          "errorClass" : "LEGACY",
+          "messageParameters" : {
+            "message" : "Test message"
+          }
+        }""")
   }
 
   test("overwrite error classes") {
@@ -539,14 +539,14 @@ class SparkThrowableSuite extends SparkFunSuite {
       val json = new File(dir, "errors.json")
       FileUtils.writeStringToFile(json,
         """
-          |{
-          |  "DIVIDE_BY_ZERO" : {
-          |    "message" : [
-          |      "abc"
-          |    ]
-          |  }
-          |}
-          |""".stripMargin, StandardCharsets.UTF_8)
+          {
+            "DIVIDE_BY_ZERO" : {
+              "message" : [
+                "abc"
+              ]
+            }
+          }
+          """, StandardCharsets.UTF_8)
       val reader = new ErrorClassesJsonReader(Seq(errorJsonFilePath.toUri.toURL, json.toURI.toURL))
       assert(reader.getErrorMessage("DIVIDE_BY_ZERO", Map.empty) == "abc")
     }
@@ -557,14 +557,14 @@ class SparkThrowableSuite extends SparkFunSuite {
       val json = new File(dir, "errors.json")
       FileUtils.writeStringToFile(json,
         """
-          |{
-          |  "DIVIDE.BY_ZERO" : {
-          |    "message" : [
-          |      "abc"
-          |    ]
-          |  }
-          |}
-          |""".stripMargin, StandardCharsets.UTF_8)
+          {
+            "DIVIDE.BY_ZERO" : {
+              "message" : [
+                "abc"
+              ]
+            }
+          }
+          """, StandardCharsets.UTF_8)
       val e = intercept[SparkException] {
         new ErrorClassesJsonReader(Seq(errorJsonFilePath.toUri.toURL, json.toURI.toURL))
       }
@@ -576,21 +576,21 @@ class SparkThrowableSuite extends SparkFunSuite {
       val json = new File(dir, "errors.json")
       FileUtils.writeStringToFile(json,
         """
-          |{
-          |  "DIVIDE" : {
-          |    "message" : [
-          |      "abc"
-          |    ],
-          |    "subClass" : {
-          |      "BY.ZERO" : {
-          |        "message" : [
-          |          "def"
-          |        ]
-          |      }
-          |    }
-          |  }
-          |}
-          |""".stripMargin, StandardCharsets.UTF_8)
+          {
+            "DIVIDE" : {
+              "message" : [
+                "abc"
+              ],
+              "subClass" : {
+                "BY.ZERO" : {
+                  "message" : [
+                    "def"
+                  ]
+                }
+              }
+            }
+          }
+          """, StandardCharsets.UTF_8)
       val e = intercept[SparkException] {
         new ErrorClassesJsonReader(Seq(errorJsonFilePath.toUri.toURL, json.toURI.toURL))
       }

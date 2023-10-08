@@ -86,8 +86,8 @@ class OracleIntegrationSuite extends DockerJDBCIntegrationSuite with SharedSpark
       .executeUpdate()
     conn.prepareStatement(
       """INSERT INTO datetime VALUES
-        |(1, {d '1991-11-09'}, {ts '1996-01-01 01:23:45'})
-      """.stripMargin.replaceAll("\n", " ")).executeUpdate()
+        (1, {d '1991-11-09'}, {ts '1996-01-01 01:23:45'})
+      """.replaceAll("\n", " ")).executeUpdate()
     conn.commit()
 
     conn.prepareStatement(
@@ -109,10 +109,10 @@ class OracleIntegrationSuite extends DockerJDBCIntegrationSuite with SharedSpark
 
     sql(
       s"""
-        |CREATE TEMPORARY VIEW datetime
-        |USING org.apache.spark.sql.jdbc
-        |OPTIONS (url '$jdbcUrl', dbTable 'datetime', oracle.jdbc.mapDateToTimestamp 'false')
-      """.stripMargin.replaceAll("\n", " "))
+        CREATE TEMPORARY VIEW datetime
+        USING org.apache.spark.sql.jdbc
+        OPTIONS (url '$jdbcUrl', dbTable 'datetime', oracle.jdbc.mapDateToTimestamp 'false')
+      """.replaceAll("\n", " "))
 
     conn.prepareStatement("CREATE TABLE datetime1 (id NUMBER(10), d DATE, t TIMESTAMP)")
       .executeUpdate()
@@ -120,10 +120,10 @@ class OracleIntegrationSuite extends DockerJDBCIntegrationSuite with SharedSpark
 
     sql(
       s"""
-        |CREATE TEMPORARY VIEW datetime1
-        |USING org.apache.spark.sql.jdbc
-        |OPTIONS (url '$jdbcUrl', dbTable 'datetime1', oracle.jdbc.mapDateToTimestamp 'false')
-      """.stripMargin.replaceAll("\n", " "))
+        CREATE TEMPORARY VIEW datetime1
+        USING org.apache.spark.sql.jdbc
+        OPTIONS (url '$jdbcUrl', dbTable 'datetime1', oracle.jdbc.mapDateToTimestamp 'false')
+      """.replaceAll("\n", " "))
 
 
     conn.prepareStatement("CREATE TABLE numerics (b DECIMAL(1), f DECIMAL(3, 2), i DECIMAL(10))")
@@ -140,20 +140,20 @@ class OracleIntegrationSuite extends DockerJDBCIntegrationSuite with SharedSpark
       .executeUpdate()
     conn.prepareStatement(
       """INSERT INTO datetimePartitionTest VALUES
-        |(1, {d '2018-07-06'}, {ts '2018-07-06 05:50:00'})
-      """.stripMargin.replaceAll("\n", " ")).executeUpdate()
+        (1, {d '2018-07-06'}, {ts '2018-07-06 05:50:00'})
+      """.replaceAll("\n", " ")).executeUpdate()
     conn.prepareStatement(
       """INSERT INTO datetimePartitionTest VALUES
-        |(2, {d '2018-07-06'}, {ts '2018-07-06 08:10:08'})
-      """.stripMargin.replaceAll("\n", " ")).executeUpdate()
+        (2, {d '2018-07-06'}, {ts '2018-07-06 08:10:08'})
+      """.replaceAll("\n", " ")).executeUpdate()
     conn.prepareStatement(
       """INSERT INTO datetimePartitionTest VALUES
-        |(3, {d '2018-07-08'}, {ts '2018-07-08 13:32:01'})
-      """.stripMargin.replaceAll("\n", " ")).executeUpdate()
+        (3, {d '2018-07-08'}, {ts '2018-07-08 13:32:01'})
+      """.replaceAll("\n", " ")).executeUpdate()
     conn.prepareStatement(
       """INSERT INTO datetimePartitionTest VALUES
-        |(4, {d '2018-07-12'}, {ts '2018-07-12 09:51:15'})
-      """.stripMargin.replaceAll("\n", " ")).executeUpdate()
+        (4, {d '2018-07-12'}, {ts '2018-07-12 09:51:15'})
+      """.replaceAll("\n", " ")).executeUpdate()
     conn.commit()
   }
 
@@ -502,12 +502,12 @@ class OracleIntegrationSuite extends DockerJDBCIntegrationSuite with SharedSpark
     // query option in the create table path.
     sql(
       s"""
-         |CREATE OR REPLACE TEMPORARY VIEW queryOption
-         |USING org.apache.spark.sql.jdbc
-         |OPTIONS (url '$jdbcUrl',
-         |   query '$query',
-         |   oracle.jdbc.mapDateToTimestamp false)
-       """.stripMargin.replaceAll("\n", " "))
+         CREATE OR REPLACE TEMPORARY VIEW queryOption
+         USING org.apache.spark.sql.jdbc
+         OPTIONS (url '$jdbcUrl',
+            query '$query',
+            oracle.jdbc.mapDateToTimestamp false)
+       """.replaceAll("\n", " "))
     assert(sql("select id, d, t from queryOption").collect.toSet == expectedResult)
   }
 

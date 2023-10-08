@@ -122,15 +122,15 @@ abstract class BaseScriptTransformationSuite extends SparkPlanTest with SQLTestU
 
       val query = sql(
         s"""
-           |SELECT
-           |TRANSFORM(a, b, c, d, e)
-           |  ROW FORMAT DELIMITED
-           |  FIELDS TERMINATED BY '\t'
-           |  USING 'python3 $scriptFilePath' AS (a, b, c, d, e)
-           |  ROW FORMAT DELIMITED
-           |  FIELDS TERMINATED BY '\t'
-           |FROM v
-        """.stripMargin)
+           SELECT
+           TRANSFORM(a, b, c, d, e)
+             ROW FORMAT DELIMITED
+             FIELDS TERMINATED BY '\t'
+             USING 'python3 $scriptFilePath' AS (a, b, c, d, e)
+             ROW FORMAT DELIMITED
+             FIELDS TERMINATED BY '\t'
+           FROM v
+        """)
 
       checkAnswer(query, identity, df.select(
         $"a".cast("string"),
@@ -301,10 +301,10 @@ abstract class BaseScriptTransformationSuite extends SparkPlanTest with SQLTestU
 
           val query = sql(
             """
-              |SELECT TRANSFORM (a, b)
-              |USING 'cat' AS (a timestamp, b date)
-              |FROM v
-            """.stripMargin)
+              SELECT TRANSFORM (a, b)
+              USING 'cat' AS (a timestamp, b date)
+              FROM v
+            """)
           checkAnswer(query, identity, df.select($"a", $"b").collect())
         }
       }
@@ -324,22 +324,22 @@ abstract class BaseScriptTransformationSuite extends SparkPlanTest with SQLTestU
       checkAnswer(
         sql(
           s"""
-             |SELECT TRANSFORM(a, b, c, d, e)
-             |  ROW FORMAT DELIMITED
-             |  FIELDS TERMINATED BY ','
-             |  COLLECTION ITEMS TERMINATED BY '#'
-             |  MAP KEYS TERMINATED BY '@'
-             |  LINES TERMINATED BY '\n'
-             |  NULL DEFINED AS 'null'
-             |  USING 'cat' AS (a, b, c, d, e)
-             |  ROW FORMAT DELIMITED
-             |  FIELDS TERMINATED BY ','
-             |  COLLECTION ITEMS TERMINATED BY '#'
-             |  MAP KEYS TERMINATED BY '@'
-             |  LINES TERMINATED BY '\n'
-             |  NULL DEFINED AS 'NULL'
-             |FROM v
-        """.stripMargin), identity, df.select(
+             SELECT TRANSFORM(a, b, c, d, e)
+               ROW FORMAT DELIMITED
+               FIELDS TERMINATED BY ','
+               COLLECTION ITEMS TERMINATED BY '#'
+               MAP KEYS TERMINATED BY '@'
+               LINES TERMINATED BY '\n'
+               NULL DEFINED AS 'null'
+               USING 'cat' AS (a, b, c, d, e)
+               ROW FORMAT DELIMITED
+               FIELDS TERMINATED BY ','
+               COLLECTION ITEMS TERMINATED BY '#'
+               MAP KEYS TERMINATED BY '@'
+               LINES TERMINATED BY '\n'
+               NULL DEFINED AS 'NULL'
+             FROM v
+        """), identity, df.select(
           $"a".cast("string"),
           $"b".cast("string"),
           $"c".cast("string"),
@@ -350,18 +350,18 @@ abstract class BaseScriptTransformationSuite extends SparkPlanTest with SQLTestU
       checkAnswer(
         sql(
           s"""
-             |SELECT TRANSFORM(a, b, c, d, e)
-             |  ROW FORMAT DELIMITED
-             |  FIELDS TERMINATED BY ','
-             |  LINES TERMINATED BY '\n'
-             |  NULL DEFINED AS 'null'
-             |  USING 'cat' AS (value)
-             |  ROW FORMAT DELIMITED
-             |  FIELDS TERMINATED BY '&'
-             |  LINES TERMINATED BY '\n'
-             |  NULL DEFINED AS 'NULL'
-             |FROM v
-        """.stripMargin), identity, df.select(
+             SELECT TRANSFORM(a, b, c, d, e)
+               ROW FORMAT DELIMITED
+               FIELDS TERMINATED BY ','
+               LINES TERMINATED BY '\n'
+               NULL DEFINED AS 'null'
+               USING 'cat' AS (value)
+               ROW FORMAT DELIMITED
+               FIELDS TERMINATED BY '&'
+               LINES TERMINATED BY '\n'
+               NULL DEFINED AS 'NULL'
+             FROM v
+        """), identity, df.select(
           concat_ws(",",
             $"a".cast("string"),
             $"b".cast("string"),
@@ -400,15 +400,15 @@ abstract class BaseScriptTransformationSuite extends SparkPlanTest with SQLTestU
   test("SPARK-32106: TRANSFORM with non-existent command/file") {
     Seq(
       s"""
-         |SELECT TRANSFORM(a)
-         |USING 'some_non_existent_command' AS (a)
-         |FROM VALUES (1) t(a)
-       """.stripMargin,
+         SELECT TRANSFORM(a)
+         USING 'some_non_existent_command' AS (a)
+         FROM VALUES (1) t(a)
+       """,
       s"""
-         |SELECT TRANSFORM(a)
-         |USING 'python3 some_non_existent_file' AS (a)
-         |FROM VALUES (1) t(a)
-       """.stripMargin).foreach { query =>
+         SELECT TRANSFORM(a)
+         USING 'python3 some_non_existent_file' AS (a)
+         FROM VALUES (1) t(a)
+       """).foreach { query =>
       intercept[SparkException] {
         // Since an error message is shell-dependent, this test just checks
         // if the expected exception will be thrown.
@@ -429,13 +429,13 @@ abstract class BaseScriptTransformationSuite extends SparkPlanTest with SQLTestU
       checkAnswer(
         sql(
           s"""
-             |SELECT TRANSFORM(a, b, c)
-             |  ROW FORMAT DELIMITED
-             |  USING 'cat' AS (a)
-             |  ROW FORMAT DELIMITED
-             |  FIELDS TERMINATED BY '&'
-             |FROM v
-        """.stripMargin), identity,
+             SELECT TRANSFORM(a, b, c)
+               ROW FORMAT DELIMITED
+               USING 'cat' AS (a)
+               ROW FORMAT DELIMITED
+               FIELDS TERMINATED BY '&'
+             FROM v
+        """), identity,
         Row("1\u00012\u00013") ::
           Row("2\u00013\u00014") ::
           Row("3\u00014\u00015") :: Nil)
@@ -504,15 +504,15 @@ abstract class BaseScriptTransformationSuite extends SparkPlanTest with SQLTestU
       checkAnswer(
         sql(
           s"""
-             |SELECT
-             |TRANSFORM(a, b, c, d, e)
-             |  ROW FORMAT DELIMITED
-             |  FIELDS TERMINATED BY '\t'
-             |  USING 'python3 $scriptFilePath' AS (a, b, c, d, e)
-             |  ROW FORMAT DELIMITED
-             |  FIELDS TERMINATED BY '\t'
-             |FROM v
-        """.stripMargin), identity, df.select(
+             SELECT
+             TRANSFORM(a, b, c, d, e)
+               ROW FORMAT DELIMITED
+               FIELDS TERMINATED BY '\t'
+               USING 'python3 $scriptFilePath' AS (a, b, c, d, e)
+               ROW FORMAT DELIMITED
+               FIELDS TERMINATED BY '\t'
+             FROM v
+        """), identity, df.select(
           $"a".cast("string"),
           $"b".cast("string"),
           $"c".cast("string"),
@@ -524,15 +524,15 @@ abstract class BaseScriptTransformationSuite extends SparkPlanTest with SQLTestU
         checkAnswer(
           sql(
             s"""
-               |SELECT
-               |TRANSFORM(a, b, c, d, e)
-               |  ROW FORMAT DELIMITED
-               |  FIELDS TERMINATED BY '\t'
-               |  USING '$scriptFilePath' AS (a, b, c, d, e)
-               |  ROW FORMAT DELIMITED
-               |  FIELDS TERMINATED BY '\t'
-               |FROM v
-        """.stripMargin), identity, df.select(
+               SELECT
+               TRANSFORM(a, b, c, d, e)
+                 ROW FORMAT DELIMITED
+                 FIELDS TERMINATED BY '\t'
+                 USING '$scriptFilePath' AS (a, b, c, d, e)
+                 ROW FORMAT DELIMITED
+                 FIELDS TERMINATED BY '\t'
+               FROM v
+        """), identity, df.select(
             $"a".cast("string"),
             $"b".cast("string"),
             $"c".cast("string"),
@@ -549,15 +549,15 @@ abstract class BaseScriptTransformationSuite extends SparkPlanTest with SQLTestU
       checkAnswer(
         sql(
           s"""
-             |SELECT
-             |TRANSFORM(a, b, c, d, e)
-             |  ROW FORMAT DELIMITED
-             |  FIELDS TERMINATED BY '\t'
-             |  USING '$scriptFilePath' AS (a, b, c, d, e)
-             |  ROW FORMAT DELIMITED
-             |  FIELDS TERMINATED BY '\t'
-             |FROM v
-        """.stripMargin), identity, df.select(
+             SELECT
+             TRANSFORM(a, b, c, d, e)
+               ROW FORMAT DELIMITED
+               FIELDS TERMINATED BY '\t'
+               USING '$scriptFilePath' AS (a, b, c, d, e)
+               ROW FORMAT DELIMITED
+               FIELDS TERMINATED BY '\t'
+             FROM v
+        """), identity, df.select(
           $"a".cast("string"),
           $"b".cast("string"),
           $"c".cast("string"),
@@ -571,14 +571,14 @@ abstract class BaseScriptTransformationSuite extends SparkPlanTest with SQLTestU
       checkAnswer(
         sql(
           s"""
-             |SELECT TRANSFORM(a, b, c, d, e)
-             |  ROW FORMAT DELIMITED
-             |  FIELDS TERMINATED BY '\t'
-             |  USING '${scriptFilePath.getName}' AS (a, b, c, d, e)
-             |  ROW FORMAT DELIMITED
-             |  FIELDS TERMINATED BY '\t'
-             |FROM v
-        """.stripMargin), identity, df.select(
+             SELECT TRANSFORM(a, b, c, d, e)
+               ROW FORMAT DELIMITED
+               FIELDS TERMINATED BY '\t'
+               USING '${scriptFilePath.getName}' AS (a, b, c, d, e)
+               ROW FORMAT DELIMITED
+               FIELDS TERMINATED BY '\t'
+             FROM v
+        """), identity, df.select(
           $"a".cast("string"),
           $"b".cast("string"),
           $"c".cast("string"),
@@ -589,14 +589,14 @@ abstract class BaseScriptTransformationSuite extends SparkPlanTest with SQLTestU
       checkAnswer(
         sql(
           s"""
-             |SELECT TRANSFORM(a, b, c, d, e)
-             |  ROW FORMAT DELIMITED
-             |  FIELDS TERMINATED BY '\t'
-             |  USING 'python3 ${scriptFilePath.getName}' AS (a, b, c, d, e)
-             |  ROW FORMAT DELIMITED
-             |  FIELDS TERMINATED BY '\t'
-             |FROM v
-        """.stripMargin), identity, df.select(
+             SELECT TRANSFORM(a, b, c, d, e)
+               ROW FORMAT DELIMITED
+               FIELDS TERMINATED BY '\t'
+               USING 'python3 ${scriptFilePath.getName}' AS (a, b, c, d, e)
+               ROW FORMAT DELIMITED
+               FIELDS TERMINATED BY '\t'
+             FROM v
+        """), identity, df.select(
           $"a".cast("string"),
           $"b".cast("string"),
           $"c".cast("string"),
@@ -617,19 +617,19 @@ abstract class BaseScriptTransformationSuite extends SparkPlanTest with SQLTestU
       if (defaultSerDe == "hive-serde") {
         checkAnswer(sql(
           """
-            |SELECT TRANSFORM(a, b)
-            |  USING 'cat' AS (a, b)
-            |FROM v
-            |""".stripMargin),
+            SELECT TRANSFORM(a, b)
+              USING 'cat' AS (a, b)
+            FROM v
+            """),
           identity,
           Row("1 00:00:00.000000000", "0-10") :: Nil)
       } else {
         checkAnswer(sql(
           """
-            |SELECT TRANSFORM(a, b)
-            |  USING 'cat' AS (a, b)
-            |FROM v
-            |""".stripMargin),
+            SELECT TRANSFORM(a, b)
+              USING 'cat' AS (a, b)
+            FROM v
+            """),
           identity,
           Row("INTERVAL '1 00:00:00' DAY TO SECOND", "INTERVAL '0-10' YEAR TO MONTH") :: Nil)
       }

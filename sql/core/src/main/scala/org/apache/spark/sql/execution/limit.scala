@@ -194,11 +194,11 @@ trait BaseLimitExec extends LimitExec with CodegenSupport {
 
   override def doConsume(ctx: CodegenContext, input: Seq[ExprCode], row: ExprCode): String = {
     s"""
-       | if ($countTerm < $limit) {
-       |   $countTerm += 1;
-       |   ${consume(ctx, input)}
-       | }
-     """.stripMargin
+        if ($countTerm < $limit) {
+          $countTerm += 1;
+          ${consume(ctx, input)}
+        }
+     """
   }
 }
 

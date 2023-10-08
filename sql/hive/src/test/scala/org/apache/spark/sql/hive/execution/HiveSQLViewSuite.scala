@@ -51,14 +51,14 @@ class HiveSQLViewSuite extends SQLViewSuite with TestHiveSingleton {
           withView("view1") {
             sql(
               s"""
-                 |CREATE $viewMode view1
-                 |AS SELECT
-                 |$permanentFuncName(str) as myUpper,
-                 |$builtInFuncNameInLowerCase(id) as abs_lower,
-                 |$builtInFuncNameInMixedCase(id) as abs_mixed,
-                 |$hiveFuncName(id, 5) over() as func
-                 |FROM tab1
-               """.stripMargin)
+                 CREATE $viewMode view1
+                 AS SELECT
+                 $permanentFuncName(str) as myUpper,
+                 $builtInFuncNameInLowerCase(id) as abs_lower,
+                 $builtInFuncNameInMixedCase(id) as abs_mixed,
+                 $hiveFuncName(id, 5) over() as func
+                 FROM tab1
+               """)
             checkAnswer(sql("select count(*) FROM view1"), Row(10))
           }
         }
@@ -195,18 +195,18 @@ class HiveSQLViewSuite extends SQLViewSuite with TestHiveSingleton {
       withView("v1") {
         sql(
           s"""
-             |CREATE TABLE test (c1 INT, c2 STRING)
-             |PARTITIONED BY (
-             |  p1 BIGINT COMMENT 'bla',
-             |  p2 STRING )
-           """.stripMargin)
+             CREATE TABLE test (c1 INT, c2 STRING)
+             PARTITIONED BY (
+               p1 BIGINT COMMENT 'bla',
+               p2 STRING )
+           """)
 
         createRawHiveTable(
           s"""
-             |CREATE VIEW v1
-             |PARTITIONED ON (p1, p2)
-             |AS SELECT * from test
-           """.stripMargin
+             CREATE VIEW v1
+             PARTITIONED ON (p1, p2)
+             AS SELECT * from test
+           """
         )
 
         checkError(

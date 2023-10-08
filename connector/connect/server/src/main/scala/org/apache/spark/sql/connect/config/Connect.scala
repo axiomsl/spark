@@ -135,13 +135,21 @@ object Connect {
       .bytesConf(ByteUnit.BYTE)
       .createWithDefaultString("10m")
 
+  val CONNECT_GRPC_MAX_INBOUND_MESSAGE_SIZE =
+    ConfigBuilder("spark.connect.grpc.maxInboundMessageSize")
+      .doc("Sets the maximum inbound message in bytes size for the gRPC requests." +
+        "Requests with a larger payload will fail.")
+      .version("3.4.0")
+      .bytesConf(ByteUnit.BYTE)
+      .createWithDefault(ConnectCommon.CONNECT_GRPC_MAX_MESSAGE_SIZE)
+
   val CONNECT_EXTENSIONS_RELATION_CLASSES =
     buildStaticConf("spark.connect.extensions.relation.classes")
       .doc("""
-          |Comma separated list of classes that implement the trait
-          |org.apache.spark.sql.connect.plugin.RelationPlugin to support custom
-          |Relation types in proto.
-          |""".stripMargin)
+          Comma separated list of classes that implement the trait
+          org.apache.spark.sql.connect.plugin.RelationPlugin to support custom
+          Relation types in proto.
+          """)
       .version("3.4.0")
       .stringConf
       .toSequence
@@ -150,10 +158,10 @@ object Connect {
   val CONNECT_EXTENSIONS_EXPRESSION_CLASSES =
     buildStaticConf("spark.connect.extensions.expression.classes")
       .doc("""
-          |Comma separated list of classes that implement the trait
-          |org.apache.spark.sql.connect.plugin.ExpressionPlugin to support custom
-          |Expression types in proto.
-          |""".stripMargin)
+          Comma separated list of classes that implement the trait
+          org.apache.spark.sql.connect.plugin.ExpressionPlugin to support custom
+          Expression types in proto.
+          """)
       .version("3.4.0")
       .stringConf
       .toSequence
@@ -162,10 +170,10 @@ object Connect {
   val CONNECT_EXTENSIONS_COMMAND_CLASSES =
     buildStaticConf("spark.connect.extensions.command.classes")
       .doc("""
-             |Comma separated list of classes that implement the trait
-             |org.apache.spark.sql.connect.plugin.CommandPlugin to support custom
-             |Command types in proto.
-             |""".stripMargin)
+             Comma separated list of classes that implement the trait
+             org.apache.spark.sql.connect.plugin.CommandPlugin to support custom
+             Command types in proto.
+             """)
       .version("3.4.0")
       .stringConf
       .toSequence

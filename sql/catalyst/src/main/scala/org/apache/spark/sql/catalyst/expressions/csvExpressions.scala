@@ -119,10 +119,12 @@ case class CsvToStructs(
       parsedOptions.columnNameOfCorruptRecord)
 
     val actualSchema =
-      StructType(nullableSchema.filterNot(_.name == parsedOptions.columnNameOfCorruptRecord))
+      StructType(nullableSchema.filterNot(_.name == parsedOptions.columnNameOfCorruptRecord)
+        .filterNot(_.name == parsedOptions.columnNameOfCorruptRecordCause))
     val actualRequiredSchema =
       StructType(requiredSchema.map(_.asNullable).getOrElse(nullableSchema)
-        .filterNot(_.name == parsedOptions.columnNameOfCorruptRecord))
+        .filterNot(_.name == parsedOptions.columnNameOfCorruptRecord)
+        .filterNot(_.name == parsedOptions.columnNameOfCorruptRecordCause))
     val rawParser = new UnivocityParser(actualSchema,
       actualRequiredSchema,
       parsedOptions)
@@ -130,7 +132,8 @@ case class CsvToStructs(
       input => rawParser.parse(input),
       mode,
       nullableSchema,
-      parsedOptions.columnNameOfCorruptRecord)
+      parsedOptions.columnNameOfCorruptRecord,
+      parsedOptions.columnNameOfCorruptRecordCause)
   }
 
   override def dataType: DataType = requiredSchema.getOrElse(schema).asNullable

@@ -138,12 +138,12 @@ trait AnalysisTest extends PlanTest {
         case a: AnalysisException =>
           fail(
             s"""
-              |Failed to Analyze Plan
-              |$inputPlan
-              |
-              |Partial Analysis
-              |$analysisAttempt
-            """.stripMargin, a)
+              Failed to Analyze Plan
+              $inputPlan
+
+              Partial Analysis
+              $analysisAttempt
+            """, a)
       }
     }
   }
@@ -162,13 +162,13 @@ trait AnalysisTest extends PlanTest {
           e.getMessage.toLowerCase(Locale.ROOT).contains)) {
         fail(
           s"""Exception message should contain the following substrings:
-             |
-             |  ${expectedErrors.mkString("\n  ")}
-             |
-             |Actual exception message:
-             |
-             |  ${e.getMessage}
-           """.stripMargin)
+
+               ${expectedErrors.mkString("\n  ")}
+
+             Actual exception message:
+
+               ${e.getMessage}
+           """)
       }
     }
   }

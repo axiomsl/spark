@@ -457,7 +457,7 @@ object QueryExecution {
       DisableUnnecessaryBucketedScan,
       ApplyColumnarRulesAndInsertTransitions(
         sparkSession.sessionState.columnarRules, outputsColumnar = false),
-      CollapseCodegenStages()) ++
+      CollapseCodegenStages(sparkSession.sparkContext)) ++
       (if (subquery) {
         Nil
       } else {

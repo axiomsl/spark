@@ -95,10 +95,10 @@ trait SparkSubmitTestUtils extends SparkFunSuite with TimeLimits {
         val historyLog = history.mkString("\n")
         fail {
           s"""spark-submit returned with exit code $exitCode.
-             |Command line: $commandLine
-             |
-             |$historyLog
-           """.stripMargin
+             Command line: $commandLine
+
+             $historyLog
+           """
         }
       }
     } catch {

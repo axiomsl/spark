@@ -87,13 +87,13 @@ object BinaryClassification {
         .action((x, c) => c.copy(input = x))
       note(
         """
-          |For example, the following command runs this app on a synthetic dataset:
-          |
-          | bin/spark-submit --class org.apache.spark.examples.mllib.BinaryClassification \
-          |  examples/target/scala-*/spark-examples-*.jar \
-          |  --algorithm LR --regType L2 --regParam 1.0 \
-          |  data/mllib/sample_binary_classification_data.txt
-        """.stripMargin)
+          For example, the following command runs this app on a synthetic dataset:
+
+           bin/spark-submit --class org.apache.spark.examples.mllib.BinaryClassification \
+            examples/target/scala-*/spark-examples-*.jar \
+            --algorithm LR --regType L2 --regParam 1.0 \
+            data/mllib/sample_binary_classification_data.txt
+        """)
     }
 
     parser.parse(args, defaultParams) match {

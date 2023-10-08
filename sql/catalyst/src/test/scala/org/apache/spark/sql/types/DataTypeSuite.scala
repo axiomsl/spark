@@ -677,12 +677,12 @@ class DataTypeSuite extends SparkFunSuite {
     val result = stringConcat.toString()
     val expected =
       """-- key: struct
-        |    |-- a: integer (nullable = true)
-        |    |-- b: integer (nullable = true)
-        |-- value: struct (valueContainsNull = true)
-        |    |-- c: integer (nullable = true)
-        |    |-- d: integer (nullable = true)
-        |""".stripMargin
+            |-- a: integer (nullable = true)
+            |-- b: integer (nullable = true)
+        -- value: struct (valueContainsNull = true)
+            |-- c: integer (nullable = true)
+            |-- d: integer (nullable = true)
+        """
 
     assert(result === expected)
   }

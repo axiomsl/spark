@@ -92,6 +92,8 @@ private[sql] class JSONOptions(
     parameters.get(MODE).map(ParseMode.fromString).getOrElse(PermissiveMode)
   val columnNameOfCorruptRecord =
     parameters.getOrElse(COLUMN_NAME_OF_CORRUPTED_RECORD, defaultColumnNameOfCorruptRecord)
+  val columnNameOfCorruptRecordCause =
+    parameters.getOrElse(COLUMN_NAME_OF_CORRUPTED_RECORD_CAUSE, defaultColumnNameOfCorruptRecord)
 
   // Whether to ignore column of all null values or empty array/struct during schema inference
   val dropFieldIfAllNull = parameters.get(DROP_FIELD_IF_ALL_NULL).map(_.toBoolean).getOrElse(false)
@@ -232,7 +234,7 @@ private[sql] class JSONOptionsInRead(
     val isDenied = JSONOptionsInRead.denyList.contains(Charset.forName(enc))
     require(multiLine || !isDenied,
       s"""The $enc encoding must not be included in the denyList when multiLine is disabled:
-         |denylist: ${JSONOptionsInRead.denyList.mkString(", ")}""".stripMargin)
+         denylist: ${JSONOptionsInRead.denyList.mkString(", ")}""")
 
     val isLineSepRequired =
         multiLine || Charset.forName(enc) == StandardCharsets.UTF_8 || lineSeparator.nonEmpty
@@ -280,6 +282,7 @@ object JSONOptions extends DataSourceOptions {
   val PRETTY = newOption("pretty")
   val INFER_TIMESTAMP = newOption("inferTimestamp")
   val COLUMN_NAME_OF_CORRUPTED_RECORD = newOption("columnNameOfCorruptRecord")
+  val COLUMN_NAME_OF_CORRUPTED_RECORD_CAUSE = newOption("columnNameOfCorruptRecordCause")
   val TIME_ZONE = newOption("timeZone")
   val WRITE_NON_ASCII_CHARACTER_AS_CODEPOINT = newOption("writeNonAsciiCharacterAsCodePoint")
   // Options with alternative

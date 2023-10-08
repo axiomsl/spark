@@ -108,9 +108,9 @@ class ResolveHintsSuite extends AnalysisTest {
     checkAnalysisWithoutViewWrapper(
       CatalystSqlParser.parsePlan(
         """
-          |WITH ctetable AS (SELECT * FROM table WHERE a > 1)
-          |SELECT /*+ BROADCAST(ctetable) */ * FROM ctetable
-        """.stripMargin
+          WITH ctetable AS (SELECT * FROM table WHERE a > 1)
+          SELECT /*+ BROADCAST(ctetable) */ * FROM ctetable
+        """
       ),
       ResolvedHint(testRelation.where($"a" > 1).select($"a"), HintInfo(strategy = Some(BROADCAST)))
         .select($"a").analyze,
@@ -122,9 +122,9 @@ class ResolveHintsSuite extends AnalysisTest {
     checkAnalysisWithoutViewWrapper(
       CatalystSqlParser.parsePlan(
         """
-          |WITH ctetable AS (SELECT * FROM table WHERE a > 1)
-          |SELECT /*+ BROADCAST(table) */ * FROM ctetable
-        """.stripMargin
+          WITH ctetable AS (SELECT * FROM table WHERE a > 1)
+          SELECT /*+ BROADCAST(table) */ * FROM ctetable
+        """
       ),
       testRelation.where($"a" > 1).select($"a").select($"a").analyze,
       caseSensitive = false,

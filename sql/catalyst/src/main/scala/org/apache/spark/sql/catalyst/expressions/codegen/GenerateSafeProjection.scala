@@ -74,11 +74,11 @@ object GenerateSafeProjection extends CodeGenerator[Seq[Expression], Projection]
     )
     val code =
       code"""
-         |final InternalRow $tmpInput = $input;
-         |final Object[] $values = new Object[${schema.length}];
-         |$allFields
-         |final InternalRow $output = new $rowClass($values);
-       """.stripMargin
+         final InternalRow $tmpInput = $input;
+         final Object[] $values = new Object[${schema.length}];
+         $allFields
+         final InternalRow $output = new $rowClass($values);
+       """
 
     ExprCode(code, FalseLiteral, JavaCode.variable(output, classOf[InternalRow]))
   }
@@ -88,11 +88,11 @@ object GenerateSafeProjection extends CodeGenerator[Seq[Expression], Projection]
       input: String,
       elementType: DataType): ExprCode = {
     // Puts `input` in a local variable to avoid to re-evaluate it if it's a statement.
-    val tmpInput = ctx.freshName("tmpInput")
-    val output = ctx.freshName("safeArray")
-    val values = ctx.freshName("values")
-    val numElements = ctx.freshName("numElements")
-    val index = ctx.freshName("index")
+    val tmpInput = ctx.freshName("tmpIn")
+    val output = ctx.freshName("sArr")
+    val values = ctx.freshName("vals")
+    val numElements = ctx.freshName("numElms")
+    val index = ctx.freshName("idx")
     val arrayClass = classOf[GenericArrayData].getName
 
     val elementConverter = convertToSafe(
@@ -168,19 +168,19 @@ object GenerateSafeProjection extends CodeGenerator[Seq[Expression], Projection]
     val allExpressions = ctx.splitExpressionsWithCurrentInputs(expressionCodes)
 
     val codeBody = s"""
-      public java.lang.Object generate(Object[] references) {
-        return new SpecificSafeProjection(references);
+      public java.lang.Object generate(Object[] refs) {
+        return new SpecificSafeProjection(refs);
       }
 
       class SpecificSafeProjection extends ${classOf[BaseProjection].getName} {
 
-        private Object[] references;
+        private Object[] refs;
         private InternalRow mutableRow;
         ${ctx.declareMutableStates()}
 
-        public SpecificSafeProjection(Object[] references) {
-          this.references = references;
-          mutableRow = (InternalRow) references[references.length - 1];
+        public SpecificSafeProjection(Object[] refs) {
+          this.refs = refs;
+          mutableRow = (InternalRow) refs[refs.length - 1];
           ${ctx.initMutableStates()}
         }
 

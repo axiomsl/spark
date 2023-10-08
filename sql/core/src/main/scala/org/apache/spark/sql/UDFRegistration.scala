@@ -55,16 +55,16 @@ class UDFRegistration private[sql] (functionRegistry: FunctionRegistry) extends 
   protected[sql] def registerPython(name: String, udf: UserDefinedPythonFunction): Unit = {
     log.debug(
       s"""
-        | Registering new PythonUDF:
-        | name: $name
-        | command: ${udf.func.command}
-        | envVars: ${udf.func.envVars}
-        | pythonIncludes: ${udf.func.pythonIncludes}
-        | pythonExec: ${udf.func.pythonExec}
-        | dataType: ${udf.dataType}
-        | pythonEvalType: ${PythonEvalType.toString(udf.pythonEvalType)}
-        | udfDeterministic: ${udf.udfDeterministic}
-      """.stripMargin)
+         Registering new PythonUDF:
+         name: $name
+         command: ${udf.func.command.toSeq}
+         envVars: ${udf.func.envVars}
+         pythonIncludes: ${udf.func.pythonIncludes}
+         pythonExec: ${udf.func.pythonExec}
+         dataType: ${udf.dataType}
+         pythonEvalType: ${PythonEvalType.toString(udf.pythonEvalType)}
+         udfDeterministic: ${udf.udfDeterministic}
+      """)
 
     functionRegistry.createOrReplaceTempFunction(name, udf.builder, "python_udf")
   }

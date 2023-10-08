@@ -99,26 +99,26 @@ private[ui] class AllJobsPage(parent: JobsTab, store: AppStatusStore) extends We
       val jsEscapedDescForLabel = StringEscapeUtils.escapeEcmaScript(escapedDesc)
       val jobEventJsonAsStr =
         s"""
-           |{
-           |  'className': 'job application-timeline-object ${classNameByStatus}',
-           |  'group': 'jobs',
-           |  'start': new Date(${submissionTime}),
-           |  'end': new Date(${completionTime}),
-           |  'content': '<div class="application-timeline-content"' +
-           |     'data-html="true" data-placement="top" data-toggle="tooltip"' +
-           |     'data-title="${jsEscapedDescForTooltip} (Job ${jobId})<br>' +
-           |     'Status: ${status}<br>' +
-           |     'Submitted: ${UIUtils.formatDate(new Date(submissionTime))}' +
-           |     '${
-                     if (status != JobExecutionStatus.RUNNING) {
-                       s"""<br>Completed: ${UIUtils.formatDate(new Date(completionTime))}"""
-                     } else {
-                       ""
-                     }
-                  }">' +
-           |    '${jsEscapedDescForLabel} (Job ${jobId})</div>'
-           |}
-         """.stripMargin
+           {
+             'className': 'job application-timeline-object ${classNameByStatus}',
+             'group': 'jobs',
+             'start': new Date(${submissionTime}),
+             'end': new Date(${completionTime}),
+             'content': '<div class="application-timeline-content"' +
+                'data-html="true" data-placement="top" data-toggle="tooltip"' +
+                'data-title="${jsEscapedDescForTooltip} (Job ${jobId})<br>' +
+                'Status: ${status}<br>' +
+                'Submitted: ${UIUtils.formatDate(new Date(submissionTime))}' +
+                '${
+                    if (status != JobExecutionStatus.RUNNING) {
+                      s"""<br>Completed: ${UIUtils.formatDate(new Date(completionTime))}"""
+                    } else {
+                      ""
+                    }
+                 }">' +
+               '${jsEscapedDescForLabel} (Job ${jobId})</div>'
+           }
+         """
       jobEventJsonAsStr
     }
   }
@@ -131,39 +131,39 @@ private[ui] class AllJobsPage(parent: JobsTab, store: AppStatusStore) extends We
     }.takeRight(MAX_TIMELINE_EXECUTORS).foreach { e =>
       val addedEvent =
         s"""
-           |{
-           |  'className': 'executor added',
-           |  'group': 'executors',
-           |  'start': new Date(${e.addTime.getTime()}),
-           |  'content': '<div class="executor-event-content"' +
-           |    'data-toggle="tooltip" data-placement="top"' +
-           |    'data-title="Executor ${e.id}<br>' +
-           |    'Added at ${UIUtils.formatDate(e.addTime)}"' +
-           |    'data-html="true">Executor ${e.id} added</div>'
-           |}
-         """.stripMargin
+           {
+             'className': 'executor added',
+             'group': 'executors',
+             'start': new Date(${e.addTime.getTime()}),
+             'content': '<div class="executor-event-content"' +
+               'data-toggle="tooltip" data-placement="top"' +
+               'data-title="Executor ${e.id}<br>' +
+               'Added at ${UIUtils.formatDate(e.addTime)}"' +
+               'data-html="true">Executor ${e.id} added</div>'
+           }
+         """
       events += addedEvent
 
       e.removeTime.foreach { removeTime =>
         val removedEvent =
           s"""
-             |{
-             |  'className': 'executor removed',
-             |  'group': 'executors',
-             |  'start': new Date(${removeTime.getTime()}),
-             |  'content': '<div class="executor-event-content"' +
-             |    'data-toggle="tooltip" data-placement="top"' +
-             |    'data-title="Executor ${e.id}<br>' +
-             |    'Removed at ${UIUtils.formatDate(removeTime)}' +
-             |    '${
-                      e.removeReason.map { reason =>
-                        s"""<br>Reason: ${StringEscapeUtils.escapeEcmaScript(
-                          reason.replace("\n", " "))}"""
-                      }.getOrElse("")
-                   }"' +
-             |    'data-html="true">Executor ${e.id} removed</div>'
-             |}
-           """.stripMargin
+             {
+               'className': 'executor removed',
+               'group': 'executors',
+               'start': new Date(${removeTime.getTime()}),
+               'content': '<div class="executor-event-content"' +
+                 'data-toggle="tooltip" data-placement="top"' +
+                 'data-title="Executor ${e.id}<br>' +
+                 'Removed at ${UIUtils.formatDate(removeTime)}' +
+                 '${
+                     e.removeReason.map { reason =>
+                       s"""<br>Reason: ${StringEscapeUtils.escapeEcmaScript(
+                         reason.replace("\n", " "))}"""
+                     }.getOrElse("")
+                  }"' +
+                 'data-html="true">Executor ${e.id} removed</div>'
+             }
+           """
         events += removedEvent
       }
     }
@@ -182,17 +182,17 @@ private[ui] class AllJobsPage(parent: JobsTab, store: AppStatusStore) extends We
 
     val groupJsonArrayAsStr =
       s"""
-          |[
-          |  {
-          |    'id': 'executors',
-          |    'content': '<div>Executors</div>${EXECUTORS_LEGEND}',
-          |  },
-          |  {
-          |    'id': 'jobs',
-          |    'content': '<div>Jobs</div>${JOBS_LEGEND}',
-          |  }
-          |]
-        """.stripMargin
+          [
+            {
+              'id': 'executors',
+              'content': '<div>Executors</div>${EXECUTORS_LEGEND}',
+            },
+            {
+              'id': 'jobs',
+              'content': '<div>Jobs</div>${JOBS_LEGEND}',
+            }
+          ]
+        """
 
     val eventArrayAsStr =
       (jobEventJsonAsStrSeq ++ executorEventJsonAsStrSeq).mkString("[", ",", "]")

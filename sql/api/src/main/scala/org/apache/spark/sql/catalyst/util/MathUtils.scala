@@ -89,11 +89,11 @@ object MathUtils {
 
   def withOverflowCode(evalCode: String, context: String): String = {
     s"""
-       |try {
-       |  $evalCode
-       |} catch (ArithmeticException e) {
-       |  throw QueryExecutionErrors.arithmeticOverflowError(e.getMessage(), "", $context);
-       |}
-       |""".stripMargin
+       try {
+         $evalCode
+       } catch (ArithmeticException e) {
+         throw QueryExecutionErrors.arithmeticOverflowError(e.getMessage(), "", $context);
+       }
+       """
   }
 }

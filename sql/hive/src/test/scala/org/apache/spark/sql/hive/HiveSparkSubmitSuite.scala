@@ -247,13 +247,13 @@ class HiveSparkSubmitSuite
     hiveWarehouseLocation.delete()
     val hiveSiteXmlContent =
       s"""
-         |<configuration>
-         |  <property>
-         |    <name>hive.metastore.warehouse.dir</name>
-         |    <value>$hiveWarehouseLocation</value>
-         |  </property>
-         |</configuration>
-     """.stripMargin
+         <configuration>
+           <property>
+             <name>hive.metastore.warehouse.dir</name>
+             <value>$hiveWarehouseLocation</value>
+           </property>
+         </configuration>
+     """
 
     // Write a hive-site.xml containing a setting of hive.metastore.warehouse.dir.
     val hiveSiteDir = Utils.createTempDir()
@@ -290,13 +290,13 @@ class HiveSparkSubmitSuite
       s"jdbc:derby:memory:;databaseName=${metastoreLocation.getAbsolutePath};create=true"
     val hiveSiteXmlContent =
       s"""
-         |<configuration>
-         |  <property>
-         |    <name>javax.jdo.option.ConnectionURL</name>
-         |    <value>$metastoreURL</value>
-         |  </property>
-         |</configuration>
-     """.stripMargin
+         <configuration>
+           <property>
+             <name>javax.jdo.option.ConnectionURL</name>
+             <value>$metastoreURL</value>
+           </property>
+         </configuration>
+     """
 
     // Write a hive-site.xml containing a setting of hive.metastore.warehouse.dir.
     val hiveSiteDir = Utils.createTempDir()
@@ -516,10 +516,10 @@ object TemporaryHiveUDFTest extends Logging {
     val jar = HiveTestJars.getHiveContribJar().getCanonicalPath
     hiveContext.sql(
       s"""
-         |CREATE TEMPORARY FUNCTION example_max
-         |AS 'org.apache.hadoop.hive.contrib.udaf.example.UDAFExampleMax'
-         |USING JAR '$jar'
-      """.stripMargin)
+         CREATE TEMPORARY FUNCTION example_max
+         AS 'org.apache.hadoop.hive.contrib.udaf.example.UDAFExampleMax'
+         USING JAR '$jar'
+      """)
     val source =
       hiveContext.createDataFrame((1 to 10).map(i => (i, s"str$i"))).toDF("key", "val")
     source.createOrReplaceTempView("sourceTable")
@@ -554,10 +554,10 @@ object PermanentHiveUDFTest1 extends Logging {
     val jar = HiveTestJars.getHiveContribJar().getCanonicalPath
     hiveContext.sql(
       s"""
-         |CREATE FUNCTION example_max
-         |AS 'org.apache.hadoop.hive.contrib.udaf.example.UDAFExampleMax'
-         |USING JAR '$jar'
-      """.stripMargin)
+         CREATE FUNCTION example_max
+         AS 'org.apache.hadoop.hive.contrib.udaf.example.UDAFExampleMax'
+         USING JAR '$jar'
+      """)
     val source =
       hiveContext.createDataFrame((1 to 10).map(i => (i, s"str$i"))).toDF("key", "val")
     source.createOrReplaceTempView("sourceTable")
@@ -655,9 +655,9 @@ object SparkSubmitClassLoaderTest extends Logging {
     logInfo("Registering temporary Hive UDF provided in a jar.")
     hiveContext.sql(
       """
-        |CREATE TEMPORARY FUNCTION example_max
-        |AS 'org.apache.hadoop.hive.contrib.udaf.example.UDAFExampleMax'
-      """.stripMargin)
+        CREATE TEMPORARY FUNCTION example_max
+        AS 'org.apache.hadoop.hive.contrib.udaf.example.UDAFExampleMax'
+      """)
     val source =
       hiveContext.createDataFrame((1 to 10).map(i => (i, s"str$i"))).toDF("key", "val")
     source.createOrReplaceTempView("sourceTable")
@@ -665,9 +665,9 @@ object SparkSubmitClassLoaderTest extends Logging {
     logInfo("Creating a Hive table with a SerDe provided in a jar.")
     hiveContext.sql(
       """
-        |CREATE TABLE t1(key int, val string)
-        |ROW FORMAT SERDE 'org.apache.hive.hcatalog.data.JsonSerDe'
-      """.stripMargin)
+        CREATE TABLE t1(key int, val string)
+        ROW FORMAT SERDE 'org.apache.hive.hcatalog.data.JsonSerDe'
+      """)
     // Actually use the loaded UDF and SerDe.
     logInfo("Writing data into the table.")
     hiveContext.sql(
@@ -875,10 +875,10 @@ object SPARK_18989_CREATE_TABLE {
     val spark = SparkSession.builder().enableHiveSupport().getOrCreate()
     spark.sql(
       """
-        |CREATE TABLE IF NOT EXISTS base64_tbl(val string) STORED AS
-        |INPUTFORMAT 'org.apache.hadoop.hive.contrib.fileformat.base64.Base64TextInputFormat'
-        |OUTPUTFORMAT 'org.apache.hadoop.hive.contrib.fileformat.base64.Base64TextOutputFormat'
-      """.stripMargin)
+        CREATE TABLE IF NOT EXISTS base64_tbl(val string) STORED AS
+        INPUTFORMAT 'org.apache.hadoop.hive.contrib.fileformat.base64.Base64TextInputFormat'
+        OUTPUTFORMAT 'org.apache.hadoop.hive.contrib.fileformat.base64.Base64TextOutputFormat'
+      """)
   }
 }
 

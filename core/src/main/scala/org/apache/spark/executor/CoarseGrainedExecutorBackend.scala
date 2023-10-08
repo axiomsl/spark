@@ -565,19 +565,19 @@ private[spark] object CoarseGrainedExecutorBackend extends Logging {
     // scalastyle:off println
     System.err.println(
       s"""
-      |Usage: $classNameForEntry [options]
-      |
-      | Options are:
-      |   --driver-url <driverUrl>
-      |   --executor-id <executorId>
-      |   --bind-address <bindAddress>
-      |   --hostname <hostname>
-      |   --cores <cores>
-      |   --resourcesFile <fileWithJSONResourceInformation>
-      |   --app-id <appid>
-      |   --worker-url <workerUrl>
-      |   --resourceProfileId <id>
-      |""".stripMargin)
+      Usage: $classNameForEntry [options]
+
+       Options are:
+         --driver-url <driverUrl>
+         --executor-id <executorId>
+         --bind-address <bindAddress>
+         --hostname <hostname>
+         --cores <cores>
+         --resourcesFile <fileWithJSONResourceInformation>
+         --app-id <appid>
+         --worker-url <workerUrl>
+         --resourceProfileId <id>
+      """)
     // scalastyle:on println
     System.exit(1)
   }

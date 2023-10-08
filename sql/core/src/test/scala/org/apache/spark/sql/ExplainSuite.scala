@@ -114,13 +114,13 @@ class ExplainSuite extends ExplainSuiteHelper with DisableAdaptiveExecutionSuite
     withTempView("test_agg") {
       sql(
         """
-          |CREATE TEMPORARY VIEW test_agg AS SELECT * FROM VALUES
-          |  (1, true), (1, false),
-          |  (2, true),
-          |  (3, false), (3, null),
-          |  (4, null), (4, null),
-          |  (5, null), (5, true), (5, false) AS test_agg(k, v)
-        """.stripMargin)
+          CREATE TEMPORARY VIEW test_agg AS SELECT * FROM VALUES
+            (1, true), (1, false),
+            (2, true),
+            (3, false), (3, null),
+            (4, null), (4, null),
+            (5, null), (5, true), (5, false) AS test_agg(k, v)
+        """)
 
       // simple explain of queries having every/some/any aggregates. Optimized
       // plan should show the rewritten aggregate expression.
@@ -141,9 +141,9 @@ class ExplainSuite extends ExplainSuiteHelper with DisableAdaptiveExecutionSuite
   test("explain inline tables cross-joins") {
     val df = sql(
       """
-        |SELECT * FROM VALUES ('one', 1), ('three', null)
-        |  CROSS JOIN VALUES ('one', 1), ('three', null)
-      """.stripMargin)
+        SELECT * FROM VALUES ('one', 1), ('three', null)
+          CROSS JOIN VALUES ('one', 1), ('three', null)
+      """)
     checkKeywordsExistsInExplain(df,
       "Join Cross",
       ":- LocalRelation [col1#x, col2#x]",
@@ -170,9 +170,9 @@ class ExplainSuite extends ExplainSuiteHelper with DisableAdaptiveExecutionSuite
     // Check if catalyst combine nested `Concat`s
     val df1 = sql(
       """
-        |SELECT (col1 || col2 || col3 || col4) col
-        |  FROM (SELECT id col1, id col2, id col3, id col4 FROM range(10))
-      """.stripMargin)
+        SELECT (col1 || col2 || col3 || col4) col
+          FROM (SELECT id col1, id col2, id col3, id col4 FROM range(10))
+      """)
     checkKeywordsExistsInExplain(df1,
       "Project [concat(cast(id#xL as string), cast(id#xL as string), cast(id#xL as string)" +
         ", cast(id#xL as string)) AS col#x]")
@@ -181,16 +181,16 @@ class ExplainSuite extends ExplainSuiteHelper with DisableAdaptiveExecutionSuite
     withSQLConf(SQLConf.CONCAT_BINARY_AS_STRING.key -> "false") {
       val df2 = sql(
         """
-          |SELECT ((col1 || col2) || (col3 || col4)) col
-          |FROM (
-          |  SELECT
-          |    string(id) col1,
-          |    string(id + 1) col2,
-          |    encode(string(id + 2), 'utf-8') col3,
-          |    encode(string(id + 3), 'utf-8') col4
-          |  FROM range(10)
-          |)
-        """.stripMargin)
+          SELECT ((col1 || col2) || (col3 || col4)) col
+          FROM (
+            SELECT
+              string(id) col1,
+              string(id + 1) col2,
+              encode(string(id + 2), 'utf-8') col3,
+              encode(string(id + 3), 'utf-8') col4
+            FROM range(10)
+          )
+        """)
       checkKeywordsExistsInExplain(df2,
         "Project [concat(cast(id#xL as string), cast((id#xL + 1) as string), " +
           "cast(encode(cast((id#xL + 2) as string), utf-8) as string), " +
@@ -198,15 +198,15 @@ class ExplainSuite extends ExplainSuiteHelper with DisableAdaptiveExecutionSuite
 
       val df3 = sql(
         """
-          |SELECT (col1 || (col3 || col4)) col
-          |FROM (
-          |  SELECT
-          |    string(id) col1,
-          |    encode(string(id + 2), 'utf-8') col3,
-          |    encode(string(id + 3), 'utf-8') col4
-          |  FROM range(10)
-          |)
-        """.stripMargin)
+          SELECT (col1 || (col3 || col4)) col
+          FROM (
+            SELECT
+              string(id) col1,
+              encode(string(id + 2), 'utf-8') col3,
+              encode(string(id + 3), 'utf-8') col4
+            FROM range(10)
+          )
+        """)
       checkKeywordsExistsInExplain(df3,
         "Project [concat(cast(id#xL as string), " +
           "cast(encode(cast((id#xL + 2) as string), utf-8) as string), " +
@@ -302,9 +302,9 @@ class ExplainSuite extends ExplainSuiteHelper with DisableAdaptiveExecutionSuite
 
           val sqlText =
             """
-              |EXPLAIN FORMATTED SELECT df1.id, df2.k
-              |FROM df1 JOIN df2 ON df1.k = df2.k AND df2.id < 2
-              |""".stripMargin
+              EXPLAIN FORMATTED SELECT df1.id, df2.k
+              FROM df1 JOIN df2 ON df1.k = df2.k AND df2.id < 2
+              """
 
           val expected_pattern1 =
             "Subquery:1 Hosting operator id = 1 Hosting Expression = k#xL IN subquery#x"
@@ -474,15 +474,15 @@ class ExplainSuite extends ExplainSuiteHelper with DisableAdaptiveExecutionSuite
 
         val expectedPlanFragment =
           s"""
-             |\\(1\\) BatchScan $fmt file:$basePath
-             |Output \\[2\\]: \\[value#x, id#x\\]
-             |DataFilters: \\[isnotnull\\(value#x\\), \\(value#x > 2\\)\\]
-             |Format: $fmt
-             |Location: InMemoryFileIndex\\([0-9]+ paths\\)\\[.*\\]
-             |PartitionFilters: \\[isnotnull\\(id#x\\), \\(id#x > 1\\)\\]
-             |PushedFilters: \\[IsNotNull\\(value\\), GreaterThan\\(value,2\\)\\]
-             |ReadSchema: struct\\<value:int\\>
-             |""".stripMargin.trim
+             \\(1\\) BatchScan $fmt file:$basePath
+             Output \\[2\\]: \\[value#x, id#x\\]
+             DataFilters: \\[isnotnull\\(value#x\\), \\(value#x > 2\\)\\]
+             Format: $fmt
+             Location: InMemoryFileIndex\\([0-9]+ paths\\)\\[.*\\]
+             PartitionFilters: \\[isnotnull\\(id#x\\), \\(id#x > 1\\)\\]
+             PushedFilters: \\[IsNotNull\\(value\\), GreaterThan\\(value,2\\)\\]
+             ReadSchema: struct\\<value:int\\>
+             """.trim
 
         spark.range(10)
           .select(col("id"), col("id").as("value"))
@@ -583,34 +583,34 @@ class ExplainSuiteAE extends ExplainSuiteHelper with EnableAdaptiveExecutionSuit
       testDf,
       FormattedMode,
       """
-        |(5) BroadcastQueryStage
-        |Output [2]: [k#x, v2#x]
-        |Arguments: 0""".stripMargin,
+        (5) BroadcastQueryStage
+        Output [2]: [k#x, v2#x]
+        Arguments: 0""",
       """
-        |(10) ShuffleQueryStage
-        |Output [5]: [k#x, count#xL, sum#xL, sum#x, count#xL]
-        |Arguments: 1""".stripMargin,
+        (10) ShuffleQueryStage
+        Output [5]: [k#x, count#xL, sum#xL, sum#x, count#xL]
+        Arguments: 1""",
       """
-        |(11) AQEShuffleRead
-        |Input [5]: [k#x, count#xL, sum#xL, sum#x, count#xL]
-        |Arguments: coalesced
-        |""".stripMargin,
+        (11) AQEShuffleRead
+        Input [5]: [k#x, count#xL, sum#xL, sum#x, count#xL]
+        Arguments: coalesced
+        """,
       """
-        |(16) BroadcastHashJoin
-        |Left keys [1]: [k#x]
-        |Right keys [1]: [k#x]
-        |Join type: Inner
-        |Join condition: None
-        |""".stripMargin,
+        (16) BroadcastHashJoin
+        Left keys [1]: [k#x]
+        Right keys [1]: [k#x]
+        Join type: Inner
+        Join condition: None
+        """,
       """
-        |(19) Exchange
-        |Input [5]: [k#x, count#xL, sum#xL, sum#x, count#xL]
-        |""".stripMargin,
+        (19) Exchange
+        Input [5]: [k#x, count#xL, sum#xL, sum#x, count#xL]
+        """,
       """
-        |(21) AdaptiveSparkPlan
-        |Output [4]: [k#x, count(v1)#xL, sum(v1)#xL, avg(v2)#x]
-        |Arguments: isFinalPlan=true
-        |""".stripMargin
+        (21) AdaptiveSparkPlan
+        Output [4]: [k#x, count(v1)#xL, sum(v1)#xL, avg(v2)#x]
+        Arguments: isFinalPlan=true
+        """
     )
     checkKeywordsNotExistsInExplain(testDf, FormattedMode, "unknown")
   }
@@ -636,39 +636,39 @@ class ExplainSuiteAE extends ExplainSuiteHelper with EnableAdaptiveExecutionSuit
       spark.range(10).createOrReplaceTempView("t2")
       val query =
         """
-          |SELECT key, value FROM t1
-          |JOIN t2 ON t1.key = t2.id
-          |WHERE value > (SELECT MAX(id) FROM t2)
-          |""".stripMargin
+          SELECT key, value FROM t1
+          JOIN t2 ON t1.key = t2.id
+          WHERE value > (SELECT MAX(id) FROM t2)
+          """
       val df = sql(query).toDF()
       df.collect()
       checkKeywordsExistsInExplain(df, FormattedMode,
         """
-          |(2) Filter [codegen id : 2]
-          |Input [1]: [id#xL]
-          |Condition : ((id#xL > Subquery subquery#x, [id=#x]) AND isnotnull((id#xL % 10)))
-          |""".stripMargin,
+          (2) Filter [codegen id : 2]
+          Input [1]: [id#xL]
+          Condition : ((id#xL > Subquery subquery#x, [id=#x]) AND isnotnull((id#xL % 10)))
+          """,
         """
-          |(6) BroadcastQueryStage
-          |Output [1]: [id#xL]
-          |Arguments: 0""".stripMargin,
+          (6) BroadcastQueryStage
+          Output [1]: [id#xL]
+          Arguments: 0""",
         """
-          |(12) AdaptiveSparkPlan
-          |Output [2]: [key#xL, value#xL]
-          |Arguments: isFinalPlan=true
-          |""".stripMargin,
+          (12) AdaptiveSparkPlan
+          Output [2]: [key#xL, value#xL]
+          Arguments: isFinalPlan=true
+          """,
         """
-          |Subquery:1 Hosting operator id = 2 Hosting Expression = Subquery subquery#x, [id=#x]
-          |""".stripMargin,
+          Subquery:1 Hosting operator id = 2 Hosting Expression = Subquery subquery#x, [id=#x]
+          """,
         """
-          |(16) ShuffleQueryStage
-          |Output [1]: [max#xL]
-          |Arguments: 0""".stripMargin,
+          (16) ShuffleQueryStage
+          Output [1]: [max#xL]
+          Arguments: 0""",
         """
-          |(20) AdaptiveSparkPlan
-          |Output [1]: [max(id)#xL]
-          |Arguments: isFinalPlan=true
-          |""".stripMargin
+          (20) AdaptiveSparkPlan
+          Output [1]: [max(id)#xL]
+          Arguments: isFinalPlan=true
+          """
       )
       checkKeywordsNotExistsInExplain(df, FormattedMode, "unknown")
     }

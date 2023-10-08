@@ -857,6 +857,10 @@ class GroupedApplyInPandasTests(GroupedApplyInPandasTestsMixin, ReusedSQLTestCas
     pass
 
 
+class GroupedApplyInPandasTests(GroupedApplyInPandasTestsMixin, ReusedSQLTestCase):
+    pass
+
+
 if __name__ == "__main__":
     from pyspark.sql.tests.pandas.test_pandas_grouped_map import *  # noqa: F401
 

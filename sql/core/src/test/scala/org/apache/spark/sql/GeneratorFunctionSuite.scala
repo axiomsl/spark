@@ -426,9 +426,9 @@ class GeneratorFunctionSuite extends QueryTest with SharedSparkSession {
         exception = intercept[AnalysisException] {
           sql(
             """select
-              |  explode(array(min(c2), max(c2))),
-              |  posexplode(array(min(c2), max(c2)))
-              |from t1 group by c1""".stripMargin)
+                explode(array(min(c2), max(c2))),
+                posexplode(array(min(c2), max(c2)))
+              from t1 group by c1""")
         },
         errorClass = "UNSUPPORTED_GENERATOR.MULTI_GENERATOR",
         parameters = Map(
@@ -472,12 +472,12 @@ class GeneratorFunctionSuite extends QueryTest with SharedSparkSession {
     withTempView("t1") {
       sql(
         """select * from values
-          |array(struct(0, 1), struct(3, 4)),
-          |array(struct(6, 7)),
-          |array(),
-          |null
-          |as tbl(arr)
-         """.stripMargin).createOrReplaceTempView("t1")
+          array(struct(0, 1), struct(3, 4)),
+          array(struct(6, 7)),
+          array(),
+          null
+          as tbl(arr)
+         """).createOrReplaceTempView("t1")
       checkAnswer(
         sql("select f1, f2 from t1 lateral view inline_outer(arr) as f1, f2"),
         Row(0, 1) :: Row(3, 4) :: Row(6, 7) :: Row(null, null) :: Row(null, null) :: Nil)
@@ -487,17 +487,17 @@ class GeneratorFunctionSuite extends QueryTest with SharedSparkSession {
   def testNullStruct(): Unit = {
     val df = sql(
       """select * from values
-        |(
-        |  1,
-        |  array(
-        |    named_struct('c1', 0, 'c2', 1),
-        |    null,
-        |    named_struct('c1', 2, 'c2', 3),
-        |    null
-        |  )
-        |)
-        |as tbl(a, b)
-         """.stripMargin)
+        (
+          1,
+          array(
+            named_struct('c1', 0, 'c2', 1),
+            null,
+            named_struct('c1', 2, 'c2', 3),
+            null
+          )
+        )
+        as tbl(a, b)
+         """)
 
     checkAnswer(
       df.select(inline('b)),
@@ -523,16 +523,16 @@ class GeneratorFunctionSuite extends QueryTest with SharedSparkSession {
     // the below query got wrong results due to incorrect nullability.
     val df = sql(
       """select c1, explode(c4) as c5 from (
-        |  select c1, array(c3) as c4 from (
-        |    select c1, explode_outer(c2) as c3
-        |    from values
-        |    (1, array(1, 2)),
-        |    (2, array(2, 3)),
-        |    (3, null)
-        |    as data(c1, c2)
-        |  )
-        |)
-        |""".stripMargin)
+          select c1, array(c3) as c4 from (
+            select c1, explode_outer(c2) as c3
+            from values
+            (1, array(1, 2)),
+            (2, array(2, 3)),
+            (3, null)
+            as data(c1, c2)
+          )
+        )
+        """)
     checkAnswer(df,
       Row(1, 1) :: Row(1, 2) :: Row(2, 2) :: Row(2, 3) :: Row(3, null) :: Nil)
   }

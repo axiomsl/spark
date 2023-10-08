@@ -63,13 +63,13 @@ class CreateTableAsSelectSuite extends DataSourceTest with SharedSparkSession {
     withTable("jsonTable") {
       sql(
         s"""
-           |CREATE TABLE jsonTable
-           |USING json
-           |OPTIONS (
-           |  path '${path.toURI}'
-           |) AS
-           |SELECT a, b FROM jt
-         """.stripMargin)
+           CREATE TABLE jsonTable
+           USING json
+           OPTIONS (
+             path '${path.toURI}'
+           ) AS
+           SELECT a, b FROM jt
+         """)
 
       checkAnswer(
         sql("SELECT a, b FROM jsonTable"),
@@ -87,13 +87,13 @@ class CreateTableAsSelectSuite extends DataSourceTest with SharedSparkSession {
     val e = intercept[SparkException] {
       sql(
         s"""
-           |CREATE TABLE jsonTable
-           |USING json
-           |OPTIONS (
-           |  path '${childPath.toURI}'
-           |) AS
-           |SELECT a, b FROM jt
-         """.stripMargin)
+           CREATE TABLE jsonTable
+           USING json
+           OPTIONS (
+             path '${childPath.toURI}'
+           ) AS
+           SELECT a, b FROM jt
+         """)
       sql("SELECT a, b FROM jsonTable").collect()
     }
 
@@ -105,13 +105,13 @@ class CreateTableAsSelectSuite extends DataSourceTest with SharedSparkSession {
     withTable("jsonTable") {
       sql(
         s"""
-           |CREATE TABLE jsonTable
-           |USING json
-           |OPTIONS (
-           |  path '${path.toURI}'
-           |) AS
-           |SELECT a, b FROM jt
-         """.stripMargin)
+           CREATE TABLE jsonTable
+           USING json
+           OPTIONS (
+             path '${path.toURI}'
+           ) AS
+           SELECT a, b FROM jt
+         """)
 
       checkAnswer(
         sql("SELECT a, b FROM jsonTable"),
@@ -120,13 +120,13 @@ class CreateTableAsSelectSuite extends DataSourceTest with SharedSparkSession {
       // Creates a table of the same name with flag "if not exists", nothing happens
       sql(
         s"""
-           |CREATE TABLE IF NOT EXISTS jsonTable
-           |USING json
-           |OPTIONS (
-           |  path '${path.toURI}'
-           |) AS
-           |SELECT a * 4 FROM jt
-         """.stripMargin)
+           CREATE TABLE IF NOT EXISTS jsonTable
+           USING json
+           OPTIONS (
+             path '${path.toURI}'
+           ) AS
+           SELECT a * 4 FROM jt
+         """)
       checkAnswer(
         sql("SELECT * FROM jsonTable"),
         sql("SELECT a, b FROM jt"))
@@ -138,13 +138,13 @@ class CreateTableAsSelectSuite extends DataSourceTest with SharedSparkSession {
       // Creates a table of the same name again, this time we succeed.
       sql(
         s"""
-           |CREATE TABLE jsonTable
-           |USING json
-           |OPTIONS (
-           |  path '${path.toURI}'
-           |) AS
-           |SELECT b FROM jt
-         """.stripMargin)
+           CREATE TABLE jsonTable
+           USING json
+           OPTIONS (
+             path '${path.toURI}'
+           ) AS
+           SELECT b FROM jt
+         """)
 
       checkAnswer(
         sql("SELECT * FROM jsonTable"),
@@ -157,9 +157,9 @@ class CreateTableAsSelectSuite extends DataSourceTest with SharedSparkSession {
       val pathUri = path.toURI.toString
       val sqlText =
         s"""CREATE TEMPORARY TABLE t USING PARQUET
-           |OPTIONS (PATH '$pathUri')
-           |PARTITIONED BY (a)
-           |AS SELECT 1 AS a, 2 AS b""".stripMargin
+           OPTIONS (PATH '$pathUri')
+           PARTITIONED BY (a)
+           AS SELECT 1 AS a, 2 AS b"""
       checkError(
         exception = intercept[ParseException] {
           sql(sqlText)
@@ -178,10 +178,10 @@ class CreateTableAsSelectSuite extends DataSourceTest with SharedSparkSession {
     withTable("t") {
       sql(
         s"""
-           |CREATE EXTERNAL TABLE t USING PARQUET
-           |OPTIONS (PATH '${path.toURI}')
-           |AS SELECT 1 AS a, 2 AS b
-         """.stripMargin)
+           CREATE EXTERNAL TABLE t USING PARQUET
+           OPTIONS (PATH '${path.toURI}')
+           AS SELECT 1 AS a, 2 AS b
+         """)
       val table = spark.sessionState.catalog.getTableMetadata(TableIdentifier("t"))
       assert(table.tableType == CatalogTableType.EXTERNAL)
       assert(table.location.toString == path.toURI.toString.stripSuffix("/"))
@@ -193,11 +193,11 @@ class CreateTableAsSelectSuite extends DataSourceTest with SharedSparkSession {
     withTable("t") {
       sql(
         s"""
-           |CREATE TABLE t USING PARQUET
-           |OPTIONS (PATH '${path.toURI}')
-           |PARTITIONED BY (a)
-           |AS SELECT 1 AS a, 2 AS b
-         """.stripMargin
+           CREATE TABLE t USING PARQUET
+           OPTIONS (PATH '${path.toURI}')
+           PARTITIONED BY (a)
+           AS SELECT 1 AS a, 2 AS b
+         """
       )
       val table = catalog.getTableMetadata(TableIdentifier("t"))
       assert(table.partitionColumnNames == Seq("a"))
@@ -209,11 +209,11 @@ class CreateTableAsSelectSuite extends DataSourceTest with SharedSparkSession {
     withTable("t") {
       sql(
         s"""
-           |CREATE TABLE t USING PARQUET
-           |OPTIONS (PATH '${path.toURI}')
-           |CLUSTERED BY (a) SORTED BY (b) INTO 5 BUCKETS
-           |AS SELECT 1 AS a, 2 AS b
-         """.stripMargin
+           CREATE TABLE t USING PARQUET
+           OPTIONS (PATH '${path.toURI}')
+           CLUSTERED BY (a) SORTED BY (b) INTO 5 BUCKETS
+           AS SELECT 1 AS a, 2 AS b
+         """
       )
       val table = catalog.getTableMetadata(TableIdentifier("t"))
       assert(table.bucketSpec == Option(BucketSpec(5, Seq("a"), Seq("b"))))
@@ -226,11 +226,11 @@ class CreateTableAsSelectSuite extends DataSourceTest with SharedSparkSession {
         val e = intercept[ParseException] {
           sql(
             s"""
-               |CREATE TABLE t USING PARQUET
-               |OPTIONS (PATH '${path.toURI}')
-               |CLUSTERED BY (a) SORTED BY (b) INTO $numBuckets BUCKETS
-               |AS SELECT 1 AS a, 2 AS b
-             """.stripMargin
+               CREATE TABLE t USING PARQUET
+               OPTIONS (PATH '${path.toURI}')
+               CLUSTERED BY (a) SORTED BY (b) INTO $numBuckets BUCKETS
+               AS SELECT 1 AS a, 2 AS b
+             """
           )
         }.getMessage
         assert(e.contains("Number of buckets should be greater than 0 but less than"))
@@ -241,11 +241,11 @@ class CreateTableAsSelectSuite extends DataSourceTest with SharedSparkSession {
   test("create table using as select - with overridden max number of buckets") {
     def createTableSql(tablePath: String, numBuckets: Int): String =
       s"""
-         |CREATE TABLE t USING PARQUET
-         |OPTIONS (PATH '$tablePath')
-         |CLUSTERED BY (a) SORTED BY (b) INTO $numBuckets BUCKETS
-         |AS SELECT 1 AS a, 2 AS b
-       """.stripMargin
+         CREATE TABLE t USING PARQUET
+         OPTIONS (PATH '$tablePath')
+         CLUSTERED BY (a) SORTED BY (b) INTO $numBuckets BUCKETS
+         AS SELECT 1 AS a, 2 AS b
+       """
 
     val maxNrBuckets: Int = 200000
     val catalog = spark.sessionState.catalog

@@ -81,26 +81,26 @@ private[ui] class JobPage(parent: JobsTab, store: AppStatusStore) extends WebUIP
       val jsEscapedNameForTooltip = StringEscapeUtils.escapeEcmaScript(Utility.escape(escapedName))
       val jsEscapedNameForLabel = StringEscapeUtils.escapeEcmaScript(escapedName)
       s"""
-         |{
-         |  'className': 'stage job-timeline-object ${status}',
-         |  'group': 'stages',
-         |  'start': new Date(${submissionTime}),
-         |  'end': new Date(${completionTime}),
-         |  'content': '<div class="job-timeline-content" data-toggle="tooltip"' +
-         |   'data-placement="top" data-html="true"' +
-         |   'data-title="${jsEscapedNameForTooltip} (Stage ${stageId}.${attemptId})<br>' +
-         |   'Status: ${status.toUpperCase(Locale.ROOT)}<br>' +
-         |   'Submitted: ${UIUtils.formatDate(submissionTime)}' +
-         |   '${
-                 if (status != "running") {
-                   s"""<br>Completed: ${UIUtils.formatDate(completionTime)}"""
-                 } else {
-                   ""
-                 }
-              }">' +
-         |    '${jsEscapedNameForLabel} (Stage ${stageId}.${attemptId})</div>',
-         |}
-       """.stripMargin
+         {
+           'className': 'stage job-timeline-object ${status}',
+           'group': 'stages',
+           'start': new Date(${submissionTime}),
+           'end': new Date(${completionTime}),
+           'content': '<div class="job-timeline-content" data-toggle="tooltip"' +
+            'data-placement="top" data-html="true"' +
+            'data-title="${jsEscapedNameForTooltip} (Stage ${stageId}.${attemptId})<br>' +
+            'Status: ${status.toUpperCase(Locale.ROOT)}<br>' +
+            'Submitted: ${UIUtils.formatDate(submissionTime)}' +
+            '${
+                if (status != "running") {
+                  s"""<br>Completed: ${UIUtils.formatDate(completionTime)}"""
+                } else {
+                  ""
+                }
+             }">' +
+             '${jsEscapedNameForLabel} (Stage ${stageId}.${attemptId})</div>',
+         }
+       """
     }
   }
 
@@ -111,39 +111,39 @@ private[ui] class JobPage(parent: JobsTab, store: AppStatusStore) extends WebUIP
     }.takeRight(MAX_TIMELINE_EXECUTORS).foreach { e =>
       val addedEvent =
         s"""
-           |{
-           |  'className': 'executor added',
-           |  'group': 'executors',
-           |  'start': new Date(${e.addTime.getTime()}),
-           |  'content': '<div class="executor-event-content"' +
-           |    'data-toggle="tooltip" data-placement="top"' +
-           |    'data-title="Executor ${e.id}<br>' +
-           |    'Added at ${UIUtils.formatDate(e.addTime)}"' +
-           |    'data-html="true">Executor ${e.id} added</div>'
-           |}
-         """.stripMargin
+           {
+             'className': 'executor added',
+             'group': 'executors',
+             'start': new Date(${e.addTime.getTime()}),
+             'content': '<div class="executor-event-content"' +
+               'data-toggle="tooltip" data-placement="top"' +
+               'data-title="Executor ${e.id}<br>' +
+               'Added at ${UIUtils.formatDate(e.addTime)}"' +
+               'data-html="true">Executor ${e.id} added</div>'
+           }
+         """
       events += addedEvent
 
       e.removeTime.foreach { removeTime =>
         val removedEvent =
           s"""
-             |{
-             |  'className': 'executor removed',
-             |  'group': 'executors',
-             |  'start': new Date(${removeTime.getTime()}),
-             |  'content': '<div class="executor-event-content"' +
-             |    'data-toggle="tooltip" data-placement="top"' +
-             |    'data-title="Executor ${e.id}<br>' +
-             |    'Removed at ${UIUtils.formatDate(removeTime)}' +
-             |    '${
-                      e.removeReason.map { reason =>
-                        s"""<br>Reason: ${StringEscapeUtils.escapeEcmaScript(
-                          reason.replace("\n", " "))}"""
-                      }.getOrElse("")
-                   }"' +
-             |    'data-html="true">Executor ${e.id} removed</div>'
-             |}
-           """.stripMargin
+             {
+               'className': 'executor removed',
+               'group': 'executors',
+               'start': new Date(${removeTime.getTime()}),
+               'content': '<div class="executor-event-content"' +
+                 'data-toggle="tooltip" data-placement="top"' +
+                 'data-title="Executor ${e.id}<br>' +
+                 'Removed at ${UIUtils.formatDate(removeTime)}' +
+                 '${
+                     e.removeReason.map { reason =>
+                       s"""<br>Reason: ${StringEscapeUtils.escapeEcmaScript(
+                         reason.replace("\n", " "))}"""
+                     }.getOrElse("")
+                  }"' +
+                 'data-html="true">Executor ${e.id} removed</div>'
+             }
+           """
           events += removedEvent
       }
     }
@@ -162,17 +162,17 @@ private[ui] class JobPage(parent: JobsTab, store: AppStatusStore) extends WebUIP
 
     val groupJsonArrayAsStr =
       s"""
-          |[
-          |  {
-          |    'id': 'executors',
-          |    'content': '<div>Executors</div>${EXECUTORS_LEGEND}',
-          |  },
-          |  {
-          |    'id': 'stages',
-          |    'content': '<div>Stages</div>${STAGES_LEGEND}',
-          |  }
-          |]
-        """.stripMargin
+          [
+            {
+              'id': 'executors',
+              'content': '<div>Executors</div>${EXECUTORS_LEGEND}',
+            },
+            {
+              'id': 'stages',
+              'content': '<div>Stages</div>${STAGES_LEGEND}',
+            }
+          ]
+        """
 
     val eventArrayAsStr =
       (stageEventJsonAsStrSeq ++ executorsJsonAsStrSeq).mkString("[", ",", "]")

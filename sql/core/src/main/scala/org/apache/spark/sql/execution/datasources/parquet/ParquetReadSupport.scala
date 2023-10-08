@@ -143,12 +143,12 @@ object ParquetReadSupport extends Logging {
         "Please remove the field ids from Spark schema or ignore missing ids by " +
           s"setting `${SQLConf.IGNORE_MISSING_PARQUET_FIELD_ID.key} = true`\n" +
         s"""
-           |Spark read schema:
-           |${catalystRequestedSchema.prettyJson}
-           |
-           |Parquet file schema:
-           |${parquetFileSchema.toString}
-           |""".stripMargin)
+           Spark read schema:
+           ${catalystRequestedSchema.prettyJson}
+
+           Parquet file schema:
+           ${parquetFileSchema.toString}
+           """)
     }
     val parquetClippedSchema = ParquetReadSupport.clipParquetSchema(parquetFileSchema,
       catalystRequestedSchema, caseSensitive, useFieldId)
@@ -172,15 +172,15 @@ object ParquetReadSupport extends Logging {
 
     logDebug(
       s"""Going to read the following fields from the Parquet file with the following schema:
-         |Parquet file schema:
-         |$parquetFileSchema
-         |Parquet clipped schema:
-         |$parquetClippedSchema
-         |Parquet requested schema:
-         |$parquetRequestedSchema
-         |Catalyst requested schema:
-         |${catalystRequestedSchema.treeString}
-       """.stripMargin)
+         Parquet file schema:
+         $parquetFileSchema
+         Parquet clipped schema:
+         $parquetClippedSchema
+         Parquet requested schema:
+         $parquetRequestedSchema
+         Catalyst requested schema:
+         ${catalystRequestedSchema.treeString}
+       """)
 
     parquetRequestedSchema
   }

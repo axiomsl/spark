@@ -77,10 +77,10 @@ trait DataSourceScanExec extends LeafExecNode {
     }
 
     s"""
-       |$formattedNodeName
-       |${ExplainUtils.generateFieldString("Output", output)}
-       |${metadataStr.mkString("\n")}
-       |""".stripMargin
+       $formattedNodeName
+       ${ExplainUtils.generateFieldString("Output", output)}
+       ${metadataStr.mkString("\n")}
+       """
   }
 
   /**
@@ -442,10 +442,10 @@ trait FileSourceScanLike extends DataSourceScanExec {
     }
 
     s"""
-       |$formattedNodeName
-       |${ExplainUtils.generateFieldString("Output", output)}
-       |${metadataStr.mkString("\n")}
-       |""".stripMargin
+       $formattedNodeName
+       ${ExplainUtils.generateFieldString("Output", output)}
+       ${metadataStr.mkString("\n")}
+       """
   }
 
   override def metrics: Map[String, SQLMetric] = scanMetrics

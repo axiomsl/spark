@@ -54,10 +54,10 @@ abstract class RemoveRedundantSortsSuiteBase
       spark.range(100).select($"id" as "key").createOrReplaceTempView("t")
       val query =
         """
-          |SELECT key FROM
-          | (SELECT key FROM t WHERE key > 10 ORDER BY key DESC LIMIT 10)
-          |ORDER BY key DESC
-          |""".stripMargin
+         SELECT key FROM
+          (SELECT key FROM t WHERE key > 10 ORDER BY key DESC LIMIT 10)
+         ORDER BY key DESC
+         """
       checkSorts(query, 0, 1)
     }
   }
@@ -68,13 +68,13 @@ abstract class RemoveRedundantSortsSuiteBase
       spark.range(1000).select($"id" as "key").createOrReplaceTempView("t2")
 
       val queryTemplate = """
-        |SELECT /*+ BROADCAST(%s) */ t1.key FROM
-        | (SELECT key FROM t1 WHERE key > 10 ORDER BY key DESC LIMIT 10) t1
-        |JOIN
-        | (SELECT key FROM t2 WHERE key > 50 ORDER BY key DESC LIMIT 100) t2
-        |ON t1.key = t2.key
-        |ORDER BY %s
-      """.stripMargin
+        SELECT /*+ BROADCAST(%s) */ t1.key FROM
+         (SELECT key FROM t1 WHERE key > 10 ORDER BY key DESC LIMIT 10) t1
+        JOIN
+         (SELECT key FROM t2 WHERE key > 50 ORDER BY key DESC LIMIT 100) t2
+        ON t1.key = t2.key
+        ORDER BY %s
+      """
 
       // No sort should be removed since the stream side (t2) order DESC
       // does not satisfy the required sort order ASC.
@@ -103,13 +103,13 @@ abstract class RemoveRedundantSortsSuiteBase
       spark.range(1000).select($"id" as "key").createOrReplaceTempView("t1")
       spark.range(1000).select($"id" as "key").createOrReplaceTempView("t2")
       val query = """
-        |SELECT /*+ MERGE(t1) */ t1.key FROM
-        | (SELECT key FROM t1 WHERE key > 10 ORDER BY key DESC LIMIT 10) t1
-        |JOIN
-        | (SELECT key FROM t2 WHERE key > 50 ORDER BY key DESC LIMIT 100) t2
-        |ON t1.key = t2.key
-        |ORDER BY t1.key
-      """.stripMargin
+        SELECT /*+ MERGE(t1) */ t1.key FROM
+         (SELECT key FROM t1 WHERE key > 10 ORDER BY key DESC LIMIT 10) t1
+        JOIN
+         (SELECT key FROM t2 WHERE key > 50 ORDER BY key DESC LIMIT 100) t2
+        ON t1.key = t2.key
+        ORDER BY t1.key
+      """
 
       val queryAsc = query + " ASC"
       checkSorts(queryAsc, 2, 3)
@@ -146,11 +146,11 @@ abstract class RemoveRedundantSortsSuiteBase
       (0 to 100).toDF("key").createOrReplaceTempView("t2")
 
       val queryTemplate = """
-        |SELECT /*+ %s(t1) */ t1.key
-        |FROM t1 JOIN t2 ON t1.key = t2.key
-        |WHERE t1.key > 10 AND t2.key < 50
-        |ORDER BY t1.key ASC
-      """.stripMargin
+        SELECT /*+ %s(t1) */ t1.key
+        FROM t1 JOIN t2 ON t1.key = t2.key
+        WHERE t1.key > 10 AND t2.key < 50
+        ORDER BY t1.key ASC
+      """
 
       Seq(("MERGE", 3), ("SHUFFLE_HASH", 1)).foreach { case (hint, count) =>
         val query = queryTemplate.format(hint)

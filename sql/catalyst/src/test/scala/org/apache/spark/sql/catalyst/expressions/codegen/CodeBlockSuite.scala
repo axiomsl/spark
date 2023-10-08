@@ -54,18 +54,18 @@ class CodeBlockSuite extends SparkFunSuite {
     val value = JavaCode.variable("expr1", IntegerType)
     val code1 =
       code"""
-           |boolean $isNull = false;
-           |int $value = ${JavaCode.defaultLiteral(IntegerType)};""".stripMargin
+           boolean $isNull = false;
+           int $value = ${JavaCode.defaultLiteral(IntegerType)};"""
     val expected =
       s"""
-        |boolean expr1_isNull = false;
-        |int expr1 = ${JavaCode.defaultLiteral(IntegerType)};""".stripMargin.trim
+        boolean expr1_isNull = false;
+        int expr1 = ${JavaCode.defaultLiteral(IntegerType)};""".trim
     assert(code1.toString == expected)
 
     val code2 =
       code"""
            >boolean $isNull = false;
-           >int $value = ${JavaCode.defaultLiteral(IntegerType)};""".stripMargin('>')
+           >int $value = ${JavaCode.defaultLiteral(IntegerType)};"""('>')
     assert(code2.toString == expected)
   }
 
@@ -74,9 +74,9 @@ class CodeBlockSuite extends SparkFunSuite {
     val value = JavaCode.variable("expr1", IntegerType)
     val code =
       code"""
-           |boolean $isNull = false;
-           |int $value = -1;
-          """.stripMargin
+           boolean $isNull = false;
+           int $value = -1;
+          """
     val exprValues = code.asInstanceOf[CodeBlock].blockInputs.collect {
       case e: ExprValue => e
     }.toSet
@@ -93,18 +93,18 @@ class CodeBlockSuite extends SparkFunSuite {
 
     val code =
       code"""
-           |boolean $isNull1 = false;
-           |int $value1 = -1;""".stripMargin +
+           boolean $isNull1 = false;
+           int $value1 = -1;""" +
       code"""
-           |boolean $isNull2 = true;
-           |int $value2 = $literal;""".stripMargin
+           boolean $isNull2 = true;
+           int $value2 = $literal;"""
 
     val expected =
       """
-       |boolean expr1_isNull = false;
-       |int expr1 = -1;
-       |boolean expr2_isNull = true;
-       |int expr2 = 100;""".stripMargin.trim
+       boolean expr1_isNull = false;
+       int expr1 = -1;
+       boolean expr2_isNull = true;
+       int expr2 = 100;""".trim
 
     assert(code.toString == expected)
 
@@ -130,10 +130,10 @@ class CodeBlockSuite extends SparkFunSuite {
 
     val code =
       code"""
-           |callFunc(int $expr) {
-           |  boolean $isNull = false;
-           |  int $exprInFunc = $expr + 1;
-           |}""".stripMargin
+           callFunc(int $expr) {
+             boolean $isNull = false;
+             int $exprInFunc = $expr + 1;
+           }"""
 
     val aliasedParam = JavaCode.variable("aliased", expr.javaType)
 
@@ -143,10 +143,10 @@ class CodeBlockSuite extends SparkFunSuite {
     }
     val expected =
       code"""
-           |callFunc(int $aliasedParam) {
-           |  boolean $isNull = false;
-           |  int $exprInFunc = $aliasedParam + 1;
-           |}""".stripMargin
+           callFunc(int $aliasedParam) {
+             boolean $isNull = false;
+             int $exprInFunc = $aliasedParam + 1;
+           }"""
     assert(aliasedCode.toString == expected.toString)
   }
 
@@ -158,10 +158,10 @@ class CodeBlockSuite extends SparkFunSuite {
     val funcs = Seq("callFunc1", "callFunc2", "callFunc3")
     val subBlocks = funcs.map { funcName =>
       code"""
-           |$funcName(int $expr) {
-           |  boolean $isNull = false;
-           |  int $exprInFunc = $expr + 1;
-           |}""".stripMargin
+           $funcName(int $expr) {
+             boolean $isNull = false;
+             int $exprInFunc = $expr + 1;
+           }"""
     }
 
     val aliasedParam = JavaCode.variable("aliased", expr.javaType)
@@ -175,24 +175,24 @@ class CodeBlockSuite extends SparkFunSuite {
 
     val expected1 =
       code"""
-        |callFunc1(int aliased) {
-        |  boolean expr1_isNull = false;
-        |  int expr1 = aliased + 1;
-        |}""".stripMargin
+        callFunc1(int aliased) {
+          boolean expr1_isNull = false;
+          int expr1 = aliased + 1;
+        }"""
 
     val expected2 =
       code"""
-        |callFunc2(int aliased) {
-        |  boolean expr1_isNull = false;
-        |  int expr1 = aliased + 1;
-        |}""".stripMargin
+        callFunc2(int aliased) {
+          boolean expr1_isNull = false;
+          int expr1 = aliased + 1;
+        }"""
 
     val expected3 =
       code"""
-        |callFunc3(int aliased) {
-        |  boolean expr1_isNull = false;
-        |  int expr1 = aliased + 1;
-        |}""".stripMargin
+        callFunc3(int aliased) {
+          boolean expr1_isNull = false;
+          int expr1 = aliased + 1;
+        }"""
 
     val exprValues = transformedBlock.children.flatMap { block =>
       block.asInstanceOf[CodeBlock].blockInputs.collect {

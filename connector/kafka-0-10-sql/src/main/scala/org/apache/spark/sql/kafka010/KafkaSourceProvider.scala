@@ -281,15 +281,15 @@ private[kafka010] class KafkaSourceProvider extends DataSourceRegister
     if (params.contains(s"kafka.${ConsumerConfig.AUTO_OFFSET_RESET_CONFIG}")) {
       throw new IllegalArgumentException(
         s"""
-           |Kafka option '${ConsumerConfig.AUTO_OFFSET_RESET_CONFIG}' is not supported.
-           |Instead set the source option '$STARTING_OFFSETS_OPTION_KEY' to 'earliest' or 'latest'
-           |to specify where to start. Structured Streaming manages which offsets are consumed
-           |internally, rather than relying on the kafkaConsumer to do it. This will ensure that no
-           |data is missed when new topics/partitions are dynamically subscribed. Note that
-           |'$STARTING_OFFSETS_OPTION_KEY' only applies when a new Streaming query is started, and
-           |that resuming will always pick up from where the query left off. See the docs for more
-           |details.
-         """.stripMargin)
+           Kafka option '${ConsumerConfig.AUTO_OFFSET_RESET_CONFIG}' is not supported.
+           Instead set the source option '$STARTING_OFFSETS_OPTION_KEY' to 'earliest' or 'latest'
+           to specify where to start. Structured Streaming manages which offsets are consumed
+           internally, rather than relying on the kafkaConsumer to do it. This will ensure that no
+           data is missed when new topics/partitions are dynamically subscribed. Note that
+           '$STARTING_OFFSETS_OPTION_KEY' only applies when a new Streaming query is started, and
+           that resuming will always pick up from where the query left off. See the docs for more
+           details.
+         """)
     }
 
     if (params.contains(s"kafka.${ConsumerConfig.KEY_DESERIALIZER_CLASS_CONFIG}")) {
@@ -573,30 +573,30 @@ private[kafka010] object KafkaSourceProvider extends Logging {
 
   val INSTRUCTION_FOR_FAIL_ON_DATA_LOSS_FALSE =
     """
-      |Some data may have been lost because they are not available in Kafka any more; either the
-      | data was aged out by Kafka or the topic may have been deleted before all the data in the
-      | topic was processed. If you want your streaming query to fail on such cases, set the source
-      | option "failOnDataLoss" to "true".
-    """.stripMargin
+      Some data may have been lost because they are not available in Kafka any more; either the
+       data was aged out by Kafka or the topic may have been deleted before all the data in the
+       topic was processed. If you want your streaming query to fail on such cases, set the source
+       option "failOnDataLoss" to "true".
+    """
 
   val INSTRUCTION_FOR_FAIL_ON_DATA_LOSS_TRUE =
     """
-      |Some data may have been lost because they are not available in Kafka any more; either the
-      | data was aged out by Kafka or the topic may have been deleted before all the data in the
-      | topic was processed. If you don't want your streaming query to fail on such cases, set the
-      | source option "failOnDataLoss" to "false".
-    """.stripMargin
+      Some data may have been lost because they are not available in Kafka any more; either the
+       data was aged out by Kafka or the topic may have been deleted before all the data in the
+       topic was processed. If you don't want your streaming query to fail on such cases, set the
+       source option "failOnDataLoss" to "false".
+    """
 
   val CUSTOM_GROUP_ID_ERROR_MESSAGE =
     s"""Kafka option 'kafka.${ConsumerConfig.GROUP_ID_CONFIG}' has been set on this query, it is
-       | not recommended to set this option. This option is unsafe to use since multiple concurrent
-       | queries or sources using the same group id will interfere with each other as they are part
-       | of the same consumer group. Restarted queries may also suffer interference from the
-       | previous run having the same group id. The user should have only one query per group id,
-       | and/or set the option 'kafka.session.timeout.ms' to be very small so that the Kafka
-       | consumers from the previous query are marked dead by the Kafka group coordinator before the
-       | restarted query starts running.
-    """.stripMargin
+        not recommended to set this option. This option is unsafe to use since multiple concurrent
+        queries or sources using the same group id will interfere with each other as they are part
+        of the same consumer group. Restarted queries may also suffer interference from the
+        previous run having the same group id. The user should have only one query per group id,
+        and/or set the option 'kafka.session.timeout.ms' to be very small so that the Kafka
+        consumers from the previous query are marked dead by the Kafka group coordinator before the
+        restarted query starts running.
+    """
 
   private val serClassName = classOf[ByteArraySerializer].getName
   private val deserClassName = classOf[ByteArrayDeserializer].getName

@@ -189,9 +189,9 @@ case class BroadcastHashJoinExec(
     // Inline mutable state since not many join operations in a task
     val relationTerm = ctx.addMutableState(clsName, "relation",
       v => s"""
-         | $v = (($clsName) $broadcast.value()).asReadOnlyCopy();
-         | incPeakExecutionMemory($v.estimatedSize());
-       """.stripMargin, forceInline = true)
+          $v = (($clsName) $broadcast.value()).asReadOnlyCopy();
+          incPeakExecutionMemory($v.estimatedSize());
+       """, forceInline = true)
     (broadcastRelation, relationTerm)
   }
 
@@ -214,23 +214,23 @@ case class BroadcastHashJoinExec(
 
       if (broadcastRelation.value == EmptyHashedRelation) {
         s"""
-           |// If the right side is empty, NAAJ simply returns the left side.
-           |$numOutput.add(1);
-           |${consume(ctx, input)}
-         """.stripMargin
+           // If the right side is empty, NAAJ simply returns the left side.
+           $numOutput.add(1);
+           ${consume(ctx, input)}
+         """
       } else if (broadcastRelation.value == HashedRelationWithAllNullKeys) {
         """
-           |// If the right side contains any all-null key, NAAJ simply returns Nothing.
-         """.stripMargin
+           // If the right side contains any all-null key, NAAJ simply returns Nothing.
+         """
       } else {
         s"""
-           |// generate join key for stream side
-           |${keyEv.code}
-           |if (!$anyNull && $relationTerm.getValue(${keyEv.value}) == null) {
-           |  $numOutput.add(1);
-           |  ${consume(ctx, input)}
-           |}
-         """.stripMargin
+           // generate join key for stream side
+           ${keyEv.code}
+           if (!$anyNull && $relationTerm.getValue(${keyEv.value}) == null) {
+             $numOutput.add(1);
+             ${consume(ctx, input)}
+           }
+         """
       }
     } else {
       super.codegenAnti(ctx, input)

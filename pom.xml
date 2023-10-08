@@ -52,6 +52,14 @@
     <url>https://issues.apache.org/jira/browse/SPARK</url>
   </issueManagement>
 
+  <distributionManagement>
+    <repository>
+      <id>il-axiomsl</id>
+      <name>AXIOM</name>
+      <url>http://il-nexus.global.axiomsl.com:8081/nexus/content/repositories/spark-releases/</url>
+    </repository>
+  </distributionManagement>
+
   <mailingLists>
     <mailingList>
       <name>Dev Mailing List</name>
@@ -175,7 +183,7 @@
     <scala.version>2.12.18</scala.version>
     <scala.binary.version>2.12</scala.binary.version>
     <scalatest-maven-plugin.version>2.2.0</scalatest-maven-plugin.version>
-    <!-- dont update scala-maven-plugin to version 4.8.1 SPARK-42809 and SPARK-43595 -->   
+    <!-- dont update scala-maven-plugin to version 4.8.1 SPARK-42809 and SPARK-43595 -->
     <scala-maven-plugin.version>4.8.0</scala-maven-plugin.version>
     <maven.scaladoc.skip>false</maven.scaladoc.skip>
     <versions-maven-plugin.version>2.16.0</versions-maven-plugin.version>
@@ -1078,7 +1086,7 @@
       <dependency>
         <groupId>org.json4s</groupId>
         <artifactId>json4s-jackson_${scala.binary.version}</artifactId>
-        <version>3.7.0-M11</version>
+        <version>4.0.6</version>
         <exclusions>
           <exclusion>
             <groupId>com.fasterxml.jackson.core</groupId>

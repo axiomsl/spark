@@ -136,19 +136,19 @@ class JDBCOptions(
 
   require(!(parameters.get(JDBC_QUERY_STRING).isDefined && partitionColumn.isDefined),
     s"""
-       |Options '$JDBC_QUERY_STRING' and '$JDBC_PARTITION_COLUMN' can not be specified together.
-       |Please define the query using `$JDBC_TABLE_NAME` option instead and make sure to qualify
-       |the partition columns using the supplied subquery alias to resolve any ambiguity.
-       |Example :
-       |spark.read.format("jdbc")
-       |  .option("url", jdbcUrl)
-       |  .option("dbtable", "(select c1, c2 from t1) as subq")
-       |  .option("partitionColumn", "c1")
-       |  .option("lowerBound", "1")
-       |  .option("upperBound", "100")
-       |  .option("numPartitions", "3")
-       |  .load()
-     """.stripMargin
+       Options '$JDBC_QUERY_STRING' and '$JDBC_PARTITION_COLUMN' can not be specified together.
+       Please define the query using `$JDBC_TABLE_NAME` option instead and make sure to qualify
+       the partition columns using the supplied subquery alias to resolve any ambiguity.
+       Example :
+       spark.read.format("jdbc")
+         .option("url", jdbcUrl)
+         .option("dbtable", "(select c1, c2 from t1) as subq")
+         .option("partitionColumn", "c1")
+         .option("lowerBound", "1")
+         .option("upperBound", "100")
+         .option("numPartitions", "3")
+         .load()
+     """
   )
 
   val fetchSize = parameters.getOrElse(JDBC_BATCH_FETCH_SIZE, "0").toInt

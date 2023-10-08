@@ -243,10 +243,10 @@ class StatisticsCollectionSuite extends StatisticsCollectionTestBase with Shared
     withTempDir { dir =>
       withTable(table) {
         sql(s"""
-             |CREATE TABLE $table (value string, name string)
-             |USING PARQUET
-             |PARTITIONED BY (name)
-             |LOCATION '${dir.toURI}'""".stripMargin)
+             CREATE TABLE $table (value string, name string)
+             USING PARQUET
+             PARTITIONED BY (name)
+             LOCATION '${dir.toURI}'""")
         val df = Seq(("a", null), ("b", null)).toDF("value", "name")
         df.write.mode("overwrite").insertInto(table)
         sql(s"ANALYZE TABLE $table PARTITION (name) COMPUTE STATISTICS")
@@ -394,10 +394,10 @@ class StatisticsCollectionSuite extends StatisticsCollectionTestBase with Shared
           withTable(table) {
             val path = dir.getCanonicalPath
             sql(s"""
-              |CREATE TABLE $table (col1 int, col2 int)
-              |USING PARQUET
-              |PARTITIONED BY (col2)
-              |LOCATION '${dir.toURI}'""".stripMargin)
+              CREATE TABLE $table (col1 int, col2 int)
+              USING PARQUET
+              PARTITIONED BY (col2)
+              LOCATION '${dir.toURI}'""")
             sql(s"ANALYZE TABLE $table COMPUTE STATISTICS")
             spark.table(table)
             assert(getTableFromCatalogCache(table).stats.sizeInBytes == 0)
@@ -437,11 +437,11 @@ class StatisticsCollectionSuite extends StatisticsCollectionTestBase with Shared
         sql("ANALYZE TABLE TBL COMPUTE STATISTICS FOR COLUMNS ID, FLD1, FLD2, FLD3")
         val df2 = spark.sql(
           """
-             |SELECT t1.id, t1.fld1, t1.fld2, t1.fld3
-             |FROM tbl t1
-             |JOIN tbl t2 on t1.id=t2.id
-             |WHERE  t1.fld3 IN (-123.23,321.23)
-          """.stripMargin)
+             SELECT t1.id, t1.fld1, t1.fld2, t1.fld3
+             FROM tbl t1
+             JOIN tbl t2 on t1.id=t2.id
+             WHERE  t1.fld3 IN (-123.23,321.23)
+          """)
         df2.createTempView("TBL2")
         sql("SELECT * FROM tbl2 WHERE fld3 IN (0,1)  ").queryExecution.executedPlan
       }
@@ -604,10 +604,10 @@ class StatisticsCollectionSuite extends StatisticsCollectionTestBase with Shared
     withTempView("cachedQuery") {
       sql(
         """CACHE TABLE cachedQuery AS
-          |  SELECT c0, avg(c1) AS v1, avg(c2) AS v2
-          |  FROM (SELECT id % 3 AS c0, id % 5 AS c1, 2 AS c2 FROM range(1, 30))
-          |  GROUP BY c0
-        """.stripMargin)
+            SELECT c0, avg(c1) AS v1, avg(c2) AS v2
+            FROM (SELECT id % 3 AS c0, id % 5 AS c1, 2 AS c2 FROM range(1, 30))
+            GROUP BY c0
+        """)
 
       // Analyzes one column in the cached logical plan
       sql("ANALYZE TABLE cachedQuery COMPUTE STATISTICS FOR COLUMNS v1")

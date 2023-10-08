@@ -388,12 +388,12 @@ private[hive] object HiveMetastoreCatalog {
   } catch {
     case NonFatal(_) =>
       val msg = s"""Detected conflicting schemas when merging the schema obtained from the Hive
-         | Metastore with the one inferred from the file format. Metastore schema:
-         |${metastoreSchema.prettyJson}
-         |
-         |Inferred schema:
-         |${inferredSchema.prettyJson}
-       """.stripMargin
+          Metastore with the one inferred from the file format. Metastore schema:
+         ${metastoreSchema.prettyJson}
+
+         Inferred schema:
+         ${inferredSchema.prettyJson}
+       """
       throw new SparkException(msg)
   }
 }

@@ -65,12 +65,12 @@ class HiveUDFSuite extends QueryTest with TestHiveSingleton with SQLTestUtils {
     udf.register("getStruct", (_: Int) => Fields(1, 2, 3, 4, 5))
     assert(sql(
       """
-        |SELECT getStruct(1).f1,
-        |       getStruct(1).f2,
-        |       getStruct(1).f3,
-        |       getStruct(1).f4,
-        |       getStruct(1).f5 FROM src LIMIT 1
-      """.stripMargin).head() === Row(1, 2, 3, 4, 5))
+        SELECT getStruct(1).f1,
+               getStruct(1).f2,
+               getStruct(1).f3,
+               getStruct(1).f4,
+               getStruct(1).f5 FROM src LIMIT 1
+      """).head() === Row(1, 2, 3, 4, 5))
   }
 
   test("SPARK-4785 When called with arguments referring column fields, PMOD throws NPE") {
@@ -84,14 +84,13 @@ class HiveUDFSuite extends QueryTest with TestHiveSingleton with SQLTestUtils {
     withTable("hiveUDFTestTable") {
       sql(
           """
-          |CREATE TABLE hiveUDFTestTable (
-          |   pair STRUCT<id: INT, value: INT>
-          |)
-          |PARTITIONED BY (partition STRING)
-          |ROW FORMAT SERDE '%s'
-          |STORED AS SEQUENCEFILE
-        """.
-            stripMargin.format(classOf[PairSerDe].getName))
+          CREATE TABLE hiveUDFTestTable (
+             pair STRUCT<id: INT, value: INT>
+          )
+          PARTITIONED BY (partition STRING)
+          ROW FORMAT SERDE '%s'
+          STORED AS SEQUENCEFILE
+        """.format(classOf[PairSerDe].getName))
 
       val location = Utils.getSparkClassLoader.getResource("data/files/testUDF").getFile
       sql(s"""
@@ -108,34 +107,34 @@ class HiveUDFSuite extends QueryTest with TestHiveSingleton with SQLTestUtils {
   test("Max/Min on named_struct") {
     checkAnswer(sql(
       """
-        |SELECT max(named_struct(
-        |           "key", key,
-        |           "value", value)).value FROM src
-      """.stripMargin), Seq(Row("val_498")))
+        SELECT max(named_struct(
+                   "key", key,
+                   "value", value)).value FROM src
+      """), Seq(Row("val_498")))
     checkAnswer(sql(
       """
-        |SELECT min(named_struct(
-        |           "key", key,
-        |           "value", value)).value FROM src
-      """.stripMargin), Seq(Row("val_0")))
+        SELECT min(named_struct(
+                   "key", key,
+                   "value", value)).value FROM src
+      """), Seq(Row("val_0")))
 
     // nested struct cases
     checkAnswer(sql(
       """
-        |SELECT max(named_struct(
-        |           "key", named_struct(
+        SELECT max(named_struct(
+                   "key", named_struct(
                             "key", key,
                             "value", value),
-        |           "value", value)).value FROM src
-      """.stripMargin), Seq(Row("val_498")))
+                   "value", value)).value FROM src
+      """), Seq(Row("val_498")))
     checkAnswer(sql(
       """
-        |SELECT min(named_struct(
-        |           "key", named_struct(
+        SELECT min(named_struct(
+                   "key", named_struct(
                            "key", key,
                            "value", value),
-        |           "value", value)).value FROM src
-      """.stripMargin), Seq(Row("val_0")))
+                   "value", value)).value FROM src
+      """), Seq(Row("val_0")))
   }
 
   test("SPARK-6409 UDAF Average test") {
@@ -159,35 +158,35 @@ class HiveUDFSuite extends QueryTest with TestHiveSingleton with SQLTestUtils {
 
     checkAnswer(sql(
      """
-       |SELECT percentile_approx(2, 0.99999),
-       |       sum(distinct 1),
-       |       count(distinct 1,2,3,4) FROM src LIMIT 1
-     """.stripMargin), sql("SELECT 2, 1, 1 FROM src LIMIT 1").collect().toSeq)
+       SELECT percentile_approx(2, 0.99999),
+              sum(distinct 1),
+              count(distinct 1,2,3,4) FROM src LIMIT 1
+     """), sql("SELECT 2, 1, 1 FROM src LIMIT 1").collect().toSeq)
 
     checkAnswer(sql(
       """
-        |SELECT ceiling(percentile_approx(distinct key, 0.99999)),
-        |       count(distinct key),
-        |       sum(distinct key),
-        |       count(distinct 1),
-        |       sum(distinct 1),
-        |       sum(1) FROM src LIMIT 1
-      """.stripMargin),
+        SELECT ceiling(percentile_approx(distinct key, 0.99999)),
+               count(distinct key),
+               sum(distinct key),
+               count(distinct 1),
+               sum(distinct 1),
+               sum(1) FROM src LIMIT 1
+      """),
       sql(
         """
-          |SELECT max(key),
-          |       count(distinct key),
-          |       sum(distinct key),
-          |       1, 1, sum(1) FROM src LIMIT 1
-        """.stripMargin).collect().toSeq)
+          SELECT max(key),
+                 count(distinct key),
+                 sum(distinct key),
+                 1, 1, sum(1) FROM src LIMIT 1
+        """).collect().toSeq)
 
     checkAnswer(sql(
       """
-        |SELECT ceiling(percentile_approx(distinct key, 0.9 + 0.09999)),
-        |       count(distinct key), sum(distinct key),
-        |       count(distinct 1), sum(distinct 1),
-        |       sum(1) FROM src LIMIT 1
-      """.stripMargin),
+        SELECT ceiling(percentile_approx(distinct key, 0.9 + 0.09999)),
+               count(distinct key), sum(distinct key),
+               count(distinct 1), sum(distinct 1),
+               sum(1) FROM src LIMIT 1
+      """),
       sql("SELECT max(key), count(distinct key), sum(distinct key), 1, 1, sum(1) FROM src LIMIT 1")
         .collect().toSeq)
 
@@ -610,9 +609,9 @@ class HiveUDFSuite extends QueryTest with TestHiveSingleton with SQLTestUtils {
       // https://cwiki.apache.org/confluence/display/Hive/DeveloperGuide+UDTF
       sql(
         """
-          |CREATE TEMPORARY FUNCTION udtf_count2
-          |AS 'org.apache.spark.sql.hive.execution.GenericUDTFCount2'
-        """.stripMargin)
+          CREATE TEMPORARY FUNCTION udtf_count2
+          AS 'org.apache.spark.sql.hive.execution.GenericUDTFCount2'
+        """)
 
       checkAnswer(
         sql("SELECT key, cc FROM src LATERAL VIEW udtf_count2(value) dd AS cc"),
@@ -628,10 +627,10 @@ class HiveUDFSuite extends QueryTest with TestHiveSingleton with SQLTestUtils {
     withUserDefinedFunction("udtf_count_temp" -> false) {
       sql(
         s"""
-           |CREATE FUNCTION udtf_count_temp
-           |AS 'org.apache.spark.sql.hive.execution.GenericUDTFCount2'
-           |USING JAR '${hiveContext.getHiveFile("TestUDTF.jar").toURI}'
-        """.stripMargin)
+           CREATE FUNCTION udtf_count_temp
+           AS 'org.apache.spark.sql.hive.execution.GenericUDTFCount2'
+           USING JAR '${hiveContext.getHiveFile("TestUDTF.jar").toURI}'
+        """)
 
       checkAnswer(
         sql("SELECT key, cc FROM src LATERAL VIEW udtf_count_temp(value) dd AS cc"),

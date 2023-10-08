@@ -1359,32 +1359,32 @@ class SparkSubmitSuite
 
     val sparkPluginCodeBody =
       """
-        |@Override
-        |public org.apache.spark.api.plugin.ExecutorPlugin executorPlugin() {
-        |  return new TestExecutorPlugin();
-        |}
-        |
-        |@Override
-        |public org.apache.spark.api.plugin.DriverPlugin driverPlugin() { return null; }
-      """.stripMargin
+        @Override
+        public org.apache.spark.api.plugin.ExecutorPlugin executorPlugin() {
+          return new TestExecutorPlugin();
+        }
+
+        @Override
+        public org.apache.spark.api.plugin.DriverPlugin driverPlugin() { return null; }
+      """
     val executorPluginCodeBody =
       s"""
-        |@Override
-        |public void init(
-        |    org.apache.spark.api.plugin.PluginContext ctx,
-        |    java.util.Map<String, String> extraConf) {
-        |  String str = null;
-        |  try (java.io.BufferedReader reader =
-        |    new java.io.BufferedReader(new java.io.InputStreamReader(
-        |      new java.io.FileInputStream("$tempFileName")))) {
-        |    str = reader.readLine();
-        |  } catch (java.io.IOException e) {
-        |    throw new RuntimeException(e);
-        |  } finally {
-        |    assert str == "SparkPluginTest";
-        |  }
-        |}
-      """.stripMargin
+        @Override
+        public void init(
+            org.apache.spark.api.plugin.PluginContext ctx,
+            java.util.Map<String, String> extraConf) {
+          String str = null;
+          try (java.io.BufferedReader reader =
+            new java.io.BufferedReader(new java.io.InputStreamReader(
+              new java.io.FileInputStream("$tempFileName")))) {
+            str = reader.readLine();
+          } catch (java.io.IOException e) {
+            throw new RuntimeException(e);
+          } finally {
+            assert str == "SparkPluginTest";
+          }
+        }
+      """
 
     val compiledExecutorPlugin = TestUtils.createCompiledClass(
       "TestExecutorPlugin",

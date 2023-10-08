@@ -35,10 +35,10 @@ object Analytics {
   def main(args: Array[String]): Unit = {
     if (args.length < 2) {
       val usage = """Usage: Analytics <taskType> <file> --numEPart=<num_edge_partitions>
-      |[other options] Supported 'taskType' as follows:
-      |pagerank    Compute PageRank
-      |cc          Compute the connected components of vertices
-      |triangles   Count the number of triangles""".stripMargin
+      [other options] Supported 'taskType' as follows:
+      pagerank    Compute PageRank
+      cc          Compute the connected components of vertices
+      triangles   Count the number of triangles"""
       System.err.println(usage)
       System.exit(1)
     }

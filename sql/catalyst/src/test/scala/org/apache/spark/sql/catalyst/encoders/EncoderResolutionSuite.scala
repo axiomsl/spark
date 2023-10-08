@@ -94,12 +94,12 @@ class EncoderResolutionSuite extends PlanTest {
         "sourceType" -> "\"STRING\"", "targetType" -> "\"BIGINT\"",
         "details" -> (
           s"""
-          |The type path of the target object is:
-          |- array element class: "long"
-          |- field (class: "[J", name: "arr")
-          |- root class: "org.apache.spark.sql.catalyst.encoders.PrimitiveArrayClass"
-          |You can either add an explicit cast to the input data or choose a higher precision type
-          """.stripMargin.trim + " of the field in the target object")))
+          The type path of the target object is:
+          - array element class: "long"
+          - field (class: "[J", name: "arr")
+          - root class: "org.apache.spark.sql.catalyst.encoders.PrimitiveArrayClass"
+          You can either add an explicit cast to the input data or choose a higher precision type
+          """.trim + " of the field in the target object")))
   }
 
   test("real type doesn't match encoder schema but they are compatible: array") {
@@ -237,10 +237,10 @@ class EncoderResolutionSuite extends PlanTest {
             "sourceType" -> ("\"" + attr.dataType.sql + "\""), "targetType" -> "\"STRING\"",
             "details" -> (
           s"""
-          |The type path of the target object is:
-          |- root class: "java.lang.String"
-          |You can either add an explicit cast to the input data or choose a higher precision type
-          """.stripMargin.trim + " of the field in the target object")))
+          The type path of the target object is:
+          - root class: "java.lang.String"
+          You can either add an explicit cast to the input data or choose a higher precision type
+          """.trim + " of the field in the target object")))
     }
   }
 
@@ -254,11 +254,11 @@ class EncoderResolutionSuite extends PlanTest {
         "sourceType" -> ("\"BIGINT\""), "targetType" -> "\"INT\"",
         "details" -> (
           s"""
-          |The type path of the target object is:
-          |- field (class: "int", name: "b")
-          |- root class: "org.apache.spark.sql.catalyst.encoders.StringIntClass"
-          |You can either add an explicit cast to the input data or choose a higher precision type
-          """.stripMargin.trim + " of the field in the target object")))
+          The type path of the target object is:
+          - field (class: "int", name: "b")
+          - root class: "org.apache.spark.sql.catalyst.encoders.StringIntClass"
+          You can either add an explicit cast to the input data or choose a higher precision type
+          """.trim + " of the field in the target object")))
 
     val e2 = intercept[AnalysisException] {
       val structType = new StructType().add("a", StringType).add("b", DecimalType.SYSTEM_DEFAULT)
@@ -271,12 +271,12 @@ class EncoderResolutionSuite extends PlanTest {
         "sourceType" -> ("\"DECIMAL(38,18)\""), "targetType" -> "\"BIGINT\"",
         "details" -> (
           s"""
-          |The type path of the target object is:
-          |- field (class: "long", name: "b")
-          |- field (class: "org.apache.spark.sql.catalyst.encoders.StringLongClass", name: "b")
-          |- root class: "org.apache.spark.sql.catalyst.encoders.ComplexClass"
-          |You can either add an explicit cast to the input data or choose a higher precision type
-          """.stripMargin.trim + " of the field in the target object")))
+          The type path of the target object is:
+          - field (class: "long", name: "b")
+          - field (class: "org.apache.spark.sql.catalyst.encoders.StringLongClass", name: "b")
+          - root class: "org.apache.spark.sql.catalyst.encoders.ComplexClass"
+          You can either add an explicit cast to the input data or choose a higher precision type
+          """.trim + " of the field in the target object")))
   }
 
   test("SPARK-31750: eliminate UpCast if child's dataType is DecimalType") {

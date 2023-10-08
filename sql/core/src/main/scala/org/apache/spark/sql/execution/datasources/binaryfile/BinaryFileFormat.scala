@@ -91,9 +91,9 @@ class BinaryFileFormat extends FileFormat with DataSourceRegister {
       hadoopConf: Configuration): PartitionedFile => Iterator[InternalRow] = {
     require(DataTypeUtils.sameType(dataSchema, schema),
       s"""
-         |Binary file data source expects dataSchema: $schema,
-         |but got: $dataSchema.
-        """.stripMargin)
+         Binary file data source expects dataSchema: $schema,
+         but got: $dataSchema.
+        """)
 
     val broadcastedHadoopConf =
       sparkSession.sparkContext.broadcast(new SerializableConfiguration(hadoopConf))

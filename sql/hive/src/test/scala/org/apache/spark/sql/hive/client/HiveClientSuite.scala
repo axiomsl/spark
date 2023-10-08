@@ -756,10 +756,10 @@ class HiveClientSuite(version: String, allVersions: Seq[String])
     withTable("tbl") {
       versionSpark.sql(
         """
-          |CREATE TABLE tbl(c1 string)
-          |USING hive
-          |PARTITIONED BY (ds STRING)
-          """.stripMargin)
+          CREATE TABLE tbl(c1 string)
+          USING hive
+          PARTITIONED BY (ds STRING)
+          """)
       versionSpark.sql("INSERT OVERWRITE TABLE tbl partition (ds='2') SELECT '1'")
 
       assert(versionSpark.table("tbl").collect().toSeq == Seq(Row("1", "2")))
@@ -776,9 +776,9 @@ class HiveClientSuite(version: String, allVersions: Seq[String])
 
       versionSpark.sql(
         """
-          |ALTER TABLE tbl PARTITION (ds='2')
-          |SET SERDEPROPERTIES ('newKey' = 'vvv')
-          """.stripMargin)
+          ALTER TABLE tbl PARTITION (ds='2')
+          SET SERDEPROPERTIES ('newKey' = 'vvv')
+          """)
       val newPartMeta = versionSpark.sessionState.catalog.getPartition(
         TableIdentifier("tbl"), spec = Map("ds" -> "2")).parameters
 
@@ -798,9 +798,9 @@ class HiveClientSuite(version: String, allVersions: Seq[String])
       withTable("tab") {
         versionSpark.sql(
           s"""
-             |CREATE TABLE tab(c1 string)
-             |location '${tmpDir.toURI.toString}'
-             """.stripMargin)
+             CREATE TABLE tab(c1 string)
+             location '${tmpDir.toURI.toString}'
+             """)
 
         (1 to 3).map { i =>
           versionSpark.sql(s"INSERT OVERWRITE TABLE tab SELECT '$i'")
@@ -830,52 +830,52 @@ class HiveClientSuite(version: String, allVersions: Seq[String])
 
       val avroSchema =
         """{
-          |  "name": "test_record",
-          |  "type": "record",
-          |  "fields": [ {
-          |    "name": "f0",
-          |    "type": "int"
-          |  }, {
-          |    "name": "f1",
-          |    "type": {
-          |      "type": "record",
-          |      "name": "inner",
-          |      "fields": [ {
-          |        "name": "f10",
-          |        "type": "int"
-          |      }, {
-          |        "name": "f11",
-          |        "type": "double"
-          |      } ]
-          |    }
-          |  } ]
-          |}
-          """.stripMargin
+            "name": "test_record",
+            "type": "record",
+            "fields": [ {
+              "name": "f0",
+              "type": "int"
+            }, {
+              "name": "f1",
+              "type": {
+                "type": "record",
+                "name": "inner",
+                "fields": [ {
+                  "name": "f10",
+                  "type": "int"
+                }, {
+                  "name": "f11",
+                  "type": "double"
+                } ]
+              }
+            } ]
+          }
+          """
 
       withTable(tableName, tempTableName) {
         // Creates the external partitioned Avro table to be tested.
         versionSpark.sql(
           s"""CREATE EXTERNAL TABLE $tableName
-             |PARTITIONED BY (ds STRING)
-             |ROW FORMAT SERDE 'org.apache.hadoop.hive.serde2.avro.AvroSerDe'
-             |STORED AS
-             |  INPUTFORMAT 'org.apache.hadoop.hive.ql.io.avro.AvroContainerInputFormat'
-             |  OUTPUTFORMAT 'org.apache.hadoop.hive.ql.io.avro.AvroContainerOutputFormat'
-             |LOCATION '$path/$tableName'
-             |TBLPROPERTIES ('avro.schema.literal' = '$avroSchema')
-           """.stripMargin
+             PARTITIONED BY (ds STRING)
+             ROW FORMAT SERDE 'org.apache.hadoop.hive.serde2.avro.AvroSerDe'
+             STORED AS
+               INPUTFORMAT 'org.apache.hadoop.hive.ql.io.avro.AvroContainerInputFormat'
+               OUTPUTFORMAT 'org.apache.hadoop.hive.ql.io.avro.AvroContainerOutputFormat'
+             LOCATION '$path/$tableName'
+             TBLPROPERTIES ('avro.schema.literal' = '$avroSchema')
+           """
         )
 
         // Creates an temporary Avro table used to prepare testing Avro file.
         versionSpark.sql(
           s"""CREATE EXTERNAL TABLE $tempTableName
-             |ROW FORMAT SERDE 'org.apache.hadoop.hive.serde2.avro.AvroSerDe'
-             |STORED AS
-             |  INPUTFORMAT 'org.apache.hadoop.hive.ql.io.avro.AvroContainerInputFormat'
-             |  OUTPUTFORMAT 'org.apache.hadoop.hive.ql.io.avro.AvroContainerOutputFormat'
-             |LOCATION '$path/$tempTableName'
-             |TBLPROPERTIES ('avro.schema.literal' = '$avroSchema')
-           """.stripMargin
+             ROW FORMAT SERDE 'org.apache.hadoop.hive.serde2.avro.AvroSerDe'
+             STORED AS
+               INPUTFORMAT 'org.apache.hadoop.hive.ql.io.avro.AvroContainerInputFormat'
+               OUTPUTFORMAT 'org.apache.hadoop.hive.ql.io.avro.AvroContainerOutputFormat'
+             LOCATION '$path/$tempTableName'
+             TBLPROPERTIES ('avro.schema.literal' = '$avroSchema')
+           """
         )
 
         // Generates Avro data.
@@ -911,22 +911,22 @@ class HiveClientSuite(version: String, allVersions: Seq[String])
     // https://avro.apache.org/docs/1.11.2/specification/#logical-types
     val avroSchema =
     """{
-      |  "name": "test_record",
-      |  "type": "record",
-      |  "fields": [ {
-      |    "name": "f0",
-      |    "type": [
-      |      "null",
-      |      {
-      |        "precision": 38,
-      |        "scale": 2,
-      |        "type": "bytes",
-      |        "logicalType": "decimal"
-      |      }
-      |    ]
-      |  } ]
-      |}
-        """.stripMargin
+        "name": "test_record",
+        "type": "record",
+        "fields": [ {
+          "name": "f0",
+          "type": [
+            "null",
+            {
+              "precision": 38,
+              "scale": 2,
+              "type": "bytes",
+              "logicalType": "decimal"
+            }
+          ]
+        } ]
+      }
+        """
 
     Seq(true, false).foreach { isPartitioned =>
       withTable(tableName) {
@@ -934,14 +934,14 @@ class HiveClientSuite(version: String, allVersions: Seq[String])
         // Creates the (non-)partitioned Avro table
         versionSpark.sql(
           s"""
-             |CREATE TABLE $tableName
-             |$partitionClause
-             |ROW FORMAT SERDE 'org.apache.hadoop.hive.serde2.avro.AvroSerDe'
-             |STORED AS
-             |  INPUTFORMAT 'org.apache.hadoop.hive.ql.io.avro.AvroContainerInputFormat'
-             |  OUTPUTFORMAT 'org.apache.hadoop.hive.ql.io.avro.AvroContainerOutputFormat'
-             |TBLPROPERTIES ('avro.schema.literal' = '$avroSchema')
-           """.stripMargin
+             CREATE TABLE $tableName
+             $partitionClause
+             ROW FORMAT SERDE 'org.apache.hadoop.hive.serde2.avro.AvroSerDe'
+             STORED AS
+               INPUTFORMAT 'org.apache.hadoop.hive.ql.io.avro.AvroContainerInputFormat'
+               OUTPUTFORMAT 'org.apache.hadoop.hive.ql.io.avro.AvroContainerOutputFormat'
+             TBLPROPERTIES ('avro.schema.literal' = '$avroSchema')
+           """
         )
 
         val errorMsg = "Cannot safely cast 'f0': decimal(2,1) to binary"
@@ -992,34 +992,34 @@ class HiveClientSuite(version: String, allVersions: Seq[String])
     val tableName = "tab1"
     val avroSchema =
       """{
-        |  "name": "test_record",
-        |  "type": "record",
-        |  "fields": [ {
-        |    "name": "f0",
-        |    "type": [
-        |      "null",
-        |      {
-        |        "precision": 38,
-        |        "scale": 2,
-        |        "type": "bytes",
-        |        "logicalType": "decimal"
-        |      }
-        |    ]
-        |  } ]
-        |}
-        """.stripMargin
+          "name": "test_record",
+          "type": "record",
+          "fields": [ {
+            "name": "f0",
+            "type": [
+              "null",
+              {
+                "precision": 38,
+                "scale": 2,
+                "type": "bytes",
+                "logicalType": "decimal"
+              }
+            ]
+          } ]
+        }
+        """
     withTable(tableName) {
       versionSpark.sql(
         s"""
-           |CREATE TABLE $tableName
-           |ROW FORMAT SERDE 'org.apache.hadoop.hive.serde2.avro.AvroSerDe'
-           |WITH SERDEPROPERTIES ('respectSparkSchema' = 'true')
-           |STORED AS
-           |  INPUTFORMAT 'org.apache.hadoop.hive.ql.io.avro.AvroContainerInputFormat'
-           |  OUTPUTFORMAT 'org.apache.hadoop.hive.ql.io.avro.AvroContainerOutputFormat'
-           |LOCATION '$location'
-           |TBLPROPERTIES ('avro.schema.literal' = '$avroSchema')
-           """.stripMargin
+           CREATE TABLE $tableName
+           ROW FORMAT SERDE 'org.apache.hadoop.hive.serde2.avro.AvroSerDe'
+           WITH SERDEPROPERTIES ('respectSparkSchema' = 'true')
+           STORED AS
+             INPUTFORMAT 'org.apache.hadoop.hive.ql.io.avro.AvroContainerInputFormat'
+             OUTPUTFORMAT 'org.apache.hadoop.hive.ql.io.avro.AvroContainerOutputFormat'
+           LOCATION '$location'
+           TBLPROPERTIES ('avro.schema.literal' = '$avroSchema')
+           """
       )
       assert(versionSpark.table(tableName).collect() ===
         versionSpark.sql("SELECT 1.30").collect())
@@ -1032,23 +1032,23 @@ class HiveClientSuite(version: String, allVersions: Seq[String])
     withTempDir { dir =>
       val avroSchema =
         """
-          |{
-          |  "name": "test_record",
-          |  "type": "record",
-          |  "fields": [{
-          |    "name": "f0",
-          |    "type": [
-          |      "null",
-          |      {
-          |        "precision": 38,
-          |        "scale": 2,
-          |        "type": "bytes",
-          |        "logicalType": "decimal"
-          |      }
-          |    ]
-          |  }]
-          |}
-          """.stripMargin
+          {
+            "name": "test_record",
+            "type": "record",
+            "fields": [{
+              "name": "f0",
+              "type": [
+                "null",
+                {
+                  "precision": 38,
+                  "scale": 2,
+                  "type": "bytes",
+                  "logicalType": "decimal"
+                }
+              ]
+            }]
+          }
+          """
       val schemaFile = new File(dir, "avroDecimal.avsc")
       Utils.tryWithResource(new PrintWriter(schemaFile)) { writer =>
         writer.write(avroSchema)
@@ -1063,27 +1063,27 @@ class HiveClientSuite(version: String, allVersions: Seq[String])
       withTable(srcTableName, destTableName) {
         versionSpark.sql(
           s"""
-             |CREATE EXTERNAL TABLE $srcTableName
-             |ROW FORMAT SERDE 'org.apache.hadoop.hive.serde2.avro.AvroSerDe'
-             |WITH SERDEPROPERTIES ('respectSparkSchema' = 'true')
-             |STORED AS
-             |  INPUTFORMAT 'org.apache.hadoop.hive.ql.io.avro.AvroContainerInputFormat'
-             |  OUTPUTFORMAT 'org.apache.hadoop.hive.ql.io.avro.AvroContainerOutputFormat'
-             |LOCATION '$srcLocation'
-             |TBLPROPERTIES ('avro.schema.url' = '$schemaPath')
-           """.stripMargin
+             CREATE EXTERNAL TABLE $srcTableName
+             ROW FORMAT SERDE 'org.apache.hadoop.hive.serde2.avro.AvroSerDe'
+             WITH SERDEPROPERTIES ('respectSparkSchema' = 'true')
+             STORED AS
+               INPUTFORMAT 'org.apache.hadoop.hive.ql.io.avro.AvroContainerInputFormat'
+               OUTPUTFORMAT 'org.apache.hadoop.hive.ql.io.avro.AvroContainerOutputFormat'
+             LOCATION '$srcLocation'
+             TBLPROPERTIES ('avro.schema.url' = '$schemaPath')
+           """
         )
 
         versionSpark.sql(
           s"""
-             |CREATE TABLE $destTableName
-             |ROW FORMAT SERDE 'org.apache.hadoop.hive.serde2.avro.AvroSerDe'
-             |WITH SERDEPROPERTIES ('respectSparkSchema' = 'true')
-             |STORED AS
-             |  INPUTFORMAT 'org.apache.hadoop.hive.ql.io.avro.AvroContainerInputFormat'
-             |  OUTPUTFORMAT 'org.apache.hadoop.hive.ql.io.avro.AvroContainerOutputFormat'
-             |TBLPROPERTIES ('avro.schema.url' = '$schemaPath')
-           """.stripMargin
+             CREATE TABLE $destTableName
+             ROW FORMAT SERDE 'org.apache.hadoop.hive.serde2.avro.AvroSerDe'
+             WITH SERDEPROPERTIES ('respectSparkSchema' = 'true')
+             STORED AS
+               INPUTFORMAT 'org.apache.hadoop.hive.ql.io.avro.AvroContainerInputFormat'
+               OUTPUTFORMAT 'org.apache.hadoop.hive.ql.io.avro.AvroContainerOutputFormat'
+             TBLPROPERTIES ('avro.schema.url' = '$schemaPath')
+           """
         )
         versionSpark.sql(
           s"""INSERT OVERWRITE TABLE $destTableName SELECT * FROM $srcTableName""")

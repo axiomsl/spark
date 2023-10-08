@@ -41,18 +41,18 @@ trait BaseJoinExec extends BinaryExecNode {
     } else "None"
     if (leftKeys.nonEmpty || rightKeys.nonEmpty) {
       s"""
-         |$formattedNodeName
-         |${ExplainUtils.generateFieldString("Left keys", leftKeys)}
-         |${ExplainUtils.generateFieldString("Right keys", rightKeys)}
-         |${ExplainUtils.generateFieldString("Join type", joinType.toString)}
-         |${ExplainUtils.generateFieldString("Join condition", joinCondStr)}
-         |""".stripMargin
+         $formattedNodeName
+         ${ExplainUtils.generateFieldString("Left keys", leftKeys)}
+         ${ExplainUtils.generateFieldString("Right keys", rightKeys)}
+         ${ExplainUtils.generateFieldString("Join type", joinType.toString)}
+         ${ExplainUtils.generateFieldString("Join condition", joinCondStr)}
+         """
     } else {
       s"""
-         |$formattedNodeName
-         |${ExplainUtils.generateFieldString("Join type", joinType.toString)}
-         |${ExplainUtils.generateFieldString("Join condition", joinCondStr)}
-         |""".stripMargin
+         $formattedNodeName
+         ${ExplainUtils.generateFieldString("Join type", joinType.toString)}
+         ${ExplainUtils.generateFieldString("Join condition", joinCondStr)}
+         """
     }
   }
 }

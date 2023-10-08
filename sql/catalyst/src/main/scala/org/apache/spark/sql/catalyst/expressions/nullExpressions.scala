@@ -81,7 +81,7 @@ case class Coalesce(children: Seq[Expression])
   override def eval(input: InternalRow): Any = {
     var result: Any = null
     val childIterator = children.iterator
-    while (childIterator.hasNext && result == null) {
+    while (result == null && childIterator.hasNext) {
       result = childIterator.next().eval(input)
     }
     result
@@ -91,16 +91,32 @@ case class Coalesce(children: Seq[Expression])
     ev.isNull = JavaCode.isNullGlobal(ctx.addMutableState(CodeGenerator.JAVA_BOOLEAN, ev.isNull))
 
     // all the evals are meant to be in a do { ... } while (false); loop
-    val evals = children.map { e =>
-      val eval = e.genCode(ctx)
+    var foundNotNull = false
+    val evals = children
+      .map(_.genCode(ctx))
+      .map {
+        case ExprCode(code, FalseLiteral, value) if !foundNotNull =>
+          foundNotNull = true
+          s"""
+    $code
+    ${ev.isNull} = false;
+    ${ev.value} = $value;
+    continue;
+    """
+        case ExprCode(code, TrueLiteral, _) if !foundNotNull =>
+          s"""
+    $code
+    """
+        case ExprCode(code, isNull, value) if !foundNotNull =>
       s"""
-         |${eval.code}
-         |if (!${eval.isNull}) {
-         |  ${ev.isNull} = false;
-         |  ${ev.value} = ${eval.value};
-         |  continue;
-         |}
-       """.stripMargin
+         $code
+      if (!$isNull) {
+        ${ev.isNull} = false;
+        ${ev.value} = $value;
+        continue;
+      }
+      """
+        case _ => ""
     }
 
     val resultType = CodeGenerator.javaType(dataType)
@@ -110,30 +126,30 @@ case class Coalesce(children: Seq[Expression])
       returnType = resultType,
       makeSplitFunction = func =>
         s"""
-           |$resultType ${ev.value} = ${CodeGenerator.defaultValue(dataType)};
-           |do {
-           |  $func
-           |} while (false);
-           |return ${ev.value};
-         """.stripMargin,
+           $resultType ${ev.value} = ${CodeGenerator.defaultValue(dataType)};
+           do {
+             $func
+           } while (false);
+           return ${ev.value};
+         """,
       foldFunctions = _.map { funcCall =>
         s"""
-           |${ev.value} = $funcCall;
-           |if (!${ev.isNull}) {
-           |  continue;
-           |}
-         """.stripMargin
+           ${ev.value} = $funcCall;
+           if (!${ev.isNull}) {
+             continue;
+           }
+         """
       }.mkString)
 
 
     ev.copy(code =
       code"""
-         |${ev.isNull} = true;
-         |$resultType ${ev.value} = ${CodeGenerator.defaultValue(dataType)};
-         |do {
-         |  $codes
-         |} while (false);
-       """.stripMargin)
+         ${ev.isNull} = true;
+         $resultType ${ev.value} = ${CodeGenerator.defaultValue(dataType)};
+         do {
+           $codes
+         } while (false);
+       """)
   }
 
   override protected def withNewChildrenInternal(newChildren: IndexedSeq[Expression]): Coalesce =
@@ -434,33 +450,33 @@ case class AtLeastNNonNulls(n: Int, children: Seq[Expression]) extends Predicate
   }
 
   override def doGenCode(ctx: CodegenContext, ev: ExprCode): ExprCode = {
-    val nonnull = ctx.freshName("nonnull")
+    val nonnull = ctx.freshName("nnull")
     // all evals are meant to be inside a do { ... } while (false); loop
     val evals = children.map { e =>
       val eval = e.genCode(ctx)
       e.dataType match {
         case DoubleType | FloatType =>
           s"""
-             |if ($nonnull < $n) {
-             |  ${eval.code}
-             |  if (!${eval.isNull} && !Double.isNaN(${eval.value})) {
-             |    $nonnull += 1;
-             |  }
-             |} else {
-             |  continue;
-             |}
-           """.stripMargin
+             if ($nonnull < $n) {
+               ${eval.code}
+               if (!${eval.isNull} && !Double.isNaN(${eval.value})) {
+                 $nonnull += 1;
+               }
+             } else {
+               continue;
+             }
+           """
         case _ =>
           s"""
-             |if ($nonnull < $n) {
-             |  ${eval.code}
-             |  if (!${eval.isNull}) {
-             |    $nonnull += 1;
-             |  }
-             |} else {
-             |  continue;
-             |}
-           """.stripMargin
+             if ($nonnull < $n) {
+               ${eval.code}
+               if (!${eval.isNull}) {
+                 $nonnull += 1;
+               }
+             } else {
+               continue;
+             }
+           """
       }
     }
 
@@ -471,28 +487,28 @@ case class AtLeastNNonNulls(n: Int, children: Seq[Expression]) extends Predicate
       returnType = CodeGenerator.JAVA_INT,
       makeSplitFunction = body =>
         s"""
-           |do {
-           |  $body
-           |} while (false);
-           |return $nonnull;
-         """.stripMargin,
+           do {
+             $body
+           } while (false);
+           return $nonnull;
+         """,
       foldFunctions = _.map { funcCall =>
         s"""
-           |$nonnull = $funcCall;
-           |if ($nonnull >= $n) {
-           |  continue;
-           |}
-         """.stripMargin
+           $nonnull = $funcCall;
+           if ($nonnull >= $n) {
+             continue;
+           }
+         """
       }.mkString)
 
     ev.copy(code =
       code"""
-         |${CodeGenerator.JAVA_INT} $nonnull = 0;
-         |do {
-         |  $codes
-         |} while (false);
-         |${CodeGenerator.JAVA_BOOLEAN} ${ev.value} = $nonnull >= $n;
-       """.stripMargin, isNull = FalseLiteral)
+         ${CodeGenerator.JAVA_INT} $nonnull = 0;
+         do {
+           $codes
+         } while (false);
+         ${CodeGenerator.JAVA_BOOLEAN} ${ev.value} = $nonnull >= $n;
+       """, isNull = FalseLiteral)
   }
 
   override protected def withNewChildrenInternal(

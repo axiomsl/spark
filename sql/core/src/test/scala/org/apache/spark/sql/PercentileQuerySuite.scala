@@ -38,11 +38,11 @@ class PercentileQuerySuite extends QueryTest with SharedSparkSession {
       checkAnswer(
         spark.sql(
           s"""SELECT
-            |  CAST(percentile(col1, 0.5) AS STRING),
-            |  SUM(null),
-            |  CAST(percentile(col2, 0.5) AS STRING)
-            |FROM $table
-          """.stripMargin),
+              CAST(percentile(col1, 0.5) AS STRING),
+              SUM(null),
+              CAST(percentile(col2, 0.5) AS STRING)
+            FROM $table
+          """),
         Row("INTERVAL '16-8' YEAR TO MONTH", null, "INTERVAL '0 00:03:20' DAY TO SECOND"))
     }
   }

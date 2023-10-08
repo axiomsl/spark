@@ -42,23 +42,23 @@ trait ShowCreateTableSuiteBase extends command.ShowCreateTableSuiteBase
     withNamespaceAndTable(ns, table) { t =>
       sql(
         s"""
-           |CREATE TABLE $t (
-           |  a bigint NOT NULL,
-           |  b bigint,
-           |  c bigint,
-           |  `extraCol` ARRAY<INT>,
-           |  `<another>` STRUCT<x: INT, y: ARRAY<BOOLEAN>>
-           |)
-           |using parquet
-           |OPTIONS (
-           |  from = 0,
-           |  to = 1,
-           |  via = 2)
-           |COMMENT 'This is a comment'
-           |TBLPROPERTIES ('prop1' = '1', 'prop2' = '2', 'prop3' = 3, 'prop4' = 4)
-           |PARTITIONED BY (a)
-           |LOCATION 'file:/tmp'
-        """.stripMargin)
+           CREATE TABLE $t (
+             a bigint NOT NULL,
+             b bigint,
+             c bigint,
+             `extraCol` ARRAY<INT>,
+             `<another>` STRUCT<x: INT, y: ARRAY<BOOLEAN>>
+           )
+           using parquet
+           OPTIONS (
+             from = 0,
+             to = 1,
+             via = 2)
+           COMMENT 'This is a comment'
+           TBLPROPERTIES ('prop1' = '1', 'prop2' = '2', 'prop3' = 3, 'prop4' = 4)
+           PARTITIONED BY (a)
+           LOCATION 'file:/tmp'
+        """)
       val showDDL = getShowCreateDDL(t)
       assert(showDDL === Array(
         s"CREATE TABLE $fullName (",
@@ -88,10 +88,10 @@ trait ShowCreateTableSuiteBase extends command.ShowCreateTableSuiteBase
     withNamespaceAndTable(ns, table) { t =>
       sql(
         s"""CREATE TABLE $t
-           |USING json
-           |CLUSTERED BY (a) INTO 2 BUCKETS
-           |AS SELECT 1 AS a, "foo" AS b
-         """.stripMargin
+           USING json
+           CLUSTERED BY (a) INTO 2 BUCKETS
+           AS SELECT 1 AS a, "foo" AS b
+         """
       )
       val expected = s"CREATE TABLE $fullName ( a INT, b STRING) USING json" +
         s" CLUSTERED BY (a) INTO 2 BUCKETS"
@@ -103,10 +103,10 @@ trait ShowCreateTableSuiteBase extends command.ShowCreateTableSuiteBase
     withNamespaceAndTable(ns, table) { t =>
       sql(
         s"""CREATE TABLE $t
-           |USING json
-           |CLUSTERED BY (a) SORTED BY (b) INTO 2 BUCKETS
-           |AS SELECT 1 AS a, "foo" AS b
-         """.stripMargin
+           USING json
+           CLUSTERED BY (a) SORTED BY (b) INTO 2 BUCKETS
+           AS SELECT 1 AS a, "foo" AS b
+         """
       )
       val expected = s"CREATE TABLE $fullName ( a INT, b STRING) USING json" +
         s" CLUSTERED BY (a) SORTED BY (b) INTO 2 BUCKETS"
@@ -118,11 +118,11 @@ trait ShowCreateTableSuiteBase extends command.ShowCreateTableSuiteBase
     withNamespaceAndTable(ns, table) { t =>
       sql(
         s"""CREATE TABLE $t
-           |USING json
-           |PARTITIONED BY (c)
-           |CLUSTERED BY (a) INTO 2 BUCKETS
-           |AS SELECT 1 AS a, "foo" AS b, 2.5 AS c
-         """.stripMargin
+           USING json
+           PARTITIONED BY (c)
+           CLUSTERED BY (a) INTO 2 BUCKETS
+           AS SELECT 1 AS a, "foo" AS b, 2.5 AS c
+         """
       )
       val expected = s"CREATE TABLE $fullName ( a INT, b STRING, c DECIMAL(2,1)) USING json" +
         s" PARTITIONED BY (c) CLUSTERED BY (a) INTO 2 BUCKETS"
@@ -134,11 +134,11 @@ trait ShowCreateTableSuiteBase extends command.ShowCreateTableSuiteBase
     withNamespaceAndTable(ns, table) { t =>
       sql(
         s"""CREATE TABLE $t
-           |USING json
-           |PARTITIONED BY (c)
-           |CLUSTERED BY (a) SORTED BY (b) INTO 2 BUCKETS
-           |AS SELECT 1 AS a, "foo" AS b, 2.5 AS c
-         """.stripMargin
+           USING json
+           PARTITIONED BY (c)
+           CLUSTERED BY (a) SORTED BY (b) INTO 2 BUCKETS
+           AS SELECT 1 AS a, "foo" AS b, 2.5 AS c
+         """
       )
       val expected = s"CREATE TABLE $fullName ( a INT, b STRING, c DECIMAL(2,1)) USING json" +
         s" PARTITIONED BY (c) CLUSTERED BY (a) SORTED BY (b) INTO 2 BUCKETS"
@@ -150,12 +150,12 @@ trait ShowCreateTableSuiteBase extends command.ShowCreateTableSuiteBase
     withNamespaceAndTable(ns, table) { t =>
       sql(
         s"""
-           |CREATE TABLE $t (
-           |  c1 STRING COMMENT 'bla',
-           |  c2 STRING
-           |)
-           |USING orc
-         """.stripMargin
+           CREATE TABLE $t (
+             c1 STRING COMMENT 'bla',
+             c2 STRING
+           )
+           USING orc
+         """
       )
 
       checkError(
@@ -180,6 +180,30 @@ trait ShowCreateTableSuiteBase extends command.ShowCreateTableSuiteBase
            |USING parquet
            |COMMENT 'This is a comment'
         """.stripMargin)
+      val showDDL = getShowCreateDDL(t)
+      assert(showDDL === Array(
+        s"CREATE TABLE $fullName (",
+        "a BIGINT,",
+        "b BIGINT DEFAULT 42,",
+        "c STRING DEFAULT 'abc, \"def\"' COMMENT 'comment')",
+        "USING parquet",
+        "COMMENT 'This is a comment'"
+      ))
+    }
+  }
+
+  test("show create table with default column values") {
+    withNamespaceAndTable(ns, table) { t =>
+      sql(
+        s"""
+           CREATE TABLE $t (
+             a bigint NOT NULL,
+             b bigint DEFAULT 42,
+             c string DEFAULT 'abc, "def"' COMMENT 'comment'
+           )
+           USING parquet
+           COMMENT 'This is a comment'
+        """)
       val showDDL = getShowCreateDDL(t)
       assert(showDDL === Array(
         s"CREATE TABLE $fullName (",

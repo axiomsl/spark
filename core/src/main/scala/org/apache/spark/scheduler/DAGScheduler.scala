@@ -24,6 +24,7 @@ import java.util.concurrent.{Future => JFutrue}
 import java.util.concurrent.atomic.AtomicInteger
 
 import scala.annotation.tailrec
+import scala.collection.JavaConverters.enumerationAsScalaIteratorConverter
 import scala.collection.Map
 import scala.collection.mutable
 import scala.collection.mutable.{HashMap, HashSet, ListBuffer}
@@ -888,6 +889,20 @@ private[spark] class DAGScheduler(
     }
   }
 
+  private def buildPropertiesForStartEvent(properties: Properties): Properties = {
+    val propertiesForEvent = new Properties()
+    properties.propertyNames()
+      .asScala
+      .filter {
+        n =>
+          n.toString == SparkContext.SPARK_JOB_DESCRIPTION ||
+            n.toString == SparkContext.SPARK_JOB_GROUP_ID ||
+            !n.toString.startsWith("spark")
+      }
+      .foreach(n => propertiesForEvent.setProperty(n.toString, properties.getProperty(n.toString)))
+    propertiesForEvent
+  }
+
   /**
    * Submit an action job to the scheduler.
    *
@@ -932,7 +947,8 @@ private[spark] class DAGScheduler(
       }
       val time = clock.getTimeMillis()
       listenerBus.post(
-        SparkListenerJobStart(jobId, time, Seq.empty, clonedProperties))
+        SparkListenerJobStart(jobId, time, Seq.empty,
+          buildPropertiesForStartEvent(clonedProperties)))
       listenerBus.post(
         SparkListenerJobEnd(jobId, time, JobSucceeded))
       // Return immediately if the job is running 0 tasks
@@ -1010,7 +1026,8 @@ private[spark] class DAGScheduler(
     if (rdd.partitions.isEmpty) {
       // Return immediately if the job is running 0 tasks
       val time = clock.getTimeMillis()
-      listenerBus.post(SparkListenerJobStart(jobId, time, Seq[StageInfo](), clonedProperties))
+      listenerBus.post(SparkListenerJobStart(jobId, time, Seq[StageInfo](),
+        buildPropertiesForStartEvent(clonedProperties)))
       listenerBus.post(SparkListenerJobEnd(jobId, time, JobSucceeded))
       return new PartialResult(evaluator.currentResult(), true)
     }
@@ -1328,7 +1345,7 @@ private[spark] class DAGScheduler(
     val stageInfos = stageIds.flatMap(id => stageIdToStage.get(id).map(_.latestInfo))
     listenerBus.post(
       SparkListenerJobStart(job.jobId, jobSubmissionTime, stageInfos,
-        Utils.cloneProperties(properties)))
+        buildPropertiesForStartEvent(properties)))
     submitStage(finalStage)
   }
 
@@ -1368,7 +1385,7 @@ private[spark] class DAGScheduler(
     val stageInfos = stageIds.flatMap(id => stageIdToStage.get(id).map(_.latestInfo))
     listenerBus.post(
       SparkListenerJobStart(job.jobId, jobSubmissionTime, stageInfos,
-        Utils.cloneProperties(properties)))
+        buildPropertiesForStartEvent(properties)))
     submitStage(finalStage)
 
     // If the whole stage has already finished, tell the listener and remove it
@@ -1529,7 +1546,7 @@ private[spark] class DAGScheduler(
       case NonFatal(e) =>
         stage.makeNewStageAttempt(partitionsToCompute.size)
         listenerBus.post(SparkListenerStageSubmitted(stage.latestInfo,
-          Utils.cloneProperties(properties)))
+          buildPropertiesForStartEvent(properties)))
         abortStage(stage, s"Task creation failed: $e\n${Utils.exceptionString(e)}", Some(e))
         runningStages -= stage
         return
@@ -1544,7 +1561,7 @@ private[spark] class DAGScheduler(
       stage.latestInfo.submissionTime = Some(clock.getTimeMillis())
     }
     listenerBus.post(SparkListenerStageSubmitted(stage.latestInfo,
-      Utils.cloneProperties(properties)))
+      buildPropertiesForStartEvent(properties)))
 
     // TODO: Maybe we can keep the taskBinary in Stage to avoid serializing it multiple times.
     // Broadcasted binary for the task, used to dispatch tasks to executors. Note that we broadcast

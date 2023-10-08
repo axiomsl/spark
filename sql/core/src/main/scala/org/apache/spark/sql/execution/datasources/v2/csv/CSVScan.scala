@@ -71,6 +71,7 @@ case class CSVScan(
     // Such filters will be applied later on the upper layer.
     val actualFilters =
       pushedFilters.filterNot(_.references.contains(parsedOptions.columnNameOfCorruptRecord))
+        .filterNot(_.references.contains(parsedOptions.columnNameOfCorruptRecordCause))
 
     val caseSensitiveMap = options.asCaseSensitiveMap.asScala.toMap
     // Hadoop Configurations are case sensitive.

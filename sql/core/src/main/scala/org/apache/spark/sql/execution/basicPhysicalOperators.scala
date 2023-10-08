@@ -82,12 +82,12 @@ case class ProjectExec(projectList: Seq[NamedExpression], child: SparkPlan)
     // Evaluation of non-deterministic expressions can't be deferred.
     val nonDeterministicAttrs = projectList.filterNot(_.deterministic).map(_.toAttribute)
     s"""
-       |// common sub-expressions
-       |${evaluateVariables(localValInputs)}
-       |$subExprsCode
-       |${evaluateRequiredVariables(output, resultVars, AttributeSet(nonDeterministicAttrs))}
-       |${consume(ctx, resultVars)}
-     """.stripMargin
+       // common sub-expressions
+       ${evaluateVariables(localValInputs)}
+       $subExprsCode
+       ${evaluateRequiredVariables(output, resultVars, AttributeSet(nonDeterministicAttrs))}
+       ${consume(ctx, resultVars)}
+     """
   }
 
   protected override def doExecute(): RDD[InternalRow] = {
@@ -108,10 +108,10 @@ case class ProjectExec(projectList: Seq[NamedExpression], child: SparkPlan)
 
   override def verboseStringWithOperatorId(): String = {
     s"""
-       |$formattedNodeName
-       |${ExplainUtils.generateFieldString("Output", projectList)}
-       |${ExplainUtils.generateFieldString("Input", child.output)}
-       |""".stripMargin
+       $formattedNodeName
+       ${ExplainUtils.generateFieldString("Output", projectList)}
+       ${ExplainUtils.generateFieldString("Input", child.output)}
+       """
   }
 
   override protected def withNewChildInternal(newChild: SparkPlan): ProjectExec =
@@ -161,10 +161,10 @@ trait GeneratePredicateHelper extends PredicateHelper {
       }
 
       s"""
-         |$evaluated
-         |${ev.code}
-         |if (${nullCheck}!${ev.value}) continue;
-       """.stripMargin
+         $evaluated
+         ${ev.code}
+         if (${nullCheck}!${ev.value}) continue;
+       """
     }
 
     // To generate the predicates we will follow this algorithm.
@@ -196,9 +196,9 @@ trait GeneratePredicateHelper extends PredicateHelper {
       // Here we use *this* operator's output with this output's nullability since we already
       // enforced them with the IsNotNull checks above.
       s"""
-         |$nullChecks
-         |${genPredicate(c, inputExprCode, outputAttrs)}
-       """.stripMargin.trim
+         $nullChecks
+         ${genPredicate(c, inputExprCode, outputAttrs)}
+       """.trim
     }.mkString("\n")
 
     val nullChecks = notNullPreds.zipWithIndex.map { case (c, idx) =>
@@ -210,9 +210,9 @@ trait GeneratePredicateHelper extends PredicateHelper {
     }.mkString("\n")
 
     s"""
-       |$generated
-       |$nullChecks
-     """.stripMargin
+       $generated
+       $nullChecks
+     """
   }
 }
 
@@ -263,12 +263,12 @@ case class FilterExec(condition: Expression, child: SparkPlan)
 
     // Note: wrap in "do { } while(false);", so the generated checks can jump out with "continue;"
     s"""
-       |do {
-       |  $predicateCode
-       |  $numOutput.add(1);
-       |  ${consume(ctx, resultVars)}
-       |} while(false);
-     """.stripMargin
+       do {
+         $predicateCode
+         $numOutput.add(1);
+         ${consume(ctx, resultVars)}
+       } while(false);
+     """
   }
 
   protected override def doExecute(): RDD[InternalRow] = {
@@ -290,10 +290,10 @@ case class FilterExec(condition: Expression, child: SparkPlan)
 
   override def verboseStringWithOperatorId(): String = {
     s"""
-       |$formattedNodeName
-       |${ExplainUtils.generateFieldString("Input", child.output)}
-       |Condition : ${condition}
-       |""".stripMargin
+       $formattedNodeName
+       ${ExplainUtils.generateFieldString("Input", child.output)}
+       Condition : ${condition}
+       """
   }
 
   override protected def withNewChildInternal(newChild: SparkPlan): FilterExec =
@@ -365,43 +365,43 @@ case class SampleExec(
         v => {
           val initSamplerFuncName = ctx.addNewFunction(initSampler,
             s"""
-              | private void $initSampler() {
-              |   $v = new $samplerClass<UnsafeRow>($upperBound - $lowerBound, false);
-              |   java.util.Random random = new java.util.Random(${seed}L);
-              |   long randomSeed = random.nextLong();
-              |   int loopCount = 0;
-              |   while (loopCount < partitionIndex) {
-              |     randomSeed = random.nextLong();
-              |     loopCount += 1;
-              |   }
-              |   $v.setSeed(randomSeed);
-              | }
-           """.stripMargin.trim)
+               private void $initSampler() {
+                 $v = new $samplerClass<UnsafeRow>($upperBound - $lowerBound, false);
+                 java.util.Random random = new java.util.Random(${seed}L);
+                 long randomSeed = random.nextLong();
+                 int loopCount = 0;
+                 while (loopCount < partitionIndex) {
+                   randomSeed = random.nextLong();
+                   loopCount += 1;
+                 }
+                 $v.setSeed(randomSeed);
+               }
+           """.trim)
           s"$initSamplerFuncName();"
         }, forceInline = true)
 
       val samplingCount = ctx.freshName("samplingCount")
       s"""
-         | int $samplingCount = $sampler.sample();
-         | while ($samplingCount-- > 0) {
-         |   $numOutput.add(1);
-         |   ${consume(ctx, input)}
-         | }
-       """.stripMargin.trim
+          int $samplingCount = $sampler.sample();
+          while ($samplingCount-- > 0) {
+            $numOutput.add(1);
+            ${consume(ctx, input)}
+          }
+       """.trim
     } else {
       val samplerClass = classOf[BernoulliCellSampler[UnsafeRow]].getName
       val sampler = ctx.addMutableState(s"$samplerClass<UnsafeRow>", "sampler",
         v => s"""
-          | $v = new $samplerClass<UnsafeRow>($lowerBound, $upperBound, false);
-          | $v.setSeed(${seed}L + partitionIndex);
-         """.stripMargin.trim)
+           $v = new $samplerClass<UnsafeRow>($lowerBound, $upperBound, false);
+           $v.setSeed(${seed}L + partitionIndex);
+         """.trim)
 
       s"""
-         | if ($sampler.sample() != 0) {
-         |   $numOutput.add(1);
-         |   ${consume(ctx, input)}
-         | }
-       """.stripMargin.trim
+          if ($sampler.sample() != 0) {
+            $numOutput.add(1);
+            ${consume(ctx, input)}
+          }
+       """.trim
     }
   }
 
@@ -492,56 +492,56 @@ case class RangeExec(range: org.apache.spark.sql.catalyst.plans.logical.Range)
 
     val initRangeFuncName = ctx.addNewFunction("initRange",
       s"""
-        | private void initRange(int idx) {
-        |   $BigInt index = $BigInt.valueOf(idx);
-        |   $BigInt numSlice = $BigInt.valueOf(${numSlices}L);
-        |   $BigInt numElement = $BigInt.valueOf(${numElements.toLong}L);
-        |   $BigInt step = $BigInt.valueOf(${step}L);
-        |   $BigInt start = $BigInt.valueOf(${start}L);
-        |   long partitionEnd;
-        |
-        |   $BigInt st = index.multiply(numElement).divide(numSlice).multiply(step).add(start);
-        |   if (st.compareTo($BigInt.valueOf(Long.MAX_VALUE)) > 0) {
-        |     $nextIndex = Long.MAX_VALUE;
-        |   } else if (st.compareTo($BigInt.valueOf(Long.MIN_VALUE)) < 0) {
-        |     $nextIndex = Long.MIN_VALUE;
-        |   } else {
-        |     $nextIndex = st.longValue();
-        |   }
-        |   $batchEnd = $nextIndex;
-        |
-        |   $BigInt end = index.add($BigInt.ONE).multiply(numElement).divide(numSlice)
-        |     .multiply(step).add(start);
-        |   if (end.compareTo($BigInt.valueOf(Long.MAX_VALUE)) > 0) {
-        |     partitionEnd = Long.MAX_VALUE;
-        |   } else if (end.compareTo($BigInt.valueOf(Long.MIN_VALUE)) < 0) {
-        |     partitionEnd = Long.MIN_VALUE;
-        |   } else {
-        |     partitionEnd = end.longValue();
-        |   }
-        |
-        |   $BigInt startToEnd = $BigInt.valueOf(partitionEnd).subtract(
-        |     $BigInt.valueOf($nextIndex));
-        |   $numElementsTodo  = startToEnd.divide(step).longValue();
-        |   if ($numElementsTodo < 0) {
-        |     $numElementsTodo = 0;
-        |   } else if (startToEnd.remainder(step).compareTo($BigInt.valueOf(0L)) != 0) {
-        |     $numElementsTodo++;
-        |   }
-        | }
-       """.stripMargin)
+         private void initRange(int idx) {
+           $BigInt index = $BigInt.valueOf(idx);
+           $BigInt numSlice = $BigInt.valueOf(${numSlices}L);
+           $BigInt numElement = $BigInt.valueOf(${numElements.toLong}L);
+           $BigInt step = $BigInt.valueOf(${step}L);
+           $BigInt start = $BigInt.valueOf(${start}L);
+           long partitionEnd;
+
+           $BigInt st = index.multiply(numElement).divide(numSlice).multiply(step).add(start);
+           if (st.compareTo($BigInt.valueOf(Long.MAX_VALUE)) > 0) {
+             $nextIndex = Long.MAX_VALUE;
+           } else if (st.compareTo($BigInt.valueOf(Long.MIN_VALUE)) < 0) {
+             $nextIndex = Long.MIN_VALUE;
+           } else {
+             $nextIndex = st.longValue();
+           }
+           $batchEnd = $nextIndex;
+
+           $BigInt end = index.add($BigInt.ONE).multiply(numElement).divide(numSlice)
+             .multiply(step).add(start);
+           if (end.compareTo($BigInt.valueOf(Long.MAX_VALUE)) > 0) {
+             partitionEnd = Long.MAX_VALUE;
+           } else if (end.compareTo($BigInt.valueOf(Long.MIN_VALUE)) < 0) {
+             partitionEnd = Long.MIN_VALUE;
+           } else {
+             partitionEnd = end.longValue();
+           }
+
+           $BigInt startToEnd = $BigInt.valueOf(partitionEnd).subtract(
+             $BigInt.valueOf($nextIndex));
+           $numElementsTodo  = startToEnd.divide(step).longValue();
+           if ($numElementsTodo < 0) {
+             $numElementsTodo = 0;
+           } else if (startToEnd.remainder(step).compareTo($BigInt.valueOf(0L)) != 0) {
+             $numElementsTodo++;
+           }
+         }
+       """)
 
     val localIdx = ctx.freshName("localIdx")
     val localEnd = ctx.freshName("localEnd")
     val stopCheck = if (parent.needStopCheck) {
       s"""
-         |if (shouldStop()) {
-         |  $nextIndex = $value + ${step}L;
-         |  $numOutput.add($localIdx + 1);
-         |  $inputMetrics.incRecordsRead($localIdx + 1);
-         |  return;
-         |}
-       """.stripMargin
+         if (shouldStop()) {
+           $nextIndex = $value + ${step}L;
+           $numOutput.add($localIdx + 1);
+           $inputMetrics.incRecordsRead($localIdx + 1);
+           return;
+         }
+       """
     } else {
       "// shouldStop check is eliminated"
     }
@@ -577,38 +577,38 @@ case class RangeExec(range: org.apache.spark.sql.catalyst.plans.logical.Range)
     // because `nextIndex` will be updated before interrupting.
 
     s"""
-      | // initialize Range
-      | if (!$initTerm) {
-      |   $initTerm = true;
-      |   $initRangeFuncName(partitionIndex);
-      | }
-      |
-      | while ($loopCondition) {
-      |   if ($nextIndex == $batchEnd) {
-      |     long $nextBatchTodo;
-      |     if ($numElementsTodo > ${batchSize}L) {
-      |       $nextBatchTodo = ${batchSize}L;
-      |       $numElementsTodo -= ${batchSize}L;
-      |     } else {
-      |       $nextBatchTodo = $numElementsTodo;
-      |       $numElementsTodo = 0;
-      |       if ($nextBatchTodo == 0) break;
-      |     }
-      |     $batchEnd += $nextBatchTodo * ${step}L;
-      |   }
-      |
-      |   int $localEnd = (int)(($batchEnd - $nextIndex) / ${step}L);
-      |   for (int $localIdx = 0; $localIdx < $localEnd; $localIdx++) {
-      |     long $value = ((long)$localIdx * ${step}L) + $nextIndex;
-      |     ${consume(ctx, Seq(ev))}
-      |     $stopCheck
-      |   }
-      |   $nextIndex = $batchEnd;
-      |   $numOutput.add($localEnd);
-      |   $inputMetrics.incRecordsRead($localEnd);
-      |   $taskContext.killTaskIfInterrupted();
-      | }
-     """.stripMargin
+       // initialize Range
+       if (!$initTerm) {
+         $initTerm = true;
+         $initRangeFuncName(partitionIndex);
+       }
+
+       while ($loopCondition) {
+         if ($nextIndex == $batchEnd) {
+           long $nextBatchTodo;
+           if ($numElementsTodo > ${batchSize}L) {
+             $nextBatchTodo = ${batchSize}L;
+             $numElementsTodo -= ${batchSize}L;
+           } else {
+             $nextBatchTodo = $numElementsTodo;
+             $numElementsTodo = 0;
+             if ($nextBatchTodo == 0) break;
+           }
+           $batchEnd += $nextBatchTodo * ${step}L;
+         }
+
+         int $localEnd = (int)(($batchEnd - $nextIndex) / ${step}L);
+         for (int $localIdx = 0; $localIdx < $localEnd; $localIdx++) {
+           long $value = ((long)$localIdx * ${step}L) + $nextIndex;
+           ${consume(ctx, Seq(ev))}
+           $stopCheck
+         }
+         $nextIndex = $batchEnd;
+         $numOutput.add($localEnd);
+         $inputMetrics.incRecordsRead($localEnd);
+         $taskContext.killTaskIfInterrupted();
+       }
+     """
   }
 
   protected override def doExecute(): RDD[InternalRow] = {

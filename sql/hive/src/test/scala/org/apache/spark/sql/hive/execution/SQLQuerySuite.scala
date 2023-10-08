@@ -104,9 +104,9 @@ abstract class SQLQuerySuiteBase extends QueryTest with SQLTestUtils with TestHi
       df.createOrReplaceTempView("script_table")
       val query1 = sql(
         s"""
-          |SELECT col1 FROM (from(SELECT c1, c2, c3 FROM script_table) tempt_table
-          |REDUCE c1, c2, c3 USING 'bash $scriptFilePath' AS
-          |(col1 STRING, col2 STRING)) script_test_table""".stripMargin)
+          SELECT col1 FROM (from(SELECT c1, c2, c3 FROM script_table) tempt_table
+          REDUCE c1, c2, c3 USING 'bash $scriptFilePath' AS
+          (col1 STRING, col2 STRING)) script_test_table""")
       checkAnswer(query1, Row("x1_y1") :: Row("x2_y2") :: Nil)
     }
   }
@@ -155,29 +155,29 @@ abstract class SQLQuerySuiteBase extends QueryTest with SQLTestUtils with TestHi
       withTable("orders", "orderupdates") {
         sql(
           """CREATE TABLE orders(
-            |  id INT,
-            |  make String,
-            |  type String,
-            |  price INT,
-            |  pdate String,
-            |  customer String,
-            |  city String)
-            |PARTITIONED BY (state STRING, month INT)
-            |STORED AS PARQUET
-          """.stripMargin)
+              id INT,
+              make String,
+              type String,
+              price INT,
+              pdate String,
+              customer String,
+              city String)
+            PARTITIONED BY (state STRING, month INT)
+            STORED AS PARQUET
+          """)
 
         sql(
           """CREATE TABLE orderupdates(
-            |  id INT,
-            |  make String,
-            |  type String,
-            |  price INT,
-            |  pdate String,
-            |  customer String,
-            |  city String)
-            |PARTITIONED BY (state STRING, month INT)
-            |STORED AS PARQUET
-          """.stripMargin)
+              id INT,
+              make String,
+              type String,
+              price INT,
+              pdate String,
+              customer String,
+              city String)
+            PARTITIONED BY (state STRING, month INT)
+            STORED AS PARQUET
+          """)
 
         sql("set hive.exec.dynamic.partition.mode=nonstrict")
         sql("INSERT INTO TABLE orders PARTITION(state, month) SELECT * FROM orders1")
@@ -186,15 +186,15 @@ abstract class SQLQuerySuiteBase extends QueryTest with SQLTestUtils with TestHi
         checkAnswer(
           sql(
             """
-              |select orders.state, orders.month
-              |from orders
-              |join (
-              |  select distinct orders.state,orders.month
-              |  from orders
-              |  join orderupdates
-              |    on orderupdates.id = orders.id) ao
-              |  on ao.state = orders.state and ao.month = orders.month
-            """.stripMargin),
+              select orders.state, orders.month
+              from orders
+              join (
+                select distinct orders.state,orders.month
+                from orders
+                join orderupdates
+                  on orderupdates.id = orders.id) ao
+                on ao.state = orders.state and ao.month = orders.month
+            """),
           (1 to 6).map(_ => Row("CA", 20151)))
       }
     }
@@ -261,10 +261,10 @@ abstract class SQLQuerySuiteBase extends QueryTest with SQLTestUtils with TestHi
     withUserDefinedFunction("udtf_count" -> false) {
       sql(
         s"""
-           |CREATE FUNCTION udtf_count
-           |AS 'org.apache.spark.sql.hive.execution.GenericUDTFCount2'
-           |USING JAR '${hiveContext.getHiveFile("TestUDTF.jar").toURI}'
-        """.stripMargin)
+           CREATE FUNCTION udtf_count
+           AS 'org.apache.spark.sql.hive.execution.GenericUDTFCount2'
+           USING JAR '${hiveContext.getHiveFile("TestUDTF.jar").toURI}'
+        """)
 
       checkKeywordsExist(sql("describe function udtf_count"),
         s"Function: $SESSION_CATALOG_NAME.default.udtf_count",
@@ -286,10 +286,10 @@ abstract class SQLQuerySuiteBase extends QueryTest with SQLTestUtils with TestHi
     withUserDefinedFunction("udtf_count_temp" -> true) {
       sql(
         s"""
-           |CREATE TEMPORARY FUNCTION udtf_count_temp
-           |AS 'org.apache.spark.sql.hive.execution.GenericUDTFCount2'
-           |USING JAR '${hiveContext.getHiveFile("TestUDTF.jar").toURI}'
-        """.stripMargin)
+           CREATE TEMPORARY FUNCTION udtf_count_temp
+           AS 'org.apache.spark.sql.hive.execution.GenericUDTFCount2'
+           USING JAR '${hiveContext.getHiveFile("TestUDTF.jar").toURI}'
+        """)
 
       checkKeywordsExist(sql("describe function udtf_count_temp"),
         "Function: udtf_count_temp",
@@ -314,21 +314,21 @@ abstract class SQLQuerySuiteBase extends QueryTest with SQLTestUtils with TestHi
 
       val query = sql(
         """
-          |SELECT
-          |  MIN(c1),
-          |  MIN(c2)
-          |FROM (
-          |  SELECT
-          |    SUM(c1) c1,
-          |    NULL c2
-          |  FROM table1
-          |  UNION ALL
-          |  SELECT
-          |    NULL c1,
-          |    SUM(c2) c2
-          |  FROM table1
-          |) a
-        """.stripMargin)
+          SELECT
+            MIN(c1),
+            MIN(c2)
+          FROM (
+            SELECT
+              SUM(c1) c1,
+              NULL c2
+            FROM table1
+            UNION ALL
+            SELECT
+              NULL c1,
+              SUM(c2) c2
+            FROM table1
+          ) a
+        """)
       checkAnswer(query, Row(1, 1) :: Nil)
     }
   }
@@ -340,14 +340,14 @@ abstract class SQLQuerySuiteBase extends QueryTest with SQLTestUtils with TestHi
       withTable("with_table1") {
         sql(
           """
-            |CREATE TABLE with_table1 AS
-            |WITH T AS (
-            |  SELECT *
-            |  FROM table1
-            |)
-            |SELECT *
-            |FROM T
-          """.stripMargin)
+            CREATE TABLE with_table1 AS
+            WITH T AS (
+              SELECT *
+              FROM table1
+            )
+            SELECT *
+            FROM T
+          """)
         val query = sql("SELECT * FROM with_table1")
         checkAnswer(query, Row(1, 1) :: Nil)
       }
@@ -372,10 +372,10 @@ abstract class SQLQuerySuiteBase extends QueryTest with SQLTestUtils with TestHi
       checkAnswer(
         sql(
           """
-            |SELECT `weird``tab`.`weird``col`
-            |FROM nestedArray
-            |LATERAL VIEW explode(a.b) `weird``tab` AS `weird``col`
-          """.stripMargin),
+            SELECT `weird``tab`.`weird``col`
+            FROM nestedArray
+            LATERAL VIEW explode(a.b) `weird``tab` AS `weird``col`
+          """),
         Row(1) :: Row(2) :: Row(3) :: Nil)
     }
   }
@@ -491,9 +491,9 @@ abstract class SQLQuerySuiteBase extends QueryTest with SQLTestUtils with TestHi
       withTable("ctas1") {
         sql(
           """
-            |CREATE TABLE ctas1 stored as parquet
-            |AS SELECT key k, value FROM src ORDER BY k, value
-          """.stripMargin)
+            CREATE TABLE ctas1 stored as parquet
+            AS SELECT key k, value FROM src ORDER BY k, value
+          """)
         checkRelation("ctas1", isDataSourceTable = false, "parquet")
       }
     }
@@ -567,7 +567,7 @@ abstract class SQLQuerySuiteBase extends QueryTest with SQLTestUtils with TestHi
       sql(s"CREATE TABLE ctas1(id string) stored as rcfile LOCATION '$tempLocation/ctas1'")
       sql("INSERT INTO TABLE ctas1 SELECT 'A' ")
       sql(s"""CREATE TABLE ctas_with_existing_location stored as rcfile LOCATION
-           |'$tempLocation' AS SELECT key k, value FROM src ORDER BY k, value""".stripMargin)
+           '$tempLocation' AS SELECT key k, value FROM src ORDER BY k, value""")
     }
 
     Seq(false, true).foreach { convertCTASFlag =>
@@ -600,14 +600,14 @@ abstract class SQLQuerySuiteBase extends QueryTest with SQLTestUtils with TestHi
       sql("CREATE TABLE ctas1 AS SELECT key k, value FROM src ORDER BY k, value")
       sql(
         """CREATE TABLE ctas2
-          | ROW FORMAT SERDE "org.apache.hadoop.hive.serde2.columnar.ColumnarSerDe"
-          | WITH SERDEPROPERTIES("serde_p1"="p1","serde_p2"="p2")
-          | STORED AS RCFile
-          | TBLPROPERTIES("tbl_p1"="p11", "tbl_p2"="p22")
-          | AS
-          |   SELECT key, value
-          |   FROM src
-          |   ORDER BY key, value""".stripMargin)
+           ROW FORMAT SERDE "org.apache.hadoop.hive.serde2.columnar.ColumnarSerDe"
+           WITH SERDEPROPERTIES("serde_p1"="p1","serde_p2"="p2")
+           STORED AS RCFile
+           TBLPROPERTIES("tbl_p1"="p11", "tbl_p2"="p22")
+           AS
+             SELECT key, value
+             FROM src
+             ORDER BY key, value""")
 
       val storageCtas2 = spark.sessionState.catalog.
         getTableMetadata(TableIdentifier("ctas2")).storage
@@ -617,20 +617,20 @@ abstract class SQLQuerySuiteBase extends QueryTest with SQLTestUtils with TestHi
 
       sql(
         """CREATE TABLE ctas3
-          | ROW FORMAT DELIMITED FIELDS TERMINATED BY ',' LINES TERMINATED BY '\012'
-          | STORED AS textfile AS
-          |   SELECT key, value
-          |   FROM src
-          |   ORDER BY key, value""".stripMargin)
+           ROW FORMAT DELIMITED FIELDS TERMINATED BY ',' LINES TERMINATED BY '\012'
+           STORED AS textfile AS
+             SELECT key, value
+             FROM src
+             ORDER BY key, value""")
 
       // the table schema may like (key: integer, value: string)
       sql(
         """CREATE TABLE IF NOT EXISTS ctas4 AS
-          | SELECT 1 AS key, value FROM src LIMIT 1""".stripMargin)
+           SELECT 1 AS key, value FROM src LIMIT 1""")
       // do nothing cause the table ctas4 already existed.
       sql(
         """CREATE TABLE IF NOT EXISTS ctas4 AS
-          | SELECT key, value FROM src ORDER BY key, value""".stripMargin)
+           SELECT key, value FROM src ORDER BY key, value""")
 
       checkAnswer(
         sql("SELECT k, value FROM ctas1 ORDER BY k, value"),
@@ -652,7 +652,7 @@ abstract class SQLQuerySuiteBase extends QueryTest with SQLTestUtils with TestHi
       intercept[AnalysisException] {
         sql(
           """CREATE TABLE ctas4 AS
-            | SELECT key, value FROM src ORDER BY key, value""".stripMargin)
+             SELECT key, value FROM src ORDER BY key, value""")
       }
       checkAnswer(
         sql("SELECT key, value FROM ctas4 ORDER BY key, value"),
@@ -660,10 +660,10 @@ abstract class SQLQuerySuiteBase extends QueryTest with SQLTestUtils with TestHi
 
       sql(
         """CREATE TABLE ctas5
-          | STORED AS parquet AS
-          |   SELECT key, value
-          |   FROM src
-          |   ORDER BY key, value""".stripMargin)
+           STORED AS parquet AS
+             SELECT key, value
+             FROM src
+             ORDER BY key, value""")
       val storageCtas5 = spark.sessionState.catalog.
         getTableMetadata(TableIdentifier("ctas5")).storage
       assert(storageCtas5.inputFormat ==
@@ -704,10 +704,10 @@ abstract class SQLQuerySuiteBase extends QueryTest with SQLTestUtils with TestHi
         val e = intercept[ParseException] {
           sql(
             """
-              |CREATE TABLE gen__tmp
-              |PARTITIONED BY (key string)
-              |AS SELECT key, value FROM mytable1
-            """.stripMargin)
+              CREATE TABLE gen__tmp
+              PARTITIONED BY (key string)
+              AS SELECT key, value FROM mytable1
+            """)
         }.getMessage
         assert(e.contains("Partition column types may not be specified in Create Table As Select"))
       }
@@ -876,16 +876,16 @@ abstract class SQLQuerySuiteBase extends QueryTest with SQLTestUtils with TestHi
 
     sql(
       """CREATE TABLE nullValuesInInnerComplexTypes
-        |  (s struct<innerStruct: struct<s1:string>,
-        |            innerArray:array<int>,
-        |            innerMap: map<string, int>>)
-      """.stripMargin).collect()
+          (s struct<innerStruct: struct<s1:string>,
+                    innerArray:array<int>,
+                    innerMap: map<string, int>>)
+      """).collect()
 
     sql(
       """
-        |INSERT OVERWRITE TABLE nullValuesInInnerComplexTypes
-        |SELECT * FROM testTable
-      """.stripMargin)
+        INSERT OVERWRITE TABLE nullValuesInInnerComplexTypes
+        SELECT * FROM testTable
+      """)
 
     checkAnswer(
       sql("SELECT * FROM nullValuesInInnerComplexTypes"),
@@ -1041,9 +1041,9 @@ abstract class SQLQuerySuiteBase extends QueryTest with SQLTestUtils with TestHi
       checkAnswer(
         sql(
           """FROM
-            |(FROM test SELECT TRANSFORM(key, value) USING 'cat' AS (`thing1` int, thing2 string)) t
-            |SELECT thing1 + 1
-          """.stripMargin), (2 to 6).map(i => Row(i)))
+            (FROM test SELECT TRANSFORM(key, value) USING 'cat' AS (`thing1` int, thing2 string)) t
+            SELECT thing1 + 1
+          """), (2 to 6).map(i => Row(i)))
     }
   }
 
@@ -1067,9 +1067,9 @@ abstract class SQLQuerySuiteBase extends QueryTest with SQLTestUtils with TestHi
       checkAnswer(
         sql(
           """
-            |SELECT C.val, b FROM data LATERAL VIEW OUTER explode(a) C as val
-            |where b < 2 order by c, val, b
-          """.stripMargin),
+            SELECT C.val, b FROM data LATERAL VIEW OUTER explode(a) C as val
+            where b < 2 order by c, val, b
+          """),
         Row(1, 1) :: Row(2, 1) :: Nil)
     }
   }
@@ -1115,9 +1115,9 @@ abstract class SQLQuerySuiteBase extends QueryTest with SQLTestUtils with TestHi
       sql("create table dynparttest1 (value int) partitioned by (pdate date)")
       sql(
         """
-          |insert into table dynparttest1 partition(pdate)
-          | select count(*), cast('2015-05-21' as date) as pdate from src
-        """.stripMargin)
+          insert into table dynparttest1 partition(pdate)
+           select count(*), cast('2015-05-21' as date) as pdate from src
+        """)
       checkAnswer(
         sql("select * from dynparttest1"),
         Seq(Row(500, java.sql.Date.valueOf("2015-05-21"))))
@@ -1127,9 +1127,9 @@ abstract class SQLQuerySuiteBase extends QueryTest with SQLTestUtils with TestHi
       sql("create table dynparttest2 (value int) partitioned by (pdec decimal(5, 1))")
       sql(
         """
-          |insert into table dynparttest2 partition(pdec)
-          | select count(*), cast('100.12' as decimal(5, 1)) as pdec from src
-        """.stripMargin)
+          insert into table dynparttest2 partition(pdec)
+           select count(*), cast('100.12' as decimal(5, 1)) as pdec from src
+        """)
       checkAnswer(
         sql("select * from dynparttest2"),
         Seq(Row(500, new java.math.BigDecimal("100.1"))))
@@ -1150,9 +1150,9 @@ abstract class SQLQuerySuiteBase extends QueryTest with SQLTestUtils with TestHi
         try {
           sql(
             """
-              |CREATE TEMPORARY FUNCTION example_max
-              |AS 'org.apache.hadoop.hive.contrib.udaf.example.UDAFExampleMax'
-            """.stripMargin)
+              CREATE TEMPORARY FUNCTION example_max
+              AS 'org.apache.hadoop.hive.contrib.udaf.example.UDAFExampleMax'
+            """)
         } catch {
           case throwable: Throwable =>
             error = Some(throwable)
@@ -1179,14 +1179,14 @@ abstract class SQLQuerySuiteBase extends QueryTest with SQLTestUtils with TestHi
     checkAnswer(
       sql(
         """
-          | SELECT
-          | CAST(timestamp_seconds(0) AS date),
-          | CAST(CAST(timestamp_seconds(0) AS date) AS string),
-          | timestamp_seconds(0),
-          | CAST(timestamp_seconds(0) AS string),
-          | CAST(CAST(CAST('1970-01-01 23:00:00' AS timestamp) AS date) AS timestamp)
-          | FROM src LIMIT 1
-        """.stripMargin),
+           SELECT
+           CAST(timestamp_seconds(0) AS date),
+           CAST(CAST(timestamp_seconds(0) AS date) AS string),
+           timestamp_seconds(0),
+           CAST(timestamp_seconds(0) AS string),
+           CAST(CAST(CAST('1970-01-01 23:00:00' AS timestamp) AS date) AS timestamp)
+           FROM src LIMIT 1
+        """),
       Row(
         Date.valueOf("1969-12-31"),
         String.valueOf("1969-12-31"),
@@ -1203,9 +1203,9 @@ abstract class SQLQuerySuiteBase extends QueryTest with SQLTestUtils with TestHi
     checkAnswer(
       sql(
         """
-          |select id, concat(year(datef))
-          |from test_SPARK8588 where concat(year(datef), ' year') in ('2015 year', '2014 year')
-        """.stripMargin),
+          select id, concat(year(datef))
+          from test_SPARK8588 where concat(year(datef), ' year') in ('2015 year', '2014 year')
+        """),
       Row(1, "2014") :: Row(2, "2015") :: Nil
     )
     dropTempTable("test_SPARK8588")
@@ -1234,23 +1234,23 @@ abstract class SQLQuerySuiteBase extends QueryTest with SQLTestUtils with TestHi
         intercept[ParseException] {
           spark.sql(
             s"""
-              |CREATE TEMPORARY VIEW db.t
-              |USING parquet
-              |OPTIONS (
-              |  path '$path'
-              |)
-             """.stripMargin)
+              CREATE TEMPORARY VIEW db.t
+              USING parquet
+              OPTIONS (
+                path '$path'
+              )
+             """)
         }
 
         // If you use backticks to quote the name then it's OK.
         spark.sql(
           s"""
-            |CREATE TEMPORARY VIEW `db.t`
-            |USING parquet
-            |OPTIONS (
-            |  path '$path'
-            |)
-           """.stripMargin)
+            CREATE TEMPORARY VIEW `db.t`
+            USING parquet
+            OPTIONS (
+              path '$path'
+            )
+           """)
         checkAnswer(spark.table("`db.t`"), df)
       }
     }
@@ -1259,12 +1259,12 @@ abstract class SQLQuerySuiteBase extends QueryTest with SQLTestUtils with TestHi
   test("SPARK-10593 same column names in lateral view") {
     val df = spark.sql(
     """
-      |select
-      |insideLayer2.json as a2
-      |from (select '{"layer1": {"layer2": "text inside layer 2"}}' json) test
-      |lateral view json_tuple(json, 'layer1') insideLayer1 as json
-      |lateral view json_tuple(insideLayer1.json, 'layer2') insideLayer2 as json
-    """.stripMargin
+      select
+      insideLayer2.json as a2
+      from (select '{"layer1": {"layer2": "text inside layer 2"}}' json) test
+      lateral view json_tuple(json, 'layer1') insideLayer1 as json
+      lateral view json_tuple(insideLayer1.json, 'layer2') insideLayer2 as json
+    """
     )
 
     checkAnswer(df, Row("text inside layer 2") :: Nil)
@@ -1282,12 +1282,12 @@ abstract class SQLQuerySuiteBase extends QueryTest with SQLTestUtils with TestHi
       checkAnswer(
         sql(
           s"""FROM(
-            |  FROM test SELECT TRANSFORM(a, b)
-            |  USING 'python3 $scriptFilePath/scripts/test_transform.py "\t"'
-            |  AS (c STRING, d STRING)
-            |) t
+              FROM test SELECT TRANSFORM(a, b)
+              USING 'python3 $scriptFilePath/scripts/test_transform.py "\t"'
+              AS (c STRING, d STRING)
+            ) t
             |SELECT c
-          """.stripMargin),
+          """),
         (0 until 5).map(i => Row(i + "#")))
     }
   }
@@ -1302,14 +1302,14 @@ abstract class SQLQuerySuiteBase extends QueryTest with SQLTestUtils with TestHi
       val scriptFilePath = getTestResourcePath("data")
       val df = sql(
         s"""FROM test
-          |SELECT TRANSFORM(a, b)
-          |ROW FORMAT SERDE 'org.apache.hadoop.hive.serde2.lazy.LazySimpleSerDe'
-          |WITH SERDEPROPERTIES('field.delim' = '|')
-          |USING 'python3 $scriptFilePath/scripts/test_transform.py "|"'
-          |AS (c STRING, d STRING)
-          |ROW FORMAT SERDE 'org.apache.hadoop.hive.serde2.lazy.LazySimpleSerDe'
-          |WITH SERDEPROPERTIES('field.delim' = '|')
-        """.stripMargin)
+          SELECT TRANSFORM(a, b)
+          ROW FORMAT SERDE 'org.apache.hadoop.hive.serde2.lazy.LazySimpleSerDe'
+          WITH SERDEPROPERTIES('field.delim' = '|')
+          USING 'python3 $scriptFilePath/scripts/test_transform.py "|"'
+          AS (c STRING, d STRING)
+          ROW FORMAT SERDE 'org.apache.hadoop.hive.serde2.lazy.LazySimpleSerDe'
+          WITH SERDEPROPERTIES('field.delim' = '|')
+        """)
 
       checkAnswer(df, (0 until 5).map(i => Row(i + "#", i + "#")))
     }
@@ -1324,19 +1324,19 @@ abstract class SQLQuerySuiteBase extends QueryTest with SQLTestUtils with TestHi
 
       checkAnswer(sql(
         """
-          |SELECT c1, AVG(c2) AS c_avg
-          |FROM test10741
-          |GROUP BY c1
-          |HAVING (AVG(c2) > 5) ORDER BY c1
-        """.stripMargin), Row("a", 7.0) :: Row("b", 6.0) :: Nil)
+          SELECT c1, AVG(c2) AS c_avg
+          FROM test10741
+          GROUP BY c1
+          HAVING (AVG(c2) > 5) ORDER BY c1
+        """), Row("a", 7.0) :: Row("b", 6.0) :: Nil)
 
       checkAnswer(sql(
         """
-          |SELECT c1, AVG(c2) AS c_avg
-          |FROM test10741
-          |GROUP BY c1
-          |ORDER BY AVG(c2)
-        """.stripMargin), Row("b", 6.0) :: Row("a", 7.0) :: Nil)
+          SELECT c1, AVG(c2) AS c_avg
+          FROM test10741
+          GROUP BY c1
+          ORDER BY AVG(c2)
+        """), Row("b", 6.0) :: Row("a", 7.0) :: Nil)
     }
   }
 
@@ -1454,10 +1454,10 @@ abstract class SQLQuerySuiteBase extends QueryTest with SQLTestUtils with TestHi
     Seq("grouping_id()", "grouping__id").foreach { gid =>
       checkAnswer(sql(
         s"""
-          |SELECT count(*) AS cnt, key % 5 AS k1, key-5 AS k2, $gid AS k3
-          |FROM src GROUP BY key%5, key-5
-          |WITH ROLLUP ORDER BY cnt, k1, k2, k3 LIMIT 10
-        """.stripMargin),
+          SELECT count(*) AS cnt, key % 5 AS k1, key-5 AS k2, $gid AS k3
+          FROM src GROUP BY key%5, key-5
+          WITH ROLLUP ORDER BY cnt, k1, k2, k3 LIMIT 10
+        """),
         Seq(
           (1, 0, 5, 0),
           (1, 0, 15, 0),
@@ -1477,10 +1477,10 @@ abstract class SQLQuerySuiteBase extends QueryTest with SQLTestUtils with TestHi
     Seq("grouping_id()", "grouping__id").foreach { gid =>
       checkAnswer(sql(
         s"""
-          |SELECT count(*) AS cnt, key % 5 AS k1, key-5 AS k2, $gid AS k3
-          |FROM (SELECT key, key%2, key - 5 FROM src) t GROUP BY key%5, key-5
-          |WITH ROLLUP ORDER BY cnt, k1, k2, k3 LIMIT 10
-        """.stripMargin),
+          SELECT count(*) AS cnt, key % 5 AS k1, key-5 AS k2, $gid AS k3
+          FROM (SELECT key, key%2, key - 5 FROM src) t GROUP BY key%5, key-5
+          WITH ROLLUP ORDER BY cnt, k1, k2, k3 LIMIT 10
+        """),
         Seq(
           (1, 0, 5, 0),
           (1, 0, 15, 0),
@@ -1515,10 +1515,10 @@ abstract class SQLQuerySuiteBase extends QueryTest with SQLTestUtils with TestHi
     Seq("grouping_id()", "grouping__id").foreach { gid =>
       checkAnswer(sql(
         s"""
-          |SELECT count(*) AS cnt, key % 5 AS k1, key-5 AS k2, $gid AS k3
-          |FROM (SELECT key, key%2, key - 5 FROM src) t GROUP BY key%5, key-5
-          |WITH CUBE ORDER BY cnt, k1, k2, k3 LIMIT 10
-        """.stripMargin),
+          SELECT count(*) AS cnt, key % 5 AS k1, key-5 AS k2, $gid AS k3
+          FROM (SELECT key, key%2, key - 5 FROM src) t GROUP BY key%5, key-5
+          WITH CUBE ORDER BY cnt, k1, k2, k3 LIMIT 10
+        """),
         Seq(
           (1, null, -3, 2),
           (1, null, -1, 2),
@@ -1538,10 +1538,10 @@ abstract class SQLQuerySuiteBase extends QueryTest with SQLTestUtils with TestHi
     Seq("grouping_id()", "grouping__id").foreach { gid =>
       checkAnswer(sql(
         s"""
-          |SELECT count(*) AS cnt, key % 5 AS k1, key-5 AS k2, $gid AS k3
-          |FROM (SELECT key, key%2, key - 5 FROM src) t GROUP BY key%5, key-5
-          |GROUPING SETS (key%5, key-5) ORDER BY cnt, k1, k2, k3 LIMIT 10
-        """.stripMargin),
+          SELECT count(*) AS cnt, key % 5 AS k1, key-5 AS k2, $gid AS k3
+          FROM (SELECT key, key%2, key - 5 FROM src) t GROUP BY key%5, key-5
+          GROUPING SETS (key%5, key-5) ORDER BY cnt, k1, k2, k3 LIMIT 10
+        """),
         Seq(
           (1, null, -3, 2),
           (1, null, -1, 2),
@@ -1593,32 +1593,32 @@ abstract class SQLQuerySuiteBase extends QueryTest with SQLTestUtils with TestHi
   test("SPARK-11590: use native json_tuple in lateral view") {
     checkAnswer(sql(
       """
-        |SELECT a, b
-        |FROM (SELECT '{"f1": "value1", "f2": 12}' json) test
-        |LATERAL VIEW json_tuple(json, 'f1', 'f2') jt AS a, b
-      """.stripMargin), Row("value1", "12"))
+        SELECT a, b
+        FROM (SELECT '{"f1": "value1", "f2": 12}' json) test
+        LATERAL VIEW json_tuple(json, 'f1', 'f2') jt AS a, b
+      """), Row("value1", "12"))
 
     // we should use `c0`, `c1`... as the name of fields if no alias is provided, to follow hive.
     checkAnswer(sql(
       """
-        |SELECT c0, c1
-        |FROM (SELECT '{"f1": "value1", "f2": 12}' json) test
-        |LATERAL VIEW json_tuple(json, 'f1', 'f2') jt
-      """.stripMargin), Row("value1", "12"))
+        SELECT c0, c1
+        FROM (SELECT '{"f1": "value1", "f2": 12}' json) test
+        LATERAL VIEW json_tuple(json, 'f1', 'f2') jt
+      """), Row("value1", "12"))
 
     // we can also use `json_tuple` in project list.
     checkAnswer(sql(
       """
-        |SELECT json_tuple(json, 'f1', 'f2')
-        |FROM (SELECT '{"f1": "value1", "f2": 12}' json) test
-      """.stripMargin), Row("value1", "12"))
+        SELECT json_tuple(json, 'f1', 'f2')
+        FROM (SELECT '{"f1": "value1", "f2": 12}' json) test
+      """), Row("value1", "12"))
 
     // we can also mix `json_tuple` with other project expressions.
     checkAnswer(sql(
       """
-        |SELECT json_tuple(json, 'f1', 'f2'), 3.14, str
-        |FROM (SELECT '{"f1": "value1", "f2": 12}' json, 'hello' as str) test
-      """.stripMargin), Row("value1", "12", BigDecimal("3.14"), "hello"))
+        SELECT json_tuple(json, 'f1', 'f2'), 3.14, str
+        FROM (SELECT '{"f1": "value1", "f2": 12}' json, 'hello' as str) test
+      """), Row("value1", "12", BigDecimal("3.14"), "hello"))
   }
 
   test("multi-insert with lateral view") {
@@ -1631,14 +1631,14 @@ abstract class SQLQuerySuiteBase extends QueryTest with SQLTestUtils with TestHi
         sql("CREATE TABLE dest2 (i INT)")
         sql(
           """
-            |FROM source
-            |INSERT OVERWRITE TABLE dest1
-            |SELECT id
-            |WHERE id > 3
-            |INSERT OVERWRITE TABLE dest2
-            |select col LATERAL VIEW EXPLODE(arr) exp AS col
-            |WHERE col > 3
-          """.stripMargin)
+            FROM source
+            INSERT OVERWRITE TABLE dest1
+            SELECT id
+            WHERE id > 3
+            INSERT OVERWRITE TABLE dest2
+            select col LATERAL VIEW EXPLODE(arr) exp AS col
+            WHERE col > 3
+          """)
 
         checkAnswer(
           spark.table("dest1"),
@@ -1664,21 +1664,21 @@ abstract class SQLQuerySuiteBase extends QueryTest with SQLTestUtils with TestHi
 
     sql(
       """
-        |CREATE TABLE test_table (key int, value STRING)
-        |PARTITIONED BY (part STRING)
-        |STORED AS RCFILE
-        |LOCATION 'file:${system:test.tmp.dir}/drop_database_removes_partition_dirs_table'
-      """.stripMargin)
+        CREATE TABLE test_table (key int, value STRING)
+        PARTITIONED BY (part STRING)
+        STORED AS RCFILE
+        LOCATION 'file:${system:test.tmp.dir}/drop_database_removes_partition_dirs_table'
+      """)
     sql(
       """
-        |ALTER TABLE test_table ADD PARTITION (part = '1')
-        |LOCATION 'file:${system:test.tmp.dir}/drop_database_removes_partition_dirs_table2/part=1'
-      """.stripMargin)
+        ALTER TABLE test_table ADD PARTITION (part = '1')
+        LOCATION 'file:${system:test.tmp.dir}/drop_database_removes_partition_dirs_table2/part=1'
+      """)
     sql(
       """
-        |INSERT OVERWRITE TABLE test_table PARTITION (part = '1')
-        |SELECT * FROM default.src
-      """.stripMargin)
+        INSERT OVERWRITE TABLE test_table PARTITION (part = '1')
+        SELECT * FROM default.src
+      """)
      checkAnswer(
        sql("select part, key, value from test_table"),
        sql("select '1' as part, key, value from default.src")
@@ -1714,21 +1714,21 @@ abstract class SQLQuerySuiteBase extends QueryTest with SQLTestUtils with TestHi
 
     sql(
       """
-        |CREATE TABLE test_table (key int, value STRING)
-        |PARTITIONED BY (part STRING)
-        |STORED AS RCFILE
-        |LOCATION 'file:${system:test.tmp.dir}/drop_table_removes_partition_dirs_table2'
-      """.stripMargin)
+        CREATE TABLE test_table (key int, value STRING)
+        PARTITIONED BY (part STRING)
+        STORED AS RCFILE
+        LOCATION 'file:${system:test.tmp.dir}/drop_table_removes_partition_dirs_table2'
+      """)
     sql(
       """
-        |ALTER TABLE test_table ADD PARTITION (part = '1')
-        |LOCATION 'file:${system:test.tmp.dir}/drop_table_removes_partition_dirs_table2/part=1'
-      """.stripMargin)
+        ALTER TABLE test_table ADD PARTITION (part = '1')
+        LOCATION 'file:${system:test.tmp.dir}/drop_table_removes_partition_dirs_table2/part=1'
+      """)
     sql(
       """
-        |INSERT OVERWRITE TABLE test_table PARTITION (part = '1')
-        |SELECT * FROM default.src
-      """.stripMargin)
+        INSERT OVERWRITE TABLE test_table PARTITION (part = '1')
+        SELECT * FROM default.src
+      """)
     checkAnswer(
       sql("select part, key, value from test_table"),
       sql("select '1' as part, key, value from src")
@@ -1747,15 +1747,15 @@ abstract class SQLQuerySuiteBase extends QueryTest with SQLTestUtils with TestHi
     withTable(table) {
       sql(
         s"""
-           |CREATE TABLE $table(c1 string)
-           |PARTITIONED BY (p1 string,p2 string,p3 string,p4 string,p5 string)
-         """.stripMargin)
+           CREATE TABLE $table(c1 string)
+           PARTITIONED BY (p1 string,p2 string,p3 string,p4 string,p5 string)
+         """)
       sql(
         s"""
-           |INSERT OVERWRITE TABLE $table
-           |PARTITION (p1='a',p2='b',p3='c',p4='d',p5='e')
-           |SELECT 'blarr'
-         """.stripMargin)
+           INSERT OVERWRITE TABLE $table
+           PARTITION (p1='a',p2='b',p3='c',p4='d',p5='e')
+           SELECT 'blarr'
+         """)
 
       // project list is the same order of partitioning columns in table definition
       checkAnswer(
@@ -1780,10 +1780,10 @@ abstract class SQLQuerySuiteBase extends QueryTest with SQLTestUtils with TestHi
         exception = intercept[ParseException] {
           sql(
             """CREATE TABLE t USING PARQUET
-              |OPTIONS (PATH '/path/to/file')
-              |CLUSTERED BY (a) SORTED BY (b DESC) INTO 2 BUCKETS
-              |AS SELECT 1 AS a, 2 AS b
-            """.stripMargin)
+              OPTIONS (PATH '/path/to/file')
+              CLUSTERED BY (a) SORTED BY (b DESC) INTO 2 BUCKETS
+              AS SELECT 1 AS a, 2 AS b
+            """)
         },
         errorClass = "_LEGACY_ERROR_TEMP_0035",
         parameters = Map("message" -> "Column ordering must be ASC, was 'DESC'"),
@@ -1828,16 +1828,16 @@ abstract class SQLQuerySuiteBase extends QueryTest with SQLTestUtils with TestHi
         df.createOrReplaceTempView("data_15752")
         sql(
           """
-            |CREATE TABLE srcpart_15752 (col1 INT, col2 STRING)
-            |PARTITIONED BY (partcol1 INT, partcol2 STRING) STORED AS parquet
-          """.stripMargin)
+            CREATE TABLE srcpart_15752 (col1 INT, col2 STRING)
+            PARTITIONED BY (partcol1 INT, partcol2 STRING) STORED AS parquet
+          """)
         for (partcol1 <- Seq(0, 1); partcol2 <- Seq("a", "b")) {
           sql(
             s"""
-              |INSERT OVERWRITE TABLE srcpart_15752
-              |PARTITION (partcol1='$partcol1', partcol2='$partcol2')
-              |select key, value from data_15752
-            """.stripMargin)
+              INSERT OVERWRITE TABLE srcpart_15752
+              PARTITION (partcol1='$partcol1', partcol2='$partcol2')
+              select key, value from data_15752
+            """)
         }
         checkAnswer(
           sql("select partcol1 from srcpart_15752 group by partcol1"),
@@ -1869,16 +1869,16 @@ abstract class SQLQuerySuiteBase extends QueryTest with SQLTestUtils with TestHi
 
         sql(
           """
-            |CREATE TABLE srctext_15752 (col1 INT, col2 STRING)
-            |PARTITIONED BY (partcol1 INT, partcol2 STRING) STORED AS textfile
-          """.stripMargin)
+            CREATE TABLE srctext_15752 (col1 INT, col2 STRING)
+            PARTITIONED BY (partcol1 INT, partcol2 STRING) STORED AS textfile
+          """)
         for (partcol1 <- Seq(0, 1); partcol2 <- Seq("a", "b")) {
           sql(
             s"""
-              |INSERT OVERWRITE TABLE srctext_15752
-              |PARTITION (partcol1='$partcol1', partcol2='$partcol2')
-              |select key, value from data_15752
-            """.stripMargin)
+              INSERT OVERWRITE TABLE srctext_15752
+              PARTITION (partcol1='$partcol1', partcol2='$partcol2')
+              select key, value from data_15752
+            """)
         }
         checkAnswer(
           sql("select partcol1 from srctext_15752 group by partcol1"),
@@ -1914,15 +1914,15 @@ abstract class SQLQuerySuiteBase extends QueryTest with SQLTestUtils with TestHi
     withSQLConf(SQLConf.PARQUET_VECTORIZED_READER_ENABLED.key -> "true") {
       sql(
         """CREATE TABLE order(id INT)
-          |PARTITIONED BY (pd DATE, pt TIMESTAMP)
-          |STORED AS PARQUET
-        """.stripMargin)
+          PARTITIONED BY (pd DATE, pt TIMESTAMP)
+          STORED AS PARQUET
+        """)
 
       sql("set hive.exec.dynamic.partition.mode=nonstrict")
       sql(
         """INSERT INTO TABLE order PARTITION(pd, pt)
-          |SELECT 1 AS id, CAST('1990-02-24' AS DATE) AS pd, CAST('1990-02-24' AS TIMESTAMP) AS pt
-        """.stripMargin)
+          SELECT 1 AS id, CAST('1990-02-24' AS DATE) AS pd, CAST('1990-02-24' AS TIMESTAMP) AS pt
+        """)
       val actual = sql("SELECT * FROM order")
       val expected = sql(
         "SELECT 1 AS id, CAST('1990-02-24' AS DATE) AS pd, CAST('1990-02-24' AS TIMESTAMP) AS pt")
@@ -2047,10 +2047,10 @@ abstract class SQLQuerySuiteBase extends QueryTest with SQLTestUtils with TestHi
         withSQLConf(SQLConf.CASE_SENSITIVE.key -> "false") {
           sql(
             """
-              |CREATE TABLE part_table (c STRING)
-              |STORED AS textfile
-              |PARTITIONED BY (d STRING)
-            """.stripMargin)
+              CREATE TABLE part_table (c STRING)
+              STORED AS textfile
+              PARTITIONED BY (d STRING)
+            """)
           sql(s"LOAD DATA LOCAL INPATH '$path/part-r-000011' " +
             "INTO TABLE part_table PARTITION(D ='1')")
           checkAnswer(sql("SELECT * FROM part_table"), Seq(Row("1", "1")))
@@ -2069,14 +2069,14 @@ abstract class SQLQuerySuiteBase extends QueryTest with SQLTestUtils with TestHi
     withTable("tableWithPartition") {
       sql(
         """
-          |CREATE TABLE tableWithPartition (key int, value STRING)
-          |PARTITIONED BY (part STRING)
-        """.stripMargin)
+          CREATE TABLE tableWithPartition (key int, value STRING)
+          PARTITIONED BY (part STRING)
+        """)
       sql(
         """
-          |INSERT OVERWRITE TABLE tableWithPartition PARTITION (part = '1')
-          |SELECT * FROM default.src
-        """.stripMargin)
+          INSERT OVERWRITE TABLE tableWithPartition PARTITION (part = '1')
+          SELECT * FROM default.src
+        """)
        checkAnswer(
          sql("SELECT part, key, value FROM tableWithPartition"),
          sql("SELECT '1' AS part, key, value FROM default.src")
@@ -2084,16 +2084,16 @@ abstract class SQLQuerySuiteBase extends QueryTest with SQLTestUtils with TestHi
 
       sql(
         """
-          |INSERT OVERWRITE TABLE tableWithPartition PARTITION (part = '1')
-          |SELECT * FROM VALUES (1, "one"), (2, "two"), (3, null) AS data(key, value)
-        """.stripMargin)
+          INSERT OVERWRITE TABLE tableWithPartition PARTITION (part = '1')
+          SELECT * FROM VALUES (1, "one"), (2, "two"), (3, null) AS data(key, value)
+        """)
       checkAnswer(
         sql("SELECT part, key, value FROM tableWithPartition"),
         sql(
           """
-            |SELECT '1' AS part, key, value FROM VALUES
-            |(1, "one"), (2, "two"), (3, null) AS data(key, value)
-          """.stripMargin)
+            SELECT '1' AS part, key, value FROM VALUES
+            (1, "one"), (2, "two"), (3, null) AS data(key, value)
+          """)
       )
     }
   }
@@ -2240,22 +2240,22 @@ abstract class SQLQuerySuiteBase extends QueryTest with SQLTestUtils with TestHi
           withTempDatabase { db =>
             client.runSqlHive(
               s"""
-                 |CREATE TABLE $db.t(
-                 |  click_id string,
-                 |  search_id string,
-                 |  uid bigint)
-                 |PARTITIONED BY (
-                 |  ts string,
-                 |  hour string)
-                 |STORED AS $format
-              """.stripMargin)
+                 CREATE TABLE $db.t(
+                   click_id string,
+                   search_id string,
+                   uid bigint)
+                 PARTITIONED BY (
+                   ts string,
+                   hour string)
+                 STORED AS $format
+              """)
 
             client.runSqlHive(
               s"""
-                 |INSERT INTO TABLE $db.t
-                 |PARTITION (ts = '98765', hour = '01')
-                 |VALUES (12, 2, 12345)
-              """.stripMargin
+                 INSERT INTO TABLE $db.t
+                 PARTITION (ts = '98765', hour = '01')
+                 VALUES (12, 2, 12345)
+              """
             )
 
             checkAnswer(
@@ -2300,11 +2300,11 @@ abstract class SQLQuerySuiteBase extends QueryTest with SQLTestUtils with TestHi
             withTempPath { tempDir =>
               sql(
                 s"""
-                  |CREATE TABLE ${format} (id_value string)
-                  |PARTITIONED BY (id_type string)
-                  |LOCATION '${tempDir.toURI}'
-                  |STORED AS ${format}
-                """.stripMargin)
+                  CREATE TABLE ${format} (id_value string)
+                  PARTITIONED BY (id_type string)
+                  LOCATION '${tempDir.toURI}'
+                  STORED AS ${format}
+                """)
               sql(s"insert into $format values ('1','a')")
               sql(s"insert into $format values ('2','a')")
               sql(s"insert into $format values ('3','b')")
@@ -2375,8 +2375,8 @@ abstract class SQLQuerySuiteBase extends QueryTest with SQLTestUtils with TestHi
         val e = intercept[SparkException] {
           sql(
             s"""FROM test SELECT TRANSFORM(a)
-               |USING 'python3 $scriptFilePath/scripts/test_transform.py "\t"'
-             """.stripMargin).collect()
+               USING 'python3 $scriptFilePath/scripts/test_transform.py "\t"'
+             """).collect()
         }
         assert(e.getMessage.contains("Failed to produce data."))
         assert(uncaughtExceptionHandler.exception.isEmpty)
@@ -2416,9 +2416,9 @@ abstract class SQLQuerySuiteBase extends QueryTest with SQLTestUtils with TestHi
             "hive.exec.dynamic.partition.mode" -> "nonstrict") {
             sql(
               """
-                |INSERT OVERWRITE TABLE test PARTITION(p1='n1', p2)
-                |SELECT * FROM VALUES (1, 'n2'), (2, 'n3') AS t(id, p2)
-              """.stripMargin)
+                INSERT OVERWRITE TABLE test PARTITION(p1='n1', p2)
+                SELECT * FROM VALUES (1, 'n2'), (2, 'n3') AS t(id, p2)
+              """)
             checkAnswer(sql("SELECT id FROM test WHERE p1 = 'n1' and p2 = 'n2' ORDER BY id"),
               Array(Row(1)))
             checkAnswer(sql("SELECT id FROM test WHERE p1 = 'n1' and p2 = 'n3' ORDER BY id"),
@@ -2433,9 +2433,9 @@ abstract class SQLQuerySuiteBase extends QueryTest with SQLTestUtils with TestHi
 
             sql(
               """
-                |INSERT OVERWRITE TABLE test PARTITION(p1='n1', p2)
-                |SELECT * FROM VALUES (5, 'n2'), (6, 'n3') AS t(id, p2)
-              """.stripMargin)
+                INSERT OVERWRITE TABLE test PARTITION(p1='n1', p2)
+                SELECT * FROM VALUES (5, 'n2'), (6, 'n3') AS t(id, p2)
+              """)
             checkAnswer(sql("SELECT id FROM test WHERE p1 = 'n1' and p2 = 'n2' ORDER BY id"),
               Array(Row(5)))
             checkAnswer(sql("SELECT id FROM test WHERE p1 = 'n1' and p2 = 'n3' ORDER BY id"),
@@ -2475,10 +2475,10 @@ abstract class SQLQuerySuiteBase extends QueryTest with SQLTestUtils with TestHi
         checkAnswer(
           sql(
             """
-              |SELECT i, CAST(j AS STRING)
-              |FROM t
-              |WHERE j IN (DATE'1990-11-10', DATE'1990-11-11', DATE'1990-11-12')
-              |""".stripMargin),
+              SELECT i, CAST(j AS STRING)
+              FROM t
+              WHERE j IN (DATE'1990-11-10', DATE'1990-11-11', DATE'1990-11-12')
+              """),
           Row(1, "1990-11-11"))
       }
     }
@@ -2511,16 +2511,16 @@ abstract class SQLQuerySuiteBase extends QueryTest with SQLTestUtils with TestHi
     withUserDefinedFunction("udtf_stack1" -> true, "udtf_stack2" -> true) {
       sql(
         s"""
-           |CREATE TEMPORARY FUNCTION udtf_stack1
-           |AS 'org.apache.spark.sql.hive.execution.UDTFStack'
-           |USING JAR '${hiveContext.getHiveFile("SPARK-21101-1.0.jar").toURI}'
-        """.stripMargin)
+           CREATE TEMPORARY FUNCTION udtf_stack1
+           AS 'org.apache.spark.sql.hive.execution.UDTFStack'
+           USING JAR '${hiveContext.getHiveFile("SPARK-21101-1.0.jar").toURI}'
+        """)
       sql(
         s"""
-           |CREATE TEMPORARY FUNCTION udtf_stack2
-           |AS 'org.apache.spark.sql.hive.execution.UDTFStack2'
-           |USING JAR '${hiveContext.getHiveFile("SPARK-21101-1.0.jar").toURI}'
-        """.stripMargin)
+           CREATE TEMPORARY FUNCTION udtf_stack2
+           AS 'org.apache.spark.sql.hive.execution.UDTFStack2'
+           USING JAR '${hiveContext.getHiveFile("SPARK-21101-1.0.jar").toURI}'
+        """)
 
       Seq("udtf_stack1", "udtf_stack2").foreach { udf =>
         checkAnswer(
@@ -2567,9 +2567,9 @@ abstract class SQLQuerySuiteBase extends QueryTest with SQLTestUtils with TestHi
           df.write.mode("Overwrite").parquet(dir.getAbsolutePath)
           sql(
             s"""
-               |CREATE EXTERNAL TABLE test_precision(name STRING, value DECIMAL(18,6))
-               |STORED AS PARQUET LOCATION '${dir.getAbsolutePath}'
-               |""".stripMargin)
+               CREATE EXTERNAL TABLE test_precision(name STRING, value DECIMAL(18,6))
+               STORED AS PARQUET LOCATION '${dir.getAbsolutePath}'
+               """)
           checkAnswer(sql("SELECT * FROM test_precision"), Row("dummy", null))
         }
       }
@@ -2586,9 +2586,9 @@ abstract class SQLQuerySuiteBase extends QueryTest with SQLTestUtils with TestHi
         withSQLConf(HiveUtils.CONVERT_METASTORE_PARQUET.key -> "false",
           "hive.exec.dynamic.partition.mode" -> "nonstrict") {
           val insertSQL = """
-              |INSERT OVERWRITE TABLE test PARTITION(p1='n1', p2)
-              |SELECT * FROM VALUES (1, 'n2'), (2, 'n3'), (3, 'n4') AS t(id, p2)
-              """.stripMargin
+              INSERT OVERWRITE TABLE test PARTITION(p1='n1', p2)
+              SELECT * FROM VALUES (1, 'n2'), (2, 'n3'), (3, 'n4') AS t(id, p2)
+              """
           withSQLConf("hive.exec.max.dynamic.partitions" -> "2") {
             val e = intercept[SparkException] {
               sql(insertSQL)
@@ -2618,10 +2618,10 @@ abstract class SQLQuerySuiteBase extends QueryTest with SQLTestUtils with TestHi
                 withTempDir { dir =>
                   val df = sql(
                     s"""
-                       |INSERT OVERWRITE LOCAL DIRECTORY '${dir.getAbsolutePath}'
-                       |STORED AS $format
-                       |SELECT 1
-                  """.stripMargin)
+                       INSERT OVERWRITE LOCAL DIRECTORY '${dir.getAbsolutePath}'
+                       STORED AS $format
+                       SELECT 1
+                  """)
                   val insertIntoDSDir = df.queryExecution.analyzed.collect {
                     case _: InsertIntoDataSourceDirCommand => true
                   }.headOption
@@ -2648,14 +2648,14 @@ abstract class SQLQuerySuiteBase extends QueryTest with SQLTestUtils with TestHi
     withTable("t") {
       sql(
         s"""
-           |CREATE TABLE t(
-           |  c STRING,
-           |  B_C STRING
-           |)
-           |PARTITIONED BY (p_c STRING)
-           |CLUSTERED BY (B_C) INTO 4 BUCKETS
-           |STORED AS PARQUET
-           |""".stripMargin)
+           CREATE TABLE t(
+             c STRING,
+             B_C STRING
+           )
+           PARTITIONED BY (p_c STRING)
+           CLUSTERED BY (B_C) INTO 4 BUCKETS
+           STORED AS PARQUET
+           """)
       val df = sql("SELECT * FROM t")
       checkAnswer(df, Seq.empty[Row])
     }

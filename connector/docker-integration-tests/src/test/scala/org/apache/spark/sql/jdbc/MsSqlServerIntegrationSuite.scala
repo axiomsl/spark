@@ -59,97 +59,97 @@ class MsSqlServerIntegrationSuite extends DockerJDBCIntegrationSuite {
 
     conn.prepareStatement(
       """
-        |CREATE TABLE numbers (
-        |a BIT,
-        |b TINYINT, c SMALLINT, d INT, e BIGINT,
-        |f FLOAT, f1 FLOAT(24),
-        |g REAL,
-        |h DECIMAL(5,2), i NUMERIC(10,5),
-        |j MONEY, k SMALLMONEY)
-      """.stripMargin).executeUpdate()
+        CREATE TABLE numbers (
+        a BIT,
+        b TINYINT, c SMALLINT, d INT, e BIGINT,
+        f FLOAT, f1 FLOAT(24),
+        g REAL,
+        h DECIMAL(5,2), i NUMERIC(10,5),
+        j MONEY, k SMALLMONEY)
+      """).executeUpdate()
     conn.prepareStatement(
       """
-        |INSERT INTO numbers VALUES (
-        |0,
-        |255, 32767, 2147483647, 9223372036854775807,
-        |123456789012345.123456789012345, 123456789012345.123456789012345,
-        |123456789012345.123456789012345,
-        |123, 12345.12,
-        |922337203685477.58, 214748.3647)
-      """.stripMargin).executeUpdate()
+        INSERT INTO numbers VALUES (
+        0,
+        255, 32767, 2147483647, 9223372036854775807,
+        123456789012345.123456789012345, 123456789012345.123456789012345,
+        123456789012345.123456789012345,
+        123, 12345.12,
+        922337203685477.58, 214748.3647)
+      """).executeUpdate()
 
     conn.prepareStatement(
       """
-        |CREATE TABLE dates (
-        |a DATE, b DATETIME, c DATETIME2,
-        |d DATETIMEOFFSET, e SMALLDATETIME,
-        |f TIME)
-      """.stripMargin).executeUpdate()
+        CREATE TABLE dates (
+        a DATE, b DATETIME, c DATETIME2,
+        d DATETIMEOFFSET, e SMALLDATETIME,
+        f TIME)
+      """).executeUpdate()
     conn.prepareStatement(
       """
-        |INSERT INTO dates VALUES (
-        |'1991-11-09', '1999-01-01 13:23:35', '9999-12-31 23:59:59',
-        |'1901-05-09 23:59:59 +14:00', '1996-01-01 23:23:45',
-        |'13:31:24')
-      """.stripMargin).executeUpdate()
+        INSERT INTO dates VALUES (
+        '1991-11-09', '1999-01-01 13:23:35', '9999-12-31 23:59:59',
+        '1901-05-09 23:59:59 +14:00', '1996-01-01 23:23:45',
+        '13:31:24')
+      """).executeUpdate()
 
     conn.prepareStatement(
       """
-        |CREATE TABLE strings (
-        |a CHAR(10), b VARCHAR(10),
-        |c NCHAR(10), d NVARCHAR(10),
-        |e BINARY(4), f VARBINARY(4),
-        |g TEXT, h NTEXT,
-        |i IMAGE)
-      """.stripMargin).executeUpdate()
+        CREATE TABLE strings (
+        a CHAR(10), b VARCHAR(10),
+        c NCHAR(10), d NVARCHAR(10),
+        e BINARY(4), f VARBINARY(4),
+        g TEXT, h NTEXT,
+        i IMAGE)
+      """).executeUpdate()
     conn.prepareStatement(
       """
-        |INSERT INTO strings VALUES (
-        |'the', 'quick',
-        |'brown', 'fox',
-        |123456, 123456,
-        |'the', 'lazy',
-        |'dog')
-      """.stripMargin).executeUpdate()
+        INSERT INTO strings VALUES (
+        'the', 'quick',
+        'brown', 'fox',
+        123456, 123456,
+        'the', 'lazy',
+        'dog')
+      """).executeUpdate()
     conn.prepareStatement(
       """
-        |CREATE TABLE spatials (
-        |point geometry,
-        |line geometry,
-        |circle geometry,
-        |curve geography,
-        |polygon geometry,
-        |curve_polygon geography,
-        |multi_point geometry,
-        |multi_line geometry,
-        |multi_polygon geometry,
-        |geometry_collection geometry)
-      """.stripMargin).executeUpdate()
+        CREATE TABLE spatials (
+        point geometry,
+        line geometry,
+        circle geometry,
+        curve geography,
+        polygon geometry,
+        curve_polygon geography,
+        multi_point geometry,
+        multi_line geometry,
+        multi_polygon geometry,
+        geometry_collection geometry)
+      """).executeUpdate()
     conn.prepareStatement(
       """
-        |INSERT INTO spatials VALUES (
-        |'POINT(3 4 7 2.5)',
-        |'LINESTRING(1 0, 0 1, -1 0)',
-        |'CIRCULARSTRING(
-        |  -122.358 47.653, -122.348 47.649, -122.348 47.658, -122.358 47.658, -122.358 47.653)',
-        |'COMPOUNDCURVE(
-        |  CIRCULARSTRING(-122.358 47.653, -122.348 47.649,
-        |    -122.348 47.658, -122.358 47.658, -122.358 47.653))',
-        |'POLYGON((-20 -20, -20 20, 20 20, 20 -20, -20 -20), (10 0, 0 10, 0 -10, 10 0))',
-        |'CURVEPOLYGON((-122.3 47, 122.3 47, 125.7 49, 121 38, -122.3 47))',
-        |'MULTIPOINT((2 3), (7 8 9.5))',
-        |'MULTILINESTRING((0 2, 1 1), (1 0, 1 1))',
-        |'MULTIPOLYGON(((2 2, 2 -2, -2 -2, -2 2, 2 2)),((1 1, 3 1, 3 3, 1 3, 1 1)))',
-        |'GEOMETRYCOLLECTION(LINESTRING(1 1, 3 5),POLYGON((-1 -1, -1 -5, -5 -5, -5 -1, -1 -1)))')
-      """.stripMargin).executeUpdate()
+        INSERT INTO spatials VALUES (
+        'POINT(3 4 7 2.5)',
+        'LINESTRING(1 0, 0 1, -1 0)',
+        'CIRCULARSTRING(
+          -122.358 47.653, -122.348 47.649, -122.348 47.658, -122.358 47.658, -122.358 47.653)',
+        'COMPOUNDCURVE(
+          CIRCULARSTRING(-122.358 47.653, -122.348 47.649,
+            -122.348 47.658, -122.358 47.658, -122.358 47.653))',
+        'POLYGON((-20 -20, -20 20, 20 20, 20 -20, -20 -20), (10 0, 0 10, 0 -10, 10 0))',
+        'CURVEPOLYGON((-122.3 47, 122.3 47, 125.7 49, 121 38, -122.3 47))',
+        'MULTIPOINT((2 3), (7 8 9.5))',
+        'MULTILINESTRING((0 2, 1 1), (1 0, 1 1))',
+        'MULTIPOLYGON(((2 2, 2 -2, -2 -2, -2 2, 2 2)),((1 1, 3 1, 3 3, 1 3, 1 1)))',
+        'GEOMETRYCOLLECTION(LINESTRING(1 1, 3 5),POLYGON((-1 -1, -1 -5, -5 -5, -5 -1, -1 -1)))')
+      """).executeUpdate()
     conn.prepareStatement(
       """
-        |CREATE TABLE bits(a INT, b INT, c BIT)
-        |""".stripMargin).executeUpdate()
+        CREATE TABLE bits(a INT, b INT, c BIT)
+        """).executeUpdate()
     conn.prepareStatement(
       """
-        |INSERT INTO bits VALUES (1, 2, 1)
-      """.stripMargin).executeUpdate()
+        INSERT INTO bits VALUES (1, 2, 1)
+      """).executeUpdate()
   }
 
   test("Basic test") {

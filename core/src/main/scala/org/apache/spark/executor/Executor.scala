@@ -124,7 +124,34 @@ private[spark] class Executor(
       .setNameFormat("Executor task launch worker-%d")
       .setThreadFactory((r: Runnable) => new UninterruptibleThread(r, "unused"))
       .build()
-    Executors.newCachedThreadPool(threadFactory).asInstanceOf[ThreadPoolExecutor]
+    new ThreadPoolExecutor(0, Integer.MAX_VALUE,
+      60L, TimeUnit.SECONDS,
+      new SynchronousQueue[Runnable](),
+      threadFactory) {
+
+      override def execute(runnable: Runnable) {
+        super.execute(new Runnable {
+          val callerThreadMDC: java.util.Map[String, String] = getMDCMap
+
+          override def run() {
+            val threadMDC = getMDCMap
+            MDC.setContextMap(callerThreadMDC)
+            try {
+              runnable.run()
+            } finally {
+              MDC.setContextMap(threadMDC)
+            }
+          }
+        })
+      }
+
+      private def getMDCMap: java.util.Map[String, String] = {
+        MDC.getCopyOfContextMap match {
+          case null => new java.util.HashMap[String, String]()
+          case m => m
+        }
+      }
+    }
   }
   private val schemes = conf.get(EXECUTOR_METRICS_FILESYSTEM_SCHEMES)
     .toLowerCase(Locale.ROOT).split(",").map(_.trim).filter(_.nonEmpty)

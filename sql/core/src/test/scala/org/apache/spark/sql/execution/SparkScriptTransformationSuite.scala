@@ -48,10 +48,10 @@ class SparkScriptTransformationSuite extends BaseScriptTransformationSuite with 
 
       val sqlText =
         """SELECT TRANSFORM (a)
-          |ROW FORMAT SERDE 'org.apache.hadoop.hive.serde2.lazy.LazySimpleSerDe'
-          |USING 'cat' AS (a)
-          |ROW FORMAT SERDE 'org.apache.hadoop.hive.serde2.lazy.LazySimpleSerDe'
-          |FROM v""".stripMargin
+          ROW FORMAT SERDE 'org.apache.hadoop.hive.serde2.lazy.LazySimpleSerDe'
+          USING 'cat' AS (a)
+          ROW FORMAT SERDE 'org.apache.hadoop.hive.serde2.lazy.LazySimpleSerDe'
+          FROM v"""
       checkError(
         exception = intercept[ParseException](sql(sqlText)),
         errorClass = "UNSUPPORTED_FEATURE.TRANSFORM_NON_HIVE",

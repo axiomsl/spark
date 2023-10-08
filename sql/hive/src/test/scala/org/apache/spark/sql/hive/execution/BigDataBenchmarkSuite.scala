@@ -36,46 +36,46 @@ class BigDataBenchmarkSuite extends HiveComparisonTest {
     TestTable(
       "rankings",
       s"""
-        |CREATE EXTERNAL TABLE rankings (
-        |  pageURL STRING,
-        |  pageRank INT,
-        |  avgDuration INT)
-        |  ROW FORMAT DELIMITED FIELDS TERMINATED BY ","
-        |  STORED AS TEXTFILE LOCATION "${new File(testDataDirectory, "rankings").getCanonicalPath}"
-      """.stripMargin.cmd),
+        CREATE EXTERNAL TABLE rankings (
+          pageURL STRING,
+          pageRank INT,
+          avgDuration INT)
+          ROW FORMAT DELIMITED FIELDS TERMINATED BY ","
+          STORED AS TEXTFILE LOCATION "${new File(testDataDirectory, "rankings").getCanonicalPath}"
+      """.cmd),
     TestTable(
       "scratch",
       s"""
-        |CREATE EXTERNAL TABLE scratch (
-        |  pageURL STRING,
-        |  pageRank INT,
-        |  avgDuration INT)
-        |  ROW FORMAT DELIMITED FIELDS TERMINATED BY ","
-        |  STORED AS TEXTFILE LOCATION "${new File(testDataDirectory, "scratch").getCanonicalPath}"
-      """.stripMargin.cmd),
+        CREATE EXTERNAL TABLE scratch (
+          pageURL STRING,
+          pageRank INT,
+          avgDuration INT)
+          ROW FORMAT DELIMITED FIELDS TERMINATED BY ","
+          STORED AS TEXTFILE LOCATION "${new File(testDataDirectory, "scratch").getCanonicalPath}"
+      """.cmd),
     TestTable(
       "uservisits",
       s"""
-        |CREATE EXTERNAL TABLE uservisits (
-        |  sourceIP STRING,
-        |  destURL STRING,
-        |  visitDate STRING,
-        |  adRevenue DOUBLE,
-        |  userAgent STRING,
-        |  countryCode STRING,
-        |  languageCode STRING,
-        |  searchWord STRING,
-        |  duration INT)
-        |  ROW FORMAT DELIMITED FIELDS TERMINATED BY ","
-        |  STORED AS TEXTFILE LOCATION "$userVisitPath"
-      """.stripMargin.cmd),
+        CREATE EXTERNAL TABLE uservisits (
+          sourceIP STRING,
+          destURL STRING,
+          visitDate STRING,
+          adRevenue DOUBLE,
+          userAgent STRING,
+          countryCode STRING,
+          languageCode STRING,
+          searchWord STRING,
+          duration INT)
+          ROW FORMAT DELIMITED FIELDS TERMINATED BY ","
+          STORED AS TEXTFILE LOCATION "$userVisitPath"
+      """.cmd),
     TestTable(
       "documents",
       s"""
-        |CREATE EXTERNAL TABLE documents (line STRING)
-        |STORED AS TEXTFILE
-        |LOCATION "${new File(testDataDirectory, "crawl").getCanonicalPath}"
-      """.stripMargin.cmd))
+        CREATE EXTERNAL TABLE documents (line STRING)
+        STORED AS TEXTFILE
+        LOCATION "${new File(testDataDirectory, "crawl").getCanonicalPath}"
+      """.cmd))
 
   testTables.foreach(registerTestTable)
 
@@ -88,44 +88,44 @@ class BigDataBenchmarkSuite extends HiveComparisonTest {
 
     createQueryTest("query2",
       """
-        |SELECT SUBSTR(sourceIP, 1, 10), SUM(adRevenue) FROM uservisits
-        |GROUP BY SUBSTR(sourceIP, 1, 10)
-      """.stripMargin)
+        SELECT SUBSTR(sourceIP, 1, 10), SUM(adRevenue) FROM uservisits
+        GROUP BY SUBSTR(sourceIP, 1, 10)
+      """)
 
     createQueryTest("query3",
       """
-        |SELECT sourceIP,
-        |       sum(adRevenue) as totalRevenue,
-        |       avg(pageRank) as pageRank
-        |FROM
-        |  rankings R JOIN
-        |  (SELECT sourceIP, destURL, adRevenue
-        |   FROM uservisits UV
-        |   WHERE UV.visitDate > "1980-01-01"
-        |   AND UV.visitDate < "1980-04-01")
-        |   NUV ON (R.pageURL = NUV.destURL)
-        |GROUP BY sourceIP
-        |ORDER BY totalRevenue DESC
-        |LIMIT 1
-      """.stripMargin)
+        SELECT sourceIP,
+               sum(adRevenue) as totalRevenue,
+               avg(pageRank) as pageRank
+        FROM
+          rankings R JOIN
+          (SELECT sourceIP, destURL, adRevenue
+           FROM uservisits UV
+           WHERE UV.visitDate > "1980-01-01"
+           AND UV.visitDate < "1980-04-01")
+           NUV ON (R.pageURL = NUV.destURL)
+        GROUP BY sourceIP
+        ORDER BY totalRevenue DESC
+        LIMIT 1
+      """)
 
     createQueryTest("query4",
       """
-        |DROP TABLE IF EXISTS url_counts_partial;
-        |CREATE TABLE url_counts_partial AS
-        |  SELECT TRANSFORM (line)
-        |  USING 'python3 target/url_count.py' as (sourcePage,
-        |    destPage, count) from documents;
-        |DROP TABLE IF EXISTS url_counts_total;
-        |CREATE TABLE url_counts_total AS
-        |  SELECT SUM(count) AS totalCount, destpage
-        |  FROM url_counts_partial GROUP BY destpage
-        |-- The following queries run, but generate different results in HIVE
-        |-- likely because the UDF is not deterministic given different input splits.
-        |-- SELECT CAST(SUM(count) AS INT) FROM url_counts_partial
-        |-- SELECT COUNT(*) FROM url_counts_partial
-        |-- SELECT * FROM url_counts_partial
-        |-- SELECT * FROM url_counts_total
-      """.stripMargin)
+        DROP TABLE IF EXISTS url_counts_partial;
+        CREATE TABLE url_counts_partial AS
+          SELECT TRANSFORM (line)
+          USING 'python3 target/url_count.py' as (sourcePage,
+            destPage, count) from documents;
+        DROP TABLE IF EXISTS url_counts_total;
+        CREATE TABLE url_counts_total AS
+          SELECT SUM(count) AS totalCount, destpage
+          FROM url_counts_partial GROUP BY destpage
+        -- The following queries run, but generate different results in HIVE
+        -- likely because the UDF is not deterministic given different input splits.
+        -- SELECT CAST(SUM(count) AS INT) FROM url_counts_partial
+        -- SELECT COUNT(*) FROM url_counts_partial
+        -- SELECT * FROM url_counts_partial
+        -- SELECT * FROM url_counts_total
+      """)
   }
 }

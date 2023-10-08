@@ -89,11 +89,11 @@ class UDFXPathUtilSuite extends SparkFunSuite {
 
     val xml =
       s"""<?xml version="1.0" encoding="utf-8"?>
-        |<!DOCTYPE test [
-        |    <!ENTITY embed SYSTEM "$fname">
-        |]>
-        |<foo>&embed;</foo>
-      """.stripMargin
+        <!DOCTYPE test [
+            <!ENTITY embed SYSTEM "$fname">
+        ]>
+        <foo>&embed;</foo>
+      """
     val evaled = new UDFXPathUtil().evalString(xml, "/foo")
     assert(evaled.isEmpty)
   }

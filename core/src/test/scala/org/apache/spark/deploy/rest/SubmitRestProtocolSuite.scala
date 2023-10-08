@@ -217,121 +217,121 @@ class SubmitRestProtocolSuite extends SparkFunSuite {
 
   private val dummyRequestJson =
     """
-      |{
-      |  "action" : "DummyRequest",
-      |  "active" : true,
-      |  "age" : 25,
-      |  "clientSparkVersion" : "1.2.3",
-      |  "name" : "jung"
-      |}
-    """.stripMargin
+      {
+        "action" : "DummyRequest",
+        "active" : true,
+        "age" : 25,
+        "clientSparkVersion" : "1.2.3",
+        "name" : "jung"
+      }
+    """
 
   private val dummyResponseJson =
     """
-      |{
-      |  "action" : "DummyResponse",
-      |  "serverSparkVersion" : "3.3.4",
-      |  "success": true
-      |}
-    """.stripMargin
+      {
+        "action" : "DummyResponse",
+        "serverSparkVersion" : "3.3.4",
+        "success": true
+      }
+    """
 
   private lazy val submitDriverRequestJson = if (versionNumberString.startsWith("2.12")) {
     s"""
-      |{
-      |  "action" : "CreateSubmissionRequest",
-      |  "appArgs" : [ "two slices", "a hint of cinnamon" ],
-      |  "appResource" : "honey-walnut-cherry.jar",
-      |  "clientSparkVersion" : "1.2.3",
-      |  "environmentVariables" : {
-      |    "PATH" : "/dev/null"
-      |  },
-      |  "mainClass" : "org.apache.spark.examples.SparkPie",
-      |  "sparkProperties" : {
-      |    "spark.archives" : "fireballs.zip",
-      |    "spark.driver.extraLibraryPath" : "pickle.jar",
-      |    "spark.jars" : "mayonnaise.jar,ketchup.jar",
-      |    "spark.driver.supervise" : "false",
-      |    "spark.app.name" : "SparkPie",
-      |    "spark.cores.max" : "10000",
-      |    "spark.driver.memory" : "${Utils.DEFAULT_DRIVER_MEM_MB}m",
-      |    "spark.files" : "fireball.png",
-      |    "spark.driver.cores" : "180",
-      |    "spark.driver.extraJavaOptions" : " -Dslices=5 -Dcolor=mostly_red",
-      |    "spark.executor.memory" : "256m",
-      |    "spark.driver.extraClassPath" : "food-coloring.jar"
-      |  }
-      |}
-    """.stripMargin
+      {
+        "action" : "CreateSubmissionRequest",
+        "appArgs" : [ "two slices", "a hint of cinnamon" ],
+        "appResource" : "honey-walnut-cherry.jar",
+        "clientSparkVersion" : "1.2.3",
+        "environmentVariables" : {
+          "PATH" : "/dev/null"
+        },
+        "mainClass" : "org.apache.spark.examples.SparkPie",
+        "sparkProperties" : {
+          "spark.archives" : "fireballs.zip",
+          "spark.driver.extraLibraryPath" : "pickle.jar",
+          "spark.jars" : "mayonnaise.jar,ketchup.jar",
+          "spark.driver.supervise" : "false",
+          "spark.app.name" : "SparkPie",
+          "spark.cores.max" : "10000",
+          "spark.driver.memory" : "${Utils.DEFAULT_DRIVER_MEM_MB}m",
+          "spark.files" : "fireball.png",
+          "spark.driver.cores" : "180",
+          "spark.driver.extraJavaOptions" : " -Dslices=5 -Dcolor=mostly_red",
+          "spark.executor.memory" : "256m",
+          "spark.driver.extraClassPath" : "food-coloring.jar"
+        }
+      }
+    """
   } else {
     s"""
-      |{
-      |  "action" : "CreateSubmissionRequest",
-      |  "appArgs" : [ "two slices", "a hint of cinnamon" ],
-      |  "appResource" : "honey-walnut-cherry.jar",
-      |  "clientSparkVersion" : "1.2.3",
-      |  "environmentVariables" : {
-      |    "PATH" : "/dev/null"
-      |  },
-      |  "mainClass" : "org.apache.spark.examples.SparkPie",
-      |  "sparkProperties" : {
-      |    "spark.archives" : "fireballs.zip",
-      |    "spark.driver.extraLibraryPath" : "pickle.jar",
-      |    "spark.jars" : "mayonnaise.jar,ketchup.jar",
-      |    "spark.driver.supervise" : "false",
-      |    "spark.driver.memory" : "${Utils.DEFAULT_DRIVER_MEM_MB}m",
-      |    "spark.files" : "fireball.png",
-      |    "spark.driver.cores" : "180",
-      |    "spark.driver.extraJavaOptions" : " -Dslices=5 -Dcolor=mostly_red",
-      |    "spark.app.name" : "SparkPie",
-      |    "spark.cores.max" : "10000",
-      |    "spark.executor.memory" : "256m",
-      |    "spark.driver.extraClassPath" : "food-coloring.jar"
-      |  }
-      |}
-    """.stripMargin
+      {
+        "action" : "CreateSubmissionRequest",
+        "appArgs" : [ "two slices", "a hint of cinnamon" ],
+        "appResource" : "honey-walnut-cherry.jar",
+        "clientSparkVersion" : "1.2.3",
+        "environmentVariables" : {
+          "PATH" : "/dev/null"
+        },
+        "mainClass" : "org.apache.spark.examples.SparkPie",
+        "sparkProperties" : {
+          "spark.archives" : "fireballs.zip",
+          "spark.driver.extraLibraryPath" : "pickle.jar",
+          "spark.jars" : "mayonnaise.jar,ketchup.jar",
+          "spark.driver.supervise" : "false",
+          "spark.driver.memory" : "${Utils.DEFAULT_DRIVER_MEM_MB}m",
+          "spark.files" : "fireball.png",
+          "spark.driver.cores" : "180",
+          "spark.driver.extraJavaOptions" : " -Dslices=5 -Dcolor=mostly_red",
+          "spark.app.name" : "SparkPie",
+          "spark.cores.max" : "10000",
+          "spark.executor.memory" : "256m",
+          "spark.driver.extraClassPath" : "food-coloring.jar"
+        }
+      }
+    """
   }
 
   private val submitDriverResponseJson =
     """
-      |{
-      |  "action" : "CreateSubmissionResponse",
-      |  "serverSparkVersion" : "1.2.3",
-      |  "submissionId" : "driver_123",
-      |  "success" : true
-      |}
-    """.stripMargin
+      {
+        "action" : "CreateSubmissionResponse",
+        "serverSparkVersion" : "1.2.3",
+        "submissionId" : "driver_123",
+        "success" : true
+      }
+    """
 
   private val killDriverResponseJson =
     """
-      |{
-      |  "action" : "KillSubmissionResponse",
-      |  "serverSparkVersion" : "1.2.3",
-      |  "submissionId" : "driver_123",
-      |  "success" : true
-      |}
-    """.stripMargin
+      {
+        "action" : "KillSubmissionResponse",
+        "serverSparkVersion" : "1.2.3",
+        "submissionId" : "driver_123",
+        "success" : true
+      }
+    """
 
   private val driverStatusResponseJson =
     """
-      |{
-      |  "action" : "SubmissionStatusResponse",
-      |  "driverState" : "RUNNING",
-      |  "serverSparkVersion" : "1.2.3",
-      |  "submissionId" : "driver_123",
-      |  "success" : true,
-      |  "workerHostPort" : "1.2.3.4:7780",
-      |  "workerId" : "worker_123"
-      |}
-    """.stripMargin
+      {
+        "action" : "SubmissionStatusResponse",
+        "driverState" : "RUNNING",
+        "serverSparkVersion" : "1.2.3",
+        "submissionId" : "driver_123",
+        "success" : true,
+        "workerHostPort" : "1.2.3.4:7780",
+        "workerId" : "worker_123"
+      }
+    """
 
   private val errorJson =
     """
-      |{
-      |  "action" : "ErrorResponse",
-      |  "message" : "Field not found in submit request: X",
-      |  "serverSparkVersion" : "1.2.3"
-      |}
-    """.stripMargin
+      {
+        "action" : "ErrorResponse",
+        "message" : "Field not found in submit request: X",
+        "serverSparkVersion" : "1.2.3"
+      }
+    """
 
   /** Assert that the contents in the two JSON strings are equal after ignoring whitespace. */
   private def assertJsonEquals(jsonString1: String, jsonString2: String): Unit = {

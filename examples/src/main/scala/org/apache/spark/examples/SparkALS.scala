@@ -81,9 +81,9 @@ object SparkALS {
   def showWarning(): Unit = {
     System.err.println(
       """WARN: This is a naive implementation of ALS and is given as an example!
-        |Please use org.apache.spark.ml.recommendation.ALS
-        |for more conventional use.
-      """.stripMargin)
+        Please use org.apache.spark.ml.recommendation.ALS
+        for more conventional use.
+      """)
   }
 
   def main(args: Array[String]): Unit = {

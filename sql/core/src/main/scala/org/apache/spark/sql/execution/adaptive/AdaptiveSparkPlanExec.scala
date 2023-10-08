@@ -148,7 +148,7 @@ case class AdaptiveSparkPlanExec(
   // This rule is stateful as it maintains the codegen stage ID. We can't create a fresh one every
   // time and need to keep it in a variable.
   @transient private val collapseCodegenStagesRule: Rule[SparkPlan] =
-    CollapseCodegenStages()
+    CollapseCodegenStages(sparkContext)
 
   // A list of physical optimizer rules to be applied right after a new stage is created. The input
   // plan to these rules has exchange as its root node.

@@ -509,11 +509,11 @@ class SparkConf(loadDefaults: Boolean) extends Cloneable with Logging with Seria
     sys.props.get("spark.driver.libraryPath").foreach { value =>
       val warning =
         s"""
-          |spark.driver.libraryPath was detected (set to '$value').
-          |This is deprecated in Spark 1.2+.
-          |
-          |Please instead use: ${DRIVER_LIBRARY_PATH.key}
-        """.stripMargin
+          spark.driver.libraryPath was detected (set to '$value').
+          This is deprecated in Spark 1.2+.
+
+          Please instead use: ${DRIVER_LIBRARY_PATH.key}
+        """
       logWarning(warning)
     }
 

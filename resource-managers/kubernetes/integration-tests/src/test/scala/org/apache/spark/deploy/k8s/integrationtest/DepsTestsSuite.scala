@@ -223,10 +223,10 @@ private[spark] trait DepsTestsSuite { k8sSuite: KubernetesSuite =>
     "SPARK-33748: Launcher python client respecting PYSPARK_PYTHON", k8sTestTag, MinikubeTag) {
     val fileName = Utils.createTempFile(
       """
-        |#!/usr/bin/env bash
-        |export IS_CUSTOM_PYTHON=1
-        |python3 "$@"
-      """.stripMargin, HOST_PATH)
+        #!/usr/bin/env bash
+        export IS_CUSTOM_PYTHON=1
+        python3 "$@"
+      """, HOST_PATH)
     Utils.createTarGzFile(s"$HOST_PATH/$fileName", s"$HOST_PATH/$fileName.tgz")
     sparkAppConf.set(ARCHIVES.key, s"$HOST_PATH/$fileName.tgz#test_env")
     val pySparkFiles = Utils.getTestFileAbsolutePath("python_executable_check.py", sparkHomeDir)
@@ -244,10 +244,10 @@ private[spark] trait DepsTestsSuite { k8sSuite: KubernetesSuite =>
       s"${PYSPARK_PYTHON.key} and ${PYSPARK_DRIVER_PYTHON.key}", k8sTestTag, MinikubeTag) {
     val fileName = Utils.createTempFile(
       """
-        |#!/usr/bin/env bash
-        |export IS_CUSTOM_PYTHON=1
-        |python3 "$@"
-      """.stripMargin, HOST_PATH)
+        #!/usr/bin/env bash
+        export IS_CUSTOM_PYTHON=1
+        python3 "$@"
+      """, HOST_PATH)
     Utils.createTarGzFile(s"$HOST_PATH/$fileName", s"$HOST_PATH/$fileName.tgz")
     sparkAppConf.set(ARCHIVES.key, s"$HOST_PATH/$fileName.tgz#test_env")
     sparkAppConf.set(PYSPARK_PYTHON.key, s"./test_env/$fileName")

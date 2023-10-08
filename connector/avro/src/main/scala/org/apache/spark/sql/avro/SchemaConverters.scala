@@ -111,9 +111,9 @@ object SchemaConverters {
       case RECORD =>
         if (existingRecordNames.contains(avroSchema.getFullName)) {
           throw new IncompatibleSchemaException(s"""
-            |Found recursive reference in Avro schema, which can not be processed by Spark:
-            |${avroSchema.toString(true)}
-          """.stripMargin)
+            Found recursive reference in Avro schema, which can not be processed by Spark:
+            ${avroSchema.toString(true)}
+          """)
         }
         val newRecordNames = existingRecordNames + avroSchema.getFullName
         val fields = avroSchema.getFields.asScala.map { f =>

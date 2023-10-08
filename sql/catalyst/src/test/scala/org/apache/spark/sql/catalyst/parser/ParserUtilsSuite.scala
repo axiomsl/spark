@@ -46,27 +46,27 @@ class ParserUtilsSuite extends SparkFunSuite {
 
   val createDbContext = buildContext(
     """
-      |CREATE DATABASE IF NOT EXISTS database_name
-      |COMMENT 'database_comment' LOCATION '/home/user/db'
-      |WITH DBPROPERTIES ('a'='a', 'b'='b', 'c'='c')
-    """.stripMargin
+      CREATE DATABASE IF NOT EXISTS database_name
+      COMMENT 'database_comment' LOCATION '/home/user/db'
+      WITH DBPROPERTIES ('a'='a', 'b'='b', 'c'='c')
+    """
   ) { parser =>
     parser.statement().asInstanceOf[CreateNamespaceContext]
   }
 
   val castClause =
     """
-      |CAST(1 /* Convert
-      |   INT
-      |   AS
-      |   String */ as STRING)""".stripMargin.trim
+      CAST(1 /* Convert
+         INT
+         AS
+         String */ as STRING)""".trim
 
   val castQuery =
     s"""
-       |SELECT
-       |$castClause /* SHOULD NOT INCLUDE THIS */
-       | AS s
-       |""".stripMargin
+       SELECT
+       $castClause /* SHOULD NOT INCLUDE THIS */
+        AS s
+       """
 
   val castQueryContext = buildContext(castQuery) { parser =>
     parser.statement().asInstanceOf[StatementDefaultContext]
@@ -128,9 +128,9 @@ class ParserUtilsSuite extends SparkFunSuite {
     // String including escaped normal characters.
     assert(unescapeSQLString(
       """"ab\
-        |cd\ef"""".stripMargin) ==
+        cd\ef"""") ==
       """ab
-        |cdef""".stripMargin)
+        cdef""")
     // scalastyle:on nonascii
   }
 

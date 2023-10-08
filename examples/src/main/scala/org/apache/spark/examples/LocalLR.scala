@@ -49,9 +49,9 @@ object LocalLR {
   def showWarning(): Unit = {
     System.err.println(
       """WARN: This is a naive implementation of Logistic Regression and is given as an example!
-        |Please use org.apache.spark.ml.classification.LogisticRegression
-        |for more conventional use.
-      """.stripMargin)
+        Please use org.apache.spark.ml.classification.LogisticRegression
+        for more conventional use.
+      """)
   }
 
   def main(args: Array[String]): Unit = {

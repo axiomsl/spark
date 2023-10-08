@@ -112,4 +112,8 @@ class PartitionsAlreadyExistException private(
       errorClass = Some("PARTITIONS_ALREADY_EXIST"),
       messageParameters = Map.empty[String, String])
   }
+
+  def this(db: String, func: String) = {
+    this(Seq(db, func))
+  }
 }

@@ -586,13 +586,13 @@ abstract class StreamExecution(
 
   private def toDebugString(includeLogicalPlan: Boolean): String = {
     val debugString =
-      s"""|=== Streaming Query ===
-          |Identifier: $prettyIdString
-          |Current Committed Offsets: $committedOffsets
-          |Current Available Offsets: $availableOffsets
-          |
-          |Current State: $state
-          |Thread State: ${queryExecutionThread.getState}""".stripMargin
+      s"""=== Streaming Query ===
+          Identifier: $prettyIdString
+          Current Committed Offsets: $committedOffsets
+          Current Available Offsets: $availableOffsets
+
+          Current State: $state
+          Thread State: ${queryExecutionThread.getState}"""
     if (includeLogicalPlan) {
       debugString + s"\n\nLogical Plan:\n$logicalPlan"
     } else {
@@ -602,10 +602,10 @@ abstract class StreamExecution(
 
   protected def getBatchDescriptionString: String = {
     val batchDescription = if (currentBatchId < 0) "init" else currentBatchId.toString
-    s"""|${Option(name).getOrElse("")}
-        |id = $id
-        |runId = $runId
-        |batch = $batchDescription""".stripMargin
+    s"""${Option(name).getOrElse("")}
+        id = $id
+        runId = $runId
+        batch = $batchDescription"""
   }
 
   protected def createWrite(

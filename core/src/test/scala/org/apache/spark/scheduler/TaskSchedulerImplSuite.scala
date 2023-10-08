@@ -1228,13 +1228,13 @@ class TaskSchedulerImplSuite extends SparkFunSuite with LocalSparkContext
     assert(failedTaskSet)
     val idx = failedTask.index
     assert(failedTaskSetReason === s"""
-      |Aborting $taskSet because task $idx (partition $idx)
-      |cannot run anywhere due to node and executor excludeOnFailure.
-      |Most recent failure:
-      |${tsm.taskSetExcludelistHelperOpt.get.getLatestFailureReason}
-      |
-      |ExcludeOnFailure behavior can be configured via spark.excludeOnFailure.*.
-      |""".stripMargin)
+      Aborting $taskSet because task $idx (partition $idx)
+      cannot run anywhere due to node and executor excludeOnFailure.
+      Most recent failure:
+      ${tsm.taskSetExcludelistHelperOpt.get.getLatestFailureReason}
+
+      ExcludeOnFailure behavior can be configured via spark.excludeOnFailure.*.
+      """)
   }
 
   test("don't abort if there is an executor available, though it hasn't had scheduled tasks yet") {

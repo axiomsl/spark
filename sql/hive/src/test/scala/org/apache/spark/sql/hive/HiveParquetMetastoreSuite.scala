@@ -46,94 +46,94 @@ class HiveParquetMetastoreSuite extends ParquetPartitioningTest {
       "test_parquet")
     sql(
       s"""
-        |create external table partitioned_parquet
-        |(
-        |  intField INT,
-        |  stringField STRING
-        |)
-        |PARTITIONED BY (p int)
-        |ROW FORMAT SERDE 'org.apache.hadoop.hive.ql.io.parquet.serde.ParquetHiveSerDe'
-        | STORED AS
-        | INPUTFORMAT 'org.apache.hadoop.hive.ql.io.parquet.MapredParquetInputFormat'
-        | OUTPUTFORMAT 'org.apache.hadoop.hive.ql.io.parquet.MapredParquetOutputFormat'
-        |location '${partitionedTableDir.toURI}'
-      """.stripMargin)
+        create external table partitioned_parquet
+        (
+          intField INT,
+          stringField STRING
+        )
+        PARTITIONED BY (p int)
+        ROW FORMAT SERDE 'org.apache.hadoop.hive.ql.io.parquet.serde.ParquetHiveSerDe'
+         STORED AS
+         INPUTFORMAT 'org.apache.hadoop.hive.ql.io.parquet.MapredParquetInputFormat'
+         OUTPUTFORMAT 'org.apache.hadoop.hive.ql.io.parquet.MapredParquetOutputFormat'
+        location '${partitionedTableDir.toURI}'
+      """)
 
     sql(
       s"""
-        |create external table partitioned_parquet_with_key
-        |(
-        |  intField INT,
-        |  stringField STRING
-        |)
-        |PARTITIONED BY (p int)
-        |ROW FORMAT SERDE 'org.apache.hadoop.hive.ql.io.parquet.serde.ParquetHiveSerDe'
-        | STORED AS
-        | INPUTFORMAT 'org.apache.hadoop.hive.ql.io.parquet.MapredParquetInputFormat'
-        | OUTPUTFORMAT 'org.apache.hadoop.hive.ql.io.parquet.MapredParquetOutputFormat'
-        |location '${partitionedTableDirWithKey.toURI}'
-      """.stripMargin)
+        create external table partitioned_parquet_with_key
+        (
+          intField INT,
+          stringField STRING
+        )
+        PARTITIONED BY (p int)
+        ROW FORMAT SERDE 'org.apache.hadoop.hive.ql.io.parquet.serde.ParquetHiveSerDe'
+         STORED AS
+         INPUTFORMAT 'org.apache.hadoop.hive.ql.io.parquet.MapredParquetInputFormat'
+         OUTPUTFORMAT 'org.apache.hadoop.hive.ql.io.parquet.MapredParquetOutputFormat'
+        location '${partitionedTableDirWithKey.toURI}'
+      """)
 
     sql(
       s"""
-        |create external table normal_parquet
-        |(
-        |  intField INT,
-        |  stringField STRING
-        |)
-        |ROW FORMAT SERDE 'org.apache.hadoop.hive.ql.io.parquet.serde.ParquetHiveSerDe'
-        | STORED AS
-        | INPUTFORMAT 'org.apache.hadoop.hive.ql.io.parquet.MapredParquetInputFormat'
-        | OUTPUTFORMAT 'org.apache.hadoop.hive.ql.io.parquet.MapredParquetOutputFormat'
-        |location '${new File(normalTableDir, "normal").toURI}'
-      """.stripMargin)
+        create external table normal_parquet
+        (
+          intField INT,
+          stringField STRING
+        )
+        ROW FORMAT SERDE 'org.apache.hadoop.hive.ql.io.parquet.serde.ParquetHiveSerDe'
+         STORED AS
+         INPUTFORMAT 'org.apache.hadoop.hive.ql.io.parquet.MapredParquetInputFormat'
+         OUTPUTFORMAT 'org.apache.hadoop.hive.ql.io.parquet.MapredParquetOutputFormat'
+        location '${new File(normalTableDir, "normal").toURI}'
+      """)
 
     sql(
       s"""
-        |CREATE EXTERNAL TABLE partitioned_parquet_with_complextypes
-        |(
-        |  intField INT,
-        |  stringField STRING,
-        |  structField STRUCT<intStructField: INT, stringStructField: STRING>,
-        |  arrayField ARRAY<INT>
-        |)
-        |PARTITIONED BY (p int)
-        |ROW FORMAT SERDE 'org.apache.hadoop.hive.ql.io.parquet.serde.ParquetHiveSerDe'
-        | STORED AS
-        | INPUTFORMAT 'org.apache.hadoop.hive.ql.io.parquet.MapredParquetInputFormat'
-        | OUTPUTFORMAT 'org.apache.hadoop.hive.ql.io.parquet.MapredParquetOutputFormat'
-        |LOCATION '${partitionedTableDirWithComplexTypes.toURI}'
-      """.stripMargin)
+        CREATE EXTERNAL TABLE partitioned_parquet_with_complextypes
+        (
+          intField INT,
+          stringField STRING,
+          structField STRUCT<intStructField: INT, stringStructField: STRING>,
+          arrayField ARRAY<INT>
+        )
+        PARTITIONED BY (p int)
+        ROW FORMAT SERDE 'org.apache.hadoop.hive.ql.io.parquet.serde.ParquetHiveSerDe'
+         STORED AS
+         INPUTFORMAT 'org.apache.hadoop.hive.ql.io.parquet.MapredParquetInputFormat'
+         OUTPUTFORMAT 'org.apache.hadoop.hive.ql.io.parquet.MapredParquetOutputFormat'
+        LOCATION '${partitionedTableDirWithComplexTypes.toURI}'
+      """)
 
     sql(
       s"""
-        |CREATE EXTERNAL TABLE partitioned_parquet_with_key_and_complextypes
-        |(
-        |  intField INT,
-        |  stringField STRING,
-        |  structField STRUCT<intStructField: INT, stringStructField: STRING>,
-        |  arrayField ARRAY<INT>
-        |)
-        |PARTITIONED BY (p int)
-        |ROW FORMAT SERDE 'org.apache.hadoop.hive.ql.io.parquet.serde.ParquetHiveSerDe'
-        | STORED AS
-        | INPUTFORMAT 'org.apache.hadoop.hive.ql.io.parquet.MapredParquetInputFormat'
-        | OUTPUTFORMAT 'org.apache.hadoop.hive.ql.io.parquet.MapredParquetOutputFormat'
-        |LOCATION '${partitionedTableDirWithKeyAndComplexTypes.toURI}'
-      """.stripMargin)
+        CREATE EXTERNAL TABLE partitioned_parquet_with_key_and_complextypes
+        (
+          intField INT,
+          stringField STRING,
+          structField STRUCT<intStructField: INT, stringStructField: STRING>,
+          arrayField ARRAY<INT>
+        )
+        PARTITIONED BY (p int)
+        ROW FORMAT SERDE 'org.apache.hadoop.hive.ql.io.parquet.serde.ParquetHiveSerDe'
+         STORED AS
+         INPUTFORMAT 'org.apache.hadoop.hive.ql.io.parquet.MapredParquetInputFormat'
+         OUTPUTFORMAT 'org.apache.hadoop.hive.ql.io.parquet.MapredParquetOutputFormat'
+        LOCATION '${partitionedTableDirWithKeyAndComplexTypes.toURI}'
+      """)
 
     sql(
       """
-        |create table test_parquet
-        |(
-        |  intField INT,
-        |  stringField STRING
-        |)
-        |ROW FORMAT SERDE 'org.apache.hadoop.hive.ql.io.parquet.serde.ParquetHiveSerDe'
-        |STORED AS
-        |  INPUTFORMAT 'org.apache.hadoop.hive.ql.io.parquet.MapredParquetInputFormat'
-        |  OUTPUTFORMAT 'org.apache.hadoop.hive.ql.io.parquet.MapredParquetOutputFormat'
-      """.stripMargin)
+        create table test_parquet
+        (
+          intField INT,
+          stringField STRING
+        )
+        ROW FORMAT SERDE 'org.apache.hadoop.hive.ql.io.parquet.serde.ParquetHiveSerDe'
+        STORED AS
+          INPUTFORMAT 'org.apache.hadoop.hive.ql.io.parquet.MapredParquetInputFormat'
+          OUTPUTFORMAT 'org.apache.hadoop.hive.ql.io.parquet.MapredParquetOutputFormat'
+      """)
 
     (1 to 10).foreach { p =>
       sql(s"ALTER TABLE partitioned_parquet ADD PARTITION (p=$p)")
@@ -196,16 +196,16 @@ class HiveParquetMetastoreSuite extends ParquetPartitioningTest {
     dropTables("test_insert_parquet")
     sql(
       """
-        |create table test_insert_parquet
-        |(
-        |  intField INT,
-        |  stringField STRING
-        |)
-        |ROW FORMAT SERDE 'org.apache.hadoop.hive.ql.io.parquet.serde.ParquetHiveSerDe'
-        |STORED AS
-        |  INPUTFORMAT 'org.apache.hadoop.hive.ql.io.parquet.MapredParquetInputFormat'
-        |  OUTPUTFORMAT 'org.apache.hadoop.hive.ql.io.parquet.MapredParquetOutputFormat'
-      """.stripMargin)
+        create table test_insert_parquet
+        (
+          intField INT,
+          stringField STRING
+        )
+        ROW FORMAT SERDE 'org.apache.hadoop.hive.ql.io.parquet.serde.ParquetHiveSerDe'
+        STORED AS
+          INPUTFORMAT 'org.apache.hadoop.hive.ql.io.parquet.MapredParquetInputFormat'
+          OUTPUTFORMAT 'org.apache.hadoop.hive.ql.io.parquet.MapredParquetOutputFormat'
+      """)
 
     // Insert into am empty table.
     sql("insert into table test_insert_parquet select a, b from jt where jt.a > 5")
@@ -224,16 +224,16 @@ class HiveParquetMetastoreSuite extends ParquetPartitioningTest {
     // Create it again.
     sql(
       """
-        |create table test_insert_parquet
-        |(
-        |  intField INT,
-        |  stringField STRING
-        |)
-        |ROW FORMAT SERDE 'org.apache.hadoop.hive.ql.io.parquet.serde.ParquetHiveSerDe'
-        |STORED AS
-        |  INPUTFORMAT 'org.apache.hadoop.hive.ql.io.parquet.MapredParquetInputFormat'
-        |  OUTPUTFORMAT 'org.apache.hadoop.hive.ql.io.parquet.MapredParquetOutputFormat'
-      """.stripMargin)
+        create table test_insert_parquet
+        (
+          intField INT,
+          stringField STRING
+        )
+        ROW FORMAT SERDE 'org.apache.hadoop.hive.ql.io.parquet.serde.ParquetHiveSerDe'
+        STORED AS
+          INPUTFORMAT 'org.apache.hadoop.hive.ql.io.parquet.MapredParquetInputFormat'
+          OUTPUTFORMAT 'org.apache.hadoop.hive.ql.io.parquet.MapredParquetOutputFormat'
+      """)
     // Insert overwrite an empty table.
     sql("insert overwrite table test_insert_parquet select a, b from jt where jt.a < 5")
     checkAnswer(
@@ -253,13 +253,13 @@ class HiveParquetMetastoreSuite extends ParquetPartitioningTest {
     withTable("test_parquet_ctas") {
       sql(
         """
-          |create table test_parquet_ctas ROW FORMAT
-          |SERDE 'org.apache.hadoop.hive.ql.io.parquet.serde.ParquetHiveSerDe'
-          |STORED AS
-          |  INPUTFORMAT 'org.apache.hadoop.hive.ql.io.parquet.MapredParquetInputFormat'
-          |  OUTPUTFORMAT 'org.apache.hadoop.hive.ql.io.parquet.MapredParquetOutputFormat'
-          |AS select * from jt
-        """.stripMargin)
+          create table test_parquet_ctas ROW FORMAT
+          SERDE 'org.apache.hadoop.hive.ql.io.parquet.serde.ParquetHiveSerDe'
+          STORED AS
+            INPUTFORMAT 'org.apache.hadoop.hive.ql.io.parquet.MapredParquetInputFormat'
+            OUTPUTFORMAT 'org.apache.hadoop.hive.ql.io.parquet.MapredParquetOutputFormat'
+          AS select * from jt
+        """)
 
       checkAnswer(
         sql(s"SELECT a, b FROM test_parquet_ctas WHERE a = 1"),
@@ -279,15 +279,15 @@ class HiveParquetMetastoreSuite extends ParquetPartitioningTest {
     withTable("test_insert_parquet") {
       sql(
         """
-          |create table test_insert_parquet
-          |(
-          |  intField INT
-          |)
-          |ROW FORMAT SERDE 'org.apache.hadoop.hive.ql.io.parquet.serde.ParquetHiveSerDe'
-          |STORED AS
-          |  INPUTFORMAT 'org.apache.hadoop.hive.ql.io.parquet.MapredParquetInputFormat'
-          |  OUTPUTFORMAT 'org.apache.hadoop.hive.ql.io.parquet.MapredParquetOutputFormat'
-        """.stripMargin)
+          create table test_insert_parquet
+          (
+            intField INT
+          )
+          ROW FORMAT SERDE 'org.apache.hadoop.hive.ql.io.parquet.serde.ParquetHiveSerDe'
+          STORED AS
+            INPUTFORMAT 'org.apache.hadoop.hive.ql.io.parquet.MapredParquetInputFormat'
+            OUTPUTFORMAT 'org.apache.hadoop.hive.ql.io.parquet.MapredParquetOutputFormat'
+        """)
 
       val df = sql("INSERT INTO TABLE test_insert_parquet SELECT a FROM jt")
       df.queryExecution.analyzed match {
@@ -308,15 +308,15 @@ class HiveParquetMetastoreSuite extends ParquetPartitioningTest {
     withTable("test_insert_parquet") {
       sql(
         """
-          |create table test_insert_parquet
-          |(
-          |  int_array array<int>
-          |)
-          |ROW FORMAT SERDE 'org.apache.hadoop.hive.ql.io.parquet.serde.ParquetHiveSerDe'
-          |STORED AS
-          |  INPUTFORMAT 'org.apache.hadoop.hive.ql.io.parquet.MapredParquetInputFormat'
-          |  OUTPUTFORMAT 'org.apache.hadoop.hive.ql.io.parquet.MapredParquetOutputFormat'
-        """.stripMargin)
+          create table test_insert_parquet
+          (
+            int_array array<int>
+          )
+          ROW FORMAT SERDE 'org.apache.hadoop.hive.ql.io.parquet.serde.ParquetHiveSerDe'
+          STORED AS
+            INPUTFORMAT 'org.apache.hadoop.hive.ql.io.parquet.MapredParquetInputFormat'
+            OUTPUTFORMAT 'org.apache.hadoop.hive.ql.io.parquet.MapredParquetOutputFormat'
+        """)
 
       val df = sql("INSERT INTO TABLE test_insert_parquet SELECT a FROM jt_array")
       df.queryExecution.analyzed match {
@@ -337,18 +337,18 @@ class HiveParquetMetastoreSuite extends ParquetPartitioningTest {
     withTable("ms_convert") {
       sql(
         """CREATE TABLE IF NOT EXISTS ms_convert (key INT)
-          |ROW FORMAT SERDE 'org.apache.hadoop.hive.ql.io.parquet.serde.ParquetHiveSerDe'
-          |STORED AS
-          |  INPUTFORMAT 'org.apache.hadoop.hive.ql.io.parquet.MapredParquetInputFormat'
-          |  OUTPUTFORMAT 'org.apache.hadoop.hive.ql.io.parquet.MapredParquetOutputFormat'
-        """.stripMargin)
+          ROW FORMAT SERDE 'org.apache.hadoop.hive.ql.io.parquet.serde.ParquetHiveSerDe'
+          STORED AS
+            INPUTFORMAT 'org.apache.hadoop.hive.ql.io.parquet.MapredParquetInputFormat'
+            OUTPUTFORMAT 'org.apache.hadoop.hive.ql.io.parquet.MapredParquetOutputFormat'
+        """)
 
       // This shouldn't throw AnalysisException
       val analyzed = sql(
         """SELECT key FROM ms_convert
-          |UNION ALL
-          |SELECT key FROM ms_convert
-        """.stripMargin).queryExecution.analyzed
+          UNION ALL
+          SELECT key FROM ms_convert
+        """).queryExecution.analyzed
 
       assertResult(2) {
         analyzed.collect {
@@ -371,12 +371,12 @@ class HiveParquetMetastoreSuite extends ParquetPartitioningTest {
     withTable("nonPartitioned") {
       sql(
         """
-          |CREATE TABLE nonPartitioned (
-          |  key INT,
-          |  value STRING
-          |)
-          |STORED AS PARQUET
-        """.stripMargin)
+          CREATE TABLE nonPartitioned (
+            key INT,
+            value STRING
+          )
+          STORED AS PARQUET
+        """)
 
       // First lookup fills the cache
       val r1 = collectHadoopFsRelation(table("nonPartitioned"))
@@ -391,13 +391,13 @@ class HiveParquetMetastoreSuite extends ParquetPartitioningTest {
     withTable("partitioned") {
       sql(
         """
-          |CREATE TABLE partitioned (
-          |  key INT,
-          |  value STRING
-          |)
-          |PARTITIONED BY (part INT)
-          |STORED AS PARQUET
-        """.stripMargin)
+          CREATE TABLE partitioned (
+            key INT,
+            value STRING
+          )
+          PARTITIONED BY (part INT)
+          STORED AS PARQUET
+        """)
 
       // First lookup fills the cache
       val r1 = collectHadoopFsRelation(table("partitioned"))
@@ -413,13 +413,13 @@ class HiveParquetMetastoreSuite extends ParquetPartitioningTest {
     withTable("partitioned") {
       sql(
         """
-          |CREATE TABLE partitioned (
-          |  key INT,
-          |  value STRING
-          |)
-          |PARTITIONED BY (part INT)
-          |STORED AS PARQUET
-        """.stripMargin)
+          CREATE TABLE partitioned (
+            key INT,
+            value STRING
+          )
+          PARTITIONED BY (part INT)
+          STORED AS PARQUET
+        """)
       sql("INSERT INTO TABLE partitioned PARTITION(part=0) SELECT 1 as key, 'one' as value")
 
       // First lookup fills the cache
@@ -453,16 +453,16 @@ class HiveParquetMetastoreSuite extends ParquetPartitioningTest {
 
     sql(
       """
-        |create table test_insert_parquet
-        |(
-        |  intField INT,
-        |  stringField STRING
-        |)
-        |ROW FORMAT SERDE 'org.apache.hadoop.hive.ql.io.parquet.serde.ParquetHiveSerDe'
-        |STORED AS
-        |  INPUTFORMAT 'org.apache.hadoop.hive.ql.io.parquet.MapredParquetInputFormat'
-        |  OUTPUTFORMAT 'org.apache.hadoop.hive.ql.io.parquet.MapredParquetOutputFormat'
-      """.stripMargin)
+        create table test_insert_parquet
+        (
+          intField INT,
+          stringField STRING
+        )
+        ROW FORMAT SERDE 'org.apache.hadoop.hive.ql.io.parquet.serde.ParquetHiveSerDe'
+        STORED AS
+          INPUTFORMAT 'org.apache.hadoop.hive.ql.io.parquet.MapredParquetInputFormat'
+          OUTPUTFORMAT 'org.apache.hadoop.hive.ql.io.parquet.MapredParquetOutputFormat'
+      """)
 
     var tableIdentifier = TableIdentifier("test_insert_parquet", Some("default"))
 
@@ -477,9 +477,9 @@ class HiveParquetMetastoreSuite extends ParquetPartitioningTest {
     assert(getCachedDataSourceTable(tableIdentifier) === null)
     sql(
       """
-        |INSERT INTO TABLE test_insert_parquet
-        |select a, b from jt
-      """.stripMargin)
+        INSERT INTO TABLE test_insert_parquet
+        select a, b from jt
+      """)
     assert(getCachedDataSourceTable(tableIdentifier) === null)
     // Make sure we can read the data.
     checkAnswer(
@@ -492,35 +492,35 @@ class HiveParquetMetastoreSuite extends ParquetPartitioningTest {
     // Create a partitioned table.
     sql(
       """
-        |create table test_parquet_partitioned_cache_test
-        |(
-        |  intField INT,
-        |  stringField STRING
-        |)
-        |PARTITIONED BY (`date` string)
-        |ROW FORMAT SERDE 'org.apache.hadoop.hive.ql.io.parquet.serde.ParquetHiveSerDe'
-        |STORED AS
-        |  INPUTFORMAT 'org.apache.hadoop.hive.ql.io.parquet.MapredParquetInputFormat'
-        |  OUTPUTFORMAT 'org.apache.hadoop.hive.ql.io.parquet.MapredParquetOutputFormat'
-      """.stripMargin)
+        create table test_parquet_partitioned_cache_test
+        (
+          intField INT,
+          stringField STRING
+        )
+        PARTITIONED BY (`date` string)
+        ROW FORMAT SERDE 'org.apache.hadoop.hive.ql.io.parquet.serde.ParquetHiveSerDe'
+        STORED AS
+          INPUTFORMAT 'org.apache.hadoop.hive.ql.io.parquet.MapredParquetInputFormat'
+          OUTPUTFORMAT 'org.apache.hadoop.hive.ql.io.parquet.MapredParquetOutputFormat'
+      """)
 
     tableIdentifier = TableIdentifier("test_parquet_partitioned_cache_test", Some("default"))
     assert(getCachedDataSourceTable(tableIdentifier) === null)
     sql(
       """
-        |INSERT INTO TABLE test_parquet_partitioned_cache_test
-        |PARTITION (`date`='2015-04-01')
-        |select a, b from jt
-      """.stripMargin)
+        INSERT INTO TABLE test_parquet_partitioned_cache_test
+        PARTITION (`date`='2015-04-01')
+        select a, b from jt
+      """)
     // Right now, insert into a partitioned data source Parquet table. We refreshed the table.
     // So, we expect it is not cached.
     assert(getCachedDataSourceTable(tableIdentifier) === null)
     sql(
       """
-        |INSERT INTO TABLE test_parquet_partitioned_cache_test
-        |PARTITION (`date`='2015-04-02')
-        |select a, b from jt
-      """.stripMargin)
+        INSERT INTO TABLE test_parquet_partitioned_cache_test
+        PARTITION (`date`='2015-04-02')
+        select a, b from jt
+      """)
     assert(getCachedDataSourceTable(tableIdentifier) === null)
 
     // Make sure we can cache the partitioned table.
@@ -531,10 +531,10 @@ class HiveParquetMetastoreSuite extends ParquetPartitioningTest {
       sql("select STRINGField, `date`, intField from test_parquet_partitioned_cache_test"),
       sql(
         """
-          |select b, '2015-04-01', a FROM jt
-          |UNION ALL
-          |select b, '2015-04-02', a FROM jt
-        """.stripMargin).collect())
+          select b, '2015-04-01', a FROM jt
+          UNION ALL
+          select b, '2015-04-02', a FROM jt
+        """).collect())
 
     spark.catalog.refreshTable("test_parquet_partitioned_cache_test")
     assert(getCachedDataSourceTable(tableIdentifier) === null)
@@ -548,10 +548,10 @@ class HiveParquetMetastoreSuite extends ParquetPartitioningTest {
         val partitionDir = new File(src, "partition").toURI
         sql(
           """
-            |CREATE TABLE test_added_partitions (a STRING)
-            |PARTITIONED BY (b INT)
-            |STORED AS PARQUET
-          """.stripMargin)
+            CREATE TABLE test_added_partitions (a STRING)
+            PARTITIONED BY (b INT)
+            STORED AS PARQUET
+          """)
 
         // Temp view that is used to insert data into partitioned table
         Seq("foo", "bar").toDF("a").createOrReplaceTempView("test_temp")
@@ -603,10 +603,10 @@ class HiveParquetMetastoreSuite extends ParquetPartitioningTest {
 
         sql(
           """
-            |CREATE TABLE test_added_partitions (a STRING)
-            |PARTITIONED BY (b INT)
-            |STORED AS PARQUET
-          """.stripMargin)
+            CREATE TABLE test_added_partitions (a STRING)
+            PARTITIONED BY (b INT)
+            STORED AS PARQUET
+          """)
 
         // Create partition without data files and check whether it can be read
         sql(s"ALTER TABLE test_added_partitions ADD PARTITION (b='1')")
@@ -615,9 +615,9 @@ class HiveParquetMetastoreSuite extends ParquetPartitioningTest {
 
         sql(
           s"""
-             |LOAD DATA LOCAL INPATH '$newPartitionDir' OVERWRITE
-             |INTO TABLE test_added_partitions PARTITION(b='1')
-           """.stripMargin)
+             LOAD DATA LOCAL INPATH '$newPartitionDir' OVERWRITE
+             INTO TABLE test_added_partitions PARTITION(b='1')
+           """)
 
         checkAnswer(
           spark.table("test_added_partitions"),
@@ -641,9 +641,9 @@ class HiveParquetMetastoreSuite extends ParquetPartitioningTest {
 
         sql(
           s"""
-             |LOAD DATA LOCAL INPATH '$newPartitionDir' OVERWRITE
-             |INTO TABLE tab
-           """.stripMargin)
+             LOAD DATA LOCAL INPATH '$newPartitionDir' OVERWRITE
+             INTO TABLE tab
+           """)
 
         checkAnswer(spark.table("tab"), Seq(Row("0"), Row("1")))
       }

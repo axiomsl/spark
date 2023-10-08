@@ -146,14 +146,14 @@ class ExecutorPodsLifecycleManagerSuite extends SparkFunSuite with BeforeAndAfte
 
 
     s"""
-       |${exitMsg}
-       |${reasonStr.getOrElse("")}
-       |${msgStr.getOrElse("")}
-       |
-       |The API gave the following container statuses:
-       |
-       |${containersDescription(failedPod)}
-      """.stripMargin
+       ${exitMsg}
+       ${reasonStr.getOrElse("")}
+       ${msgStr.getOrElse("")}
+
+       The API gave the following container statuses:
+
+       ${containersDescription(failedPod)}
+      """
   }
 
   private def namedPodsAnswer(): Answer[PodResource] =

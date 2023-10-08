@@ -72,33 +72,33 @@ class HiveMetastoreCatalogSuite extends TestHiveSingleton with SQLTestUtils {
     withTable("t") {
       sql(
         """
-          |CREATE TABLE t (
-          |c1 boolean,
-          |c2 tinyint,
-          |c3 smallint,
-          |c4 short,
-          |c5 bigint,
-          |c6 long,
-          |c7 float,
-          |c8 double,
-          |c9 date,
-          |c10 timestamp,
-          |c11 string,
-          |c12 char(10),
-          |c13 varchar(10),
-          |c14 binary,
-          |c15 decimal,
-          |c16 decimal(10),
-          |c17 decimal(10,2),
-          |c18 array<string>,
-          |c19 array<int>,
-          |c20 array<char(10)>,
-          |c21 map<int,int>,
-          |c22 map<int,char(10)>,
-          |c23 struct<a:int,b:int>,
-          |c24 struct<c:varchar(10),d:int>
-          |) USING hive
-        """.stripMargin)
+          CREATE TABLE t (
+          c1 boolean,
+          c2 tinyint,
+          c3 smallint,
+          c4 short,
+          c5 bigint,
+          c6 long,
+          c7 float,
+          c8 double,
+          c9 date,
+          c10 timestamp,
+          c11 string,
+          c12 char(10),
+          c13 varchar(10),
+          c14 binary,
+          c15 decimal,
+          c16 decimal(10),
+          c17 decimal(10,2),
+          c18 array<string>,
+          c19 array<int>,
+          c20 array<char(10)>,
+          c21 map<int,int>,
+          c22 map<int,char(10)>,
+          c23 struct<a:int,b:int>,
+          c24 struct<c:varchar(10),d:int>
+          ) USING hive
+        """)
 
       val schema = hiveClient.getTable("default", "t").schema
       val expectedSchema = new StructType()
@@ -245,9 +245,9 @@ class DataSourceWithHiveMetastoreCatalogSuite
         withTable("t") {
           sql(
             s"""CREATE TABLE t USING $provider
-               |OPTIONS (path '${dir.toURI}')
-               |AS SELECT 1 AS d1, "val_1" AS d2
-             """.stripMargin)
+               OPTIONS (path '${dir.toURI}')
+               AS SELECT 1 AS d1, "val_1" AS d2
+             """)
 
           val hiveTable =
             sessionState.catalog.getTableMetadata(TableIdentifier("t", Some("default")))
@@ -275,13 +275,13 @@ class DataSourceWithHiveMetastoreCatalogSuite
     withTable("t") {
       spark.sql(
         s"""
-          |CREATE TABLE t
-          |USING $provider
-          |CLUSTERED BY (c1)
-          |SORTED BY (c1)
-          |INTO 2 BUCKETS
-          |AS SELECT 1 AS c1, 2 AS c2
-        """.stripMargin)
+          CREATE TABLE t
+          USING $provider
+          CLUSTERED BY (c1)
+          SORTED BY (c1)
+          INTO 2 BUCKETS
+          AS SELECT 1 AS c1, 2 AS c2
+        """)
 
       val metadata = sessionState.catalog.getTableMetadata(TableIdentifier("t", Some("default")))
 
@@ -311,14 +311,14 @@ class DataSourceWithHiveMetastoreCatalogSuite
     withTable("t") {
       spark.sql(
         s"""
-           |CREATE TABLE t
-           |USING $provider
-           |PARTITIONED BY (p)
-           |CLUSTERED BY (key)
-           |SORTED BY (value)
-           |INTO 2 BUCKETS
-           |AS SELECT key, value, cast(key % 3 as string) as p FROM src
-        """.stripMargin)
+           CREATE TABLE t
+           USING $provider
+           PARTITIONED BY (p)
+           CLUSTERED BY (key)
+           SORTED BY (value)
+           INTO 2 BUCKETS
+           AS SELECT key, value, cast(key % 3 as string) as p FROM src
+        """)
 
       val metadata = sessionState.catalog.getTableMetadata(TableIdentifier("t", Some("default")))
 
@@ -353,9 +353,9 @@ class DataSourceWithHiveMetastoreCatalogSuite
         withSQLConf(HiveUtils.CONVERT_METASTORE_PARQUET.key -> "true") {
           spark.sql(
             s"""
-               |CREATE TABLE non_partition_table (id bigint)
-               |STORED AS PARQUET LOCATION '$baseDir'
-               |""".stripMargin)
+               CREATE TABLE non_partition_table (id bigint)
+               STORED AS PARQUET LOCATION '$baseDir'
+               """)
           val e = intercept[AnalysisException](
             spark.table("non_partition_table")).getMessage
           assert(e.contains("Converted table has 2 columns, but source Hive table has 1 columns."))
@@ -381,11 +381,11 @@ class DataSourceWithHiveMetastoreCatalogSuite
           withTable("t1") {
             hiveClient.runSqlHive(
               s"""
-                 |CREATE TABLE t1 (id bigint)
-                 |ROW FORMAT SERDE '$serde'
-                 |WITH SERDEPROPERTIES ('path'='someNonLocationValue')
-                 |STORED AS $format LOCATION '$baseDir'
-                 |""".stripMargin)
+                 CREATE TABLE t1 (id bigint)
+                 ROW FORMAT SERDE '$serde'
+                 WITH SERDEPROPERTIES ('path'='someNonLocationValue')
+                 STORED AS $format LOCATION '$baseDir'
+                 """)
 
             assertResult(0) {
               spark.sql("SELECT * FROM t1").count()
@@ -396,11 +396,11 @@ class DataSourceWithHiveMetastoreCatalogSuite
           withTable("t2") {
             hiveClient.runSqlHive(
               s"""
-                 |CREATE TABLE t2 (id bigint)
-                 |ROW FORMAT SERDE '$serde'
-                 |WITH SERDEPROPERTIES ('path'='$baseDir')
-                 |STORED AS $format LOCATION '$baseDir'
-                 |""".stripMargin)
+                 CREATE TABLE t2 (id bigint)
+                 ROW FORMAT SERDE '$serde'
+                 WITH SERDEPROPERTIES ('path'='$baseDir')
+                 STORED AS $format LOCATION '$baseDir'
+                 """)
 
             assertResult(3) {
               spark.sql("SELECT * FROM t2").count()

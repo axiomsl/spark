@@ -155,17 +155,17 @@ trait PlanStabilitySuite extends DisableAdaptiveExecutionSuite {
 
       fail(
         s"""
-          |Plans did not match:
-          |last approved simplified plan: ${approvedSimplifiedFile.getAbsolutePath}
-          |last approved explain plan: ${approvedExplainFile.getAbsolutePath}
-          |
-          |$approvedSimplified
-          |
-          |actual simplified plan: ${actualSimplifiedFile.getAbsolutePath}
-          |actual explain plan: ${actualExplainFile.getAbsolutePath}
-          |
-          |$actualSimplified
-        """.stripMargin)
+          Plans did not match:
+          last approved simplified plan: ${approvedSimplifiedFile.getAbsolutePath}
+          last approved explain plan: ${approvedExplainFile.getAbsolutePath}
+
+          $approvedSimplified
+
+          actual simplified plan: ${actualSimplifiedFile.getAbsolutePath}
+          actual explain plan: ${actualExplainFile.getAbsolutePath}
+
+          $actualSimplified
+        """)
     }
   }
 

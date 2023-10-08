@@ -41,12 +41,12 @@ class ShowCreateTableSuite extends command.ShowCreateTableSuiteBase with Command
     withNamespaceAndTable(ns, table) { t =>
       sql(
         s"""CREATE TABLE $t
-           |$defaultUsing
-           |PARTITIONED BY (a)
-           |COMMENT 'This is a comment'
-           |TBLPROPERTIES ('a' = '1')
-           |AS SELECT 1 AS a, "foo" AS b
-         """.stripMargin
+           $defaultUsing
+           PARTITIONED BY (a)
+           COMMENT 'This is a comment'
+           TBLPROPERTIES ('a' = '1')
+           AS SELECT 1 AS a, "foo" AS b
+         """
       )
       val showDDL = getShowCreateDDL(t, false)
       assert(showDDL === Array(
@@ -69,28 +69,28 @@ class ShowCreateTableSuite extends command.ShowCreateTableSuiteBase with Command
     withNamespaceAndTable(db, table) { t =>
       sql(
         s"""
-           |CREATE TABLE $t (
-           |  a bigint NOT NULL,
-           |  b bigint,
-           |  c bigint,
-           |  `extraCol` ARRAY<INT>,
-           |  `<another>` STRUCT<x: INT, y: ARRAY<BOOLEAN>>
-           |)
-           |$defaultUsing
-           |OPTIONS (
-           |  from = 0,
-           |  to = 1,
-           |  via = 2)
-           |COMMENT 'This is a comment'
-           |TBLPROPERTIES (
-           |  'prop1' = '1',
-           |  'prop2' = '2',
-           |  'prop3' = 3,
-           |  'prop4' = 4,
-           |  'password' = 'password')
-           |PARTITIONED BY (a)
-           |LOCATION '/tmp'
-        """.stripMargin)
+           CREATE TABLE $t (
+             a bigint NOT NULL,
+             b bigint,
+             c bigint,
+             `extraCol` ARRAY<INT>,
+             `<another>` STRUCT<x: INT, y: ARRAY<BOOLEAN>>
+           )
+           $defaultUsing
+           OPTIONS (
+             from = 0,
+             to = 1,
+             via = 2)
+           COMMENT 'This is a comment'
+           TBLPROPERTIES (
+             'prop1' = '1',
+             'prop2' = '2',
+             'prop3' = 3,
+             'prop4' = 4,
+             'password' = 'password')
+           PARTITIONED BY (a)
+           LOCATION '/tmp'
+        """)
       val showDDL = getShowCreateDDL(t, false)
       assert(showDDL === Array(
         s"CREATE TABLE $t (",
@@ -121,15 +121,15 @@ class ShowCreateTableSuite extends command.ShowCreateTableSuiteBase with Command
     withNamespaceAndTable(ns, table) { t =>
       sql(
         s"""
-           |CREATE TABLE $t (a INT, b STRING, ts TIMESTAMP) $defaultUsing
-           |PARTITIONED BY (
-           |    a,
-           |    bucket(16, b),
-           |    years(ts),
-           |    months(ts),
-           |    days(ts),
-           |    hours(ts))
-         """.stripMargin)
+           CREATE TABLE $t (a INT, b STRING, ts TIMESTAMP) $defaultUsing
+           PARTITIONED BY (
+               a,
+               bucket(16, b),
+               years(ts),
+               months(ts),
+               days(ts),
+               hours(ts))
+         """)
       // V1 transforms cannot be converted to partition columns: bucket,year,...)
       val showDDL = getShowCreateDDL(t, false)
       assert(showDDL === Array(
