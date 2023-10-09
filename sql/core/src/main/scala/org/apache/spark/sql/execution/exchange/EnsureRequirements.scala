@@ -407,9 +407,9 @@ case class EnsureRequirements(
 
         logInfo(
           s"""
-             |Left side # of partitions: ${leftPartValues.size}
-             |Right side # of partitions: ${rightPartValues.size}
-             |""".stripMargin)
+             Left side # of partitions: ${leftPartValues.size}
+             Right side # of partitions: ${rightPartValues.size}
+             """)
 
         // As partition keys are compatible, we can pick either left or right as partition
         // expressions
@@ -455,11 +455,11 @@ case class EnsureRequirements(
                   rightLink.get.stats.sizeInBytes > 1) {
               logInfo(
                 s"""
-                   |Using plan statistics to determine which side of join to fully
-                   |cluster partition values:
-                   |Left side size (in bytes): ${leftLink.get.stats.sizeInBytes}
-                   |Right side size (in bytes): ${rightLink.get.stats.sizeInBytes}
-                   |""".stripMargin)
+                   Using plan statistics to determine which side of join to fully
+                   cluster partition values:
+                   Left side size (in bytes): ${leftLink.get.stats.sizeInBytes}
+                   Right side size (in bytes): ${rightLink.get.stats.sizeInBytes}
+                   """)
               leftLink.get.stats.sizeInBytes < rightLink.get.stats.sizeInBytes
             } else {
               // As a simple heuristic, we pick the side with fewer number of partitions

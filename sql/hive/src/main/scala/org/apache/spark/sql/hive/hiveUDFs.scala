@@ -87,27 +87,27 @@ private[hive] case class HiveSimpleUDF(
     val setValues = evals.zipWithIndex.map {
       case (eval, i) =>
         s"""
-           |if (${eval.isNull}) {
-           |  $refEvaluator.setArg($i, null);
-           |} else {
-           |  $refEvaluator.setArg($i, ${eval.value});
-           |}
-           |""".stripMargin
+           if (${eval.isNull}) {
+             $refEvaluator.setArg($i, null);
+           } else {
+             $refEvaluator.setArg($i, ${eval.value});
+           }
+           """
     }
 
     val resultType = CodeGenerator.boxedType(dataType)
     val resultTerm = ctx.freshName("result")
     ev.copy(code =
       code"""
-         |${evals.map(_.code).mkString("\n")}
-         |${setValues.mkString("\n")}
-         |$resultType $resultTerm = ($resultType) $refEvaluator.evaluate();
-         |boolean ${ev.isNull} = $resultTerm == null;
-         |${CodeGenerator.javaType(dataType)} ${ev.value} = ${CodeGenerator.defaultValue(dataType)};
-         |if (!${ev.isNull}) {
-         |  ${ev.value} = $resultTerm;
-         |}
-         |""".stripMargin
+         ${evals.map(_.code).mkString("\n")}
+         ${setValues.mkString("\n")}
+         $resultType $resultTerm = ($resultType) $refEvaluator.evaluate();
+         boolean ${ev.isNull} = $resultTerm == null;
+         ${CodeGenerator.javaType(dataType)} ${ev.value} = ${CodeGenerator.defaultValue(dataType)};
+         if (!${ev.isNull}) {
+           ${ev.value} = $resultTerm;
+         }
+         """
     )
   }
 }
@@ -157,27 +157,27 @@ private[hive] case class HiveGenericUDF(
     val setValues = evals.zipWithIndex.map {
       case (eval, i) =>
         s"""
-           |if (${eval.isNull}) {
-           |  $refEvaluator.setArg($i, null);
-           |} else {
-           |  $refEvaluator.setArg($i, ${eval.value});
-           |}
-           |""".stripMargin
+           if (${eval.isNull}) {
+             $refEvaluator.setArg($i, null);
+           } else {
+             $refEvaluator.setArg($i, ${eval.value});
+           }
+           """
     }
 
     val resultType = CodeGenerator.boxedType(dataType)
     val resultTerm = ctx.freshName("result")
     ev.copy(code =
       code"""
-         |${evals.map(_.code).mkString("\n")}
-         |${setValues.mkString("\n")}
-         |$resultType $resultTerm = ($resultType) $refEvaluator.evaluate();
-         |boolean ${ev.isNull} = $resultTerm == null;
-         |${CodeGenerator.javaType(dataType)} ${ev.value} = ${CodeGenerator.defaultValue(dataType)};
-         |if (!${ev.isNull}) {
-         |  ${ev.value} = $resultTerm;
-         |}
-         |""".stripMargin
+         ${evals.map(_.code).mkString("\n")}
+         ${setValues.mkString("\n")}
+         $resultType $resultTerm = ($resultType) $refEvaluator.evaluate();
+         boolean ${ev.isNull} = $resultTerm == null;
+         ${CodeGenerator.javaType(dataType)} ${ev.value} = ${CodeGenerator.defaultValue(dataType)};
+         if (!${ev.isNull}) {
+           ${ev.value} = $resultTerm;
+         }
+         """
     )
   }
 }

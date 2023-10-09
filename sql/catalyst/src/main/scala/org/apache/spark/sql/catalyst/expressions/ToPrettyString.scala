@@ -63,14 +63,14 @@ case class ToPrettyString(child: Expression, timeZoneId: Option[String] = None)
     val toStringCode = castToStringCode(child.dataType, ctx).apply(childCode.value, ev.value)
     val finalCode =
       code"""
-         |${childCode.code}
-         |UTF8String ${ev.value};
-         |if (${childCode.isNull}) {
-         |  ${ev.value} = UTF8String.fromString("$nullString");
-         |} else {
-         |  $toStringCode
-         |}
-         |""".stripMargin
+         ${childCode.code}
+         UTF8String ${ev.value};
+         if (${childCode.isNull}) {
+           ${ev.value} = UTF8String.fromString("$nullString");
+         } else {
+           $toStringCode
+         }
+         """
     ev.copy(code = finalCode, isNull = FalseLiteral)
   }
 }

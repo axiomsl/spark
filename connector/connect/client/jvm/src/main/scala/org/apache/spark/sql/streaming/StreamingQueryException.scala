@@ -42,6 +42,6 @@ class StreamingQueryException private[sql] (
   override def getErrorClass: String = errorClass
 
   override def toString: String = s"""$message
-    |JVM stacktrace: $stackTrace
-    |""".stripMargin
+    JVM stacktrace: $stackTrace
+    """
 }

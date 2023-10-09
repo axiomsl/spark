@@ -544,7 +544,7 @@ case class StringSplit(str: Expression, regex: Expression, limit: Expression)
     val arrayClass = classOf[GenericArrayData].getName
     nullSafeCodeGen(ctx, ev, (str, regex, limit) => {
       // Array in java is covariant, so we don't need to cast UTF8String[] to Object[].
-      s"""${ev.value} = new $arrayClass($str.split($regex,$limit));""".stripMargin
+      s"""${ev.value} = new $arrayClass($str.split($regex,$limit));"""
     })
   }
 
@@ -1120,18 +1120,18 @@ object RegExpUtils {
     val termPattern = ctx.addMutableState(classNamePattern, "pattern")
 
     s"""
-       |if (!$regexp.equals($termLastRegex)) {
-       |  // regex value changed
-       |  try {
-       |    UTF8String r = $regexp.clone();
-       |    $termPattern = $classNamePattern.compile(r.toString());
-       |    $termLastRegex = r;
-       |  } catch (java.util.regex.PatternSyntaxException e) {
-       |    throw QueryExecutionErrors.invalidPatternError("$prettyName", e.getPattern(), e);
-       |  }
-       |}
-       |java.util.regex.Matcher $matcher = $termPattern.matcher($subject.toString());
-       |""".stripMargin
+       if (!$regexp.equals($termLastRegex)) {
+         // regex value changed
+         try {
+           UTF8String r = $regexp.clone();
+           $termPattern = $classNamePattern.compile(r.toString());
+           $termLastRegex = r;
+         } catch (java.util.regex.PatternSyntaxException e) {
+           throw QueryExecutionErrors.invalidPatternError("$prettyName", e.getPattern(), e);
+         }
+       }
+       java.util.regex.Matcher $matcher = $termPattern.matcher($subject.toString());
+       """
   }
 
   def getPatternAndLastRegex(p: Any, prettyName: String): (Pattern, UTF8String) = {

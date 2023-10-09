@@ -307,10 +307,10 @@ abstract class BinaryArithmetic extends BinaryOperator
       }
       nullSafeCodeGen(ctx, ev, (eval1, eval2) => {
         s"""
-           |${ev.value} = $eval1.$decimalMethod($eval2).toPrecision(
-           |  $precision, $scale, Decimal.ROUND_HALF_UP(), ${!failOnError}, $errorContextCode);
-           |$updateIsNull
-       """.stripMargin
+           ${ev.value} = $eval1.$decimalMethod($eval2).toPrecision(
+             $precision, $scale, Decimal.ROUND_HALF_UP(), ${!failOnError}, $errorContextCode);
+           $updateIsNull
+       """
       })
     case CalendarIntervalType =>
       val iu = IntervalUtils.getClass.getCanonicalName.stripSuffix("$")

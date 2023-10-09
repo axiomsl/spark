@@ -1174,14 +1174,14 @@ case class Unhex(child: Expression, failOnError: Boolean = false)
       val maybeFailOnErrorCode = if (failOnError) {
         val binaryType = ctx.addReferenceObj("to", BinaryType, BinaryType.getClass.getName)
         s"""
-           |if (${ev.value} == null) {
-           |  throw QueryExecutionErrors.invalidInputInConversionError(
-           |    $binaryType,
-           |    $c,
-           |    UTF8String.fromString("HEX"),
-           |    "try_to_binary");
-           |}
-           |""".stripMargin
+           if (${ev.value} == null) {
+             throw QueryExecutionErrors.invalidInputInConversionError(
+               $binaryType,
+               $c,
+               UTF8String.fromString("HEX"),
+               "try_to_binary");
+           }
+           """
       } else {
         s"${ev.isNull} = ${ev.value} == null;"
       }
@@ -1604,15 +1604,15 @@ abstract class RoundBase(child: Expression, scale: Expression,
         if (ansiEnabled) {
           val errorContext = getContextOrNullCode(ctx)
           val evalCode = s"""
-            |${ev.value} = new java.math.BigDecimal(${ce.value}).
-            |setScale(${_scale}, java.math.BigDecimal.${modeStr}).${dt}ValueExact();
-            |""".stripMargin
+            ${ev.value} = new java.math.BigDecimal(${ce.value}).
+            setScale(${_scale}, java.math.BigDecimal.${modeStr}).${dt}ValueExact();
+            """
           MathUtils.withOverflowCode(evalCode, errorContext)
         } else {
           s"""
-             |${ev.value} = new java.math.BigDecimal(${ce.value}).
-             |setScale(${_scale}, java.math.BigDecimal.${modeStr}).${dt}Value();
-             |""".stripMargin
+             ${ev.value} = new java.math.BigDecimal(${ce.value}).
+             setScale(${_scale}, java.math.BigDecimal.${modeStr}).${dt}Value();
+             """
         }
       } else {
         s"${ev.value} = ${ce.value};"

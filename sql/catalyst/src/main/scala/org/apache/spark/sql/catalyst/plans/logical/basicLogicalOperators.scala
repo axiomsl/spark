@@ -1822,9 +1822,9 @@ trait HasPartitionExpressions extends SQLConfHelper {
         "`SortOrder`, which means `RangePartitioning`, or none of them are `SortOrder`, which " +
         "means `HashPartitioning`. In this case we have:" +
         s"""
-           |SortOrder: $sortOrder
-           |NonSortOrder: $nonSortOrder
-       """.stripMargin)
+           SortOrder: $sortOrder
+           NonSortOrder: $nonSortOrder
+       """)
     if (sortOrder.nonEmpty) {
       RangePartitioning(sortOrder.map(_.asInstanceOf[SortOrder]), numPartitions)
     } else {

@@ -516,9 +516,9 @@ case class In(value: Expression, list: Seq[Expression]) extends Predicate {
       // Under legacy behavior it's null if the left side is null, otherwise false (SPARK-44550).
       ev.copy(code =
         code"""
-              |final boolean ${ev.isNull} = false;
-              |final boolean ${ev.value} = false;
-       """.stripMargin)
+              final boolean ${ev.isNull} = false;
+              final boolean ${ev.value} = false;
+       """)
     } else {
       val javaDataType = CodeGenerator.javaType(value.dataType)
       val valueGen = value.genCode(ctx)

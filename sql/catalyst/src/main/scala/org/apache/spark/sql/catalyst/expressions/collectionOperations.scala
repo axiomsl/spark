@@ -4866,97 +4866,97 @@ case class ArrayInsert(
       val errorContext = getContextOrNullCode(ctx)
       if (positivePos.isDefined) {
         s"""
-           |int $itemInsertionIndex = ${positivePos.get - 1};
-           |int $adjustedAllocIdx = 0;
-           |boolean $insertedItemIsNull = ${itemExpr.isNull};
-           |
-           |final int $resLength = java.lang.Math.max($arr.numElements() + 1, ${positivePos.get});
-           |if ($resLength > ${ByteArrayMethods.MAX_ROUNDED_ARRAY_LENGTH}) {
-           |  throw QueryExecutionErrors.createArrayWithElementsExceedLimitError($resLength);
-           |}
-           |
-           |$allocation
-           |for (int $i = 0; $i < $arr.numElements(); $i ++) {
-           |  $adjustedAllocIdx = $i;
-           |  if ($i >= $itemInsertionIndex) {
-           |    $adjustedAllocIdx = $adjustedAllocIdx + 1;
-           |  }
-           |  $assignment
-           |}
-           |${CodeGenerator.setArrayElement(
-              values, elementType, itemInsertionIndex, item, Some(insertedItemIsNull))}
-           |
-           |for (int $j = $arr.numElements(); $j < $resLength - 1; $j ++) {
-           |  $values.setNullAt($j);
-           |}
-           |
-           |${ev.value} = $values;
-           |""".stripMargin
+           int $itemInsertionIndex = ${positivePos.get - 1};
+           int $adjustedAllocIdx = 0;
+           boolean $insertedItemIsNull = ${itemExpr.isNull};
+
+           final int $resLength = java.lang.Math.max($arr.numElements() + 1, ${positivePos.get});
+           if ($resLength > ${ByteArrayMethods.MAX_ROUNDED_ARRAY_LENGTH}) {
+             throw QueryExecutionErrors.createArrayWithElementsExceedLimitError($resLength);
+           }
+
+           $allocation
+           for (int $i = 0; $i < $arr.numElements(); $i ++) {
+             $adjustedAllocIdx = $i;
+             if ($i >= $itemInsertionIndex) {
+               $adjustedAllocIdx = $adjustedAllocIdx + 1;
+             }
+             $assignment
+           }
+           ${CodeGenerator.setArrayElement(
+          values, elementType, itemInsertionIndex, item, Some(insertedItemIsNull))}
+
+           for (int $j = $arr.numElements(); $j < $resLength - 1; $j ++) {
+             $values.setNullAt($j);
+           }
+
+           ${ev.value} = $values;
+           """
       } else {
         val pos = posExpr.value
         val baseOffset = if (legacyNegativeIndex) 1 else 0
         s"""
-           |int $itemInsertionIndex = 0;
-           |int $resLength = 0;
-           |int $adjustedAllocIdx = 0;
-           |boolean $insertedItemIsNull = ${itemExpr.isNull};
-           |
-           |if ($pos == 0) {
-           |  throw QueryExecutionErrors.invalidIndexOfZeroError($errorContext);
-           |}
-           |
-           |if ($pos < 0 && (java.lang.Math.abs($pos) > $arr.numElements())) {
-           |
-           |  $resLength = java.lang.Math.abs($pos) + $baseOffset;
-           |  if ($resLength > ${ByteArrayMethods.MAX_ROUNDED_ARRAY_LENGTH}) {
-           |    throw QueryExecutionErrors.createArrayWithElementsExceedLimitError($resLength);
-           |  }
-           |
-           |  $allocation
-           |  for (int $i = 0; $i < $arr.numElements(); $i ++) {
-           |    $adjustedAllocIdx = $i + $baseOffset + java.lang.Math.abs($pos + $arr.numElements());
-           |    $assignment
-           |  }
-           |  ${CodeGenerator.setArrayElement(
-             values, elementType, itemInsertionIndex, item, Some(insertedItemIsNull))}
-           |
-           |  for (int $j = ${if (legacyNegativeIndex) 0 else 1} + $pos + $arr.numElements(); $j < 0; $j ++) {
-           |    $values.setNullAt($j + $baseOffset + java.lang.Math.abs($pos + $arr.numElements()));
-           |  }
-           |
-           |  ${ev.value} = $values;
-           |} else {
-           |
-           |  $itemInsertionIndex = 0;
-           |  if ($pos < 0) {
-           |    $itemInsertionIndex = $pos + $arr.numElements() + ${if (legacyNegativeIndex) 0 else 1};
-           |  } else if ($pos > 0) {
-           |    $itemInsertionIndex = $pos - 1;
-           |  }
-           |
-           |  $resLength = java.lang.Math.max($arr.numElements() + 1, $itemInsertionIndex + 1);
-           |  if ($resLength > ${ByteArrayMethods.MAX_ROUNDED_ARRAY_LENGTH}) {
-           |    throw QueryExecutionErrors.createArrayWithElementsExceedLimitError($resLength);
-           |  }
-           |
-           |  $allocation
-           |  for (int $i = 0; $i < $arr.numElements(); $i ++) {
-           |    $adjustedAllocIdx = $i;
-           |    if ($i >= $itemInsertionIndex) {
-           |      $adjustedAllocIdx = $adjustedAllocIdx + 1;
-           |    }
-           |    $assignment
-           |  }
-           |  ${CodeGenerator.setArrayElement(
-             values, elementType, itemInsertionIndex, item, Some(insertedItemIsNull))}
-           |
-           |  for (int $j = $arr.numElements(); $j < $resLength - 1; $j ++) {
-           |    $values.setNullAt($j);
-           |  }
-           |
-           |  ${ev.value} = $values;
-           |}
-           |""".stripMargin
+           int $itemInsertionIndex = 0;
+           int $resLength = 0;
+           int $adjustedAllocIdx = 0;
+           boolean $insertedItemIsNull = ${itemExpr.isNull};
+
+           if ($pos == 0) {
+             throw QueryExecutionErrors.invalidIndexOfZeroError($errorContext);
+           }
+
+           if ($pos < 0 && (java.lang.Math.abs($pos) > $arr.numElements())) {
+
+             $resLength = java.lang.Math.abs($pos) + $baseOffset;
+             if ($resLength > ${ByteArrayMethods.MAX_ROUNDED_ARRAY_LENGTH}) {
+               throw QueryExecutionErrors.createArrayWithElementsExceedLimitError($resLength);
+             }
+
+             $allocation
+             for (int $i = 0; $i < $arr.numElements(); $i ++) {
+               $adjustedAllocIdx = $i + $baseOffset + java.lang.Math.abs($pos + $arr.numElements());
+               $assignment
+             }
+             ${CodeGenerator.setArrayElement(
+          values, elementType, itemInsertionIndex, item, Some(insertedItemIsNull))}
+
+             for (int $j = ${if (legacyNegativeIndex) 0 else 1} + $pos + $arr.numElements(); $j < 0; $j ++) {
+               $values.setNullAt($j + $baseOffset + java.lang.Math.abs($pos + $arr.numElements()));
+             }
+
+             ${ev.value} = $values;
+           } else {
+
+             $itemInsertionIndex = 0;
+             if ($pos < 0) {
+               $itemInsertionIndex = $pos + $arr.numElements() + ${if (legacyNegativeIndex) 0 else 1};
+             } else if ($pos > 0) {
+               $itemInsertionIndex = $pos - 1;
+             }
+
+             $resLength = java.lang.Math.max($arr.numElements() + 1, $itemInsertionIndex + 1);
+             if ($resLength > ${ByteArrayMethods.MAX_ROUNDED_ARRAY_LENGTH}) {
+               throw QueryExecutionErrors.createArrayWithElementsExceedLimitError($resLength);
+             }
+
+             $allocation
+             for (int $i = 0; $i < $arr.numElements(); $i ++) {
+               $adjustedAllocIdx = $i;
+               if ($i >= $itemInsertionIndex) {
+                 $adjustedAllocIdx = $adjustedAllocIdx + 1;
+               }
+               $assignment
+             }
+             ${CodeGenerator.setArrayElement(
+          values, elementType, itemInsertionIndex, item, Some(insertedItemIsNull))}
+
+             for (int $j = $arr.numElements(); $j < $resLength - 1; $j ++) {
+               $values.setNullAt($j);
+             }
+
+             ${ev.value} = $values;
+           }
+           """
       }
     }
 
@@ -5142,16 +5142,16 @@ case class ArrayAppend(left: Expression, right: Expression)
       val assignment = CodeGenerator.createArrayAssignment(
         values, elementType, eval1, i, i, left.dataType.asInstanceOf[ArrayType].containsNull)
       s"""
-         |int $newArraySize = $eval1.numElements() + 1;
-         |$allocation
-         |int $i = 0;
-         |while ($i < $eval1.numElements()) {
-         |  $assignment
-         |  $i ++;
-         |}
-         |${CodeGenerator.setArrayElement(values, elementType, i, eval2, Some(rightGen.isNull))}
-         |${ev.value} = $values;
-         |""".stripMargin
+         int $newArraySize = $eval1.numElements() + 1;
+         $allocation
+         int $i = 0;
+         while ($i < $eval1.numElements()) {
+           $assignment
+           $i ++;
+         }
+         ${CodeGenerator.setArrayElement(values, elementType, i, eval2, Some(rightGen.isNull))}
+         ${ev.value} = $values;
+         """
     }
     val resultCode = f(leftGen.value, rightGen.value)
     if (nullable) {

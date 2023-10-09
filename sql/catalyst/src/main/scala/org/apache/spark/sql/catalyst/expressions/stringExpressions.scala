@@ -2478,14 +2478,14 @@ case class UnBase64(child: Expression, failOnError: Boolean = false)
         val unbase64 = UnBase64.getClass.getName.stripSuffix("$")
         val binaryType = ctx.addReferenceObj("to", BinaryType, BinaryType.getClass.getName)
         s"""
-           |if (!$unbase64.isValidBase64($child)) {
-           |  throw QueryExecutionErrors.invalidInputInConversionError(
-           |    $binaryType,
-           |    $child,
-           |    UTF8String.fromString("BASE64"),
-           |    "try_to_binary");
-           |}
-       """.stripMargin
+           if (!$unbase64.isValidBase64($child)) {
+             throw QueryExecutionErrors.invalidInputInConversionError(
+               $binaryType,
+               $child,
+               UTF8String.fromString("BASE64"),
+               "try_to_binary");
+           }
+       """
       } else {
         ""
       }

@@ -239,21 +239,21 @@ case class GlobalLimitExec(limit: Int = -1, child: SparkPlan, offset: Int = 0)
         // In codegen, we skip the first `offset` rows, then take the first `limit - offset` rows.
         val finalLimit = limit - offset
         s"""
-           | if ($skipTerm < $offset) {
-           |   $skipTerm += 1;
-           | } else if ($countTerm < $finalLimit) {
-           |   $countTerm += 1;
-           |   ${consume(ctx, input)}
-           | }
-         """.stripMargin
+            if ($skipTerm < $offset) {
+              $skipTerm += 1;
+            } else if ($countTerm < $finalLimit) {
+              $countTerm += 1;
+              ${consume(ctx, input)}
+            }
+         """
       } else {
         s"""
-           | if ($skipTerm < $offset) {
-           |   $skipTerm += 1;
-           | } else {
-           |   ${consume(ctx, input)}
-           | }
-         """.stripMargin
+            if ($skipTerm < $offset) {
+              $skipTerm += 1;
+            } else {
+              ${consume(ctx, input)}
+            }
+         """
       }
     } else {
       super.doConsume(ctx, input, row)

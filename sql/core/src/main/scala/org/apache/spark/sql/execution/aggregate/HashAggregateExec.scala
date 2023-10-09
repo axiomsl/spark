@@ -487,14 +487,14 @@ case class HashAggregateExec(
     // output (e.g. aggregate followed by limit).
     val addHookToCloseFastHashMap = if (isFastHashMapEnabled) {
       s"""
-         |$thisPlan.getTaskContext().addTaskCompletionListener(
-         |  new org.apache.spark.util.TaskCompletionListener() {
-         |    @Override
-         |    public void onTaskCompletion(org.apache.spark.TaskContext context) {
-         |      $fastHashMapTerm.close();
-         |    }
-         |});
-       """.stripMargin
+         $thisPlan.getTaskContext().addTaskCompletionListener(
+           new org.apache.spark.util.TaskCompletionListener() {
+             @Override
+             public void onTaskCompletion(org.apache.spark.TaskContext context) {
+               $fastHashMapTerm.close();
+             }
+         });
+       """
     } else ""
 
     // Create a name for the iterator from the regular hash map.
@@ -689,16 +689,16 @@ case class HashAggregateExec(
         // If fast hash map is on, we first generate code to probe and update the fast hash map.
         // If the probe is successful the corresponding fast row buffer will hold the mutable row.
         s"""
-           |${fastRowKeys.map(_.code).mkString("\n")}
-           |if (${fastRowKeys.map("!" + _.isNull).mkString(" && ")}) {
-           |  $fastRowBuffer = $fastHashMapTerm.findOrInsert(
-           |    ${fastRowKeys.map(_.value).mkString(", ")});
-           |}
-           |// Cannot find the key in fast hash map, try regular hash map.
-           |if ($fastRowBuffer == null) {
-           |  $findOrInsertRegularHashMap
-           |}
-         """.stripMargin
+           ${fastRowKeys.map(_.code).mkString("\n")}
+           if (${fastRowKeys.map("!" + _.isNull).mkString(" && ")}) {
+             $fastRowBuffer = $fastHashMapTerm.findOrInsert(
+               ${fastRowKeys.map(_.value).mkString(", ")});
+           }
+           // Cannot find the key in fast hash map, try regular hash map.
+           if ($fastRowBuffer == null) {
+             $findOrInsertRegularHashMap
+           }
+         """
       } else {
         findOrInsertRegularHashMap
       }
