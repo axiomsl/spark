@@ -3837,6 +3837,20 @@ class Dataset[T] private[sql](
 
   /**
    * Mark the Dataset as non-persistent, and remove all blocks for it from memory and disk.
+   * This will un-persist any cached data that is built upon this Dataset.
+   *
+   * @param blocking Whether to block until all blocks are deleted.
+   * @group basic
+   * @since 3.4.2-2-AX
+   */
+  def unpersist(blocking: Boolean, cascade: Boolean): this.type = {
+    sparkSession.sharedState.cacheManager.uncacheQuery(
+      sparkSession, logicalPlan, cascade, blocking)
+    this
+  }
+
+  /**
+   * Mark the Dataset as non-persistent, and remove all blocks for it from memory and disk.
    * This will not un-persist any cached data that is built upon this Dataset.
    *
    * @group basic
