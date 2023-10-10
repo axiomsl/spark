@@ -502,7 +502,7 @@ case class BroadcastNestedLoopJoinExec(
              $shouldOutputRow = true;
              $foundMatch = true;
            }
-           if ($arrayIndex == $buildRowArrayTerm.length - 1 && !$foundMatch) {
+           if (!$foundMatch && $arrayIndex == $buildRowArrayTerm.length - 1) {
              $buildRow = null;
              $shouldOutputRow = true;
            }
