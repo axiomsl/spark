@@ -137,7 +137,7 @@ case class SortExec(
 
   override protected def doProduce(ctx: CodegenContext): String = {
     val needToSort =
-      ctx.addMutableState(CodeGenerator.JAVA_BOOLEAN, "needToSort", v => s"$v = true;")
+      ctx.addMutableState(CodeGenerator.JAVA_BOOLEAN, "nToSrt", v => s"$v = true;")
 
     // Initialize the class member variables. This includes the instance of the Sorter and
     // the iterator to return sorted rows.
@@ -150,7 +150,7 @@ case class SortExec(
     val sortedIterator = ctx.addMutableState("scala.collection.Iterator<UnsafeRow>", "sortedIter",
       forceInline = true)
 
-    val addToSorter = ctx.freshName("addToSorter")
+    val addToSorter = ctx.freshName("aToSrt")
     val addToSorterFuncName = ctx.addNewFunction(addToSorter,
       s"""
          private void $addToSorter() throws java.io.IOException {
@@ -158,11 +158,11 @@ case class SortExec(
          }
       """.trim)
 
-    val outputRow = ctx.freshName("outputRow")
-    val peakMemory = metricTerm(ctx, "peakMemory")
-    val spillSize = metricTerm(ctx, "spillSize")
-    val spillSizeBefore = ctx.freshName("spillSizeBefore")
-    val sortTime = metricTerm(ctx, "sortTime")
+    val outputRow = ctx.freshName("outRow")
+    val peakMemory = metricTerm(ctx, "pMem")
+    val spillSize = metricTerm(ctx, "sSize")
+    val spillSizeBefore = ctx.freshName("sSizeBef")
+    val sortTime = metricTerm(ctx, "srtTime")
     s"""
         if ($needToSort) {
           long $spillSizeBefore = $metrics.memoryBytesSpilled();
