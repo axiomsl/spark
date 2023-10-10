@@ -98,12 +98,18 @@ case class If(predicate: Expression, trueValue: Expression, falseValue: Expressi
     val trueEval = trueValue.genCode(ctx)
     val falseEval = falseValue.genCode(ctx)
 
+    val ifCond = condEval.isNull.toString match {
+      case "false" => s"${condEval.value}"
+      case "true" => s"false"
+      case _ => s"!${condEval.isNull} && ${condEval.value}"
+    }
+
     val code =
       code"""
          ${condEval.code}
          boolean ${ev.isNull} = false;
          ${CodeGenerator.javaType(dataType)} ${ev.value} = ${CodeGenerator.defaultValue(dataType)};
-         if (!${condEval.isNull} && ${condEval.value}) {
+         if ($ifCond) {
            ${trueEval.code}
            ${ev.isNull} = ${trueEval.isNull};
            ${ev.value} = ${trueEval.value};
