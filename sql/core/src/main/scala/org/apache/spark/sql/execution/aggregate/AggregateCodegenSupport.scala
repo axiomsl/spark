@@ -275,7 +275,7 @@ trait AggregateCodegenSupport
         // Note: wrap in "do { } while(false);", so the generated checks can jump out
         // with "continue;"
         s"""
-           break $jumpLabel {
+           $jumpLabel {
              ${generatePredicateCode(ctx, condition, inputAttrs, input, jumpLabel)}
              $aggCode
            }

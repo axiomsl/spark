@@ -266,7 +266,7 @@ case class FilterExec(condition: Expression, child: SparkPlan)
 
     // Note: wrap in "do { } while(false);", so the generated checks can jump out with "continue;"
     s"""
-       $jumpLabel {
+       $jumpLabel: {
          $predicateCode
          $numOutput.add(1);
          ${consume(ctx, resultVars)}
