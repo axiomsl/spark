@@ -137,20 +137,20 @@ case class SortExec(
 
   override protected def doProduce(ctx: CodegenContext): String = {
     val needToSort =
-      ctx.addMutableState(CodeGenerator.JAVA_BOOLEAN, "needToSort", v => s"$v = true;")
+      ctx.addMutableState(CodeGenerator.JAVA_BOOLEAN, "nts", v => s"$v = true;")
 
     // Initialize the class member variables. This includes the instance of the Sorter and
     // the iterator to return sorted rows.
     val thisPlan = ctx.addReferenceObj("plan", this)
     // Inline mutable state since not many Sort operations in a task
-    sorterVariable = ctx.addMutableState(classOf[UnsafeExternalRowSorter].getName, "sorter",
+    sorterVariable = ctx.addMutableState(classOf[UnsafeExternalRowSorter].getName, "srt",
       v => s"$v = $thisPlan.createSorter();", forceInline = true)
     val metrics = ctx.addMutableState(classOf[TaskMetrics].getName, "metrics",
       v => s"$v = org.apache.spark.TaskContext.get().taskMetrics();", forceInline = true)
     val sortedIterator = ctx.addMutableState("scala.collection.Iterator<UnsafeRow>", "sortedIter",
       forceInline = true)
 
-    val addToSorter = ctx.freshName("addToSorter")
+    val addToSorter = ctx.freshName("ats")
     val addToSorterFuncName = ctx.addNewFunction(addToSorter,
       s"""
          private void $addToSorter() throws java.io.IOException {
@@ -158,10 +158,10 @@ case class SortExec(
          }
       """.trim)
 
-    val outputRow = ctx.freshName("outputRow")
+    val outputRow = ctx.freshName("oRow")
     val peakMemory = metricTerm(ctx, "peakMemory")
     val spillSize = metricTerm(ctx, "spillSize")
-    val spillSizeBefore = ctx.freshName("spillSizeBefore")
+    val spillSizeBefore = ctx.freshName("ssb")
     val sortTime = metricTerm(ctx, "sortTime")
     s"""
         if ($needToSort) {
