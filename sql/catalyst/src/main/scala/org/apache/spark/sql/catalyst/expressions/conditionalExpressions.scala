@@ -108,7 +108,7 @@ case class If(predicate: Expression, trueValue: Expression, falseValue: Expressi
     val trueNullSet = if (trueIsNullString != "false" &&
       trueIsNullString != "true" &&
       !trueEval.code.toString.contains(trueIsNullString)) {
-      s"${ev.isNull} = ${trueEval.value} == null;"
+      s"${ev.isNull} = java.util.Objects.isNull(${trueEval.value});"
     } else {
       s"${ev.isNull} = ${trueEval.isNull};"
     }
@@ -117,7 +117,7 @@ case class If(predicate: Expression, trueValue: Expression, falseValue: Expressi
     val falseNullSet = if (falseIsNullString != "false" &&
       falseIsNullString != "true" &&
       !falseEval.code.toString.contains(falseIsNullString)) {
-      s"${ev.isNull} = ${falseEval.value} == null;"
+      s"${ev.isNull} = java.util.Objects.isNull(${falseEval.value});"
     } else {
       s"${ev.isNull} = ${falseEval.isNull};"
     }
