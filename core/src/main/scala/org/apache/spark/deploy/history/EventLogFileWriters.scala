@@ -83,7 +83,7 @@ abstract class EventLogFileWriter(
   private val syncThread = new Thread("event-log-sync") with WithLock {
     val lock = new ArrayBlockingQueue[Boolean](1)
     override def run(): Unit = {
-      while (!isInterrupted && !stopped) {
+      while (!isInterrupted) {
         lock.take()
         TimeUnit.MILLISECONDS.sleep(sparkConf.getTimeAsMs("spark.eventLog.sync.interval", "5m"))
         if (!stopped) {
@@ -127,7 +127,9 @@ abstract class EventLogFileWriter(
       val bstream = new BufferedOutputStream(cstream, outputBufferSize)
       fileSystem.setPermission(path, EventLogFileWriter.LOG_FILE_PERMISSIONS)
 
-      syncThread.start()
+      if (!syncThread.isAlive) {
+        syncThread.start()
+      }
       logInfo(s"Logging events to $path")
       writer = Some(fnSetupWriter(bstream))
     } catch {
@@ -150,7 +152,11 @@ abstract class EventLogFileWriter(
 
   protected def closeWriter(): Unit = {
     stopped = true
-    flush()
+    try {
+      flush()
+    } catch {
+      case ignore: Exception =>
+    }
   }
 
   protected def renameFile(src: Path, dest: Path, overwrite: Boolean): Unit = {
@@ -184,8 +190,12 @@ abstract class EventLogFileWriter(
   def stop(): Unit
 
   def flush(): Unit = {
-    writer.foreach(_.flush())
-    hadoopDataStream.foreach(_.hflush())
+    try {
+      writer.foreach(_.flush())
+      hadoopDataStream.foreach(_.hflush())
+    } catch {
+      case e: Exception => logTrace(e.toString, e)
+    }
   }
 
   /** returns representative path of log. for tests only. */
