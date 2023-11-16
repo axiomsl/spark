@@ -159,10 +159,10 @@ case class SortExec(
       """.trim)
 
     val outputRow = ctx.freshName("outRow")
-    val peakMemory = metricTerm(ctx, "peakMemory")
-    val spillSize = metricTerm(ctx, "spillSize")
+    val peakMemory = metricTerm(ctx, "pMem")
+    val spillSize = metricTerm(ctx, "sSize")
     val spillSizeBefore = ctx.freshName("sSizeBef")
-    val sortTime = metricTerm(ctx, "sortTime")
+    val sortTime = metricTerm(ctx, "srtTime")
     s"""
         if ($needToSort) {
           long $spillSizeBefore = $metrics.memoryBytesSpilled();
