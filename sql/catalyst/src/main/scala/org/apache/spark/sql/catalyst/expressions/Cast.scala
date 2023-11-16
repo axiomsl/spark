@@ -1225,36 +1225,20 @@ case class Cast(
       s"${cast(input, result, resultIsNull)}"
     } else {
       s"""
-         try {
-           ${cast(input, result, resultIsNull)}
-         } catch (Exception e) {
-           $resultIsNull = true;
-         }
-         """
+         |try {
+         |  ${cast(input, result, resultIsNull)}
+         |} catch (Exception e) {
+         |  $resultIsNull = true;
+         |}
+         |""".stripMargin
     }
-
-    if (inputIsNull.toString == "false" ) {
-      if (castCodeWithTryCatchIfNeeded.contains(resultIsNull.toString)) {
-        code"""
-          boolean $resultIsNull = $inputIsNull;
-          $javaType $result = ${CodeGenerator.defaultValue(resultType)};
-          $castCodeWithTryCatchIfNeeded
-        """
-      } else {
-        code"""
-          $javaType $result = ${CodeGenerator.defaultValue(resultType)};
-          $castCodeWithTryCatchIfNeeded
-        """
+    code"""
+      boolean $resultIsNull = $inputIsNull;
+      $javaType $result = ${CodeGenerator.defaultValue(resultType)};
+      if (!$inputIsNull) {
+        $castCodeWithTryCatchIfNeeded
       }
-    } else {
-      code"""
-        boolean $resultIsNull = $inputIsNull;
-        $javaType $result = ${CodeGenerator.defaultValue(resultType)};
-        if (!$inputIsNull) {
-          $castCodeWithTryCatchIfNeeded
-        }
-      """
-    }
+    """
   }
 
   private[this] def castToBinaryCode(from: DataType): CastFunction = from match {
