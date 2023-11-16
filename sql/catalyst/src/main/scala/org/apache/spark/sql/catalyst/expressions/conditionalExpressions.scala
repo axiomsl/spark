@@ -104,24 +104,6 @@ case class If(predicate: Expression, trueValue: Expression, falseValue: Expressi
       case _ => s"!${condEval.isNull} && ${condEval.value}"
     }
 
-    val trueIsNullString = trueEval.isNull.toString
-    val trueNullSet = if (trueIsNullString != "false" &&
-      trueIsNullString != "true" &&
-      !trueEval.code.toString.contains(trueIsNullString)) {
-      s"${ev.isNull} = ${trueValue.nullable};"
-    } else {
-      s"${ev.isNull} = ${trueEval.isNull};"
-    }
-
-    val falseIsNullString = falseEval.isNull.toString
-    val falseNullSet = if (falseIsNullString != "false" &&
-      falseIsNullString != "true" &&
-      !falseEval.code.toString.contains(falseIsNullString)) {
-      s"${ev.isNull} = ${falseValue.nullable};"
-    } else {
-      s"${ev.isNull} = ${falseEval.isNull};"
-    }
-
     val code =
       code"""
          ${condEval.code}
@@ -129,11 +111,11 @@ case class If(predicate: Expression, trueValue: Expression, falseValue: Expressi
          ${CodeGenerator.javaType(dataType)} ${ev.value} = ${CodeGenerator.defaultValue(dataType)};
          if ($ifCond) {
            ${trueEval.code}
-           $trueNullSet
+           ${ev.isNull} = ${trueEval.isNull};
            ${ev.value} = ${trueEval.value};
          } else {
            ${falseEval.code}
-           $falseNullSet
+           ${ev.isNull} = ${falseEval.isNull};
            ${ev.value} = ${falseEval.value};
          }
        """
