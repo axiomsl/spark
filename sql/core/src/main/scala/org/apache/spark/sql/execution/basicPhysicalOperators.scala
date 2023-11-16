@@ -125,8 +125,7 @@ trait GeneratePredicateHelper extends PredicateHelper {
       ctx: CodegenContext,
       condition: Expression,
       inputAttrs: Seq[Attribute],
-      inputExprCode: Seq[ExprCode],
-      jumpLabel: String): String = {
+      inputExprCode: Seq[ExprCode]): String = {
     val (notNullPreds, otherPreds) = splitConjunctivePredicates(condition).partition {
       case IsNotNull(a) => isNullIntolerant(a) && a.references.subsetOf(AttributeSet(inputAttrs))
       case _ => false
@@ -135,7 +134,7 @@ trait GeneratePredicateHelper extends PredicateHelper {
     val outputAttrs = outputWithNullability(inputAttrs, nonNullAttrExprIds)
     generatePredicateCode(
       ctx, inputAttrs, inputExprCode, outputAttrs, notNullPreds, otherPreds,
-      nonNullAttrExprIds, jumpLabel)
+      nonNullAttrExprIds)
   }
 
   protected def generatePredicateCode(
@@ -145,8 +144,7 @@ trait GeneratePredicateHelper extends PredicateHelper {
       outputAttrs: Seq[Attribute],
       notNullPreds: Seq[Expression],
       otherPreds: Seq[Expression],
-      nonNullAttrExprIds: Seq[ExprId],
-      jumpLabel: String): String = {
+      nonNullAttrExprIds: Seq[ExprId]): String = {
     /**
      * Generates code for `c`, using `in` for input attributes and `attrs` for nullability.
      */
@@ -165,7 +163,7 @@ trait GeneratePredicateHelper extends PredicateHelper {
       s"""
          $evaluated
          ${ev.code}
-         if (${nullCheck}!${ev.value}) break $jumpLabel;
+         if (${nullCheck}!${ev.value}) continue;
        """
     }
 
@@ -249,11 +247,10 @@ case class FilterExec(condition: Expression, child: SparkPlan)
   }
 
   override def doConsume(ctx: CodegenContext, input: Seq[ExprCode], row: ExprCode): String = {
-    val jumpLabel = ctx.freshName("lbl_")
     val numOutput = metricTerm(ctx, "numOutputRows")
 
     val predicateCode = generatePredicateCode(
-      ctx, child.output, input, output, notNullPreds, otherPreds, notNullAttributes, jumpLabel)
+      ctx, child.output, input, output, notNullPreds, otherPreds, notNullAttributes)
 
     // Reset the isNull to false for the not-null columns, then the followed operators could
     // generate better code (remove dead branches).
@@ -266,11 +263,11 @@ case class FilterExec(condition: Expression, child: SparkPlan)
 
     // Note: wrap in "do { } while(false);", so the generated checks can jump out with "continue;"
     s"""
-       $jumpLabel {
+       do {
          $predicateCode
          $numOutput.add(1);
          ${consume(ctx, resultVars)}
-       }
+       } while(false);
      """
   }
 

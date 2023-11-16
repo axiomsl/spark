@@ -339,7 +339,6 @@ case class Elt(
     val index = indexExpr.genCode(ctx)
     val inputs = inputExprs.map(_.genCode(ctx))
     val indexVal = ctx.freshName("idx")
-    val jumpLabel = ctx.freshName("lbl_")
     val indexMatched = ctx.freshName("eltIdxMtc")
 
     val inputVal = ctx.addMutableState(CodeGenerator.javaType(dataType), "inVal")
@@ -350,7 +349,7 @@ case class Elt(
            ${eval.code}
            $inputVal = ${eval.isNull} ? null : ${eval.value};
            $indexMatched = true;
-           break $jumpLabel;
+           continue;
          }
       """
     }
@@ -363,16 +362,16 @@ case class Elt(
       makeSplitFunction = body =>
         s"""
            ${CodeGenerator.JAVA_BOOLEAN} $indexMatched = false;
-           $jumpLabel: {
+           do {
              $body
-           }
+           } while (false);
            return $indexMatched;
          """,
       foldFunctions = _.map { funcCall =>
         s"""
            $indexMatched = $funcCall;
            if ($indexMatched) {
-             break $jumpLabel;
+             continue;
            }
          """
       }.mkString)
@@ -399,9 +398,9 @@ case class Elt(
            final int $indexVal = ${index.value};
            ${CodeGenerator.JAVA_BOOLEAN} $indexMatched = false;
            $inputVal = null;
-           $jumpLabel: {
+           do {
              $codes
-           }
+           } while (false);
            $indexOutOfBoundBranch
            ${ev.value} = $inputVal;
            ${ev.isNull} = ${ev.value} == null;

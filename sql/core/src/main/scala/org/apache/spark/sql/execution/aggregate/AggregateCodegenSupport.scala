@@ -257,9 +257,6 @@ trait AggregateCodegenSupport
       aggNames: Seq[String],
       aggCodeBlocks: Seq[Block],
       subExprs: SubExprCodes): String = {
-
-    val jumpLabel = ctx.freshName("lbl_")
-
     val aggCodes = if (conf.codegenSplitAggregateFunc &&
       aggCodeBlocks.map(_.length).sum > conf.methodSplitThreshold) {
       val maybeSplitCodes = splitAggregateExpressions(
@@ -275,10 +272,10 @@ trait AggregateCodegenSupport
         // Note: wrap in "do { } while(false);", so the generated checks can jump out
         // with "continue;"
         s"""
-           break $jumpLabel {
-             ${generatePredicateCode(ctx, condition, inputAttrs, input, jumpLabel)}
+           do {
+             ${generatePredicateCode(ctx, condition, inputAttrs, input)}
              $aggCode
-           }
+           } while(false);
          """
       case (aggCode, _) =>
         aggCode

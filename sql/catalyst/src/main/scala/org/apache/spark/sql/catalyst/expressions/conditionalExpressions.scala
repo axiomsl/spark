@@ -299,7 +299,6 @@ case class CaseWhen(
     val HAS_NULL = 1
     // It is initialized to `NOT_MATCHED`, and if it's set to `HAS_NULL` or `HAS_NONNULL`,
     // We won't go on anymore on the computation.
-    val jumpLabel = ctx.freshName("lbl_")
     val resultState = ctx.freshName("cWResSt")
     ev.value = JavaCode.global(
       ctx.addMutableState(CodeGenerator.javaType(dataType), ev.value),
@@ -326,7 +325,7 @@ case class CaseWhen(
            ${res.code}
            $resultState = $resultStateValue;
            ${ev.value} = ${res.value};
-           break $jumpLabel;
+           continue;
          }
        """
     }
@@ -374,16 +373,16 @@ case class CaseWhen(
       makeSplitFunction = func =>
         s"""
            ${CodeGenerator.JAVA_BYTE} $resultState = $NOT_MATCHED;
-           $jumpLabel: {
+           do {
              $func
-           }
+           } while (false);
            return $resultState;
          """,
       foldFunctions = _.map { funcCall =>
         s"""
            $resultState = $funcCall;
            if ($resultState != $NOT_MATCHED) {
-             break $jumpLabel;
+             continue;
            }
          """
       }.mkString)
@@ -391,9 +390,9 @@ case class CaseWhen(
     ev.copy(code =
       code"""
          ${CodeGenerator.JAVA_BYTE} $resultState = $NOT_MATCHED;
-         $jumpLabel: {
+         do {
            $codes
-         }
+         } while (false);
          // TRUE if any condition is met and the result is null, or no any condition is met.
          final boolean ${ev.isNull} = ($resultState != $HAS_NONNULL);
        """)

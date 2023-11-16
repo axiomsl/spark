@@ -520,7 +520,6 @@ case class In(value: Expression, list: Seq[Expression]) extends Predicate {
               final boolean ${ev.value} = false;
        """)
     } else {
-      val jumpLabel = ctx.freshName("lbl_")
       val javaDataType = CodeGenerator.javaType(value.dataType)
       val valueGen = value.genCode(ctx)
       val listGen = list.map(_.genCode(ctx))
@@ -540,7 +539,7 @@ case class In(value: Expression, list: Seq[Expression]) extends Predicate {
         case FalseLiteral =>
           s"""if (${ctx.genEqual(value.dataType, valueArg, x.value)}) {
                $tmpResult = $MATCHED; // ${ev.isNull} = false; ${ev.value} = true;
-           break $jumpLabel;
+           continue;
              }
             """
         case TrueLiteral =>
@@ -552,7 +551,7 @@ case class In(value: Expression, list: Seq[Expression]) extends Predicate {
              $tmpResult = $HAS_NULL; // ${ev.isNull} = true;
            } else if (${ctx.genEqual(value.dataType, valueArg, x.value)}) {
              $tmpResult = $MATCHED; // ${ev.isNull} = false; ${ev.value} = true;
-             break $jumpLabel;
+             continue;
            }
          """}
       s"""
@@ -568,16 +567,16 @@ case class In(value: Expression, list: Seq[Expression]) extends Predicate {
         returnType = CodeGenerator.JAVA_BYTE,
         makeSplitFunction = body =>
           s"""
-             $jumpLabel: {
+             do {
                $body
-             }
+             } while (false);
              return $tmpResult;
            """,
         foldFunctions = _.map { funcCall =>
           s"""
              $tmpResult = $funcCall;
              if ($tmpResult == $MATCHED) {
-               break $jumpLabel;
+               continue;
              }
            """
         }.mkString("\n"))
@@ -589,9 +588,9 @@ case class In(value: Expression, list: Seq[Expression]) extends Predicate {
            if (!${valueGen.isNull}) {
              $tmpResult = $NOT_MATCHED;
              $javaDataType $valueArg = ${valueGen.value};
-             $jumpLabel: {
+             do {
                $codes
-             }
+             } while (false);
            }
            final boolean ${ev.isNull} = ($tmpResult == $HAS_NULL);
            final boolean ${ev.value} = ($tmpResult == $MATCHED);
