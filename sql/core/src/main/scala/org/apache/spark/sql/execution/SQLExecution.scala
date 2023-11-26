@@ -110,8 +110,11 @@ object SQLExecution {
         val startTime = System.nanoTime()
         try {
           val queryExecutionString =
-            if (sc.conf.getBoolean("spark.ui.debugString.isEnabled", defaultValue = false)) ""
-            else queryExecution.explainString(planDescriptionMode)
+            if (sc.conf.getBoolean("spark.ui.debugString.isEnabled", defaultValue = false)) {
+              queryExecution.explainString(planDescriptionMode)
+            } else {
+              ""
+            }
           sc.listenerBus.post(SparkListenerSQLExecutionStart(
             executionId = executionId,
             rootExecutionId = Some(rootExecutionId),
