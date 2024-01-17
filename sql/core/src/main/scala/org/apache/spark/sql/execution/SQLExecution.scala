@@ -109,8 +109,10 @@ object SQLExecution {
         var ex: Option[Throwable] = None
         val startTime = System.nanoTime()
         try {
+          val uiDebugEnabled = sc.conf
+            .getBoolean("spark.ui.debugString.isEnabled", defaultValue = false)
           val queryExecutionString =
-            if (sc.conf.getBoolean("spark.ui.debugString.isEnabled", defaultValue = false)) {
+            if (uiDebugEnabled) {
               queryExecution.explainString(planDescriptionMode)
             } else {
               ""
@@ -123,7 +125,8 @@ object SQLExecution {
             physicalPlanDescription = queryExecutionString,
             // `queryExecution.executedPlan` triggers query planning. If it fails, the exception
             // will be caught and reported in the `SparkListenerSQLExecutionEnd`
-            sparkPlanInfo = SparkPlanInfo.fromSparkPlan(queryExecution.executedPlan),
+            sparkPlanInfo = SparkPlanInfo
+              .fromSparkPlan(queryExecution.executedPlan, uiDebugEnabled),
             time = System.currentTimeMillis(),
             modifiedConfigs = redactedConfigs,
             jobTags = sc.getJobTags()

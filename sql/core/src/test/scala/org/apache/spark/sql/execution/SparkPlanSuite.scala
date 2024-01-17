@@ -86,7 +86,8 @@ class SparkPlanSuite extends QueryTest with SharedSparkSession {
       withTempPath { path =>
         spark.range(5).write.parquet(path.getAbsolutePath)
         val f = spark.read.parquet(path.getAbsolutePath)
-        assert(SparkPlanInfo.fromSparkPlan(f.queryExecution.sparkPlan).metadata.nonEmpty)
+        assert(SparkPlanInfo.fromSparkPlan(f.queryExecution.sparkPlan,
+          uiDebugEnabled = true).metadata.nonEmpty)
       }
     }
   }

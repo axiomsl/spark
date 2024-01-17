@@ -180,7 +180,8 @@ abstract class SQLAppStatusListenerSuite extends SharedSparkSession with JsonTes
     val executionId = 0
     val df = createTestDataFrame
     val accumulatorIds =
-      SparkPlanGraph(SparkPlanInfo.fromSparkPlan(df.queryExecution.executedPlan))
+      SparkPlanGraph(SparkPlanInfo.fromSparkPlan(df.queryExecution.executedPlan,
+        uiDebugEnabled = true))
         .allNodes.flatMap(_.metrics.map(_.accumulatorId))
     // Assume all accumulators are long
     var accumulatorValue = 0L
@@ -195,7 +196,7 @@ abstract class SQLAppStatusListenerSuite extends SharedSparkSession with JsonTes
       "test",
       "test",
       df.queryExecution.toString,
-      SparkPlanInfo.fromSparkPlan(df.queryExecution.executedPlan),
+      SparkPlanInfo.fromSparkPlan(df.queryExecution.executedPlan, uiDebugEnabled = true),
       System.currentTimeMillis(),
       Map.empty))
 
@@ -386,7 +387,7 @@ abstract class SQLAppStatusListenerSuite extends SharedSparkSession with JsonTes
       "test",
       "test",
       df.queryExecution.toString,
-      SparkPlanInfo.fromSparkPlan(df.queryExecution.executedPlan),
+      SparkPlanInfo.fromSparkPlan(df.queryExecution.executedPlan, uiDebugEnabled = true),
       System.currentTimeMillis(),
       Map.empty))
     listener.onJobStart(SparkListenerJobStart(
@@ -417,7 +418,7 @@ abstract class SQLAppStatusListenerSuite extends SharedSparkSession with JsonTes
       "test",
       "test",
       df.queryExecution.toString,
-      SparkPlanInfo.fromSparkPlan(df.queryExecution.executedPlan),
+      SparkPlanInfo.fromSparkPlan(df.queryExecution.executedPlan, uiDebugEnabled = true),
       System.currentTimeMillis(),
       Map.empty))
     listener.onJobStart(SparkListenerJobStart(
@@ -459,7 +460,7 @@ abstract class SQLAppStatusListenerSuite extends SharedSparkSession with JsonTes
       "test",
       "test",
       df.queryExecution.toString,
-      SparkPlanInfo.fromSparkPlan(df.queryExecution.executedPlan),
+      SparkPlanInfo.fromSparkPlan(df.queryExecution.executedPlan, uiDebugEnabled = true),
       System.currentTimeMillis(),
       Map.empty))
     listener.onJobStart(SparkListenerJobStart(
@@ -490,7 +491,7 @@ abstract class SQLAppStatusListenerSuite extends SharedSparkSession with JsonTes
       "test",
       "test",
       df.queryExecution.toString,
-      SparkPlanInfo.fromSparkPlan(df.queryExecution.executedPlan),
+      SparkPlanInfo.fromSparkPlan(df.queryExecution.executedPlan, uiDebugEnabled = true),
       System.currentTimeMillis(),
       Map.empty))
     listener.onOtherEvent(SparkListenerSQLExecutionEnd(
@@ -522,7 +523,7 @@ abstract class SQLAppStatusListenerSuite extends SharedSparkSession with JsonTes
       "test",
       "test",
       df.queryExecution.toString,
-      SparkPlanInfo.fromSparkPlan(df.queryExecution.executedPlan),
+      SparkPlanInfo.fromSparkPlan(df.queryExecution.executedPlan, uiDebugEnabled = true),
       System.currentTimeMillis(),
       Map.empty))
 
@@ -663,7 +664,7 @@ abstract class SQLAppStatusListenerSuite extends SharedSparkSession with JsonTes
       "test",
       "test",
       df.queryExecution.toString,
-      SparkPlanInfo.fromSparkPlan(df.queryExecution.executedPlan),
+      SparkPlanInfo.fromSparkPlan(df.queryExecution.executedPlan, uiDebugEnabled = true),
       time,
       Map.empty))
     time += 1
@@ -673,7 +674,7 @@ abstract class SQLAppStatusListenerSuite extends SharedSparkSession with JsonTes
       "test",
       "test",
       df.queryExecution.toString,
-      SparkPlanInfo.fromSparkPlan(df.queryExecution.executedPlan),
+      SparkPlanInfo.fromSparkPlan(df.queryExecution.executedPlan, uiDebugEnabled = true),
       time,
       Map.empty))
 
@@ -691,7 +692,7 @@ abstract class SQLAppStatusListenerSuite extends SharedSparkSession with JsonTes
       "test",
       "test",
       df.queryExecution.toString,
-      SparkPlanInfo.fromSparkPlan(df.queryExecution.executedPlan),
+      SparkPlanInfo.fromSparkPlan(df.queryExecution.executedPlan, uiDebugEnabled = true),
       time,
       Map.empty))
     assert(statusStore.executionsCount === 2)
@@ -702,7 +703,8 @@ abstract class SQLAppStatusListenerSuite extends SharedSparkSession with JsonTes
     DisableAdaptiveExecution("WSCG rule is applied later in AQE")) {
     // with AQE on, the WholeStageCodegen rule is applied when running QueryStageExec.
     val df = createTestDataFrame.select(count("*"))
-    val sparkPlanInfo = SparkPlanInfo.fromSparkPlan(df.queryExecution.executedPlan)
+    val sparkPlanInfo = SparkPlanInfo.fromSparkPlan(df.queryExecution.executedPlan,
+      uiDebugEnabled = true)
     assert(sparkPlanInfo.nodeName === "WholeStageCodegen (2)")
   }
 
@@ -717,7 +719,7 @@ abstract class SQLAppStatusListenerSuite extends SharedSparkSession with JsonTes
     // SQLPlanMetric(duration,0,timing)
     // SQLPlanMetric(number of output rows,1,sum)
     // SQLPlanMetric(number of output rows,2,sum)
-    val oldPlan = SparkPlanInfo.fromSparkPlan(df.queryExecution.executedPlan)
+    val oldPlan = SparkPlanInfo.fromSparkPlan(df.queryExecution.executedPlan, uiDebugEnabled = true)
     val oldAccumulatorIds =
       SparkPlanGraph(oldPlan)
         .allNodes.flatMap(_.metrics.map(_.accumulatorId))
@@ -777,7 +779,7 @@ abstract class SQLAppStatusListenerSuite extends SharedSparkSession with JsonTes
     // SQLPlanMetric(duration,3,timing)
     // SQLPlanMetric(number of output rows,4,sum)
     // SQLPlanMetric(number of output rows,5,sum)
-    val newPlan = SparkPlanInfo.fromSparkPlan(df2.queryExecution.executedPlan)
+    val newPlan = SparkPlanInfo.fromSparkPlan(df2.queryExecution.executedPlan, uiDebugEnabled = true)
     val newAccumulatorIds =
       SparkPlanGraph(newPlan)
         .allNodes.flatMap(_.metrics.map(_.accumulatorId))

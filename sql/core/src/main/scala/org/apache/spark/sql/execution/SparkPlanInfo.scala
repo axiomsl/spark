@@ -51,7 +51,7 @@ class SparkPlanInfo(
 
 private[execution] object SparkPlanInfo {
 
-  def fromSparkPlan(plan: SparkPlan): SparkPlanInfo = {
+  def fromSparkPlan(plan: SparkPlan, uiDebugEnabled: Boolean): SparkPlanInfo = {
     val children = plan match {
       case ReusedExchangeExec(_, child) => child :: Nil
       case ReusedSubqueryExec(child) => child :: Nil
@@ -69,10 +69,17 @@ private[execution] object SparkPlanInfo {
       case fileScan: FileSourceScanExec => fileScan.metadata
       case _ => Map[String, String]()
     }
+
+    val simpleString = if (uiDebugEnabled) {
+      plan.simpleString(SQLConf.get.maxToStringFields)
+    } else {
+      ""
+    }
+
     new SparkPlanInfo(
       plan.nodeName,
-      plan.simpleString(SQLConf.get.maxToStringFields),
-      children.map(fromSparkPlan),
+      simpleString,
+      children.map(c => fromSparkPlan(c, uiDebugEnabled)),
       metadata,
       metrics)
   }

@@ -756,10 +756,20 @@ case class AdaptiveSparkPlanExec(
         executionId, newMetrics))
     } else {
       val planDescriptionMode = ExplainMode.fromString(conf.uiExplainMode)
+
+      val uiDebugEnabled = context.session.sparkContext.conf
+        .getBoolean("spark.ui.debugString.isEnabled", defaultValue = false)
+      val queryExecutionString =
+        if (uiDebugEnabled) {
+          context.qe.explainString(planDescriptionMode)
+        } else {
+          ""
+        }
+
       context.session.sparkContext.listenerBus.post(SparkListenerSQLAdaptiveExecutionUpdate(
         executionId,
-        context.qe.explainString(planDescriptionMode),
-        SparkPlanInfo.fromSparkPlan(context.qe.executedPlan)))
+        queryExecutionString,
+        SparkPlanInfo.fromSparkPlan(context.qe.executedPlan, uiDebugEnabled)))
     }
   }
 
