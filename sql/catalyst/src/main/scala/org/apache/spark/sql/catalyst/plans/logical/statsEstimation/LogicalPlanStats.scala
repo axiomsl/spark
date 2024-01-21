@@ -24,11 +24,11 @@ import org.apache.spark.sql.catalyst.plans.logical._
  */
 trait LogicalPlanStats { self: LogicalPlan =>
 
-  def updateStatsCache(sizeInBytes: BigInt, rowCount: Option[BigInt]): Unit = {
+  def updateStatsCache(sizeInBytes: BigInt, rowCount: Option[BigInt], metadata: Map[String, String] = Map.empty ): Unit = {
     if (statsCache.isDefined) {
-      statsCache = Some(statsCache.get.copy(sizeInBytes = sizeInBytes, rowCount = rowCount))
+      statsCache = Some(statsCache.get.copy(sizeInBytes = sizeInBytes, rowCount = rowCount, metadata = metadata))
     } else {
-      statsCache = Some(Statistics(sizeInBytes = sizeInBytes, rowCount = rowCount))
+      statsCache = Some(Statistics(sizeInBytes = sizeInBytes, rowCount = rowCount, metadata =  metadata))
     }
   }
 
@@ -36,9 +36,9 @@ trait LogicalPlanStats { self: LogicalPlan =>
     statsCache = Some(stats)
   }
 
-  def updateStatsCache(rowCount: BigInt): Unit = {
+  def updateStatsCache(rowCount: BigInt, metadata: Map[String, String] = Map.empty): Unit = {
     val outputRowSize = EstimationUtils.getSizePerRow(this.output)
-    updateStatsCache(outputRowSize * rowCount, Some(rowCount))
+    updateStatsCache(outputRowSize * rowCount, Some(rowCount), metadata)
   }
 
   /**

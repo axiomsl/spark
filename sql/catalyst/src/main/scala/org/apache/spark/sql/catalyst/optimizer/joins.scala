@@ -370,7 +370,7 @@ trait JoinSelectionHelper extends Logging {
     if (r) {
       if (log.isDebugEnabled) {
         val fields = plan.schema.fields.map(_.name).mkString("[", ", ", "]")
-        logInfo(s"plan stats: ${plan.stats}; canBroadcastBySize: $r; fields: $fields")
+        logDebug(s"plan stats: ${plan.stats}; canBroadcastBySize: $r; fields: $fields")
       }
     }
     r

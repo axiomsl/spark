@@ -55,13 +55,14 @@ case class Statistics(
     sizeInBytes: BigInt,
     rowCount: Option[BigInt] = None,
     attributeStats: AttributeMap[ColumnStat] = AttributeMap(Nil),
-    isRuntime: Boolean = false) {
+    isRuntime: Boolean = false,
+    metadata: Map[String, String] = Map.empty) {
 
   override def toString: String = "Statistics(" + simpleString + ")"
 
   /** Readable string representation for the Statistics. */
   def simpleString: String = {
-    Seq(s"sizeInBytes=${Utils.bytesToString(sizeInBytes)}",
+    val base = Seq(s"sizeInBytes=${Utils.bytesToString(sizeInBytes)}",
       if (rowCount.isDefined) {
         // Show row count in scientific notation.
         s"rowCount=${BigDecimal(rowCount.get, new MathContext(3, RoundingMode.HALF_UP)).toString()}"
@@ -69,6 +70,12 @@ case class Statistics(
         ""
       }
     ).filter(_.nonEmpty).mkString(", ")
+
+    if (metadata.nonEmpty) {
+      base + ", " + metadata
+    } else {
+      base
+    }
   }
 }
 
