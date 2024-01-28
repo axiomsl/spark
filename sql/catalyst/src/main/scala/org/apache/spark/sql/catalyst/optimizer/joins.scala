@@ -18,7 +18,10 @@
 package org.apache.spark.sql.catalyst.optimizer
 
 import scala.annotation.tailrec
+import scala.util.Random
 import scala.util.control.NonFatal
+
+import org.slf4j.MDC
 
 import org.apache.spark.internal.Logging
 import org.apache.spark.sql.catalyst.expressions._
@@ -360,7 +363,10 @@ trait JoinSelectionHelper extends Logging {
    * Matches a plan whose output should be small enough to be used in broadcast join.
    */
   def canBroadcastBySize(plan: LogicalPlan, conf: SQLConf): Boolean = {
-    val autoBroadcastJoinThreshold = if (plan.stats.isRuntime) {
+    val id = Random.alphanumeric.take(6).mkString
+    MDC.put("statsCalcId", s"[statsCalcId=$id]")
+    val isRuntime = plan.stats.isRuntime
+    val autoBroadcastJoinThreshold = if (isRuntime) {
       conf.getConf(SQLConf.ADAPTIVE_AUTO_BROADCASTJOIN_THRESHOLD)
         .getOrElse(conf.autoBroadcastJoinThreshold)
     } else {
@@ -370,9 +376,11 @@ trait JoinSelectionHelper extends Logging {
     if (r) {
       if (log.isDebugEnabled) {
         val fields = plan.schema.fields.map(_.name).mkString("[", ", ", "]")
-        logDebug(s"plan stats: ${plan.stats}; canBroadcastBySize: $r; fields: $fields")
+        logDebug(s"plan stats: ${plan.stats}; canBroadcastBySize: $r;" +
+          s" isRuntime: $isRuntime; fields: $fields")
       }
     }
+    MDC.remove("statsCalcId")
     r
   }
 

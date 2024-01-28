@@ -160,6 +160,8 @@ case class BroadcastExchangeExec(
                   s"type: ${relation.getClass.getName}")
             }
 
+            logDebug(s"dataSize: $dataSize; child: [${child.output.map(_.name).mkString(", ")}];")
+
             longMetric("dataSize") += dataSize
             if (dataSize >= MAX_BROADCAST_TABLE_BYTES) {
               throw QueryExecutionErrors.cannotBroadcastTableOverMaxTableBytesError(
