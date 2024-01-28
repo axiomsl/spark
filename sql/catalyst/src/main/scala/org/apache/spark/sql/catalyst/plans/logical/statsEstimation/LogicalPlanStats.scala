@@ -17,6 +17,8 @@
 
 package org.apache.spark.sql.catalyst.plans.logical.statsEstimation
 
+import org.slf4j.MDC
+
 import org.apache.spark.sql.catalyst.plans.logical._
 
 /**
@@ -24,12 +26,19 @@ import org.apache.spark.sql.catalyst.plans.logical._
  */
 trait LogicalPlanStats { self: LogicalPlan =>
 
-  def updateStatsCache(sizeInBytes: BigInt, rowCount: Option[BigInt], metadata: Map[String, String] = Map.empty ): Unit = {
+  def updateStatsCache(sizeInBytes: BigInt, rowCount: Option[BigInt],
+                       metadata: Map[String, String]): Unit = {
     if (statsCache.isDefined) {
-      statsCache = Some(statsCache.get.copy(sizeInBytes = sizeInBytes, rowCount = rowCount, metadata = metadata))
+      statsCache = Some(statsCache.get.copy(sizeInBytes = sizeInBytes, rowCount = rowCount,
+        metadata = metadata))
     } else {
-      statsCache = Some(Statistics(sizeInBytes = sizeInBytes, rowCount = rowCount, metadata =  metadata))
+      statsCache = Some(Statistics(sizeInBytes = sizeInBytes, rowCount = rowCount,
+        metadata = metadata))
     }
+  }
+
+  def updateStatsCache(sizeInBytes: BigInt, rowCount: Option[BigInt]): Unit = {
+    updateStatsCache(sizeInBytes, rowCount, Map.empty)
   }
 
   def updateStatsCache(stats: Statistics): Unit = {
@@ -49,10 +58,16 @@ trait LogicalPlanStats { self: LogicalPlan =>
    */
   def stats: Statistics = statsCache.getOrElse {
     if (conf.cboEnabled) {
-      statsCache = Option(BasicStatsPlanVisitor.visit(self))
+      statsCache = Option(LogicalPlanVisitor.cbo.visit(self))
     } else {
-      statsCache = Option(SizeInBytesOnlyStatsPlanVisitor.visit(self))
+      statsCache = Option(LogicalPlanVisitor.nonCbo.visit(self))
     }
+    val id = MDC.get("statsCalcId")
+    val value = statsCache.get
+    if (id != null && !value.metadata.contains("statsCalcId")) {
+      statsCache = Some(value.copy(metadata = Map("statsCalcId" -> id)))
+    }
+
     statsCache.get
   }
 

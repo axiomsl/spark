@@ -26,7 +26,7 @@ import org.apache.spark.sql.catalyst.plans.logical._
 /**
  * An [[LogicalPlanVisitor]] that computes a single dimension for plan stats: size in bytes.
  */
-object SizeInBytesOnlyStatsPlanVisitor extends LogicalPlanVisitor[Statistics] with Logging {
+case class SizeInBytesOnlyStatsPlanVisitor() extends LogicalPlanStatisticsVisitor with Logging {
 
   /**
    * A default, commonly used estimation for unary nodes. We assume the input row number is the
@@ -47,7 +47,7 @@ object SizeInBytesOnlyStatsPlanVisitor extends LogicalPlanVisitor[Statistics] wi
         // (product of children).
         estimatedParentTotalSize = 1
       }
-      logDebug(s"visitUnaryNode - noRowCount : $estimatedParentTotalSize; " +
+      logDebug(s"visitUnaryNode - estimatedParentTotalSize : $estimatedParentTotalSize; " +
         s"childRowSize: $childRowSize; parentRowSize: $outputRowSize;" +
         s" sizeInBytes: ${p.child.stats.sizeInBytes}")
       estimatedParentTotalSize

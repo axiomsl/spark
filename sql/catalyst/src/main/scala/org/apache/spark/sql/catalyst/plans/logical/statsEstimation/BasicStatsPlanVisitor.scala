@@ -23,10 +23,11 @@ import org.apache.spark.sql.catalyst.plans.logical._
 /**
  * A [[LogicalPlanVisitor]] that computes the statistics for the cost-based optimizer.
  */
-object BasicStatsPlanVisitor extends LogicalPlanVisitor[Statistics] with Logging {
+case class BasicStatsPlanVisitor(delegate: LogicalPlanStatisticsVisitor) extends
+  LogicalPlanStatisticsVisitor with Logging {
 
   /** Falls back to the estimation computed by [[SizeInBytesOnlyStatsPlanVisitor]]. */
-  private def fallback(p: LogicalPlan): Statistics = SizeInBytesOnlyStatsPlanVisitor.visit(p)
+  private def fallback(p: LogicalPlan): Statistics = delegate.visit(p)
 
   override def default(p: LogicalPlan): Statistics = p match {
     case p: LeafNode =>
