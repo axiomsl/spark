@@ -322,8 +322,7 @@ private[ui] class MasterPage(parent: MasterWebUI) extends WebUIPage("") {
   private def driverRow(driver: DriverInfo, showDuration: Boolean): Seq[Node] = {
     val killLink = if (parent.killEnabled &&
       (driver.state == DriverState.RUNNING ||
-        driver.state == DriverState.SUBMITTED ||
-        driver.state == DriverState.RELAUNCHING)) {
+        driver.state == DriverState.SUBMITTED)) {
       val confirm =
         s"if (window.confirm('Are you sure you want to kill driver ${driver.id} ?')) " +
           "{ this.parentNode.submit(); return true; } else { return false; }"
@@ -355,7 +354,9 @@ private[ui] class MasterPage(parent: MasterWebUI) extends WebUIPage("") {
       <td>{formatResourcesAddresses(driver.resources)}</td>
       <td>{driver.desc.command.arguments(2)}</td>
       {if (showDuration) {
-        <td>{UIUtils.formatDuration(System.currentTimeMillis() - driver.startTime)}</td>
+        <td sorttable_customkey={(-driver.startTime).toString}>
+          {UIUtils.formatDuration(System.currentTimeMillis() - driver.startTime)}
+        </td>
       }}
     </tr>
   }

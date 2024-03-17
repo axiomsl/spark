@@ -307,6 +307,7 @@ class Analyzer(override val catalogManager: CatalogManager) extends RuleExecutor
       ResolveWindowFrame ::
       ResolveNaturalAndUsingJoin ::
       ResolveOutputRelation ::
+      new ResolveDataFrameDropColumns(catalogManager) ::
       ExtractWindowExpressions ::
       GlobalAggregates ::
       ResolveAggregateFunctions ::
@@ -347,7 +348,9 @@ class Analyzer(override val catalogManager: CatalogManager) extends RuleExecutor
     Batch("Cleanup", fixedPoint,
       CleanupAliases),
     Batch("HandleSpecialCommand", Once,
-      HandleSpecialCommand)
+      HandleSpecialCommand),
+    Batch("Remove watermark for batch query", Once,
+      EliminateEventTimeWatermark)
   )
 
   /**
@@ -1968,7 +1971,19 @@ class Analyzer(override val catalogManager: CatalogManager) extends RuleExecutor
               throw QueryCompilationErrors.groupByPositionRefersToAggregateFunctionError(
                 index, ordinalExpr)
             } else {
-              ordinalExpr
+              trimAliases(ordinalExpr) match {
+                // HACK ALERT: If the ordinal expression is also an integer literal, don't use it
+                //             but still keep the ordinal literal. The reason is we may repeatedly
+                //             analyze the plan. Using a different integer literal may lead to
+                //             a repeat GROUP BY ordinal resolution which is wrong. GROUP BY
+                //             constant is meaningless so whatever value does not matter here.
+                // TODO: (SPARK-45932) GROUP BY ordinal should pull out grouping expressions to
+                //       a Project, then the resolved ordinal expression is always
+                //       `AttributeReference`.
+                case Literal(_: Int, IntegerType) =>
+                  Literal(index)
+                case _ => ordinalExpr
+              }
             }
           } else {
             throw QueryCompilationErrors.groupByPositionRangeError(index, aggs.size)
@@ -3830,7 +3845,7 @@ object CleanupAliases extends Rule[LogicalPlan] with AliasHelper {
 object EliminateEventTimeWatermark extends Rule[LogicalPlan] {
   override def apply(plan: LogicalPlan): LogicalPlan = plan.resolveOperatorsWithPruning(
     _.containsPattern(EVENT_TIME_WATERMARK)) {
-    case EventTimeWatermark(_, _, child) if !child.isStreaming => child
+    case EventTimeWatermark(_, _, child) if child.resolved && !child.isStreaming => child
   }
 }
 

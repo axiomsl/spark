@@ -270,6 +270,13 @@ class DatasetSuite extends QueryTest
       (ClassData("one", 2), 1L), (ClassData("two", 3), 1L))
   }
 
+  test("SPARK-45896: seq of option of seq") {
+    val ds = Seq(DataSeqOptSeq(Seq(Some(Seq(0))))).toDS()
+    checkDataset(
+      ds,
+      DataSeqOptSeq(Seq(Some(List(0)))))
+  }
+
   test("select") {
     val ds = Seq(("a", 1), ("b", 2), ("c", 3)).toDS()
     checkDataset(
@@ -2541,6 +2548,33 @@ class DatasetSuite extends QueryTest
     val ds = Seq(1, 2).toDS().persist(StorageLevel.NONE)
     assert(ds.count() == 2)
   }
+
+  test("SPARK-45592: Coaleasced shuffle read is not compatible with hash partitioning") {
+    withSQLConf(SQLConf.CAN_CHANGE_CACHED_PLAN_OUTPUT_PARTITIONING.key -> "true",
+      SQLConf.AUTO_BROADCASTJOIN_THRESHOLD.key -> "-1",
+      SQLConf.SHUFFLE_PARTITIONS.key -> "20",
+      SQLConf.ADVISORY_PARTITION_SIZE_IN_BYTES.key -> "2000") {
+      val ee = spark.range(0, 1000, 1, 5).map(l => (l, l - 1)).toDF()
+        .persist(org.apache.spark.storage.StorageLevel.MEMORY_AND_DISK)
+      ee.count()
+
+      // `minNbrs1` will start with 20 partitions and without the fix would coalesce to ~10
+      // partitions.
+      val minNbrs1 = ee
+        .groupBy("_2").agg(min(col("_1")).as("min_number"))
+        .select(col("_2") as "_1", col("min_number"))
+        .persist(org.apache.spark.storage.StorageLevel.MEMORY_AND_DISK)
+      minNbrs1.count()
+
+      // shuffle on `ee` will start with 2 partitions, smaller than `minNbrs1`'s partition num,
+      // and `EnsureRequirements` will change its partition num to `minNbrs1`'s partition num.
+      withSQLConf(SQLConf.SHUFFLE_PARTITIONS.key -> "5") {
+        val join = ee.join(minNbrs1, "_1")
+        assert(join.count() == 999)
+      }
+    }
+  }
+
 }
 
 class DatasetLargeResultCollectingSuite extends QueryTest
@@ -2614,6 +2648,8 @@ case class ClassNullableData(a: String, b: Integer)
 
 case class NestedStruct(f: ClassData)
 case class DeepNestedStruct(f: NestedStruct)
+
+case class DataSeqOptSeq(a: Seq[Option[Seq[Int]]])
 
 /**
  * A class used to test serialization using encoders. This class throws exceptions when using

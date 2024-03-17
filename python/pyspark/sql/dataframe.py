@@ -942,7 +942,11 @@ class DataFrame(PandasMapOpsMixin, PandasConversionMixin):
         age  | 16
         name | Bob
         """
+        print(self._show_string(n, truncate, vertical))
 
+    def _show_string(
+        self, n: int = 20, truncate: Union[bool, int] = True, vertical: bool = False
+    ) -> str:
         if not isinstance(n, int) or isinstance(n, bool):
             raise PySparkTypeError(
                 error_class="NOT_INT",
@@ -956,7 +960,7 @@ class DataFrame(PandasMapOpsMixin, PandasConversionMixin):
             )
 
         if isinstance(truncate, bool) and truncate:
-            print(self._jdf.showString(n, 20, vertical))
+            return self._jdf.showString(n, 20, vertical)
         else:
             try:
                 int_truncate = int(truncate)
@@ -969,7 +973,7 @@ class DataFrame(PandasMapOpsMixin, PandasConversionMixin):
                     },
                 )
 
-            print(self._jdf.showString(n, int_truncate, vertical))
+            return self._jdf.showString(n, int_truncate, vertical)
 
     def __repr__(self) -> str:
         if not self._support_repr_html and self.sparkSession._jconf.isReplEagerEvalEnabled():
@@ -1485,7 +1489,7 @@ class DataFrame(PandasMapOpsMixin, PandasConversionMixin):
         self.rdd.foreachPartition(f)  # type: ignore[arg-type]
 
     def cache(self) -> "DataFrame":
-        """Persists the :class:`DataFrame` with the default storage level (`MEMORY_AND_DISK`).
+        """Persists the :class:`DataFrame` with the default storage level (`MEMORY_AND_DISK_DESER`).
 
         .. versionadded:: 1.3.0
 
@@ -1494,7 +1498,7 @@ class DataFrame(PandasMapOpsMixin, PandasConversionMixin):
 
         Notes
         -----
-        The default storage level has changed to `MEMORY_AND_DISK` to match Scala in 2.0.
+        The default storage level has changed to `MEMORY_AND_DISK_DESER` to match Scala in 3.0.
 
         Returns
         -------

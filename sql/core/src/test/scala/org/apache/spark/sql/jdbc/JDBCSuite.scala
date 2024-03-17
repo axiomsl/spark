@@ -29,7 +29,7 @@ import org.mockito.ArgumentMatchers._
 import org.mockito.Mockito._
 
 import org.apache.spark.{SparkException, SparkSQLException}
-import org.apache.spark.sql.{AnalysisException, DataFrame, QueryTest, Row}
+import org.apache.spark.sql.{AnalysisException, DataFrame, Observation, QueryTest, Row}
 import org.apache.spark.sql.catalyst.{analysis, TableIdentifier}
 import org.apache.spark.sql.catalyst.parser.CatalystSqlParser
 import org.apache.spark.sql.catalyst.plans.logical.ShowCreateTable
@@ -39,6 +39,7 @@ import org.apache.spark.sql.execution.command.{ExplainCommand, ShowCreateTableCo
 import org.apache.spark.sql.execution.datasources.LogicalRelation
 import org.apache.spark.sql.execution.datasources.jdbc.{JDBCOptions, JDBCPartition, JDBCRelation, JdbcUtils}
 import org.apache.spark.sql.execution.metric.InputOutputMetricsHelper
+import org.apache.spark.sql.functions.{lit, percentile_approx}
 import org.apache.spark.sql.internal.SQLConf
 import org.apache.spark.sql.sources._
 import org.apache.spark.sql.test.SharedSparkSession
@@ -913,6 +914,8 @@ class JDBCSuite extends QueryTest with SharedSparkSession {
     assert(mySqlDialect.getCatalystType(java.sql.Types.VARBINARY, "BIT", 1, metadata) == None)
     assert(mySqlDialect.getCatalystType(java.sql.Types.BIT, "TINYINT", 1, metadata) ==
       Some(BooleanType))
+    assert(mySqlDialect.getCatalystType(java.sql.Types.TINYINT, "TINYINT", 1, metadata) ==
+      Some(ByteType))
   }
 
   test("SPARK-35446: MySQLDialect type mapping of float") {
@@ -1052,10 +1055,9 @@ class JDBCSuite extends QueryTest with SharedSparkSession {
     val h2 = JdbcDialects.get(url)
     val derby = JdbcDialects.get("jdbc:derby:db")
     val table = "weblogs"
-    val defaultQuery = s"SELECT * FROM $table WHERE 1=0"
-    val limitQuery = s"SELECT 1 FROM $table LIMIT 1"
-    assert(MySQL.getTableExistsQuery(table) == limitQuery)
-    assert(Postgres.getTableExistsQuery(table) == limitQuery)
+    val defaultQuery = s"SELECT 1 FROM $table WHERE 1=0"
+    assert(MySQL.getTableExistsQuery(table) == defaultQuery)
+    assert(Postgres.getTableExistsQuery(table) == defaultQuery)
     assert(db2.getTableExistsQuery(table) == defaultQuery)
     assert(h2.getTableExistsQuery(table) == defaultQuery)
     assert(derby.getTableExistsQuery(table) == defaultQuery)
@@ -1271,7 +1273,7 @@ class JDBCSuite extends QueryTest with SharedSparkSession {
   test("SPARK 12941: The data type mapping for StringType to Oracle") {
     val oracleDialect = JdbcDialects.get("jdbc:oracle://127.0.0.1/db")
     assert(oracleDialect.getJDBCType(StringType).
-      map(_.databaseTypeDefinition).get == "CLOB")
+      map(_.databaseTypeDefinition).get == "VARCHAR2(255)")
   }
 
   test("SPARK-16625: General data types to be mapped to Oracle") {
@@ -1289,7 +1291,7 @@ class JDBCSuite extends QueryTest with SharedSparkSession {
     assert(getJdbcType(oracleDialect, DoubleType) == "NUMBER(19, 4)")
     assert(getJdbcType(oracleDialect, ByteType) == "NUMBER(3)")
     assert(getJdbcType(oracleDialect, ShortType) == "NUMBER(5)")
-    assert(getJdbcType(oracleDialect, StringType) == "CLOB")
+    assert(getJdbcType(oracleDialect, StringType) == "VARCHAR2(255)")
     assert(getJdbcType(oracleDialect, BinaryType) == "BLOB")
     assert(getJdbcType(oracleDialect, DateType) == "DATE")
     assert(getJdbcType(oracleDialect, TimestampType) == "TIMESTAMP")
@@ -2056,5 +2058,19 @@ class JDBCSuite extends QueryTest with SharedSparkSession {
   test("SPARK-41990: Filter with composite name") {
     val df = sql("SELECT * FROM composite_name WHERE `last name` = 'smith'")
     assert(df.collect.toSet === Set(Row("smith", 1)))
+  }
+
+  test("SPARK-45475: saving a table via JDBC should work with observe API") {
+    val tableName = "test_table"
+    val namedObservation = Observation("named")
+    val observed_df = spark.range(100).observe(
+      namedObservation, percentile_approx($"id", lit(0.5), lit(100)).as("percentile_approx_val"))
+
+    observed_df.write.format("jdbc")
+      .option("url", urlWithUserAndPass)
+      .option("dbtable", tableName).save()
+
+    val expected = Map("percentile_approx_val" -> 49)
+    assert(namedObservation.get === expected)
   }
 }

@@ -2224,13 +2224,6 @@ class AstBuilder extends DataTypeAstBuilder with SQLConfHelper with Logging {
   }
 
   /**
-   * Create an expression for the IDENTIFIER() clause.
-   */
-  override def visitIdentifierClause(ctx: IdentifierClauseContext): Expression = withOrigin(ctx) {
-    ExpressionWithUnresolvedIdentifier(expression(ctx.expression), UnresolvedAttribute(_))
-  }
-
-  /**
    * Create a (windowed) Function expression.
    */
   override def visitFunctionCall(ctx: FunctionCallContext): Expression = withOrigin(ctx) {
@@ -2251,19 +2244,31 @@ class AstBuilder extends DataTypeAstBuilder with SQLConfHelper with Logging {
     val filter = Option(ctx.where).map(expression(_))
     val ignoreNulls =
       Option(ctx.nullsOption).map(_.getType == SqlBaseParser.IGNORE).getOrElse(false)
-    val funcCtx = ctx.functionName
-    val func = withFuncIdentClause(
-      funcCtx,
-      ident => UnresolvedFunction(ident, arguments, isDistinct, filter, ignoreNulls)
-    )
 
-    // Check if the function is evaluated in a windowed context.
-    ctx.windowSpec match {
-      case spec: WindowRefContext =>
-        UnresolvedWindowExpression(func, visitWindowRef(spec))
-      case spec: WindowDefContext =>
-        WindowExpression(func, visitWindowDef(spec))
-      case _ => func
+    // Is this an IDENTIFIER clause instead of a function call?
+    if (ctx.functionName.identFunc != null &&
+      arguments.length == 1 && // One argument
+      ctx.setQuantifier == null && // No other clause
+      ctx.where == null &&
+      ctx.nullsOption == null &&
+      ctx.windowSpec == null) {
+      ExpressionWithUnresolvedIdentifier(arguments.head, UnresolvedAttribute(_))
+    } else {
+      // It's a function call
+      val funcCtx = ctx.functionName
+      val func = withFuncIdentClause(
+        funcCtx,
+        ident => UnresolvedFunction(ident, arguments, isDistinct, filter, ignoreNulls)
+      )
+
+      // Check if the function is evaluated in a windowed context.
+      ctx.windowSpec match {
+        case spec: WindowRefContext =>
+          UnresolvedWindowExpression(func, visitWindowRef(spec))
+        case spec: WindowDefContext =>
+          WindowExpression(func, visitWindowDef(spec))
+        case _ => func
+      }
     }
   }
 
@@ -3269,7 +3274,9 @@ class AstBuilder extends DataTypeAstBuilder with SQLConfHelper with Logging {
       ctx: ExpressionPropertyListContext): OptionList = {
     val options = ctx.expressionProperty.asScala.map { property =>
       val key: String = visitPropertyKey(property.key)
-      val value: Expression = Option(property.value).map(expression).orNull
+      val value: Expression = Option(property.value).map(expression).getOrElse {
+        operationNotAllowed(s"A value must be specified for the key: $key.", ctx)
+      }
       key -> value
     }.toSeq
     OptionList(options)
