@@ -18,6 +18,7 @@
 package org.apache.spark.sql.execution
 
 import java.util.Locale
+import java.util.concurrent.TimeUnit
 import java.util.concurrent.atomic.{AtomicInteger, AtomicLong}
 
 import scala.collection.mutable
@@ -58,12 +59,18 @@ trait CodegenSupport extends SparkPlan {
     case _: DataSourceScanExec => "ds"
     case _: InMemoryTableScanExec => "ms"
     case _: WholeStageCodegenExec => "wsc"
+    case _: LocalTableScanExec => "lcltabscn"
+    case _: GenerateExec => "gen"
+    case _: SortExec => "srt"
     case _ =>
       nodeName.toLowerCase(Locale.ROOT) match {
         case "project" => "prj"
         case "inputadapter" => "inadp"
         case "filter" => "flt"
+        case "value" => "val"
         case "columnartorow" => "ctr"
+        case "streamedrow" => "strw"
+        case "bufferedrow" => "bfrw"
         case t => t
       }
   }
@@ -728,14 +735,18 @@ case class WholeStageCodegenExec(child: SparkPlan)(val codegenStageId: Int)
   }
 
   override def doExecute(): RDD[InternalRow] = {
+    val startTime = System.nanoTime()
     val (ctx, cleanedSource) = doCodeGen()
     // try to compile and fallback if it failed
     val (_, compiledCodeStats) = try {
       CodeGenerator.compile(cleanedSource)
     } catch {
       case NonFatal(_) if !Utils.isTesting && conf.codegenFallback =>
+        val runtime = TimeUnit.NANOSECONDS.toSeconds(System.nanoTime() - startTime)
         // We should already saw the error message
-        logWarning(s"Whole-stage codegen disabled for plan (id=$codegenStageId):\n $treeString")
+        logWarning(s"Whole-stage codegen disabled for plan (id=$codegenStageId)" +
+          s" after ($runtime seconds):" +
+          s"\n $treeString")
         return child.execute()
     }
 
