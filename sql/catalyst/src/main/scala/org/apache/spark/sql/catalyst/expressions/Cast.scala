@@ -1225,12 +1225,12 @@ case class Cast(
       s"${cast(input, result, resultIsNull)}"
     } else {
       s"""
-         |try {
-         |  ${cast(input, result, resultIsNull)}
-         |} catch (Exception e) {
-         |  $resultIsNull = true;
-         |}
-         |""".stripMargin
+         try {
+           ${cast(input, result, resultIsNull)}
+         } catch (Exception e) {
+           $resultIsNull = true;
+         }
+         """
     }
     code"""
       boolean $resultIsNull = $inputIsNull;
