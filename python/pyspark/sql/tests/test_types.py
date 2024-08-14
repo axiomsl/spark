@@ -812,6 +812,9 @@ class TypesTestsMixin:
         self.assertRaises(IndexError, lambda: struct1[9])
         self.assertRaises(TypeError, lambda: struct1[9.9])
 
+    @unittest.skipIf(
+        "SPARK_SKIP_CONNECT_COMPAT_TESTS" in os.environ, "Failed with different Client <> Server"
+    )
     def test_parse_datatype_string(self):
         from pyspark.sql.types import _all_atomic_types, _parse_datatype_string
 
@@ -1271,6 +1274,13 @@ class TypesTestsMixin:
 
         schema3 = self.spark.sql("SELECT INTERVAL '8' MONTH AS interval").schema
         self.assertEqual(schema3.fields[0].dataType, YearMonthIntervalType(1, 1))
+
+    def test_infer_array_element_type_with_struct(self):
+        # SPARK-48248: Nested array to respect legacy conf of inferArrayTypeFromFirstElement
+        with self.sql_conf(
+            {"spark.sql.pyspark.legacy.inferArrayTypeFromFirstElement.enabled": True}
+        ):
+            self.assertEqual([[1, None]], self.spark.createDataFrame([[[[1, "a"]]]]).first()[0])
 
 
 class DataTypeTests(unittest.TestCase):

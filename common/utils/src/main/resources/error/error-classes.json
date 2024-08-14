@@ -1292,6 +1292,11 @@
           "which requires <expectedType> type, but the statement provided a value of incompatible <actualType> type."
         ]
       },
+      "NOT_CONSTANT" : {
+        "message" : [
+          "which is not a constant expression whose equivalent value is known at query planning time."
+        ]
+      },
       "SUBQUERY_EXPRESSION" : {
         "message" : [
           "which contains subquery expressions."
@@ -3056,7 +3061,7 @@
     "subClass" : {
       "MULTI_GENERATOR" : {
         "message" : [
-          "only one generator allowed per <clause> clause but found <num>: <generators>."
+          "only one generator allowed per SELECT clause but found <num>: <generators>."
         ]
       },
       "NESTED_IN_EXPRESSIONS" : {

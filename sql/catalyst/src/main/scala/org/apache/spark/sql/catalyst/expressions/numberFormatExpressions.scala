@@ -86,8 +86,9 @@ abstract class ToNumberBase(left: Expression, right: Expression, errorOnFail: Bo
         ${CodeGenerator.javaType(dataType)} ${ev.value} = ${CodeGenerator.defaultValue(dataType)};
         if (!${ev.isNull}) {
           ${ev.value} = $builder.parse(${eval.value});
+          ${ev.isNull} = ${ev.isNull} || (${ev.value} == null);
         }
-      """)
+      """.stripMargin)
   }
 }
 
@@ -267,12 +268,12 @@ case class ToCharacter(left: Expression, right: Expression)
     val eval = left.genCode(ctx)
     val result =
       code"""
-         ${eval.code}
-         boolean ${ev.isNull} = ${eval.isNull} || ($builder == null);
-         ${CodeGenerator.javaType(dataType)} ${ev.value} = ${CodeGenerator.defaultValue(dataType)};
-         if (!${ev.isNull}) {
-           ${ev.value} = $builder.format(${eval.value});
-         }
+         |${eval.code}
+         |boolean ${ev.isNull} = ${eval.isNull} || ($builder == null);
+         |${CodeGenerator.javaType(dataType)} ${ev.value} = ${CodeGenerator.defaultValue(dataType)};
+         |if (!${ev.isNull}) {
+         |  ${ev.value} = $builder.format(${eval.value});
+         |}
       """
     val stripped = result
     ev.copy(code = stripped)

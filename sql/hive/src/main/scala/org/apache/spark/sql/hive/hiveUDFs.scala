@@ -87,12 +87,12 @@ private[hive] case class HiveSimpleUDF(
     val setValues = evals.zipWithIndex.map {
       case (eval, i) =>
         s"""
-           if (${eval.isNull}) {
-             $refEvaluator.setArg($i, null);
-           } else {
-             $refEvaluator.setArg($i, ${eval.value});
-           }
-           """
+           |if (${eval.isNull}) {
+           |  $refEvaluator.setArg($i, null);
+           |} else {
+           |  $refEvaluator.setArg($i, ${eval.value});
+           |}
+           |""".stripMargin
     }
 
     val resultType = CodeGenerator.boxedType(dataType)
@@ -136,7 +136,13 @@ private[hive] case class HiveGenericUDF(
 
   override def eval(input: InternalRow): Any = {
     children.zipWithIndex.foreach {
-      case (child, idx) => evaluator.setArg(idx, child.eval(input))
+      case (child, idx) =>
+        try {
+          evaluator.setArg(idx, child.eval(input))
+        } catch {
+          case t: Throwable =>
+            evaluator.setException(idx, t)
+        }
     }
     evaluator.evaluate()
   }
@@ -157,19 +163,23 @@ private[hive] case class HiveGenericUDF(
     val setValues = evals.zipWithIndex.map {
       case (eval, i) =>
         s"""
-           if (${eval.isNull}) {
-             $refEvaluator.setArg($i, null);
-           } else {
-             $refEvaluator.setArg($i, ${eval.value});
+           try {
+             ${eval.code}
+             if (${eval.isNull}) {
+               $refEvaluator.setArg($i, null);
+             } else {
+               $refEvaluator.setArg($i, ${eval.value});
+             }
+           } catch (Throwable t) {
+             $refEvaluator.setException($i, t);
            }
-           """
+           """.stripMargin
     }
 
     val resultType = CodeGenerator.boxedType(dataType)
     val resultTerm = ctx.freshName("result")
     ev.copy(code =
       code"""
-         ${evals.map(_.code).mkString("\n")}
          ${setValues.mkString("\n")}
          $resultType $resultTerm = ($resultType) $refEvaluator.evaluate();
          boolean ${ev.isNull} = $resultTerm == null;
@@ -177,7 +187,7 @@ private[hive] case class HiveGenericUDF(
          if (!${ev.isNull}) {
            ${ev.value} = $resultTerm;
          }
-         """
+         """.stripMargin
     )
   }
 }

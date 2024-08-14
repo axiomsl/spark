@@ -32,7 +32,7 @@ import org.apache.spark.sql.connector.catalog.index.TableIndex
 import org.apache.spark.sql.connector.expressions.{Expression, FieldReference, NamedReference, NullOrdering, SortDirection}
 import org.apache.spark.sql.errors.QueryExecutionErrors
 import org.apache.spark.sql.execution.datasources.jdbc.{JDBCOptions, JdbcUtils}
-import org.apache.spark.sql.types.{BooleanType, ByteType, DataType, FloatType, LongType, MetadataBuilder, StringType}
+import org.apache.spark.sql.types._
 
 private case object MySQLDialect extends JdbcDialect with SQLConfHelper {
 
@@ -65,6 +65,21 @@ private case object MySQLDialect extends JdbcDialect with SQLConfHelper {
       }
     }
 
+    override def visitStartsWith(l: String, r: String): String = {
+      val value = r.substring(1, r.length() - 1)
+      s"$l LIKE '${escapeSpecialCharsForLikePattern(value)}%' ESCAPE '\\\\'"
+    }
+
+    override def visitEndsWith(l: String, r: String): String = {
+      val value = r.substring(1, r.length() - 1)
+      s"$l LIKE '%${escapeSpecialCharsForLikePattern(value)}' ESCAPE '\\\\'"
+    }
+
+    override def visitContains(l: String, r: String): String = {
+      val value = r.substring(1, r.length() - 1)
+      s"$l LIKE '%${escapeSpecialCharsForLikePattern(value)}%' ESCAPE '\\\\'"
+    }
+
     override def visitAggregateFunction(
         funcName: String, isDistinct: Boolean, inputs: Array[String]): String =
       if (isDistinct && distinctUnsupportedAggregateFunctions.contains(funcName)) {
@@ -89,8 +104,13 @@ private case object MySQLDialect extends JdbcDialect with SQLConfHelper {
   override def getCatalystType(
       sqlType: Int, typeName: String, size: Int, md: MetadataBuilder): Option[DataType] = {
     if (sqlType == Types.VARBINARY && typeName.equals("BIT") && size != 1) {
+      // MariaDB connector behaviour
       // This could instead be a BinaryType if we'd rather return bit-vectors of up to 64 bits as
       // byte arrays instead of longs.
+      md.putLong("binarylong", 1)
+      Option(LongType)
+    } else if (sqlType == Types.BIT && size > 1) {
+      // MySQL connector behaviour
       md.putLong("binarylong", 1)
       Option(LongType)
     } else if (sqlType == Types.BIT && typeName.equals("TINYINT")) {
@@ -102,8 +122,12 @@ private case object MySQLDialect extends JdbcDialect with SQLConfHelper {
       // Some MySQL JDBC drivers converts JSON type into Types.VARCHAR with a precision of -1.
       // Explicitly converts it into StringType here.
       Some(StringType)
-    } else if (sqlType == Types.TINYINT && typeName.equals("TINYINT")) {
-      Some(ByteType)
+    } else if (sqlType == Types.TINYINT) {
+      if (md.build().getBoolean("isSigned")) {
+        Some(ByteType)
+      } else {
+        Some(ShortType)
+      }
     } else None
   }
 

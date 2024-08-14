@@ -64,12 +64,6 @@ trait CheckAnalysis extends PredicateHelper with LookupCatalog with QueryErrorsB
       messageParameters = messageParameters)
   }
 
-  protected def containsMultipleGenerators(exprs: Seq[Expression]): Boolean = {
-    exprs.flatMap(_.collect {
-      case e: Generator => e
-    }).length > 1
-  }
-
   protected def hasMapType(dt: DataType): Boolean = {
     dt.existsRecursively(_.isInstanceOf[MapType])
   }
@@ -147,17 +141,56 @@ trait CheckAnalysis extends PredicateHelper with LookupCatalog with QueryErrorsB
       errorClass, missingCol, orderedCandidates, a.origin)
   }
 
+  private def checkUnreferencedCTERelations(
+      cteMap: mutable.Map[Long, (CTERelationDef, Int, mutable.Map[Long, Int])],
+      visited: mutable.Map[Long, Boolean],
+      danglingCTERelations: mutable.ArrayBuffer[CTERelationDef],
+      cteId: Long): Unit = {
+    if (visited(cteId)) {
+      return
+    }
+    val (cteDef, _, refMap) = cteMap(cteId)
+    refMap.foreach { case (id, _) =>
+      checkUnreferencedCTERelations(cteMap, visited, danglingCTERelations, id)
+    }
+    danglingCTERelations.append(cteDef)
+    visited(cteId) = true
+  }
+
+  /**
+   * Checks whether the operator allows non-deterministic expressions.
+   */
+  private def operatorAllowsNonDeterministicExpressions(plan: LogicalPlan): Boolean = {
+    plan match {
+      case p: SupportsNonDeterministicExpression =>
+        p.allowNonDeterministicExpression
+      case _ => false
+    }
+  }
+
   def checkAnalysis(plan: LogicalPlan): Unit = {
     val inlineCTE = InlineCTE(alwaysInline = true)
     val cteMap = mutable.HashMap.empty[Long, (CTERelationDef, Int, mutable.Map[Long, Int])]
     inlineCTE.buildCTEMap(plan, cteMap)
-    cteMap.values.foreach { case (relation, refCount, _) =>
-      // If a CTE relation is never used, it will disappear after inline. Here we explicitly check
-      // analysis for it, to make sure the entire query plan is valid.
-      if (refCount == 0) checkAnalysis0(relation.child)
+    val danglingCTERelations = mutable.ArrayBuffer.empty[CTERelationDef]
+    val visited: mutable.Map[Long, Boolean] = mutable.Map.empty.withDefaultValue(false)
+    // If a CTE relation is never used, it will disappear after inline. Here we explicitly collect
+    // these dangling CTE relations, and put them back in the main query, to make sure the entire
+    // query plan is valid.
+    cteMap.foreach { case (cteId, (_, refCount, _)) =>
+      // If a CTE relation ref count is 0, the other CTE relations that reference it should also be
+      // collected. This code will also guarantee the leaf relations that do not reference
+      // any others are collected first.
+      if (refCount == 0) {
+        checkUnreferencedCTERelations(cteMap, visited, danglingCTERelations, cteId)
+      }
     }
     // Inline all CTEs in the plan to help check query plan structures in subqueries.
-    checkAnalysis0(inlineCTE(plan))
+    var inlinedPlan: LogicalPlan = inlineCTE(plan)
+    if (danglingCTERelations.nonEmpty) {
+      inlinedPlan = WithCTE(inlinedPlan, danglingCTERelations.toSeq)
+    }
+    checkAnalysis0(inlinedPlan)
     plan.setAnalyzed()
   }
 
@@ -687,10 +720,6 @@ trait CheckAnalysis extends PredicateHelper with LookupCatalog with QueryErrorsB
                 ))
             }
 
-          case p @ Project(exprs, _) if containsMultipleGenerators(exprs) =>
-            val generators = exprs.filter(expr => expr.exists(_.isInstanceOf[Generator]))
-            throw QueryCompilationErrors.moreThanOneGeneratorError(generators, "SELECT")
-
           case p @ Project(projectList, _) =>
             projectList.foreach(_.transformDownWithPruning(
               _.containsPattern(UNRESOLVED_WINDOW_EXPRESSION)) {
@@ -753,6 +782,7 @@ trait CheckAnalysis extends PredicateHelper with LookupCatalog with QueryErrorsB
                 "dataType" -> toSQLType(mapCol.dataType)))
 
           case o if o.expressions.exists(!_.deterministic) &&
+            !operatorAllowsNonDeterministicExpressions(o) &&
             !o.isInstanceOf[Project] && !o.isInstanceOf[Filter] &&
             !o.isInstanceOf[Aggregate] && !o.isInstanceOf[Window] &&
             !o.isInstanceOf[Expand] &&

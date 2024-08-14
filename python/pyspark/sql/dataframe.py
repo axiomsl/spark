@@ -529,6 +529,7 @@ class DataFrame(PandasMapOpsMixin, PandasConversionMixin):
 
         Examples
         --------
+        >>> import time
         >>> import tempfile
         >>> df = spark.readStream.format("rate").load()
         >>> type(df.writeStream)
@@ -536,9 +537,10 @@ class DataFrame(PandasMapOpsMixin, PandasConversionMixin):
 
         >>> with tempfile.TemporaryDirectory() as d:
         ...     # Create a table with Rate source.
-        ...     df.writeStream.toTable(
+        ...     query = df.writeStream.toTable(
         ...         "my_table", checkpointLocation=d)
-        <...streaming.query.StreamingQuery object at 0x...>
+        ...     time.sleep(3)
+        ...     query.stop()
         """
         return DataStreamWriter(self)
 
@@ -1511,7 +1513,7 @@ class DataFrame(PandasMapOpsMixin, PandasConversionMixin):
         >>> df.cache()
         DataFrame[id: bigint]
 
-        >>> df.explain()
+        >>> df.explain()  # doctest: +SKIP
         == Physical Plan ==
         AdaptiveSparkPlan isFinalPlan=false
         +- InMemoryTableScan ...
@@ -1554,7 +1556,7 @@ class DataFrame(PandasMapOpsMixin, PandasConversionMixin):
         >>> df.persist()
         DataFrame[id: bigint]
 
-        >>> df.explain()
+        >>> df.explain()  # doctest: +SKIP
         == Physical Plan ==
         AdaptiveSparkPlan isFinalPlan=false
         +- InMemoryTableScan ...
@@ -3885,8 +3887,8 @@ class DataFrame(PandasMapOpsMixin, PandasConversionMixin):
         >>> df2 = spark.createDataFrame([(3, "Charlie"), (4, "Dave")], ["id", "name"])
         >>> df1 = df1.withColumn("age", lit(30))
         >>> df2 = df2.withColumn("age", lit(40))
-        >>> df3 = df1.union(df2)
-        >>> df3.show()
+        >>> df3 = df1.union(df2)  # doctest: +SKIP
+        >>> df3.show()  # doctest: +SKIP
         +-----+-------+---+
         | name|     id|age|
         +-----+-------+---+

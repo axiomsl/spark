@@ -329,12 +329,16 @@ class SessionCatalog(
   def getCurrentDatabase: String = currentDb
 
   def setCurrentDatabase(db: String): Unit = {
+    setCurrentDatabaseWithNameCheck(db, requireDbExists)
+  }
+
+  def setCurrentDatabaseWithNameCheck(db: String, nameCheck: String => Unit): Unit = {
     val dbName = format(db)
     if (dbName == globalTempViewManager.database) {
       throw QueryCompilationErrors.cannotUsePreservedDatabaseAsCurrentDatabaseError(
         globalTempViewManager.database)
     }
-    requireDbExists(dbName)
+    nameCheck(dbName)
     synchronized { currentDb = dbName }
   }
 
