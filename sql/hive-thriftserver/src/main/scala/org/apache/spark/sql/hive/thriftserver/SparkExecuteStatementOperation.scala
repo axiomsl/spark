@@ -226,10 +226,12 @@ private[hive] class SparkExecuteStatementOperation(
       sqlContext.sparkContext.setJobGroup(statementId, redactedStatement, forceCancel)
       result =
         if (statement.endsWith("LIMIT 0") || statement.endsWith("limit 0")) {
-          val r = sqlContext.sql(statement)
+          val patchedStatemant = SqlManipulator.patchLimit0(statement)
+          val r = sqlContext.sql(patchedStatemant)
           sqlContext.createDataFrame(new java.util.ArrayList[Row](0), r.schema)
         } else {
-          sqlContext.sql(statement)
+          val patchedStatement = SqlManipulator.patch(statement)
+          sqlContext.sql(patchedStatement)
         }
       logDebug(result.queryExecution.toString())
       HiveThriftServer2.eventManager.onStatementParsed(statementId,
@@ -385,5 +387,103 @@ object SparkExecuteStatementOperation {
       tTableSchema.addToColumns(toTColumnDesc(f, i))
     }
     tTableSchema
+  }
+}
+
+object SqlManipulator extends Logging {
+
+  val r = ("((?:[A-Za-z0-9_]+\\.model_drilldown_info_[0-9]+ \\+ \\d+ \\* )+" +
+    "(?:[A-Za-z0-9_]+\\.model_drilldown_info_[0-9]+))").r
+  val r2 = "([A-Za-z0-9_]+\\.model_drilldown_info_[0-9]+)".r
+  val null_is_null = "\\(\\s*NULL IS NULL\\s*\\)".r
+  val number_equals_number = "\\(\\s*([0-9]+)\\s*=\\s*([0-9]+)\\s*\\)".r
+  val string_equals_string = "\\(\\s*'([^']+)'\\s*=\\s*'([^']+)'\\s*\\)".r
+  val and_true = "AND\\s+true".r
+  val or_false = "OR\\s+false".r
+
+  val where_limit_0 = "(?s)\\s+WHERE .+\\sLIMIT 0".r
+
+  def patchLimit0(statement: String): String = {
+    val patched = where_limit_0.replaceAllIn(statement, " WHERE 1=0")
+    logInfo(s"Patched Statement: $patched")
+    patched
+  }
+
+  def patch(statement: String): String = {
+    sys.props.get("axiomsl.sql.manipulator.enabled") match {
+      case Some(v) if v.toLowerCase() == "true" =>
+        all(statement)
+      case None =>
+        all(statement)
+    }
+  }
+
+  def all(statement: String): String = {
+        logDebug(s"Input Statement: $statement")
+        val d = handleDrillDownInfo(statement)
+        logDebug(s"After DrillDownInfo: $d")
+        val d2 = handleNullIsNull(d)
+        logDebug(s"After NullIsNull: $d2")
+        val d3 = handleNumberEqualsNumber(d2)
+        logDebug(s"After NumberEqualsNumber: $d3")
+        val d4 = handleStringEqualsString(d3)
+        logDebug(s"After StringEqualsString: $d4")
+        val d5 = handleAndTrue(d4)
+        logDebug(s"After AndTrue: $d5")
+        val d6 = handleOrFalse(d5)
+        logDebug(s"After OrFalse: $d6")
+        logInfo(s"Patched Statement: $d6")
+        d6
+  }
+
+  def handleDrillDownInfo(statement: String): String = {
+    val s = statement
+    val d = r.replaceAllIn(
+      s,
+      m => {
+        r2.findAllMatchIn(m.group(0))
+          .map(_.group(0))
+          .toList
+          .reverse
+          .mkString("CONV(", " || ", ", 2, 10)")
+      }
+    )
+    d
+  }
+
+  def handleNullIsNull(statement: String): String = {
+    null_is_null.replaceAllIn(statement, "true")
+  }
+
+  def handleNumberEqualsNumber(statement: String): String = {
+    number_equals_number.replaceAllIn(statement, m => {
+      val number1 = m.group(1)
+      val number2 = m.group(2)
+      if (number1 == number2) {
+        "true"
+      } else {
+        "false"
+      }
+    })
+  }
+
+  def handleStringEqualsString(statement: String): String = {
+    string_equals_string.replaceAllIn(statement, m => {
+      val s1 = m.group(1)
+      val s2 = m.group(2)
+      if (s1 == s2) {
+        "true"
+      } else {
+        "false"
+      }
+    })
+  }
+
+  def handleAndTrue(statement: String): String = {
+    and_true.replaceAllIn(statement, "")
+  }
+
+  def handleOrFalse(statement: String): String = {
+    or_false.replaceAllIn(statement, "")
   }
 }
