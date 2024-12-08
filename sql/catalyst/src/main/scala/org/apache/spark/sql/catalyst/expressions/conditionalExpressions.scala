@@ -157,8 +157,8 @@ case class If(predicate: Expression, trueValue: Expression, falseValue: Expressi
   group = "conditional_funcs")
 // scalastyle:on line.size.limit
 case class CaseWhen(
-    branches: Seq[(Expression, Expression)],
-    elseValue: Option[Expression] = None)
+    branches: IndexedSeq[(Expression, Expression)],
+    elseValue: Option[Expression])
   extends ComplexTypeMergingExpression with ConditionalExpression {
 
   override def children: Seq[Expression] = branches.flatMap(b => b._1 :: b._2 :: Nil) ++ elseValue
@@ -390,7 +390,12 @@ case class CaseWhen(
 /** Factory methods for CaseWhen. */
 object CaseWhen {
   def apply(branches: Seq[(Expression, Expression)], elseValue: Expression): CaseWhen = {
-    CaseWhen(branches, Option(elseValue))
+    CaseWhen(branches.toIndexedSeq, Option(elseValue))
+  }
+
+  def apply(branches: Seq[(Expression, Expression)],
+            elseValue: Option[Expression] = None): CaseWhen = {
+    new CaseWhen(branches.toIndexedSeq, elseValue)
   }
 
   /**
@@ -417,7 +422,7 @@ object CaseKeyWhen {
     val cases = branches.grouped(2).flatMap {
       case Seq(cond, value) => Some((EqualTo(key, cond), value))
       case Seq(value) => None
-    }.toArray.toSeq  // force materialization to make the seq serializable
+    }.toArray.toIndexedSeq  // force materialization to make the seq serializable
     val elseValue = if (branches.size % 2 != 0) Some(branches.last) else None
     CaseWhen(cases, elseValue)
   }
