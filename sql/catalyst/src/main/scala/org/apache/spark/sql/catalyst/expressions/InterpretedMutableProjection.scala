@@ -36,7 +36,7 @@ class InterpretedMutableProjection(expressions: Seq[Expression]) extends Mutable
     this(bindReferences(expressions, inputSchema))
 
   private[this] val subExprEliminationEnabled = SQLConf.get.subexpressionEliminationEnabled
-  private[this] val exprs = prepareExpressions(expressions, subExprEliminationEnabled)
+  private[this] val exprs = prepareExpressions(expressions, subExprEliminationEnabled).toIndexedSeq
 
   private[this] val buffer = new Array[Any](expressions.size)
 
@@ -47,7 +47,7 @@ class InterpretedMutableProjection(expressions: Seq[Expression]) extends Mutable
   private[this] val validExprs = expressions.zipWithIndex.filter {
     case (NoOp, _) => false
     case _ => true
-  }
+  }.toIndexedSeq
   private[this] var mutableRow: InternalRow = new GenericInternalRow(expressions.size)
   def currentValue: InternalRow = mutableRow
 

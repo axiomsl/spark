@@ -54,7 +54,7 @@ class InterpretedSafeProjection(expressions: Seq[Expression]) extends Projection
       }
     }
     (exprs(i), f)
-  }
+  }.toIndexedSeq
 
   private def generateSafeValueConverter(dt: DataType): Any => Any = dt match {
     case ArrayType(elemType, _) =>
