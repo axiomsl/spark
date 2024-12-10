@@ -156,8 +156,8 @@ case class If(predicate: Expression, trueValue: Expression, falseValue: Expressi
   since = "1.0.1",
   group = "conditional_funcs")
 // scalastyle:on line.size.limit
-case class CaseWhen(
-    branches: IndexedSeq[(Expression, Expression)],
+case class CaseWhen private(
+    branches: Seq[(Expression, Expression)],
     elseValue: Option[Expression])
   extends ComplexTypeMergingExpression with ConditionalExpression {
 
@@ -390,12 +390,12 @@ case class CaseWhen(
 /** Factory methods for CaseWhen. */
 object CaseWhen {
   def apply(branches: Seq[(Expression, Expression)], elseValue: Expression): CaseWhen = {
-    CaseWhen(branches.toIndexedSeq, Option(elseValue))
+    CaseWhen(branches, Option(elseValue))
   }
 
   def apply(branches: Seq[(Expression, Expression)],
             elseValue: Option[Expression] = None): CaseWhen = {
-    new CaseWhen(branches.toIndexedSeq, elseValue)
+    new CaseWhen(branches.toArray.toSeq, elseValue)
   }
 
   /**
