@@ -1246,7 +1246,14 @@ class Analyzer(override val catalogManager: CatalogManager) extends RuleExecutor
         options: CaseInsensitiveStringMap,
         isStreaming: Boolean): Option[LogicalPlan] = {
       table.map {
-        case v1Table: V1Table if CatalogV2Util.isSessionCatalog(catalog) =>
+        // To utilize this code path to execute V1 commands, e.g. INSERT,
+        // either it must be session catalog, or tracksPartitionsInCatalog
+        // must be false so it does not require use catalog to manage partitions.
+        // Obviously we cannot execute V1Table by V1 code path if the table
+        // is not from session catalog and the table still requires its catalog
+        // to manage partitions.
+        case v1Table: V1Table if CatalogV2Util.isSessionCatalog(catalog)
+          || !v1Table.catalogTable.tracksPartitionsInCatalog =>
           if (isStreaming) {
             if (v1Table.v1Table.tableType == CatalogTableType.VIEW) {
               throw QueryCompilationErrors.permanentViewNotSupportedByStreamingReadingAPIError(
@@ -1302,8 +1309,12 @@ class Analyzer(override val catalogManager: CatalogManager) extends RuleExecutor
                 cachedConnectRelation
               }.getOrElse(cachedRelation)
             }.orElse {
-              val table = CatalogV2Util.loadTable(catalog, ident, timeTravelSpec)
-              val loaded = createRelation(catalog, ident, table, u.options, u.isStreaming)
+              val writePrivilegesString =
+                Option(u.options.get(UnresolvedRelation.REQUIRED_WRITE_PRIVILEGES))
+              val table = CatalogV2Util.loadTable(
+                catalog, ident, timeTravelSpec, writePrivilegesString)
+              val loaded = createRelation(
+                catalog, ident, table, u.clearWritePrivileges.options, u.isStreaming)
               loaded.foreach(AnalysisContext.get.relationCache.update(key, _))
               u.getTagValue(LogicalPlan.PLAN_ID_TAG).map { planId =>
                 loaded.map { loadedRelation =>

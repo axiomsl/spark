@@ -15,24 +15,18 @@
  * limitations under the License.
  */
 
-package org.apache.spark.examples.streaming
+package org.apache.spark.sql.jdbc
 
-import org.apache.logging.log4j.Level
-import org.apache.logging.log4j.core.config.Configurator
+class MsSQLServerDatabaseOnDocker extends DatabaseOnDocker {
+  override val imageName = sys.env.getOrElse("MSSQLSERVER_DOCKER_IMAGE_NAME",
+    "mcr.microsoft.com/mssql/server:2022-CU12-GDR1-ubuntu-22.04")
+  override val env = Map(
+    "SA_PASSWORD" -> "Sapass123",
+    "ACCEPT_EULA" -> "Y"
+  )
+  override val usesIpc = false
+  override val jdbcPort: Int = 1433
 
-import org.apache.spark.internal.Logging
-
-/** Utility functions for Spark Streaming examples. */
-object StreamingExamples extends Logging {
-
-  /** Set reasonable logging levels for streaming if the user has not configured log4j. */
-  def setStreamingLogLevels(): Unit = {
-    if (Logging.islog4j2DefaultConfigured()) {
-      // We first log something to initialize Spark's default logging, then we override the
-      // logging level.
-      logInfo("Setting log level to [WARN] for streaming example." +
-        " To override add a custom log4j2.properties to the classpath.")
-      Configurator.setRootLevel(Level.WARN)
-    }
-  }
+  override def getJdbcUrl(ip: String, port: Int): String =
+    s"jdbc:sqlserver://$ip:$port;user=sa;password=Sapass123;"
 }

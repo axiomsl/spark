@@ -25,9 +25,9 @@ import org.apache.spark.sql.catalyst.catalog.{CatalogStorageFormat, CatalogTable
 import org.apache.spark.sql.catalyst.expressions.{Alias, Attribute}
 import org.apache.spark.sql.catalyst.plans.logical._
 import org.apache.spark.sql.catalyst.rules.Rule
-import org.apache.spark.sql.catalyst.util.{quoteIfNeeded, toPrettySQL, ResolveDefaultColumns => DefaultCols}
+import org.apache.spark.sql.catalyst.util.{quoteIfNeeded, toPrettySQL, CharVarcharUtils, ResolveDefaultColumns => DefaultCols}
 import org.apache.spark.sql.catalyst.util.ResolveDefaultColumns._
-import org.apache.spark.sql.connector.catalog.{CatalogManager, CatalogPlugin, CatalogV2Util, LookupCatalog, SupportsNamespaces, V1Table}
+import org.apache.spark.sql.connector.catalog.{CatalogExtension, CatalogManager, CatalogPlugin, CatalogV2Util, LookupCatalog, SupportsNamespaces, V1Table}
 import org.apache.spark.sql.connector.expressions.Transform
 import org.apache.spark.sql.errors.{QueryCompilationErrors, QueryExecutionErrors}
 import org.apache.spark.sql.execution.command._
@@ -35,7 +35,7 @@ import org.apache.spark.sql.execution.datasources.{CreateTable => CreateTableV1,
 import org.apache.spark.sql.execution.datasources.v2.FileDataSourceV2
 import org.apache.spark.sql.internal.{HiveSerDe, SQLConf}
 import org.apache.spark.sql.internal.connector.V1Function
-import org.apache.spark.sql.types.{MetadataBuilder, StructField, StructType}
+import org.apache.spark.sql.types.{MetadataBuilder, StringType, StructField, StructType}
 
 /**
  * Converts resolved v2 commands to v1 if the catalog is the session catalog. Since the v2 commands
@@ -84,7 +84,11 @@ class ResolveSessionCatalog(val catalogManager: CatalogManager)
       val colName = a.column.name(0)
       val dataType = a.dataType.getOrElse {
         table.schema.findNestedField(Seq(colName), resolver = conf.resolver)
-          .map(_._2.dataType)
+          .map {
+            case (_, StructField(_, st: StringType, _, metadata)) =>
+              CharVarcharUtils.getRawType(metadata).getOrElse(st)
+            case (_, field) => field.dataType
+          }
           .getOrElse {
             throw QueryCompilationErrors.alterColumnCannotFindColumnInV1TableError(
               quoteIfNeeded(colName), table)
@@ -271,10 +275,20 @@ class ResolveSessionCatalog(val catalogManager: CatalogManager)
     case AnalyzeColumn(ResolvedV1TableOrViewIdentifier(ident), columnNames, allColumns) =>
       AnalyzeColumnCommand(ident, columnNames, allColumns)
 
-    case RepairTable(ResolvedV1TableIdentifier(ident), addPartitions, dropPartitions) =>
+    // V2 catalog doesn't support REPAIR TABLE yet, we must use v1 command here.
+    case RepairTable(
+        ResolvedV1TableIdentifierInSessionCatalog(ident),
+        addPartitions,
+        dropPartitions) =>
       RepairTableCommand(ident, addPartitions, dropPartitions)
 
-    case LoadData(ResolvedV1TableIdentifier(ident), path, isLocal, isOverwrite, partition) =>
+    // V2 catalog doesn't support LOAD DATA yet, we must use v1 command here.
+    case LoadData(
+        ResolvedV1TableIdentifierInSessionCatalog(ident),
+        path,
+        isLocal,
+        isOverwrite,
+        partition) =>
       LoadDataCommand(
         ident,
         path,
@@ -322,7 +336,8 @@ class ResolveSessionCatalog(val catalogManager: CatalogManager)
       }
       ShowColumnsCommand(db, v1TableName, output)
 
-    case RecoverPartitions(ResolvedV1TableIdentifier(ident)) =>
+    // V2 catalog doesn't support RECOVER PARTITIONS yet, we must use v1 command here.
+    case RecoverPartitions(ResolvedV1TableIdentifierInSessionCatalog(ident)) =>
       RepairTableCommand(
         ident,
         enableAddPartitions = true,
@@ -350,8 +365,9 @@ class ResolveSessionCatalog(val catalogManager: CatalogManager)
         purge,
         retainData = false)
 
+    // V2 catalog doesn't support setting serde properties yet, we must use v1 command here.
     case SetTableSerDeProperties(
-        ResolvedV1TableIdentifier(ident),
+        ResolvedV1TableIdentifierInSessionCatalog(ident),
         serdeClassName,
         serdeProperties,
         partitionSpec) =>
@@ -361,8 +377,15 @@ class ResolveSessionCatalog(val catalogManager: CatalogManager)
         serdeProperties,
         partitionSpec)
 
-    case SetTableLocation(ResolvedV1TableIdentifier(ident), partitionSpec, location) =>
-      AlterTableSetLocationCommand(ident, partitionSpec, location)
+    case SetTableLocation(ResolvedV1TableIdentifier(ident), None, location) =>
+      AlterTableSetLocationCommand(ident, None, location)
+
+    // V2 catalog doesn't support setting partition location yet, we must use v1 command here.
+    case SetTableLocation(
+        ResolvedV1TableIdentifierInSessionCatalog(ident),
+        Some(partitionSpec),
+        location) =>
+      AlterTableSetLocationCommand(ident, Some(partitionSpec), location)
 
     case AlterViewAs(ResolvedViewIdentifier(ident), originalText, query) =>
       AlterViewAsCommand(ident, originalText, query)
@@ -572,6 +595,14 @@ class ResolveSessionCatalog(val catalogManager: CatalogManager)
     }
   }
 
+  object ResolvedV1TableIdentifierInSessionCatalog {
+    def unapply(resolved: LogicalPlan): Option[TableIdentifier] = resolved match {
+      case ResolvedTable(catalog, _, t: V1Table, _) if isSessionCatalog(catalog) =>
+        Some(t.catalogTable.identifier)
+      case _ => None
+    }
+  }
+
   object ResolvedV1TableOrViewIdentifier {
     def unapply(resolved: LogicalPlan): Option[TableIdentifier] = resolved match {
       case ResolvedV1TableIdentifier(ident) => Some(ident)
@@ -662,7 +693,8 @@ class ResolveSessionCatalog(val catalogManager: CatalogManager)
   }
 
   private def supportsV1Command(catalog: CatalogPlugin): Boolean = {
-    catalog.name().equalsIgnoreCase(CatalogManager.SESSION_CATALOG_NAME) &&
-      !SQLConf.get.getConf(SQLConf.V2_SESSION_CATALOG_IMPLEMENTATION).isDefined
+    isSessionCatalog(catalog) && (
+      SQLConf.get.getConf(SQLConf.V2_SESSION_CATALOG_IMPLEMENTATION).isEmpty ||
+        catalog.isInstanceOf[CatalogExtension])
   }
 }

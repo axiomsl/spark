@@ -56,6 +56,26 @@ class ReattachableExecuteSuite extends SparkConnectServerTest {
     }
   }
 
+  test("reattach after connection expired") {
+    withClient { client =>
+      val iter = client.execute(buildPlan(MEDIUM_RESULTS_QUERY))
+      val operationId = getReattachableIterator(iter).operationId
+      // open the iterator
+      iter.next()
+
+      SparkConnectService.invalidateSession(defaultUserId, defaultSessionId)
+      withRawBlockingStub { stub =>
+        val iter2 = stub.reattachExecute(buildReattachExecuteRequest(operationId, None))
+
+        // session closed, bound to fail
+        val e = intercept[StatusRuntimeException] {
+          while (iter2.hasNext) iter2.next()
+        }
+        assert(e.getMessage.contains("INVALID_HANDLE.SESSION_NOT_FOUND"))
+      }
+    }
+  }
+
   test("raw interrupted RPC results in INVALID_CURSOR.DISCONNECTED error") {
     withRawBlockingStub { stub =>
       val iter = stub.executePlan(buildExecutePlanRequest(buildPlan(MEDIUM_RESULTS_QUERY)))
@@ -347,6 +367,10 @@ class ReattachableExecuteSuite extends SparkConnectServerTest {
   }
 
   test("long sleeping query") {
+    // register udf directly on the server, we're not testing client UDFs here...
+    val serverSession =
+      SparkConnectService.getOrCreateIsolatedSession(defaultUserId, defaultSessionId).session
+    serverSession.udf.register("sleep", ((ms: Int) => { Thread.sleep(ms); ms }))
     // query will be sleeping and not returning results, while having multiple reattach
     withSparkEnvConfs(
       (Connect.CONNECT_EXECUTE_REATTACHABLE_SENDER_MAX_STREAM_DURATION.key, "1s")) {

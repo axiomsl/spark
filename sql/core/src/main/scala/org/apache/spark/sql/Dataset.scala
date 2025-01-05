@@ -4050,13 +4050,12 @@ class Dataset[T] private[sql](
     new DataStreamWriter[T](this)
   }
 
-
   /**
    * Returns the content of the Dataset as a Dataset of JSON strings.
    * @since 2.0.0
    */
   def toJSON: Dataset[String] = {
-    val rowSchema = this.schema
+    val rowSchema = exprEnc.schema
     val sessionLocalTimeZone = sparkSession.sessionState.conf.sessionLocalTimeZone
     mapPartitions { iter =>
       val writer = new CharArrayWriter()

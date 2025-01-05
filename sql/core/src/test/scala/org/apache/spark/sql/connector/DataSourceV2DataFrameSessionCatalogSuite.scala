@@ -55,8 +55,7 @@ class DataSourceV2DataFrameSessionCatalogSuite
     "and a same-name temp view exist") {
     withTable("same_name") {
       withTempView("same_name") {
-        val format = spark.sessionState.conf.defaultDataSourceName
-        sql(s"CREATE TABLE same_name(id LONG) USING $format")
+        sql(s"CREATE TABLE same_name(id LONG) USING $v2Format")
         spark.range(10).createTempView("same_name")
         spark.range(20).write.format(v2Format).mode(SaveMode.Append).saveAsTable("same_name")
         checkAnswer(spark.table("same_name"), spark.range(10).toDF())
@@ -84,8 +83,17 @@ class DataSourceV2DataFrameSessionCatalogSuite
       spark.range(20).write.format(v2Format).option("path", "/abc").saveAsTable(t1)
       val cat = spark.sessionState.catalogManager.currentCatalog.asInstanceOf[TableCatalog]
       val tableInfo = cat.loadTable(Identifier.of(Array("default"), t1))
-      assert(tableInfo.properties().get("location") === "file:///abc")
+      assert(tableInfo.properties().get("location") === "file:/abc")
       assert(tableInfo.properties().get("provider") === v2Format)
+    }
+  }
+
+  test("SPARK-49246: saveAsTable with v1 format") {
+    withTable("t") {
+      sql("CREATE TABLE t(c INT) USING csv")
+      val df = spark.range(10).toDF()
+      df.write.mode(SaveMode.Overwrite).format("csv").saveAsTable("t")
+      verifyTable("t", df)
     }
   }
 }

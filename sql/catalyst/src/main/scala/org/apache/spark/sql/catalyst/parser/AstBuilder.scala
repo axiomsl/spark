@@ -44,7 +44,7 @@ import org.apache.spark.sql.catalyst.trees.TreePattern.PARAMETER
 import org.apache.spark.sql.catalyst.types.DataTypeUtils
 import org.apache.spark.sql.catalyst.util.{CharVarcharUtils, DateTimeUtils, GeneratedColumn, IntervalUtils, ResolveDefaultColumns}
 import org.apache.spark.sql.catalyst.util.DateTimeUtils.{convertSpecialDate, convertSpecialTimestamp, convertSpecialTimestampNTZ, getZoneId, stringToDate, stringToTimestamp, stringToTimestampWithoutTimeZone}
-import org.apache.spark.sql.connector.catalog.{CatalogV2Util, SupportsNamespaces, TableCatalog}
+import org.apache.spark.sql.connector.catalog.{CatalogV2Util, SupportsNamespaces, TableCatalog, TableWritePrivilege}
 import org.apache.spark.sql.connector.catalog.TableChange.ColumnPosition
 import org.apache.spark.sql.connector.expressions.{ApplyTransform, BucketTransform, DaysTransform, Expression => V2Expression, FieldReference, HoursTransform, IdentityTransform, LiteralValue, MonthsTransform, Transform, YearsTransform}
 import org.apache.spark.sql.errors.{QueryCompilationErrors, QueryParsingErrors}
@@ -66,9 +66,22 @@ class AstBuilder extends DataTypeAstBuilder with SQLConfHelper with Logging {
       builder: Seq[String] => LogicalPlan): LogicalPlan = {
     val exprCtx = ctx.expression
     if (exprCtx != null) {
-      PlanWithUnresolvedIdentifier(withOrigin(exprCtx) { expression(exprCtx) }, builder)
+      PlanWithUnresolvedIdentifier(withOrigin(exprCtx) { expression(exprCtx) }, Nil,
+        (ident, _) => builder(ident))
     } else {
       builder.apply(visitMultipartIdentifier(ctx.multipartIdentifier))
+    }
+  }
+
+  protected def withIdentClause(
+      ctx: IdentifierReferenceContext,
+      otherPlans: Seq[LogicalPlan],
+      builder: (Seq[String], Seq[LogicalPlan]) => LogicalPlan): LogicalPlan = {
+    val exprCtx = ctx.expression
+    if (exprCtx != null) {
+      PlanWithUnresolvedIdentifier(withOrigin(exprCtx) { expression(exprCtx) }, otherPlans, builder)
+    } else {
+      builder.apply(visitMultipartIdentifier(ctx.multipartIdentifier), otherPlans)
     }
   }
 
@@ -85,12 +98,13 @@ class AstBuilder extends DataTypeAstBuilder with SQLConfHelper with Logging {
 
   protected def withFuncIdentClause(
       ctx: FunctionNameContext,
-      builder: Seq[String] => LogicalPlan): LogicalPlan = {
+      otherPlans: Seq[LogicalPlan],
+      builder: (Seq[String], Seq[LogicalPlan]) => LogicalPlan): LogicalPlan = {
     val exprCtx = ctx.expression
     if (exprCtx != null) {
-      PlanWithUnresolvedIdentifier(withOrigin(exprCtx) { expression(exprCtx) }, builder)
+      PlanWithUnresolvedIdentifier(withOrigin(exprCtx) { expression(exprCtx) }, otherPlans, builder)
     } else {
-      builder.apply(getFunctionMultiparts(ctx))
+      builder.apply(getFunctionMultiparts(ctx), otherPlans)
     }
   }
 
@@ -320,12 +334,12 @@ class AstBuilder extends DataTypeAstBuilder with SQLConfHelper with Logging {
       case table: InsertIntoTableContext =>
         val (relationCtx, cols, partition, ifPartitionNotExists, byName)
         = visitInsertIntoTable(table)
-        withIdentClause(relationCtx, ident => {
+        withIdentClause(relationCtx, Seq(query), (ident, otherPlans) => {
           InsertIntoStatement(
-            createUnresolvedRelation(relationCtx, ident),
+            createUnresolvedRelation(relationCtx, ident, Seq(TableWritePrivilege.INSERT)),
             partition,
             cols,
-            query,
+            otherPlans.head,
             overwrite = false,
             ifPartitionNotExists,
             byName)
@@ -333,21 +347,23 @@ class AstBuilder extends DataTypeAstBuilder with SQLConfHelper with Logging {
       case table: InsertOverwriteTableContext =>
         val (relationCtx, cols, partition, ifPartitionNotExists, byName)
         = visitInsertOverwriteTable(table)
-        withIdentClause(relationCtx, ident => {
+        withIdentClause(relationCtx, Seq(query), (ident, otherPlans) => {
           InsertIntoStatement(
-            createUnresolvedRelation(relationCtx, ident),
+            createUnresolvedRelation(relationCtx, ident,
+              Seq(TableWritePrivilege.INSERT, TableWritePrivilege.DELETE)),
             partition,
             cols,
-            query,
+            otherPlans.head,
             overwrite = true,
             ifPartitionNotExists,
             byName)
         })
       case ctx: InsertIntoReplaceWhereContext =>
-        withIdentClause(ctx.identifierReference, ident => {
+        withIdentClause(ctx.identifierReference, Seq(query), (ident, otherPlans) => {
           OverwriteByExpression.byPosition(
-            createUnresolvedRelation(ctx.identifierReference, ident),
-            query,
+            createUnresolvedRelation(ctx.identifierReference, ident,
+              Seq(TableWritePrivilege.INSERT, TableWritePrivilege.DELETE)),
+            otherPlans.head,
             expression(ctx.whereClause().booleanExpression()))
         })
       case dir: InsertOverwriteDirContext =>
@@ -425,7 +441,8 @@ class AstBuilder extends DataTypeAstBuilder with SQLConfHelper with Logging {
 
   override def visitDeleteFromTable(
       ctx: DeleteFromTableContext): LogicalPlan = withOrigin(ctx) {
-    val table = createUnresolvedRelation(ctx.identifierReference)
+    val table = createUnresolvedRelation(
+      ctx.identifierReference, writePrivileges = Seq(TableWritePrivilege.DELETE))
     val tableAlias = getTableAliasWithoutColumnAlias(ctx.tableAlias(), "DELETE")
     val aliasedTable = tableAlias.map(SubqueryAlias(_, table)).getOrElse(table)
     val predicate = if (ctx.whereClause() != null) {
@@ -437,7 +454,8 @@ class AstBuilder extends DataTypeAstBuilder with SQLConfHelper with Logging {
   }
 
   override def visitUpdateTable(ctx: UpdateTableContext): LogicalPlan = withOrigin(ctx) {
-    val table = createUnresolvedRelation(ctx.identifierReference)
+    val table = createUnresolvedRelation(
+      ctx.identifierReference, writePrivileges = Seq(TableWritePrivilege.UPDATE))
     val tableAlias = getTableAliasWithoutColumnAlias(ctx.tableAlias(), "UPDATE")
     val aliasedTable = tableAlias.map(SubqueryAlias(_, table)).getOrElse(table)
     val assignments = withAssignments(ctx.setClause().assignmentList())
@@ -459,10 +477,6 @@ class AstBuilder extends DataTypeAstBuilder with SQLConfHelper with Logging {
     }
 
   override def visitMergeIntoTable(ctx: MergeIntoTableContext): LogicalPlan = withOrigin(ctx) {
-    val targetTable = createUnresolvedRelation(ctx.target)
-    val targetTableAlias = getTableAliasWithoutColumnAlias(ctx.targetAlias, "MERGE")
-    val aliasedTarget = targetTableAlias.map(SubqueryAlias(_, targetTable)).getOrElse(targetTable)
-
     val sourceTableOrQuery = if (ctx.source != null) {
       createUnresolvedRelation(ctx.source)
     } else if (ctx.sourceQuery != null) {
@@ -492,7 +506,7 @@ class AstBuilder extends DataTypeAstBuilder with SQLConfHelper with Logging {
             s"Unrecognized matched action: ${clause.matchedAction().getText}")
         }
       }
-    }
+    }.toSeq
     val notMatchedActions = ctx.notMatchedClause().asScala.map {
       clause => {
         if (clause.notMatchedAction().INSERT() != null) {
@@ -513,7 +527,7 @@ class AstBuilder extends DataTypeAstBuilder with SQLConfHelper with Logging {
             s"Unrecognized matched action: ${clause.notMatchedAction().getText}")
         }
       }
-    }
+    }.toSeq
     val notMatchedBySourceActions = ctx.notMatchedBySourceClause().asScala.map {
       clause => {
         val notMatchedBySourceAction = clause.notMatchedBySourceAction()
@@ -528,7 +542,7 @@ class AstBuilder extends DataTypeAstBuilder with SQLConfHelper with Logging {
             s"Unrecognized matched action: ${clause.notMatchedBySourceAction().getText}")
         }
       }
-    }
+    }.toSeq
     if (matchedActions.isEmpty && notMatchedActions.isEmpty && notMatchedBySourceActions.isEmpty) {
       throw QueryParsingErrors.mergeStatementWithoutWhenClauseError(ctx)
     }
@@ -547,13 +561,19 @@ class AstBuilder extends DataTypeAstBuilder with SQLConfHelper with Logging {
       throw QueryParsingErrors.nonLastNotMatchedBySourceClauseOmitConditionError(ctx)
     }
 
+    val targetTable = createUnresolvedRelation(
+      ctx.target,
+      writePrivileges = MergeIntoTable.getWritePrivileges(
+        matchedActions, notMatchedActions, notMatchedBySourceActions))
+    val targetTableAlias = getTableAliasWithoutColumnAlias(ctx.targetAlias, "MERGE")
+    val aliasedTarget = targetTableAlias.map(SubqueryAlias(_, targetTable)).getOrElse(targetTable)
     MergeIntoTable(
       aliasedTarget,
       aliasedSource,
       mergeCondition,
-      matchedActions.toSeq,
-      notMatchedActions.toSeq,
-      notMatchedBySourceActions.toSeq)
+      matchedActions,
+      notMatchedActions,
+      notMatchedBySourceActions)
   }
 
   /**
@@ -1598,7 +1618,8 @@ class AstBuilder extends DataTypeAstBuilder with SQLConfHelper with Logging {
 
     withFuncIdentClause(
       func.functionName,
-      ident => {
+      Nil,
+      (ident, _) => {
         if (ident.length > 1) {
           throw QueryParsingErrors.invalidTableValuedFunctionNameError(ident, ctx)
         }
@@ -2778,16 +2799,23 @@ class AstBuilder extends DataTypeAstBuilder with SQLConfHelper with Logging {
    * Create an [[UnresolvedRelation]] from an identifier reference.
    */
   private def createUnresolvedRelation(
-      ctx: IdentifierReferenceContext): LogicalPlan = withOrigin(ctx) {
-    withIdentClause(ctx, UnresolvedRelation(_))
+      ctx: IdentifierReferenceContext,
+      writePrivileges: Seq[TableWritePrivilege] = Nil): LogicalPlan = withOrigin(ctx) {
+    withIdentClause(ctx, parts => {
+      val relation = new UnresolvedRelation(parts, isStreaming = false)
+      relation.requireWritePrivileges(writePrivileges)
+    })
   }
 
   /**
    * Create an [[UnresolvedRelation]] from a multi-part identifier.
    */
   private def createUnresolvedRelation(
-      ctx: ParserRuleContext, ident: Seq[String]): UnresolvedRelation = withOrigin(ctx) {
-    UnresolvedRelation(ident)
+      ctx: ParserRuleContext,
+      ident: Seq[String],
+      writePrivileges: Seq[TableWritePrivilege]): UnresolvedRelation = withOrigin(ctx) {
+    val relation = new UnresolvedRelation(ident, isStreaming = false)
+    relation.requireWritePrivileges(writePrivileges)
   }
 
   /**
@@ -4586,7 +4614,9 @@ class AstBuilder extends DataTypeAstBuilder with SQLConfHelper with Logging {
       if (query.isDefined) {
         CacheTableAsSelect(ident.head, query.get, source(ctx.query()), isLazy, options)
       } else {
-        CacheTable(createUnresolvedRelation(ctx.identifierReference, ident), ident, isLazy, options)
+        CacheTable(
+          createUnresolvedRelation(ctx.identifierReference, ident, writePrivileges = Nil),
+          ident, isLazy, options)
       }
     })
   }

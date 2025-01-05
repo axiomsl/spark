@@ -15,24 +15,26 @@
  * limitations under the License.
  */
 
-package org.apache.spark.examples.streaming
+package org.apache.spark.sql.connector.catalog;
 
-import org.apache.logging.log4j.Level
-import org.apache.logging.log4j.core.config.Configurator
+/**
+ * The table write privileges that will be provided when loading a table.
+ *
+ * @since 3.5.3
+ */
+public enum TableWritePrivilege {
+  /**
+   * The privilege for adding rows to the table.
+   */
+  INSERT,
 
-import org.apache.spark.internal.Logging
+  /**
+   * The privilege for changing existing rows in th table.
+   */
+  UPDATE,
 
-/** Utility functions for Spark Streaming examples. */
-object StreamingExamples extends Logging {
-
-  /** Set reasonable logging levels for streaming if the user has not configured log4j. */
-  def setStreamingLogLevels(): Unit = {
-    if (Logging.islog4j2DefaultConfigured()) {
-      // We first log something to initialize Spark's default logging, then we override the
-      // logging level.
-      logInfo("Setting log level to [WARN] for streaming example." +
-        " To override add a custom log4j2.properties to the classpath.")
-      Configurator.setRootLevel(Level.WARN)
-    }
-  }
+  /**
+   * The privilege for deleting rows from the table.
+   */
+  DELETE
 }

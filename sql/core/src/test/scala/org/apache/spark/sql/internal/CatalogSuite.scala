@@ -635,7 +635,8 @@ class CatalogSuite extends SharedSparkSession with AnalysisTest with BeforeAndAf
     val description = "this is a test table"
 
     withTable("t") {
-      withTempDir { dir =>
+      withTempDir { baseDir =>
+        val dir = new File(baseDir, "test%prefix")
         spark.catalog.createTable(
           tableName = "t",
           source = "json",
@@ -754,7 +755,7 @@ class CatalogSuite extends SharedSparkSession with AnalysisTest with BeforeAndAf
       assert(table.properties().get("comment").equals(description))
       assert(table.properties().get("path").equals(dir.getAbsolutePath))
       assert(table.properties().get("external").equals("true"))
-      assert(table.properties().get("location").equals("file://" + dir.getAbsolutePath))
+      assert(table.properties().get("location").equals("file:" + dir.getAbsolutePath))
     }
   }
 
