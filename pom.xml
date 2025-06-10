@@ -135,7 +135,7 @@
     <protobuf.version>3.23.4</protobuf.version>
     <protoc-jar-maven-plugin.version>3.11.4</protoc-jar-maven-plugin.version>
     <yarn.version>${hadoop.version}</yarn.version>
-    <zookeeper.version>3.9.2</zookeeper.version>
+    <zookeeper.version>3.9.3</zookeeper.version>
     <curator.version>2.13.0</curator.version>
     <hive.group>org.apache.hive</hive.group>
     <hive.classifier>core</hive.classifier>
@@ -180,7 +180,7 @@
     <!-- managed up from 3.2.1 for SPARK-11652 -->
     <commons.collections.version>3.2.2</commons.collections.version>
     <commons.collections4.version>4.4</commons.collections4.version>
-    <scala.version>2.12.18</scala.version>
+    <scala.version>2.12.20</scala.version>
     <scala.binary.version>2.12</scala.binary.version>
     <scala-collection-compat.version>2.7.0</scala-collection-compat.version>
     <scalatest-maven-plugin.version>2.2.0</scalatest-maven-plugin.version>
@@ -229,7 +229,7 @@
     <commons-cli.version>1.5.0</commons-cli.version>
     <bouncycastle.version>1.77</bouncycastle.version>
     <tink.version>1.9.0</tink.version>
-    <netty.version>4.1.112.Final</netty.version>
+    <netty.version>4.1.122.Final</netty.version>
     <!--
     If you are changing Arrow version specification, please check
     ./python/pyspark/sql/pandas/utils.py, and ./python/setup.py too.
@@ -3675,7 +3675,7 @@
          SPARK-34774 Add this property to ensure change-scala-version.sh can replace the public `scala.version`
          property correctly.
         -->
-        <scala.version>2.12.18</scala.version>
+        <scala.version>2.12.20</scala.version>
       </properties>
       <build>
         <pluginManagement>
