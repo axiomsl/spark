@@ -225,13 +225,22 @@ private[hive] class SparkExecuteStatementOperation(
       }
 
       sqlContext.sparkContext.setJobGroup(statementId, redactedStatement, forceCancel)
+
       result =
-        if (statement.endsWith("LIMIT 0") || statement.endsWith("limit 0")) {
-          val patchedStatemant = SqlManipulator.patchLimit0(statement)
-          val r = sqlContext.sql(patchedStatemant)
+        if (statement.toLowerCase().trim == "set -v") {
+          SparkExecuteStatementOperation.set_v_result.synchronized {
+            if (SparkExecuteStatementOperation.set_v_result.isEmpty) {
+              logInfo(s"Running 'SET -V' with $statementId")
+              SparkExecuteStatementOperation.set_v_result = Some(sqlContext.sql(statement))
+            }
+          }
+          SparkExecuteStatementOperation.set_v_result.get
+        } else if (statement.endsWith("LIMIT 0") || statement.endsWith("limit 0")) {
+          val patchedStatement = SqlManipulator.patchLimit0(statement, statementId)
+          val r = sqlContext.sql(patchedStatement)
           sqlContext.createDataFrame(new java.util.ArrayList[Row](0), r.schema)
         } else {
-          val patchedStatement = SqlManipulator.patch(statement)
+          val patchedStatement = SqlManipulator.patch(statement, statementId)
           sqlContext.sql(patchedStatement)
         }
       logDebug(result.queryExecution.toString())
@@ -324,7 +333,7 @@ private[hive] class SparkExecuteStatementOperation(
 }
 
 object SparkExecuteStatementOperation {
-
+  var set_v_result: Option[DataFrame] = None
   def toTTypeId(typ: DataType): TTypeId = typ match {
     case NullType => TTypeId.NULL_TYPE
     case BooleanType => TTypeId.BOOLEAN_TYPE
@@ -409,40 +418,43 @@ object SqlManipulator extends Logging {
 
   val where_limit_0 = "(?s)\\s+WHERE .+\\sLIMIT 0".r
 
-  def patchLimit0(statement: String): String = {
+  def patchLimit0(statement: String, statementId: String): String = {
     val patched = where_limit_0.replaceAllIn(statement, " WHERE 1=0")
-    logInfo(s"Patched Statement: $patched")
+    logInfo(s"Patched Statement: $patched with $statementId")
     patched
   }
 
-  def patch(statement: String): String = {
+  def patch(statement: String, statementId: String): String = {
     sys.props.get("axiomsl.sql.manipulator.enabled") match {
       case Some(v) if v.toLowerCase() == "true" =>
-        all(statement)
+        all(statement, statementId)
       case None =>
-        all(statement)
+        all(statement, statementId)
+      case Some(v) if v.toLowerCase() == "false" =>
+        logDebug(s"SQL Manipulator is disabled, returning original statement: $statement with $statementId")
+        statement
     }
   }
 
-  def all(statement: String): String = {
-        logDebug(s"Input Statement: $statement")
+  private def all(statement: String, statementId: String): String = {
+        logDebug(s"Input Statement: $statement with $statementId")
         val d = handleDrillDownInfo(statement)
-        logDebug(s"After DrillDownInfo: $d")
+        logDebug(s"After DrillDownInfo: $d with $statementId")
         val d2 = handleNullIsNull(d)
-        logDebug(s"After NullIsNull: $d2")
+        logDebug(s"After NullIsNull: $d2 with $statementId")
         val d3 = handleNumberEqualsNumber(d2)
-        logDebug(s"After NumberEqualsNumber: $d3")
+        logDebug(s"After NumberEqualsNumber: $d3 with $statementId")
         val d4 = handleStringEqualsString(d3)
-        logDebug(s"After StringEqualsString: $d4")
+        logDebug(s"After StringEqualsString: $d4 with $statementId")
         val d5 = handleAndTrue(d4)
-        logDebug(s"After AndTrue: $d5")
+        logDebug(s"After AndTrue: $d5 with $statementId")
         val d6 = handleOrFalse(d5)
-        logDebug(s"After OrFalse: $d6")
-        logInfo(s"Patched Statement: $d6")
+        logDebug(s"After OrFalse: $d6 with $statementId")
+        logInfo(s"Patched Statement: $d6 with $statementId")
         d6
   }
 
-  def handleDrillDownInfo(statement: String): String = {
+  private def handleDrillDownInfo(statement: String): String = {
     val s = statement
     val d = r.replaceAllIn(
       s,
@@ -457,11 +469,11 @@ object SqlManipulator extends Logging {
     d
   }
 
-  def handleNullIsNull(statement: String): String = {
+  private def handleNullIsNull(statement: String): String = {
     null_is_null.replaceAllIn(statement, "true")
   }
 
-  def handleNumberEqualsNumber(statement: String): String = {
+  private def handleNumberEqualsNumber(statement: String): String = {
     number_equals_number.replaceAllIn(statement, m => {
       val number1 = m.group(1)
       val number2 = m.group(2)
@@ -473,7 +485,7 @@ object SqlManipulator extends Logging {
     })
   }
 
-  def handleStringEqualsString(statement: String): String = {
+  private def handleStringEqualsString(statement: String): String = {
     string_equals_string.replaceAllIn(statement, m => {
       val s1 = m.group(1)
       val s2 = m.group(2)
@@ -485,11 +497,11 @@ object SqlManipulator extends Logging {
     })
   }
 
-  def handleAndTrue(statement: String): String = {
+  private def handleAndTrue(statement: String): String = {
     and_true.replaceAllIn(statement, "")
   }
 
-  def handleOrFalse(statement: String): String = {
+  private def handleOrFalse(statement: String): String = {
     or_false.replaceAllIn(statement, "")
   }
 }
