@@ -431,7 +431,8 @@ object SqlManipulator extends Logging {
       case None =>
         all(statement, statementId)
       case Some(v) if v.toLowerCase() == "false" =>
-        logDebug(s"SQL Manipulator is disabled, returning original statement: $statement with $statementId")
+        logDebug(s"SQL Manipulator is disabled, returning original statement: " +
+          s"$statement with $statementId")
         statement
     }
   }
