@@ -439,6 +439,11 @@
   <dependencyManagement>
     <dependencies>
       <dependency>
+        <groupId>org.scalameta</groupId>
+        <artifactId>semanticdb-shared_2.12</artifactId>
+        <version>4.13.6</version>
+      </dependency>
+      <dependency>
         <groupId>org.apache.spark</groupId>
         <artifactId>spark-tags_${scala.binary.version}</artifactId>
         <version>${project.version}</version>
