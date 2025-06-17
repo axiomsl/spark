@@ -434,6 +434,11 @@ object SqlManipulator extends Logging {
         logDebug(s"SQL Manipulator is disabled, returning original statement: " +
           s"$statement with $statementId")
         statement
+      case _ =>
+        logWarning(s"Invalid value for 'axiomsl.sql.manipulator.enabled': " +
+          s"${sys.props.get("axiomsl.sql.manipulator.enabled")}, returning original statement: " +
+          s"$statement with $statementId")
+        statement
     }
   }
 
