@@ -52,6 +52,14 @@
     <url>https://issues.apache.org/jira/browse/SPARK</url>
   </issueManagement>
 
+  <distributionManagement>
+    <repository>
+      <id>il-axiomsl</id>
+      <name>AXIOM</name>
+      <url>http://il-nexus.global.axiomsl.com:8081/nexus/content/repositories/spark-releases/</url>
+    </repository>
+  </distributionManagement>
+
   <mailingLists>
     <mailingList>
       <name>Dev Mailing List</name>
@@ -198,7 +206,7 @@
     <datanucleus-core.version>4.1.17</datanucleus-core.version>
     <guava.version>33.4.0-jre</guava.version>
     <gson.version>2.11.0</gson.version>
-    <janino.version>3.1.9</janino.version>
+    <janino.version>3.1.11</janino.version>
     <jersey.version>3.0.16</jersey.version>
     <joda.version>2.13.0</joda.version>
     <jodd.version>3.5.2</jodd.version>
@@ -231,7 +239,7 @@
     ./python/packaging/client/setup.py, and ./python/packaging/connect/setup.py too.
     -->
     <arrow.version>18.1.0</arrow.version>
-    <ammonite.version>3.0.1</ammonite.version>
+    <ammonite.version>3.0.2</ammonite.version>
     <jjwt.version>0.12.6</jjwt.version>
 
     <!-- org.fusesource.leveldbjni will be used except on arm64 platform. -->
@@ -1167,7 +1175,7 @@
         <exclusions>
           <exclusion>
             <groupId>org.scala-lang.modules</groupId>
-            <artifactId>scala-xml_2.13</artifactId>
+            <artifactId>scala-xml_${scala.binary.version}</artifactId>
           </exclusion>
         </exclusions>
       </dependency>
