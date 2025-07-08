@@ -87,6 +87,11 @@
       <scope>compile</scope>
     </dependency>
     <dependency>
+      <groupId>org.scala-lang</groupId>
+      <artifactId>scalap</artifactId>
+      <version>${scala.version}</version>
+    </dependency>
+    <dependency>
       <groupId>com.lihaoyi</groupId>
       <artifactId>ammonite_${scala.version}</artifactId>
       <version>${ammonite.version}</version>
@@ -101,6 +106,10 @@
         <exclusion>
           <groupId>org.scala-lang</groupId>
           <artifactId>scala-library</artifactId>
+        </exclusion>
+        <exclusion>
+          <groupId>org.scala-lang</groupId>
+          <artifactId>scalap</artifactId>
         </exclusion>
       </exclusions>
       <scope>provided</scope>
