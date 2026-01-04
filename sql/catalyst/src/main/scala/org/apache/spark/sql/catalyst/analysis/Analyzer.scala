@@ -1361,7 +1361,7 @@ class Analyzer(override val catalogManager: CatalogManager) extends RuleExecutor
         val partCols = partitionColumnNames(r.table)
         validatePartitionSpec(partCols, i.partitionSpec)
 
-        val staticPartitions = i.partitionSpec.filter(_._2.isDefined).mapValues(_.get)
+        val staticPartitions = i.partitionSpec.filter(_._2.isDefined).mapValues(_.get).toMap
         val query = addStaticPartitionColumns(r, projectByName.getOrElse(i.query), staticPartitions,
           isByName)
 

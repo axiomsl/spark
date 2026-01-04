@@ -129,12 +129,12 @@ private[spark] class Executor(
       new SynchronousQueue[Runnable](),
       threadFactory) {
 
-      override def execute(runnable: Runnable) {
+      override def execute(runnable: Runnable): Unit = {
         super.execute(new Runnable {
-          val callerThreadMDC: java.util.Map[String, String] = getMDCMap
+          val callerThreadMDC: java.util.Map[String, String] = getMDCMap()
 
-          override def run() {
-            val threadMDC = getMDCMap
+          override def run(): Unit = {
+            val threadMDC = getMDCMap()
             MDC.setContextMap(callerThreadMDC)
             try {
               runnable.run()
@@ -145,7 +145,7 @@ private[spark] class Executor(
         })
       }
 
-      private def getMDCMap: java.util.Map[String, String] = {
+      private def getMDCMap(): java.util.Map[String, String] = {
         MDC.getCopyOfContextMap match {
           case null => new java.util.HashMap[String, String]()
           case m => m
