@@ -56,7 +56,7 @@
     <repository>
       <id>il-axiomsl</id>
       <name>AXIOM</name>
-      <url>http://il-nexus.global.axiomsl.com:8081/nexus/content/repositories/spark-releases/</url>
+      <url>http://il-nexus.axiomsl.nasdaq.com:8081/nexus/content/repositories/spark-releases/</url>
     </repository>
   </distributionManagement>
 
