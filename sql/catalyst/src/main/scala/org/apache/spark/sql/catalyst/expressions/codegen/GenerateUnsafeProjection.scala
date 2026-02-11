@@ -361,7 +361,7 @@ object GenerateUnsafeProjection extends CodeGenerator[Seq[Expression], UnsafePro
            public java.lang.Object apply(java.lang.Object row) {
              try {
                return apply((InternalRow) row);
-             } catch (UnsafeWriterException e) {
+             } catch (org.apache.spark.sql.catalyst.expressions.codegen.UnsafeWriterException e) {
                InternalRow _row = (InternalRow) row;
                e.setRow(_row);
                throw e;
@@ -372,7 +372,7 @@ object GenerateUnsafeProjection extends CodeGenerator[Seq[Expression], UnsafePro
              try {
                ${eval.code}
                return ${eval.value};
-             } catch (UnsafeWriterException e) {
+             } catch (org.apache.spark.sql.catalyst.expressions.codegen.UnsafeWriterException e) {
                e.setRow(${ctx.INPUT_ROW});
                throw e;
              }
