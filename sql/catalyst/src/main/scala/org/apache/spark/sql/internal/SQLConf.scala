@@ -4442,6 +4442,140 @@ object SQLConf {
       .booleanConf
       .createWithDefault(false)
 
+  val CREATE_DIRECTORY_AFTER_CATALOG_TABLE =
+    buildConf("spark.sql.catalog.createDirectoryAfterTable.enabled")
+      .doc("When true, create table data directory after creating the table in Glue. " +
+        "This should be enabled when using Spark in FTA/FGAC mode as LF credentials " +
+        "are only available after table creation in Glue. " +
+        "The default value is false to match OSS Spark behaviour")
+      .version("3.5.4")
+      .booleanConf
+      .createWithDefault(false)
+
+  val DELETE_DATA_BEFORE_CATALOG_TABLE =
+    buildConf("spark.sql.catalog.dropDirectoryBeforeTable.enabled")
+      .doc("When true, drop table data directory before deleting the table in Glue. " +
+        "This should be enabled when using Spark in FTA/FGAC mode as LF credentials " +
+        "are only available until the table exists in Glue. " +
+        "The default value is false to match OSS Spark behaviour")
+      .version("3.5.4")
+      .booleanConf.createWithDefault(false)
+
+  val REPLACE_CERTAIN_SELF_JOINS_WITH_AGG_FILTER_ENABLED =
+    buildConf("spark.sql.optimizer.replaceCertainSelfJoinsWithAggFilter.enabled")
+      .doc("When true, the optimizer will try to replace certain self-joins with a group-by-agg " +
+        "and a filter.")
+      .internal()
+      .version("3.5.3")
+      .booleanConf
+      .createWithDefault(true)
+
+  val REPLACE_CERTAIN_SELF_JOINS_WITH_AGG_FILTER_SCHEMA_SIZE_THRESHOLD =
+    buildConf("spark.sql.optimizer.replaceCertainSelfJoinsWithAggFilter.schemaSizeThreshold")
+      .doc("Controls the maximum possible row length increase allowed to this change")
+      .internal()
+      .version("3.5.3")
+      .doubleConf
+      .checkValue(
+        SQLConf.REPLACE_CERTAIN_SELF_JOINS_WITH_AGG_FILTER_SCHEMA_SIZE_THRESHOLD,
+        "threshold should be in [0, 1]"
+      ).createWithDefault(0.4D)
+
+  val REPLACE_CERTAIN_SELF_JOINS_WITH_AGG_FILTER_ONESIDE_ONLY =
+    buildConf("spark.sql.optimizer.replaceCertainSelfJoinsWithAggFilter.oneSideOnly")
+      .doc("When true, the optimizer will replace one side of certain self-joins with a group-by-agg and a filter.")
+      .internal().version("3.5.3").booleanConf.createWithDefault(true)
+
+  val MATERIALIZED_VIEWS_METADATA_CACHE_ENABLED =
+    buildConf("spark.sql.materializedViews.metadataCache.enabled")
+      .doc("When true, a proactive metadata cache for materialized views will be used.")
+      .internal().version("3.5.6").booleanConf.createWithDefault(true)
+
+  val MATERIALIZED_VIEW_REQUIRE_FULLY_QUALIFIED_TABLES =
+    buildConf("spark.sql.materializedView.requireFullyQualifiedTables")
+      .doc("When true, enforces that all base table references in " +
+        "CREATE MATERIALIZED VIEW statements use fully qualified names " +
+        "with at least 3 parts (catalog.schema.table). " +
+        "This ensures unambiguous table resolution across catalogs. " +
+        "Disabling this may cause materialized view auto-refresh to fail.")
+      .internal().version("3.5.6").booleanConf.createWithDefault(true)
+
+  val MATERIALIZED_VIEWS_METADATA_CACHE_CLASSNAME =
+    buildConf("spark.sql.materializedViews.metadataCache.className")
+      .doc("The name of the class to use to implement metadata caching.")
+      .internal().version("3.5.6")
+      .stringConf.createWithDefault("org.apache.spark.sql.InMemMvMetadataCache")
+
+  val MATERIALIZED_VIEWS_METADATA_CACHE_WATCHER_PERIOD_SECONDS =
+    buildConf("spark.sql.materializedViews.metadataCache.watcherPeriodSeconds")
+      .doc("Positive value denoting periodicity between watcher runs.")
+      .internal().version("3.5.6").intConf
+      .checkValue(SQLConf.MATERIALIZED_VIEWS_METADATA_CACHE_WATCHER_PERIOD_SECONDS,
+        "watcher period should be in [1, 1000] seconds").createWithDefault(10)
+
+  val MATERIALIZED_VIEWS_METADATA_CACHE_LOADER_DELAY_SECONDS =
+    buildConf("spark.sql.materializedViews.metadataCache.loaderDelaySeconds")
+      .doc("Positive value denoting delay from prev loader finish when watcher starts a new run.")
+      .internal()
+      .version("3.5.6")
+      .intConf
+      .checkValue(SQLConf.MATERIALIZED_VIEWS_METADATA_CACHE_LOADER_DELAY_SECONDS,
+        "loader delay should be greater or equal to 1 second")
+      .createWithDefault(60)
+
+  val MATERIALIZED_VIEWS_METADATA_CACHE_MEMORY_THRESHOLD_PERCENTAGE =
+    buildConf("spark.sql.materializedViews.metadataCache.memoryThresholdPercentage")
+      .doc("Maximum JVM heap memory percentage for MV metadata cache (0-100). " +
+        "When heap usage exceeds this threshold, no new MVs will be loaded.")
+      .internal()
+      .version("3.5.6")
+      .doubleConf
+      .checkValue(SQLConf.MATERIALIZED_VIEWS_METADATA_CACHE_MEMORY_THRESHOLD_PERCENTAGE,
+        "memory threshold should be in [0.0, 100.0] percent")
+      .createWithDefault(40.0D)
+
+  val MATERIALIZED_VIEWS_SCAN_CURRENT_CATALOG =
+    buildConf("spark.sql.materializedViews.scanCurrentCatalog")
+      .doc("When enabled, the mv cache will always scan the current catalog for materialized views." +
+        "When disabled, only scans additional catalogs specified in " +
+        "spark.sql.materializedViews.additionalCatalogs.")
+      .internal()
+      .version("3.5.6")
+      .booleanConf
+      .createWithDefault(true)
+
+  val MATERIALIZED_VIEWS_ADDITIONAL_CATALOGS =
+    buildConf("spark.sql.materializedViews.additionalCatalogs")
+      .doc("Comma-separated list of additional catalog names to scan for materialized views, " +
+        "in addition to the current catalog.")
+      .internal()
+      .version("3.5.6")
+      .stringConf
+      .createWithDefault("")
+
+  val MATERIALIZED_VIEWS_SKIP_CATALOG_TYPE_CHECKS =
+    buildConf("spark.sql.materializedViews.skipCatalogTypeChecks")
+      .doc("When true, allow creating materialized views without glue catalog. " +
+        "Please note that many operations don't support non-glue materialized views. " +
+        "Skipping the catalog type check may result in unexpected results.")
+      .internal()
+      .version("3.5.6")
+      .booleanConf
+      .createWithDefault(false)
+
+  val MATERIALIZED_VIEWS_SKIP_LEAF_NODE_TYPE_CHECKS =
+    buildConf("spark.sql.materializedViews.skipLeafNodeTypeChecks")
+      .doc("When true, allow creating materialized views with leaf node other than " +
+        "DataSourceV2Relation (supported), Range (supported), OneRowRelation (supported), " +
+        "HiveTableRelation (unsupported), View (unsupported). " +
+        "Please note that many operations don't support materialized views with " +
+        "other leaf node types. Skipping the leaf node type " +
+        "check may result in unexpected results.")
+      .internal()
+      .version("3.5.6")
+      .booleanConf
+      .createWithDefault(false)
+
   /**
    * Holds information about keys that have been deprecated.
    *
