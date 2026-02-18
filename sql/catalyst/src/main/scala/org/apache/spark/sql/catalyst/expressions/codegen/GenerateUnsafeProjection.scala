@@ -359,12 +359,23 @@ object GenerateUnsafeProjection extends CodeGenerator[Seq[Expression], UnsafePro
 
            // Scala.Function1 need this
            public java.lang.Object apply(java.lang.Object row) {
-             return apply((InternalRow) row);
+             try {
+               return apply((InternalRow) row);
+             } catch (org.apache.spark.sql.catalyst.expressions.codegen.UnsafeWriterException e) {
+               InternalRow _row = (InternalRow) row;
+               e.setRow(_row);
+               throw e;
+             }
            }
 
            public UnsafeRow apply(InternalRow ${ctx.INPUT_ROW}) {
-             ${eval.code}
-             return ${eval.value};
+             try {
+               ${eval.code}
+               return ${eval.value};
+             } catch (org.apache.spark.sql.catalyst.expressions.codegen.UnsafeWriterException e) {
+               e.setRow(${ctx.INPUT_ROW});
+               throw e;
+             }
            }
 
            ${ctx.declareAddedFunctions()}

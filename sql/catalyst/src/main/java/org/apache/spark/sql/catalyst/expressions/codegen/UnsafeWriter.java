@@ -110,7 +110,7 @@ public abstract class UnsafeWriter {
     try {
       writeUnalignedBytes(ordinal, input.getBaseObject(), input.getBaseOffset(), input.numBytes());
     } catch (NullPointerException e) {
-      throw new RuntimeException("field ordinal: [" + ordinal + "]", e);
+      throw new UnsafeWriterException("field ordinal: [" + ordinal + "]", ordinal, e);
     }
   }
 

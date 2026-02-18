@@ -578,7 +578,10 @@ private[v2] trait V2CreateTableAsSelectBaseExec extends LeafV2CommandExec {
       overwrite: Boolean): Seq[InternalRow] = {
     Utils.tryWithSafeFinallyAndFailureCallbacks({
       val relation = DataSourceV2Relation.create(table, Some(catalog), Some(ident))
-      val writeCommand = if (overwrite) {
+
+      val useOverwrite = writeOptions.getOrElse("useOverwrite", overwrite.toString).toBoolean
+
+      val writeCommand = if (useOverwrite) {
         OverwriteByExpression.byPosition(relation, query, Literal.TrueLiteral, writeOptions)
       } else {
         AppendData.byPosition(relation, query, writeOptions)
