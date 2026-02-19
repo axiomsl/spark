@@ -4477,19 +4477,23 @@ object SQLConf {
       .version("3.5.3")
       .doubleConf
       .checkValue(
-        SQLConf.REPLACE_CERTAIN_SELF_JOINS_WITH_AGG_FILTER_SCHEMA_SIZE_THRESHOLD,
+        d => d >= 0D && d <= 1D,
         "threshold should be in [0, 1]"
       ).createWithDefault(0.4D)
 
   val REPLACE_CERTAIN_SELF_JOINS_WITH_AGG_FILTER_ONESIDE_ONLY =
     buildConf("spark.sql.optimizer.replaceCertainSelfJoinsWithAggFilter.oneSideOnly")
-      .doc("When true, the optimizer will replace one side of certain self-joins with a group-by-agg and a filter.")
+      .doc("When true, the optimizer will replace one side of certain " +
+        "self-joins with a group-by-agg and a filter.")
       .internal().version("3.5.3").booleanConf.createWithDefault(true)
 
   val MATERIALIZED_VIEWS_METADATA_CACHE_ENABLED =
     buildConf("spark.sql.materializedViews.metadataCache.enabled")
       .doc("When true, a proactive metadata cache for materialized views will be used.")
-      .internal().version("3.5.6").booleanConf.createWithDefault(true)
+      .internal()
+      .version("3.5.6")
+      .booleanConf
+      .createWithDefault(true)
 
   val MATERIALIZED_VIEW_REQUIRE_FULLY_QUALIFIED_TABLES =
     buildConf("spark.sql.materializedView.requireFullyQualifiedTables")
@@ -4498,7 +4502,10 @@ object SQLConf {
         "with at least 3 parts (catalog.schema.table). " +
         "This ensures unambiguous table resolution across catalogs. " +
         "Disabling this may cause materialized view auto-refresh to fail.")
-      .internal().version("3.5.6").booleanConf.createWithDefault(true)
+      .internal()
+      .version("3.5.6")
+      .booleanConf
+      .createWithDefault(true)
 
   val MATERIALIZED_VIEWS_METADATA_CACHE_CLASSNAME =
     buildConf("spark.sql.materializedViews.metadataCache.className")
@@ -4509,9 +4516,12 @@ object SQLConf {
   val MATERIALIZED_VIEWS_METADATA_CACHE_WATCHER_PERIOD_SECONDS =
     buildConf("spark.sql.materializedViews.metadataCache.watcherPeriodSeconds")
       .doc("Positive value denoting periodicity between watcher runs.")
-      .internal().version("3.5.6").intConf
-      .checkValue(SQLConf.MATERIALIZED_VIEWS_METADATA_CACHE_WATCHER_PERIOD_SECONDS,
-        "watcher period should be in [1, 1000] seconds").createWithDefault(10)
+      .internal()
+      .version("3.5.6")
+      .intConf
+      .checkValue(i => i >=1 && i <= 1000,
+        "watcher period should be in [1, 1000] seconds")
+      .createWithDefault(10)
 
   val MATERIALIZED_VIEWS_METADATA_CACHE_LOADER_DELAY_SECONDS =
     buildConf("spark.sql.materializedViews.metadataCache.loaderDelaySeconds")
@@ -4519,7 +4529,7 @@ object SQLConf {
       .internal()
       .version("3.5.6")
       .intConf
-      .checkValue(SQLConf.MATERIALIZED_VIEWS_METADATA_CACHE_LOADER_DELAY_SECONDS,
+      .checkValue(i => i >= 1,
         "loader delay should be greater or equal to 1 second")
       .createWithDefault(60)
 
@@ -4530,13 +4540,14 @@ object SQLConf {
       .internal()
       .version("3.5.6")
       .doubleConf
-      .checkValue(SQLConf.MATERIALIZED_VIEWS_METADATA_CACHE_MEMORY_THRESHOLD_PERCENTAGE,
+      .checkValue(d => d >= 0.0D && d <= 100.0D,
         "memory threshold should be in [0.0, 100.0] percent")
       .createWithDefault(40.0D)
 
   val MATERIALIZED_VIEWS_SCAN_CURRENT_CATALOG =
     buildConf("spark.sql.materializedViews.scanCurrentCatalog")
-      .doc("When enabled, the mv cache will always scan the current catalog for materialized views." +
+      .doc("When enabled, the mv cache will always scan the current catalog " +
+        "for materialized views." +
         "When disabled, only scans additional catalogs specified in " +
         "spark.sql.materializedViews.additionalCatalogs.")
       .internal()
