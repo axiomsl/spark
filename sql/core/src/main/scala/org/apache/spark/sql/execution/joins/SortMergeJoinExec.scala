@@ -232,7 +232,7 @@ case class SortMergeJoinExec(
     val inMemoryThreshold = getInMemoryThreshold
 
     // Inline mutable state since not many join operations in a task
-    val matches = ctx.addMutableState(clsName, "matches",
+    val matches = ctx.addMutableState(clsName, "mtc",
       // TODO: shall we have a new config to specify the max in-memory buffer size
       //       of ExternalAppendOnlyUnsafeRowArray?
       v => s"$v = new $clsName($inMemoryThreshold, ${sizeInBytesSpillThreshold}L, " +

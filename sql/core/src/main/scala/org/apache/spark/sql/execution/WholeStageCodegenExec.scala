@@ -18,13 +18,14 @@
 package org.apache.spark.sql.execution
 
 import java.util.Locale
+import java.util.concurrent.TimeUnit
 import java.util.concurrent.atomic.{AtomicInteger, AtomicLong}
 
 import scala.collection.mutable
 import scala.util.control.NonFatal
 
 import org.apache.spark.{broadcast, SparkException, SparkUnsupportedOperationException}
-import org.apache.spark.internal.LogKeys.{CODEGEN_STAGE_ID, CONFIG, ERROR, HUGE_METHOD_LIMIT, MAX_METHOD_CODE_SIZE, TREE_NODE}
+import org.apache.spark.internal.LogKeys.{CODEGEN_STAGE_ID, CONFIG, ELAPSED_TIME, ERROR, HUGE_METHOD_LIMIT, MAX_METHOD_CODE_SIZE, TREE_NODE}
 import org.apache.spark.rdd.RDD
 import org.apache.spark.sql.catalyst.InternalRow
 import org.apache.spark.sql.catalyst.expressions._
@@ -56,10 +57,23 @@ trait CodegenSupport extends SparkPlan {
     case _: BroadcastNestedLoopJoinExec => "bnlj"
     case _: RDDScanExec => "rdd"
     case _: OneRowRelationExec => "orr"
-    case _: DataSourceScanExec => "scan"
-    case _: InMemoryTableScanExec => "memoryScan"
-    case _: WholeStageCodegenExec => "wholestagecodegen"
-    case _ => nodeName.toLowerCase(Locale.ROOT)
+    case _: DataSourceScanExec => "ds"
+    case _: InMemoryTableScanExec => "ms"
+    case _: WholeStageCodegenExec => "wsc"
+    case _: LocalTableScanExec => "lcltabscn"
+    case _: GenerateExec => "gen"
+    case _: SortExec => "srt"
+    case _ =>
+      nodeName.toLowerCase(Locale.ROOT) match {
+        case "project" => "prj"
+        case "inputadapter" => "inadp"
+        case "filter" => "flt"
+        case "columnartorow" => "ctr"
+        case "value" => "val"
+        case "streamedrow" => "strw"
+        case "bufferedrow" => "bfrw"
+        case t => t
+      }
   }
 
   /**
@@ -678,8 +692,8 @@ case class WholeStageCodegenExec(child: SparkPlan)(val codegenStageId: Int)
     val className = generatedClassName()
 
     val source = s"""
-      public Object generate(Object[] references) {
-        return new $className(references);
+      public Object generate(Object[] refs) {
+        return new $className(refs);
       }
 
       ${ctx.registerComment(
@@ -689,12 +703,12 @@ case class WholeStageCodegenExec(child: SparkPlan)(val codegenStageId: Int)
       ${ctx.registerComment(s"codegenStageId=$codegenStageId", "wsc_codegenStageId", true)}
       final class $className extends ${classOf[BufferedRowIterator].getName} {
 
-        private Object[] references;
+        private Object[] refs;
         private scala.collection.Iterator[] inputs;
         ${ctx.declareMutableStates()}
 
-        public $className(Object[] references) {
-          this.references = references;
+        public $className(Object[] refs) {
+          this.refs = refs;
         }
 
         public void init(int index, scala.collection.Iterator[] inputs) {
@@ -728,16 +742,19 @@ case class WholeStageCodegenExec(child: SparkPlan)(val codegenStageId: Int)
   }
 
   override def doExecute(): RDD[InternalRow] = {
+    val startTime = System.nanoTime()
     val (ctx, cleanedSource) = doCodeGen()
     // try to compile and fallback if it failed
     val (_, compiledCodeStats) = try {
       CodeGenerator.compile(cleanedSource)
     } catch {
       case NonFatal(_) if !Utils.isTesting && conf.codegenFallback =>
+        val runtime = TimeUnit.NANOSECONDS.toSeconds(System.nanoTime() - startTime)
         // We should already saw the error message
         logWarning(log"Whole-stage codegen disabled for plan " +
-          log"(id=${MDC(CODEGEN_STAGE_ID, codegenStageId)}):\n " +
-          log"${MDC(TREE_NODE, treeString)}")
+            log"(id=${MDC(CODEGEN_STAGE_ID, codegenStageId)})" +
+            log" after (${MDC(ELAPSED_TIME, runtime)} seconds):\n " +
+            log"${MDC(TREE_NODE, treeString)}")
         return child.execute()
     }
 
