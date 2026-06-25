@@ -1,4 +1,4 @@
-<?xml version="1.0" encoding="UTF-8"?>
+﻿<?xml version="1.0" encoding="UTF-8"?>
 <!--
   ~ Licensed to the Apache Software Foundation (ASF) under one or more
   ~ contributor license agreements.  See the NOTICE file distributed with
@@ -128,7 +128,7 @@
     <sbt.project.name>spark</sbt.project.name>
     <asm.version>9.5</asm.version>
     <slf4j.version>2.0.7</slf4j.version>
-    <log4j.version>2.20.0</log4j.version>
+    <log4j.version>2.25.4</log4j.version>
     <!-- make sure to update IsolatedClientLoader whenever this version is changed -->
     <hadoop.version>3.3.4</hadoop.version>
     <!-- SPARK-41247: When updating `protobuf.version`, also need to update `protoVersion` in `SparkBuild.scala` -->
