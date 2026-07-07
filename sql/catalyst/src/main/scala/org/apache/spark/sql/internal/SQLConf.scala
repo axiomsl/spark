@@ -1740,6 +1740,13 @@ object SQLConf {
     .checkValue(threshold => threshold > 0, "The threshold must be a positive integer.")
     .createWithDefault(1024)
 
+  val CODEGEN_ADD_NPE_DEBUG_CODE = buildConf("spark.sql.codegen.addNPEDebugCode")
+    .internal()
+    .doc("adds function to write the value in case of NPE in write.")
+    .version("3.5.4")
+    .booleanConf
+    .createWithDefault(false)
+
   val WHOLESTAGE_SPLIT_CONSUME_FUNC_BY_OPERATOR =
     buildConf("spark.sql.codegen.splitConsumeFuncByOperator")
       .internal()
@@ -4944,6 +4951,8 @@ class SQLConf extends Serializable with Logging with SqlApiConf {
   def hugeMethodLimit: Int = getConf(WHOLESTAGE_HUGE_METHOD_LIMIT)
 
   def methodSplitThreshold: Int = getConf(CODEGEN_METHOD_SPLIT_THRESHOLD)
+
+  def addNpeDebugCode: Boolean = getConf(CODEGEN_ADD_NPE_DEBUG_CODE)
 
   def wholeStageSplitConsumeFuncByOperator: Boolean =
     getConf(WHOLESTAGE_SPLIT_CONSUME_FUNC_BY_OPERATOR)
