@@ -941,7 +941,7 @@ class CodegenContext extends Logging {
              StringBuilder sb = new StringBuilder();
              $body
              throw new org.apache.spark.sql.catalyst.expressions.codegen.UnsafeWriterException(
-               sb.toString(), nullIndex, e);
+               e.toString() + " " + sb.toString(), nullIndex, e);
            }
           """
         addNewFunctionInternal(writeFieldsErrorFuncName,
