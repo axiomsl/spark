@@ -1,4 +1,4 @@
-<?xml version="1.0" encoding="UTF-8"?>
+﻿<?xml version="1.0" encoding="UTF-8"?>
 <!--
   ~ Licensed to the Apache Software Foundation (ASF) under one or more
   ~ contributor license agreements.  See the NOTICE file distributed with
@@ -26,7 +26,7 @@
   </parent>
   <groupId>org.apache.spark</groupId>
   <artifactId>spark-parent_2.13</artifactId>
-  <version>4.0.1-SNAPSHOT</version>
+  <version>4.0.0-1-ax</version>
   <packaging>pom</packaging>
   <name>Spark Project Parent POM</name>
   <url>https://spark.apache.org/</url>
@@ -56,7 +56,7 @@
     <repository>
       <id>il-axiomsl</id>
       <name>AXIOM</name>
-      <url>http://il-nexus.global.axiomsl.com:8081/nexus/content/repositories/spark-releases/</url>
+      <url>https://il-spark-nexus.axiomsl.nasdaq.com/nexus/content/repositories/spark-releases/</url>
     </repository>
   </distributionManagement>
 
