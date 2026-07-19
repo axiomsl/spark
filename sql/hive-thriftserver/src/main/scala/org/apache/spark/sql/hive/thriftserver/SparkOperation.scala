@@ -66,6 +66,13 @@ private[hive] trait SparkOperation extends Operation with Logging {
     val originalSession = SparkSession.getActiveSession
 
     try {
+      statementId match {
+        case null =>
+        case id =>
+          session.sparkContext.setLocalProperty("mdc.statementId", id)
+          org.slf4j.MDC.put("mdc.sessionId", id)
+      }
+
       // Set active SparkSession
       SparkSession.setActiveSession(session)
 
