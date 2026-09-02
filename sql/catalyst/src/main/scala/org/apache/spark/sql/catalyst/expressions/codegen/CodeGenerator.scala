@@ -951,7 +951,8 @@ class CodegenContext extends Logging {
 
       if (addNpeDebugCode) {
         val regex = s"""(\\(${arguments.head._2}\\.get[a-zA-Z0-9]+\\((\\d+)\\)\\))""".r
-        val regex2 = s"""(((Expression) refs\\[(\\d+)]).eval\\(${arguments.head._2}\\))""".r
+        val regex2 =
+          s"""(\\(\\(Expression\\) refs\\[(\\d+)]\\)\\.eval\\(${arguments.head._2}\\))""".r
 
         val body = blocks.map { body =>
           regex2.findAllMatchIn(body).map { matcher =>
@@ -974,7 +975,8 @@ class CodegenContext extends Logging {
                   if (nullIndex == $index) {
                     sb.append("NullPointerException value").append(",");
                   } else {
-                    sb.append(i.isNullAt($index) ? "NULL(null)" : $full).append(",");
+                    sb.append(${arguments.head._2}.isNullAt($index) ? "NULL(null)" : $full)
+                      .append(",");
                   }
                  """
           }.mkString("\n")
