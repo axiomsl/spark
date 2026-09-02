@@ -942,13 +942,77 @@ class CodegenContext extends Logging {
 
       val func = freshName(funcName)
       val argString = arguments.map { case (t, name) => s"$t $name" }.mkString(", ")
+
+      // Opt-in NPE diagnostics: only for the row-writing split functions, and only when
+      // `spark.sql.codegen.addNPEDebugCode` is enabled. When disabled, nothing below runs and
+      // the generated code is unchanged.
+      val addNpeDebugCode = SQLConf.get.addNpeDebugCode && func.startsWith("writeFields_")
+      lazy val writeFieldsErrorFuncName = freshName("writeFieldsError")
+
+      if (addNpeDebugCode) {
+        val regex = s"""(\\(${arguments.head._2}\\.get[a-zA-Z0-9]+\\((\\d+)\\)\\))""".r
+        val regex2 = s"""(((Expression) refs\\[(\\d+)]).eval\\(${arguments.head._2}\\))""".r
+
+        val body = blocks.map { body =>
+          regex2.findAllMatchIn(body).map { matcher =>
+            val full = matcher.group(1)
+            val index = matcher.group(2)
+            s"""
+             if (nullIndex == $index) {
+               sb.append("NullPointerException value").append(",");
+             } else {
+               Object v = $full;
+               sb.append(v == null ? "NULL(null)" : v.toString()).append(",");
+             }
+             """
+          }.mkString("\n") + "\n" +
+          regex.findAllMatchIn(body)
+            .map { matcher =>
+              val full = matcher.group(1)
+              val index = matcher.group(2)
+              s"""
+                  if (nullIndex == $index) {
+                    sb.append("NullPointerException value").append(",");
+                  } else {
+                    sb.append(i.isNullAt($index) ? "NULL(null)" : $full).append(",");
+                  }
+                 """
+          }.mkString("\n")
+        }.mkString("\n")
+
+        val handleErrorFunction = s"""
+          private void $writeFieldsErrorFuncName($argString, int nullIndex, Exception e) {
+            StringBuilder sb = new StringBuilder();
+            $body
+            throw new org.apache.spark.sql.catalyst.expressions.codegen.UnsafeWriterException(
+              e.toString() + " " + sb.toString(), nullIndex, e);
+          }
+         """
+        addNewFunctionInternal(writeFieldsErrorFuncName,
+          handleErrorFunction, inlineToOuterClass = false)
+      }
+
       val functions = blocks.zipWithIndex.map { case (body, i) =>
         val name = s"${func}_$i"
-        val code = s"""
+        val code = if (addNpeDebugCode) {
+          s"""
+             |private $returnType $name($argString) {
+             |  try {
+             |  ${makeSplitFunction(body)}
+             |  } catch (
+             |      org.apache.spark.sql.catalyst.expressions.codegen.UnsafeWriterException e) {
+             |    int nullIndex = e.getOrdinal();
+             |    $writeFieldsErrorFuncName(${arguments.map(_._2).mkString(", ")}, nullIndex, e);
+             |  }
+             |}
+           """.stripMargin
+        } else {
+          s"""
            |private $returnType $name($argString) {
            |  ${makeSplitFunction(body)}
            |}
          """.stripMargin
+        }
         addNewFunctionInternal(name, code, inlineToOuterClass = false)
       }
 
