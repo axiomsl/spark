@@ -163,9 +163,9 @@ case class If(predicate: Expression, trueValue: Expression, falseValue: Expressi
   since = "1.0.1",
   group = "conditional_funcs")
 // scalastyle:on line.size.limit
-case class CaseWhen(
+case class CaseWhen private(
     branches: Seq[(Expression, Expression)],
-    elseValue: Option[Expression] = None)
+    elseValue: Option[Expression])
   extends ComplexTypeMergingExpression with ConditionalExpression {
 
   override def children: Seq[Expression] = branches.flatMap(b => b._1 :: b._2 :: Nil) ++ elseValue
@@ -173,11 +173,15 @@ case class CaseWhen(
   final override val nodePatterns : Seq[TreePattern] = Seq(CASE_WHEN)
 
   override protected def withNewChildrenInternal(newChildren: IndexedSeq[Expression]): CaseWhen = {
+    // Keep `branches` backed by an Array so that the indexed accesses in `eval` are O(1).
     if (newChildren.length % 2 == 0) {
-      copy(branches = newChildren.grouped(2).map { case Seq(a, b) => (a, b) }.toSeq)
+      copy(branches =
+        newChildren.grouped(2).map { case Seq(a, b) => (a, b) }.toArray.toImmutableArraySeq)
     } else {
       copy(
-        branches = newChildren.dropRight(1).grouped(2).map { case Seq(a, b) => (a, b) }.toSeq,
+        branches = newChildren.dropRight(1).grouped(2).map {
+          case Seq(a, b) => (a, b)
+        }.toArray.toImmutableArraySeq,
         elseValue = newChildren.lastOption)
     }
   }
@@ -403,6 +407,18 @@ object CaseWhen {
 
   def apply(branches: Seq[(Expression, Expression)], elseValue: Expression): CaseWhen = {
     CaseWhen(branches, Option(elseValue))
+  }
+
+  /**
+   * The primary constructor of [[CaseWhen]] is private so that every instance is created through
+   * this factory, which materializes `branches` into an Array-backed `Seq`. `CaseWhen.eval`
+   * accesses `branches` by index, which would be O(n) for a `List` and turn the evaluation loop
+   * into O(n^2).
+   */
+  def apply(
+      branches: Seq[(Expression, Expression)],
+      elseValue: Option[Expression] = None): CaseWhen = {
+    new CaseWhen(branches.toArray.toImmutableArraySeq, elseValue)
   }
 
   /**

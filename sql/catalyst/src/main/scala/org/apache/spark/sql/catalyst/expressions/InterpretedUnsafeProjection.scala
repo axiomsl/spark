@@ -38,7 +38,7 @@ class InterpretedUnsafeProjection(expressions: Array[Expression]) extends Unsafe
 
   private[this] val subExprEliminationEnabled = SQLConf.get.subexpressionEliminationEnabled
   private[this] val exprs =
-    prepareExpressions(expressions.toImmutableArraySeq, subExprEliminationEnabled)
+    prepareExpressions(expressions.toImmutableArraySeq, subExprEliminationEnabled).toIndexedSeq
 
   /** Number of (top level) fields in the resulting row. */
   private[this] val numFields = expressions.length
