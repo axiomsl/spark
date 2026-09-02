@@ -550,7 +550,7 @@ class CodeGenerationSuite extends SparkFunSuite with ExpressionEvalHelper {
     val ctx = new CodegenContext
     val bytes = new Array[Byte](3)
     val refTerm = ctx.addReferenceObj("bytes", bytes)
-    assert(refTerm == "((byte[]) references[0] /* bytes */)")
+    assert(refTerm == "((byte[]) refs[0] /* bytes */)")
   }
 
   test("SPARK-32624: CodegenContext.addReferenceObj should work for nested Scala class") {
@@ -561,7 +561,7 @@ class CodeGenerationSuite extends SparkFunSuite with ExpressionEvalHelper {
     val refTerm = ctx.addReferenceObj("comparator", comparator)
 
     // Expecting result:
-    //   "((scala.math.Ordering) references[0] /* comparator */)"
+    //   "((scala.math.Ordering) refs[0] /* comparator */)"
     // Using lenient assertions to be resilient to anonymous class numbering changes
     assert(!refTerm.contains("null"))
     assert(refTerm.contains("scala.math.Ordering"))

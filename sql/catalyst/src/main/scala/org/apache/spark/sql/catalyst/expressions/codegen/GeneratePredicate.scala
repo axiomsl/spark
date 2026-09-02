@@ -42,16 +42,16 @@ object GeneratePredicate extends CodeGenerator[Expression, BasePredicate] {
     val evalSubexpr = ctx.subexprFunctionsCode
 
     val codeBody = s"""
-      public SpecificPredicate generate(Object[] references) {
-        return new SpecificPredicate(references);
+      public SpecificPredicate generate(Object[] refs) {
+        return new SpecificPredicate(refs);
       }
 
       class SpecificPredicate extends ${classOf[BasePredicate].getName} {
-        private final Object[] references;
+        private final Object[] refs;
         ${ctx.declareMutableStates()}
 
-        public SpecificPredicate(Object[] references) {
-          this.references = references;
+        public SpecificPredicate(Object[] refs) {
+          this.refs = refs;
           ${ctx.initMutableStates()}
         }
 
