@@ -53,21 +53,26 @@ class SparkPlanInfo(
 
 private[execution] object SparkPlanInfo {
 
-  private def fromLogicalPlan(plan: LogicalPlan): SparkPlanInfo = {
+  private def fromLogicalPlan(plan: LogicalPlan, uiDebugEnabled: Boolean): SparkPlanInfo = {
     val childrenInfo = plan match {
-      case LogicalQueryStage(_, physical) => Seq(fromSparkPlan(physical))
-      case EmptyRelation(logical) => Seq(fromLogicalPlan(logical))
-      case _ => (plan.children ++ plan.subqueries).map(fromLogicalPlan)
+      case LogicalQueryStage(_, physical) => Seq(fromSparkPlan(physical, uiDebugEnabled))
+      case EmptyRelation(logical) => Seq(fromLogicalPlan(logical, uiDebugEnabled))
+      case _ => (plan.children ++ plan.subqueries).map(fromLogicalPlan(_, uiDebugEnabled))
+    }
+    val simpleString = if (uiDebugEnabled) {
+      plan.simpleString(SQLConf.get.maxToStringFields)
+    } else {
+      ""
     }
     new SparkPlanInfo(
       plan.nodeName,
-      plan.simpleString(SQLConf.get.maxToStringFields),
+      simpleString,
       childrenInfo,
       Map[String, String](),
       Seq.empty)
   }
 
-  def fromSparkPlan(plan: SparkPlan): SparkPlanInfo = {
+  def fromSparkPlan(plan: SparkPlan, uiDebugEnabled: Boolean): SparkPlanInfo = {
     val children = plan match {
       case ReusedExchangeExec(_, child) => child :: Nil
       case ReusedSubqueryExec(child) => child :: Nil
@@ -88,14 +93,19 @@ private[execution] object SparkPlanInfo {
     }
     val childrenInfo = children.flatMap {
       case child: SparkPlan =>
-        Some(fromSparkPlan(child))
+        Some(fromSparkPlan(child, uiDebugEnabled))
       case child: LogicalPlan =>
-        Some(fromLogicalPlan(child))
+        Some(fromLogicalPlan(child, uiDebugEnabled))
       case _ => None
+    }
+    val simpleString = if (uiDebugEnabled) {
+      plan.simpleString(SQLConf.get.maxToStringFields)
+    } else {
+      ""
     }
     new SparkPlanInfo(
       plan.nodeName,
-      plan.simpleString(SQLConf.get.maxToStringFields),
+      simpleString,
       childrenInfo,
       metadata,
       metrics)

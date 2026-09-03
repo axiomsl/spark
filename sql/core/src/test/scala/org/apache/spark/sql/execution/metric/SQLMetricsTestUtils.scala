@@ -184,7 +184,7 @@ trait SQLMetricsTestUtils extends SQLTestUtils {
       // If we can track all jobs, check the metric values
       val metricValues = statusStore.executionMetrics(executionId)
       val metrics = SparkPlanGraph(SparkPlanInfo.fromSparkPlan(
-        df.queryExecution.executedPlan)).allNodes.filter { node =>
+        df.queryExecution.executedPlan, uiDebugEnabled = true)).allNodes.filter { node =>
         expectedNodeIds.contains(node.id)
       }.map { node =>
         val nodeMetrics = node.metrics.map { metric =>
