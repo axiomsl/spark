@@ -91,7 +91,7 @@ abstract class AllExecutionsPageSuite extends SharedSparkSession with BeforeAndA
         "test",
         "test",
         df.queryExecution.toString,
-        SparkPlanInfo.fromSparkPlan(df.queryExecution.executedPlan),
+        SparkPlanInfo.fromSparkPlan(df.queryExecution.executedPlan, uiDebugEnabled = true),
         System.currentTimeMillis()))
       listener.onJobStart(SparkListenerJobStart(
         jobId = 0,
@@ -147,7 +147,7 @@ abstract class AllExecutionsPageSuite extends SharedSparkSession with BeforeAndA
       "test",
       "test",
       df.queryExecution.toString,
-      SparkPlanInfo.fromSparkPlan(df.queryExecution.executedPlan),
+      SparkPlanInfo.fromSparkPlan(df.queryExecution.executedPlan, uiDebugEnabled = true),
       System.currentTimeMillis()))
     listener.onOtherEvent(SparkListenerSQLExecutionStart(
       1,
@@ -155,7 +155,7 @@ abstract class AllExecutionsPageSuite extends SharedSparkSession with BeforeAndA
       "test",
       "test",
       df.queryExecution.toString,
-      SparkPlanInfo.fromSparkPlan(df.queryExecution.executedPlan),
+      SparkPlanInfo.fromSparkPlan(df.queryExecution.executedPlan, uiDebugEnabled = true),
       System.currentTimeMillis()))
     // sub execution has a missing root execution
     listener.onOtherEvent(SparkListenerSQLExecutionStart(
@@ -164,7 +164,7 @@ abstract class AllExecutionsPageSuite extends SharedSparkSession with BeforeAndA
       "test",
       "test",
       df.queryExecution.toString,
-      SparkPlanInfo.fromSparkPlan(df.queryExecution.executedPlan),
+      SparkPlanInfo.fromSparkPlan(df.queryExecution.executedPlan, uiDebugEnabled = true),
       System.currentTimeMillis()))
     val html = page.render(request).toString().toLowerCase(Locale.ROOT)
     assert(html.contains("sub execution ids") && html.contains("sub-execution-list"))
@@ -195,7 +195,7 @@ abstract class AllExecutionsPageSuite extends SharedSparkSession with BeforeAndA
       "test",
       "test",
       df.queryExecution.toString,
-      SparkPlanInfo.fromSparkPlan(df.queryExecution.executedPlan),
+      SparkPlanInfo.fromSparkPlan(df.queryExecution.executedPlan, uiDebugEnabled = true),
       System.currentTimeMillis()))
     listener.onOtherEvent(SparkListenerSQLExecutionStart(
       1,
@@ -203,7 +203,7 @@ abstract class AllExecutionsPageSuite extends SharedSparkSession with BeforeAndA
       "test",
       "test",
       df.queryExecution.toString,
-      SparkPlanInfo.fromSparkPlan(df.queryExecution.executedPlan),
+      SparkPlanInfo.fromSparkPlan(df.queryExecution.executedPlan, uiDebugEnabled = true),
       System.currentTimeMillis()))
     val html = page.render(request).toString().toLowerCase(Locale.ROOT)
     assert(!html.contains("sub execution ids") && !html.contains("sub-execution-list"))
@@ -238,7 +238,7 @@ abstract class AllExecutionsPageSuite extends SharedSparkSession with BeforeAndA
         "test",
         "test",
         df.queryExecution.toString,
-        SparkPlanInfo.fromSparkPlan(df.queryExecution.executedPlan),
+        SparkPlanInfo.fromSparkPlan(df.queryExecution.executedPlan, uiDebugEnabled = true),
         System.currentTimeMillis(),
         Map.empty))
       listener.onOtherEvent(SparkListenerSQLExecutionEnd(

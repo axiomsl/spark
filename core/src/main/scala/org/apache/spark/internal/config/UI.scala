@@ -42,6 +42,15 @@ private[spark] object UI {
     .booleanConf
     .createWithDefault(true)
 
+  val UI_DEBUG_STRING_ENABLED = ConfigBuilder("spark.ui.debugString.isEnabled")
+    .doc("When true, generate the (expensive) query plan debug strings that are shown in the " +
+      "SQL tab of the web UI. When false, the physical plan description and the per-node " +
+      "simple strings are left empty, which avoids the string generation cost on every query " +
+      "execution.")
+    .version("4.0.0")
+    .booleanConf
+    .createWithDefault(false)
+
   val UI_PORT = ConfigBuilder("spark.ui.port")
     .doc("Port for your application's dashboard, which shows memory and workload data.")
     .version("0.7.0")

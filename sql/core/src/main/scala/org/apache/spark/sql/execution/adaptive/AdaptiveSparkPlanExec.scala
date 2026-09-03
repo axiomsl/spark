@@ -30,6 +30,7 @@ import org.apache.spark.SparkException
 import org.apache.spark.broadcast
 import org.apache.spark.internal.{MDC, MessageWithContext}
 import org.apache.spark.internal.LogKeys._
+import org.apache.spark.internal.config.UI.UI_DEBUG_STRING_ENABLED
 import org.apache.spark.rdd.RDD
 import org.apache.spark.sql.catalyst.InternalRow
 import org.apache.spark.sql.catalyst.expressions.Attribute
@@ -853,10 +854,16 @@ case class AdaptiveSparkPlanExec(
         executionId, newMetrics))
     } else {
       val planDescriptionMode = ExplainMode.fromString(conf.uiExplainMode)
+      val uiDebugEnabled = context.session.sparkContext.conf.get(UI_DEBUG_STRING_ENABLED)
+      val queryExecutionString = if (uiDebugEnabled) {
+        context.qe.explainString(planDescriptionMode)
+      } else {
+        ""
+      }
       context.session.sparkContext.listenerBus.post(SparkListenerSQLAdaptiveExecutionUpdate(
         executionId,
-        context.qe.explainString(planDescriptionMode),
-        SparkPlanInfo.fromSparkPlan(context.qe.executedPlan)))
+        queryExecutionString,
+        SparkPlanInfo.fromSparkPlan(context.qe.executedPlan, uiDebugEnabled)))
     }
   }
 

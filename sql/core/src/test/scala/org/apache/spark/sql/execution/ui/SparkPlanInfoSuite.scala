@@ -37,7 +37,8 @@ class SparkPlanInfoSuite extends SharedSparkSession {
       (2, 2)
     ).toDF().filter("_1 > 1").cache().repartition(10)
 
-    val planInfoResult = SparkPlanInfo.fromSparkPlan(dfWithCache.queryExecution.executedPlan)
+    val planInfoResult = SparkPlanInfo.fromSparkPlan(dfWithCache.queryExecution.executedPlan,
+      uiDebugEnabled = true)
 
     validateSparkPlanInfo(planInfoResult)
   }

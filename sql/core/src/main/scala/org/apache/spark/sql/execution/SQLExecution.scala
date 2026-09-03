@@ -28,6 +28,7 @@ import org.apache.spark.SparkContext.{SPARK_JOB_DESCRIPTION, SPARK_JOB_INTERRUPT
 import org.apache.spark.internal.Logging
 import org.apache.spark.internal.config.{SPARK_DRIVER_PREFIX, SPARK_EXECUTOR_PREFIX}
 import org.apache.spark.internal.config.Tests.IS_TESTING
+import org.apache.spark.internal.config.UI.UI_DEBUG_STRING_ENABLED
 import org.apache.spark.sql.classic.SparkSession
 import org.apache.spark.sql.execution.adaptive.AdaptiveSparkPlanExec
 import org.apache.spark.sql.execution.ui.{SparkListenerSQLExecutionEnd, SparkListenerSQLExecutionStart}
@@ -145,9 +146,14 @@ object SQLExecution extends Logging {
                 case Right(f) =>
                   val planDescriptionMode =
                     ExplainMode.fromString(sparkSession.sessionState.conf.uiExplainMode)
-                  val planDesc = queryExecution.explainString(planDescriptionMode)
+                  val uiDebugEnabled = sc.conf.get(UI_DEBUG_STRING_ENABLED)
+                  val planDesc = if (uiDebugEnabled) {
+                    queryExecution.explainString(planDescriptionMode)
+                  } else {
+                    ""
+                  }
                   val planInfo = try {
-                    SparkPlanInfo.fromSparkPlan(queryExecution.executedPlan)
+                    SparkPlanInfo.fromSparkPlan(queryExecution.executedPlan, uiDebugEnabled)
                   } catch {
                     case NonFatal(e) =>
                       logDebug("Failed to generate SparkPlanInfo", e)
