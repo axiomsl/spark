@@ -573,7 +573,7 @@ class Analyzer(
    * Substitute child plan with WindowSpecDefinitions.
    */
   object WindowsSubstitution extends Rule[LogicalPlan] {
-    def apply(plan: LogicalPlan): LogicalPlan = plan.resolveOperatorsUpWithPruning(
+    override def apply(plan: LogicalPlan): LogicalPlan = plan.resolveOperatorsUpWithPruning(
       _.containsAnyPattern(WITH_WINDOW_DEFINITION, UNRESOLVED_WINDOW_EXPRESSION), ruleId) {
       // Lookup WindowSpecDefinitions. This rule works with unresolved children.
       case WithWindowDefinition(windowDefinitions, child, forPipeSQL) =>
@@ -595,7 +595,7 @@ class Analyzer(
    * Replaces [[UnresolvedAlias]]s with concrete aliases.
    */
   object ResolveAliases extends Rule[LogicalPlan] {
-    def apply(plan: LogicalPlan): LogicalPlan = {
+    override def apply(plan: LogicalPlan): LogicalPlan = {
       val collatedPlan =
         if (conf.getConf(SQLConf.RUN_COLLATION_TYPE_CASTS_BEFORE_ALIAS_ASSIGNMENT)) {
           CollationRulesRunner(plan)
@@ -850,7 +850,7 @@ class Analyzer(
     // This require transformDown to resolve having condition when generating aggregate node for
     // CUBE/ROLLUP/GROUPING SETS. This also replace grouping()/grouping_id() in resolved
     // Filter/Sort.
-    def apply(plan: LogicalPlan): LogicalPlan = plan.resolveOperatorsDownWithPruning(
+    override def apply(plan: LogicalPlan): LogicalPlan = plan.resolveOperatorsDownWithPruning(
       _.containsPattern(GROUPING_ANALYTICS), ruleId) {
       case h @ UnresolvedHaving(_, agg @ Aggregate(
         GroupingAnalytics(selectedGroupByExprs, groupByExprs), aggExprs, _, _))
@@ -886,7 +886,7 @@ class Analyzer(
   }
 
   object ResolvePivot extends Rule[LogicalPlan] {
-    def apply(plan: LogicalPlan): LogicalPlan = plan.resolveOperatorsWithPruning(
+    override def apply(plan: LogicalPlan): LogicalPlan = plan.resolveOperatorsWithPruning(
       _.containsPattern(PIVOT), ruleId) {
       case p: Pivot if !p.childrenResolved || !p.aggregates.forall(_.resolved)
         || (p.groupByExprsOpt.isDefined && !p.groupByExprsOpt.get.forall(_.resolved))
@@ -1009,7 +1009,7 @@ class Analyzer(
   }
 
   object ResolveUnpivot extends Rule[LogicalPlan] {
-    def apply(plan: LogicalPlan): LogicalPlan = plan.resolveOperatorsWithPruning(
+    override def apply(plan: LogicalPlan): LogicalPlan = plan.resolveOperatorsWithPruning(
       _.containsPattern(UNPIVOT), ruleId) {
 
       // once children are resolved, we can determine values from ids and vice versa
@@ -1081,7 +1081,7 @@ class Analyzer(
   object AddMetadataColumns extends Rule[LogicalPlan] {
     import org.apache.spark.sql.catalyst.util._
 
-    def apply(plan: LogicalPlan): LogicalPlan = {
+    override def apply(plan: LogicalPlan): LogicalPlan = {
       val onlyUniqueAndNecessaryMetadataColumns =
         conf.getConf(SQLConf.ONLY_NECESSARY_AND_UNIQUE_METADATA_COLUMNS)
       plan.resolveOperatorsDownWithPruning(AlwaysProcess.fn, ruleId) {
@@ -1201,7 +1201,7 @@ class Analyzer(
       }
     }
 
-    def apply(plan: LogicalPlan)
+    override def apply(plan: LogicalPlan)
         : LogicalPlan = plan.resolveOperatorsUpWithPruning(AlwaysProcess.fn, ruleId) {
       case i @ InsertIntoStatement(table, _, _, _, _, _, _) =>
         val relation = table match {
@@ -1555,7 +1555,7 @@ class Analyzer(
       }
     }
 
-    def apply(plan: LogicalPlan): LogicalPlan = {
+    override def apply(plan: LogicalPlan): LogicalPlan = {
       val collatedPlan =
         if (conf.getConf(SQLConf.RUN_COLLATION_TYPE_CASTS_BEFORE_ALIAS_ASSIGNMENT)) {
           CollationRulesRunner(plan)
@@ -2066,7 +2066,7 @@ class Analyzer(
    * have no effect on the results.
    */
   object ResolveOrdinalInOrderByAndGroupBy extends Rule[LogicalPlan] {
-    def apply(plan: LogicalPlan): LogicalPlan = plan.resolveOperatorsUpWithPruning(
+    override def apply(plan: LogicalPlan): LogicalPlan = plan.resolveOperatorsUpWithPruning(
       _.containsPattern(UNRESOLVED_ORDINAL), ruleId) {
       case p if !p.childrenResolved => p
       // Replace the index with the related attribute for ORDER BY,
@@ -2199,7 +2199,7 @@ class Analyzer(
    * Replaces [[UnresolvedTableValuedFunction]]s with concrete [[LogicalPlan]]s.
    */
   object ResolveFunctions extends Rule[LogicalPlan] {
-    def apply(plan: LogicalPlan): LogicalPlan = plan.resolveOperatorsUpWithPruning(
+    override def apply(plan: LogicalPlan): LogicalPlan = plan.resolveOperatorsUpWithPruning(
       _.containsAnyPattern(UNRESOLVED_FUNC, UNRESOLVED_FUNCTION, GENERATOR,
         UNRESOLVED_TABLE_VALUED_FUNCTION, UNRESOLVED_TVF_ALIASES), ruleId) {
       // Resolve functions with concrete relations from v2 catalog.
@@ -2510,7 +2510,7 @@ class Analyzer(
     /**
      * Resolve and rewrite all subqueries in an operator tree..
      */
-    def apply(plan: LogicalPlan): LogicalPlan = plan.resolveOperatorsUpWithPruning(
+    override def apply(plan: LogicalPlan): LogicalPlan = plan.resolveOperatorsUpWithPruning(
       _.containsPattern(PLAN_EXPRESSION), ruleId) {
       case j: LateralJoin if j.left.resolved =>
         // We can't pass `LateralJoin` as the outer plan, as its right child is not resolved yet
@@ -2536,7 +2536,7 @@ class Analyzer(
    */
   object ResolveSubqueryColumnAliases extends Rule[LogicalPlan] {
 
-     def apply(plan: LogicalPlan): LogicalPlan = plan.resolveOperatorsUpWithPruning(
+     override def apply(plan: LogicalPlan): LogicalPlan = plan.resolveOperatorsUpWithPruning(
        _.containsPattern(UNRESOLVED_SUBQUERY_COLUMN_ALIAS), ruleId) {
       case u @ UnresolvedSubqueryColumnAliases(columnNames, child) if child.resolved =>
         // Resolves output attributes if a query has alias names in its subquery:
@@ -2924,7 +2924,7 @@ class Analyzer(
    * Turns projections that contain aggregate expressions into aggregations.
    */
   object GlobalAggregates extends Rule[LogicalPlan] {
-    def apply(plan: LogicalPlan): LogicalPlan = plan.resolveOperatorsUpWithPruning(
+    override def apply(plan: LogicalPlan): LogicalPlan = plan.resolveOperatorsUpWithPruning(
       t => t.containsAnyPattern(AGGREGATE_EXPRESSION, PYTHON_UDF) && t.containsPattern(PROJECT),
       ruleId) {
       case Project(projectList, child) if containsAggregates(projectList) =>
@@ -2957,7 +2957,7 @@ class Analyzer(
    * and group by expressions from them.
    */
   object ResolveAggregateFunctions extends Rule[LogicalPlan] {
-    def apply(plan: LogicalPlan): LogicalPlan = {
+    override def apply(plan: LogicalPlan): LogicalPlan = {
       val collatedPlan =
         if (conf.getConf(SQLConf.RUN_COLLATION_TYPE_CASTS_BEFORE_ALIAS_ASSIGNMENT)) {
           CollationRulesRunner(plan)
@@ -3210,7 +3210,7 @@ class Analyzer(
               generatorVisited = true
 
               val newGenChildren: Seq[Expression] = generator.children.zipWithIndex.map {
-                case (e, idx) => if (e.foldable) e else Alias(e, s"_gen_input_${idx}")()
+                case (e, idx) => if (e.foldable) e else Alias(e, s"_gen_input_$idx")()
               }
               val newGenerator = {
                 val g = generator.withNewChildren(newGenChildren.map { e =>
@@ -3219,7 +3219,7 @@ class Analyzer(
                 if (outer) GeneratorOuter(g) else g
               }
               val newAliasedGenerator = if (names.length == 1) {
-                Alias(newGenerator, names(0))()
+                Alias(newGenerator, names.head)()
               } else {
                 MultiAlias(newGenerator, names)
               }
@@ -3293,7 +3293,7 @@ class Analyzer(
    * that wrap the [[Generator]].
    */
   object ResolveGenerate extends Rule[LogicalPlan] {
-    def apply(plan: LogicalPlan): LogicalPlan = plan.resolveOperatorsUpWithPruning(
+    override def apply(plan: LogicalPlan): LogicalPlan = plan.resolveOperatorsUpWithPruning(
       _.containsPattern(GENERATE), ruleId) {
       case g: Generate if !g.child.resolved || !g.generator.resolved => g
       case g: Generate if !g.resolved => withPosition(g) {
@@ -3530,7 +3530,7 @@ class Analyzer(
 
     // We have to use transformDown at here to make sure the rule of
     // "Aggregate with Having clause" will be triggered.
-    def apply(plan: LogicalPlan): LogicalPlan = plan.resolveOperatorsDownWithPruning(
+    override def apply(plan: LogicalPlan): LogicalPlan = plan.resolveOperatorsDownWithPruning(
       _.containsPattern(WINDOW_EXPRESSION), ruleId) {
 
       case Filter(condition, _) if hasWindowFunction(condition) =>
@@ -3707,7 +3707,7 @@ class Analyzer(
    * Check and add proper window frames for all window functions.
    */
   object ResolveWindowFrame extends Rule[LogicalPlan] {
-    def apply(plan: LogicalPlan): LogicalPlan = plan.resolveExpressionsWithPruning(
+    override def apply(plan: LogicalPlan): LogicalPlan = plan.resolveExpressionsWithPruning(
       _.containsPattern(WINDOW_EXPRESSION), ruleId) {
       case we: WindowExpression => WindowResolution.resolveFrame(we)
     }
@@ -3717,7 +3717,7 @@ class Analyzer(
    * Check and add order to [[AggregateWindowFunction]]s.
    */
   object ResolveWindowOrder extends Rule[LogicalPlan] {
-    def apply(plan: LogicalPlan): LogicalPlan = plan.resolveExpressionsWithPruning(
+    override def apply(plan: LogicalPlan): LogicalPlan = plan.resolveExpressionsWithPruning(
       _.containsPattern(WINDOW_EXPRESSION), ruleId) {
       case we: WindowExpression => WindowResolution.resolveOrder(we)
     }
@@ -3921,7 +3921,7 @@ class Analyzer(
    * constructed is an inner class.
    */
   object ResolveNewInstance extends Rule[LogicalPlan] {
-    def apply(plan: LogicalPlan): LogicalPlan = plan.resolveOperatorsUpWithPruning(
+    override def apply(plan: LogicalPlan): LogicalPlan = plan.resolveOperatorsUpWithPruning(
       _.containsPattern(NEW_INSTANCE), ruleId) {
       case p if !p.childrenResolved => p
       case p if p.resolved => p
@@ -3941,7 +3941,7 @@ class Analyzer(
    * Replace the [[UpCast]] expression by [[Cast]], and throw exceptions if the cast may truncate.
    */
   object ResolveUpCast extends Rule[LogicalPlan] {
-    def apply(plan: LogicalPlan): LogicalPlan = plan.resolveOperatorsUpWithPruning(
+    override def apply(plan: LogicalPlan): LogicalPlan = plan.resolveOperatorsUpWithPruning(
       _.containsPattern(UP_CAST), ruleId) {
       case p if !p.childrenResolved => p
       case p if p.resolved => p
@@ -3959,7 +3959,7 @@ class Analyzer(
    * Rule to resolve, normalize and rewrite field names based on case sensitivity for commands.
    */
   object ResolveFieldNameAndPosition extends Rule[LogicalPlan] {
-    def apply(plan: LogicalPlan): LogicalPlan = plan.resolveOperatorsUp {
+    override def apply(plan: LogicalPlan): LogicalPlan = plan.resolveOperatorsUp {
       case cmd: CreateIndex if cmd.table.resolved &&
           cmd.columns.exists(_._1.isInstanceOf[UnresolvedFieldName]) =>
         val table = cmd.table.asInstanceOf[ResolvedTable]
@@ -4129,7 +4129,7 @@ object EliminateSubqueryAliases extends Rule[LogicalPlan] {
  * Removes [[Union]] operators from the plan if it just has one child.
  */
 object EliminateUnions extends Rule[LogicalPlan] {
-  def apply(plan: LogicalPlan): LogicalPlan = plan.resolveOperatorsWithPruning(
+  override def apply(plan: LogicalPlan): LogicalPlan = plan.resolveOperatorsWithPruning(
     _.containsPattern(UNION), ruleId) {
     case u: Union if u.children.size == 1 => u.children.head
   }
@@ -4275,7 +4275,7 @@ object UpdateOuterReferences extends Rule[LogicalPlan] {
     }
   }
 
-  def apply(plan: LogicalPlan): LogicalPlan = {
+  override def apply(plan: LogicalPlan): LogicalPlan = {
     plan.resolveOperatorsWithPruning(
       _.containsAllPatterns(PLAN_EXPRESSION, FILTER, AGGREGATE), ruleId) {
       case f @ Filter(_, a: Aggregate) if f.resolved =>
