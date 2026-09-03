@@ -149,6 +149,8 @@ object DistinctKeyVisitor extends LogicalPlanVisitor[Set[ExpressionSet]] {
 
   override def visitWindow(p: Window): Set[ExpressionSet] = p.child.distinctKeys
 
+  override def visitSubqueryAlias(p: SubqueryAlias): Set[ExpressionSet] = p.child.distinctKeys
+
   override def visitTail(p: Tail): Set[ExpressionSet] = p.child.distinctKeys
 
   override def visitSort(p: Sort): Set[ExpressionSet] = p.child.distinctKeys
