@@ -219,7 +219,7 @@ class CodegenContext extends Logging {
     private[this] var currentIndex = 0
 
     private def createNewArray() = {
-      val newArrayName = freshName("mutableStateArray")
+      val newArrayName = freshName("mStArr")
       mutableStateNames += newArrayName
       arrayNames.append(newArrayName)
     }
@@ -662,8 +662,8 @@ class CodegenContext extends Logging {
     case NullType => "0"
     case array: ArrayType =>
       val elementType = array.elementType
-      val compareFunc = freshName("compareArray")
-      val minLength = freshName("minLength")
+      val compareFunc = freshName("cmpArr")
+      val minLength = freshName("minLen")
       val funcCode: String =
         s"""
           public int $compareFunc(ArrayData a, ArrayData b) {
@@ -690,7 +690,7 @@ class CodegenContext extends Logging {
       s"${addNewFunction(compareFunc, funcCode)}($c1, $c2)"
     case schema: StructType =>
       val comparisons = GenerateOrdering.genComparisons(this, schema)
-      val compareFunc = freshName("compareStruct")
+      val compareFunc = freshName("cmpStruct")
       val funcCode: String =
         s"""
           public int $compareFunc(InternalRow a, InternalRow b) {
@@ -744,9 +744,9 @@ class CodegenContext extends Logging {
 
   private def genCompElementsAt(arrayA: String, arrayB: String, i: String,
     elementType : DataType): String = {
-    val elementA = freshName("elementA")
+    val elementA = freshName("elmA")
     val isNullA = freshName("isNullA")
-    val elementB = freshName("elementB")
+    val elementB = freshName("elmB")
     val isNullB = freshName("isNullB")
     val jt = javaType(elementType);
     s"""

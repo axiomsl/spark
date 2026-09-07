@@ -243,6 +243,7 @@ public enum LogKeys implements LogKey {
   FIELD_TYPE,
   FILES,
   FILE_ABSOLUTE_PATH,
+  FILE_CACHE_HITS,
   FILE_END_OFFSET,
   FILE_FORMAT,
   FILE_FORMAT2,
