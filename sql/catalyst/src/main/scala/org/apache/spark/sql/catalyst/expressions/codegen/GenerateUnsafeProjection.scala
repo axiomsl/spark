@@ -158,7 +158,7 @@ object GenerateUnsafeProjection extends CodeGenerator[Seq[Expression], UnsafePro
     // Puts `input` in a local variable to avoid to re-evaluate it if it's a statement.
     val tmpInput = ctx.freshName("tmpInput")
     val numElements = ctx.freshName("numElements")
-    val index = ctx.freshName("index")
+    val index = ctx.freshName("idx")
 
     val et = UserDefinedType.sqlType(elementType)
 

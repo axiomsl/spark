@@ -134,6 +134,7 @@ class CSVOptions(
   val inferSchemaFlag = getBool(INFER_SCHEMA)
   val ignoreLeadingWhiteSpaceInRead = getBool(IGNORE_LEADING_WHITESPACE, default = false)
   val ignoreTrailingWhiteSpaceInRead = getBool(IGNORE_TRAILING_WHITESPACE, default = false)
+  val ignoreEmptyLines = getBool(IGNORE_EMPTY_LINES, default = true)
 
   // For write, both options were `true` by default. We leave it as `true` for
   // backwards compatibility.
@@ -367,6 +368,7 @@ object CSVOptions extends DataSourceOptions {
   val INFER_SCHEMA = newOption("inferSchema")
   val IGNORE_LEADING_WHITESPACE = newOption("ignoreLeadingWhiteSpace")
   val IGNORE_TRAILING_WHITESPACE = newOption("ignoreTrailingWhiteSpace")
+  val IGNORE_EMPTY_LINES = newOption("ignoreEmptyLines")
   val PREFER_DATE = newOption("preferDate")
   val ESCAPE_QUOTES = newOption("escapeQuotes")
   val QUOTE_ALL = newOption("quoteAll")

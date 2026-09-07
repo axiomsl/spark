@@ -3325,12 +3325,13 @@ abstract class CSVSuite
   }
 
   test("SPARK-40667: validate CSV Options") {
-    assert(CSVOptions.getAllOptions.size == 40)
+    assert(CSVOptions.getAllOptions.size == 41)
     // Please add validation on any new CSV options here
     assert(CSVOptions.isValidOption("header"))
     assert(CSVOptions.isValidOption("inferSchema"))
     assert(CSVOptions.isValidOption("ignoreLeadingWhiteSpace"))
     assert(CSVOptions.isValidOption("ignoreTrailingWhiteSpace"))
+    assert(CSVOptions.isValidOption("ignoreEmptyLines"))
     assert(CSVOptions.isValidOption("preferDate"))
     assert(CSVOptions.isValidOption("escapeQuotes"))
     assert(CSVOptions.isValidOption("quoteAll"))

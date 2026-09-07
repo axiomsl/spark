@@ -1160,7 +1160,7 @@ case class SortArray(base: Expression, ascendingOrder: Expression)
       order: String): String = {
     val genericArrayData = classOf[GenericArrayData].getName
     val unsafeArrayData = classOf[UnsafeArrayData].getName
-    val array = ctx.freshName("array")
+    val array = ctx.freshName("arr")
     val c = ctx.freshName("c")
     if (elementType == NullType) {
       s"${ev.value} = $base.copy();"
@@ -4439,8 +4439,8 @@ case class ArrayUnion(left: Expression, right: Expression) extends ArrayBinaryLi
       nullSafeCodeGen(ctx, ev, (array1, array2) => {
         val nullElementIndex = ctx.freshName("nullElementIndex")
         val builder = ctx.freshName("builder")
-        val array = ctx.freshName("array")
-        val arrays = ctx.freshName("arrays")
+        val array = ctx.freshName("arr")
+        val arrays = ctx.freshName("arrs")
         val arrayDataIdx = ctx.freshName("arrayDataIdx")
         val openHashSet = classOf[SQLOpenHashSet[_]].getName
         val classTag = s"scala.reflect.ClassTag$$.MODULE$$.$hsTypeName()"

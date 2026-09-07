@@ -444,7 +444,7 @@ abstract class HashExpression[E] extends Expression {
       keyType: DataType,
       valueType: DataType,
       valueContainsNull: Boolean): String = {
-    val index = ctx.freshName("index")
+    val index = ctx.freshName("idx")
     val keys = ctx.freshName("keys")
     val values = ctx.freshName("values")
     s"""
@@ -463,7 +463,7 @@ abstract class HashExpression[E] extends Expression {
       result: String,
       elementType: DataType,
       containsNull: Boolean): String = {
-    val index = ctx.freshName("index")
+    val index = ctx.freshName("idx")
     s"""
         for (int $index = 0; $index < $input.numElements(); $index++) {
           ${nullSafeElementHash(input, index, containsNull, elementType, result, ctx)}
@@ -844,7 +844,7 @@ case class HiveHash(children: Seq[Expression]) extends HashExpression[Int] {
       result: String,
       elementType: DataType,
       containsNull: Boolean): String = {
-    val index = ctx.freshName("index")
+    val index = ctx.freshName("idx")
     val childResult = ctx.freshName("childResult")
     s"""
         int $childResult = 0;
@@ -863,7 +863,7 @@ case class HiveHash(children: Seq[Expression]) extends HashExpression[Int] {
       keyType: DataType,
       valueType: DataType,
       valueContainsNull: Boolean): String = {
-    val index = ctx.freshName("index")
+    val index = ctx.freshName("idx")
     val keys = ctx.freshName("keys")
     val values = ctx.freshName("values")
     val keyResult = ctx.freshName("keyResult")

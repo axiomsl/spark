@@ -34,11 +34,13 @@ import org.apache.spark.sql.catalyst.expressions.{
   ExpectsInputTypes,
   Expression,
   Greatest,
+  GreatestNullIntolerant,
   If,
   ImplicitCastInputTypes,
   In,
   InSubquery,
   Least,
+  LeastNullIntolerant,
   ListQuery,
   Literal,
   MapConcat,
@@ -394,10 +396,24 @@ abstract class TypeCoercionHelper {
           case None => g
         }
 
+      case g @ GreatestNullIntolerant(children) if !haveSameType(g.inputTypesForMerging) =>
+        findWiderTypeWithoutStringPromotion(g.inputTypesForMerging) match {
+          case Some(finalDataType) =>
+            GreatestNullIntolerant(children.map(castIfNotSameType(_, finalDataType)))
+          case None => g
+        }
+
       case l @ Least(children) if !haveSameType(l.inputTypesForMerging) =>
         val types = children.map(_.dataType)
         findWiderTypeWithoutStringPromotion(types) match {
           case Some(finalDataType) => Least(children.map(castIfNotSameType(_, finalDataType)))
+          case None => l
+        }
+
+      case l @ LeastNullIntolerant(children) if !haveSameType(l.inputTypesForMerging) =>
+        findWiderTypeWithoutStringPromotion(l.inputTypesForMerging) match {
+          case Some(finalDataType) =>
+            LeastNullIntolerant(children.map(castIfNotSameType(_, finalDataType)))
           case None => l
         }
 

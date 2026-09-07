@@ -272,6 +272,7 @@ private[spark] object LogKeys {
   case object FIELD_TYPE extends LogKey
   case object FILES extends LogKey
   case object FILE_ABSOLUTE_PATH extends LogKey
+  case object FILE_CACHE_HITS extends LogKey
   case object FILE_END_OFFSET extends LogKey
   case object FILE_FORMAT extends LogKey
   case object FILE_FORMAT2 extends LogKey

@@ -88,11 +88,11 @@ object GenerateSafeProjection extends CodeGenerator[Seq[Expression], Projection]
       input: String,
       elementType: DataType): ExprCode = {
     // Puts `input` in a local variable to avoid to re-evaluate it if it's a statement.
-    val tmpInput = ctx.freshName("tmpInput")
-    val output = ctx.freshName("safeArray")
-    val values = ctx.freshName("values")
-    val numElements = ctx.freshName("numElements")
-    val index = ctx.freshName("index")
+    val tmpInput = ctx.freshName("tmpIn")
+    val output = ctx.freshName("sArr")
+    val values = ctx.freshName("vals")
+    val numElements = ctx.freshName("numElms")
+    val index = ctx.freshName("idx")
     val arrayClass = classOf[GenericArrayData].getName
 
     val elementConverter = convertToSafe(

@@ -22,10 +22,11 @@ import java.util.concurrent.TimeUnit
 import java.util.concurrent.atomic.{AtomicInteger, AtomicLong}
 
 import scala.collection.mutable
+import scala.util.{Failure, Success, Try}
 import scala.util.control.NonFatal
 
-import org.apache.spark.{broadcast, SparkException, SparkUnsupportedOperationException}
-import org.apache.spark.internal.LogKeys.{CODEGEN_STAGE_ID, CONFIG, ELAPSED_TIME, ERROR, HUGE_METHOD_LIMIT, MAX_METHOD_CODE_SIZE, TREE_NODE}
+import org.apache.spark.{broadcast, SparkContext, SparkException, SparkUnsupportedOperationException}
+import org.apache.spark.internal.LogKeys.{CODEGEN_STAGE_ID, CONFIG, ELAPSED_TIME, ERROR, HUGE_METHOD_LIMIT, MAX_METHOD_CODE_SIZE, TREE_NODE, VALUE}
 import org.apache.spark.internal.MDC
 import org.apache.spark.rdd.RDD
 import org.apache.spark.sql.catalyst.InternalRow
@@ -917,6 +918,7 @@ case class WholeStageCodegenExec(child: SparkPlan)(val codegenStageId: Int)
  * failed to generate/compile code.
  */
 case class CollapseCodegenStages(
+    sparkContext: SparkContext,
     codegenStageCounter: AtomicInteger = new AtomicInteger(0))
   extends Rule[SparkPlan] {
 
@@ -991,8 +993,21 @@ case class CollapseCodegenStages(
   }
 
   def apply(plan: SparkPlan): SparkPlan = {
-    if (conf.wholeStageEnabled && CodegenObjectFactoryMode.withName(conf.codegenFactoryMode)
-      != CodegenObjectFactoryMode.NO_CODEGEN) {
+    val localWholeStageEnabled =
+      sparkContext.getLocalProperty("spark.sql.local.codegen.wholeStage") match {
+        case null => true
+        case value => Try(value.toBoolean) match {
+          case Success(b) => b
+          case Failure(_) =>
+            logWarning(log"Failed to convert " +
+              log"`${MDC(CONFIG, "spark.sql.local.codegen.wholeStage")}` into Boolean got " +
+              log"[${MDC(VALUE, value)}], using [true]")
+            true
+        }
+      }
+    if (conf.wholeStageEnabled && localWholeStageEnabled &&
+      CodegenObjectFactoryMode.withName(conf.codegenFactoryMode)
+        != CodegenObjectFactoryMode.NO_CODEGEN) {
       insertWholeStageCodegen(plan)
     } else {
       plan

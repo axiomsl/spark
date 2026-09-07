@@ -304,7 +304,7 @@ case class CaseWhen private(
     val HAS_NULL = 1
     // It is initialized to `NOT_MATCHED`, and if it's set to `HAS_NULL` or `HAS_NONNULL`,
     // We won't go on anymore on the computation.
-    val resultState = ctx.freshName("caseWhenResultState")
+    val resultState = ctx.freshName("cWResSt")
     ev.value = JavaCode.global(
       ctx.addMutableState(CodeGenerator.javaType(dataType), ev.value),
       dataType)

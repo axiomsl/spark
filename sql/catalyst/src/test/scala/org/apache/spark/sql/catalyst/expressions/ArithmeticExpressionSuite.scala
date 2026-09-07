@@ -708,6 +708,117 @@ class ArithmeticExpressionSuite extends SparkFunSuite with ExpressionEvalHelper 
     checkEvaluation(greatest, Seq(1, 3, null))
   }
 
+  test("function LeastNullIntolerant") {
+    val row = create_row(1, 2, "a", "b", "c")
+    val c1 = $"a".int.at(0)
+    val c2 = $"a".int.at(1)
+    val c3 = $"a".string.at(2)
+    val c4 = $"a".string.at(3)
+    val c5 = $"a".string.at(4)
+    checkEvaluation(LeastNullIntolerant(Seq(c4, c3, c5)), "a", row)
+    checkEvaluation(LeastNullIntolerant(Seq(c1, c2)), 1, row)
+    checkEvaluation(LeastNullIntolerant(Seq(c1, c2, Literal(-1))), -1, row)
+
+    // Unlike `Least`, a single null input makes the whole expression null.
+    checkEvaluation(
+      LeastNullIntolerant(Seq(Literal.create(null, IntegerType), Literal(2))), null, row)
+    checkEvaluation(LeastNullIntolerant(Seq(c1, Literal.create(null, IntegerType))), null, row)
+    checkEvaluation(
+      LeastNullIntolerant(Seq(Literal(null), Literal(null))), null, InternalRow.empty)
+
+    checkEvaluation(LeastNullIntolerant(Seq(Literal(-1.0), Literal(2.5))), -1.0, InternalRow.empty)
+    checkEvaluation(LeastNullIntolerant(Seq(Literal(-1), Literal(2))), -1, InternalRow.empty)
+    checkEvaluation(
+      LeastNullIntolerant(Seq(Literal(Long.MaxValue), Literal(Long.MinValue))), Long.MinValue,
+      InternalRow.empty)
+    checkEvaluation(
+      LeastNullIntolerant(Seq(Literal("abc"), Literal("aaaa"))), "aaaa", InternalRow.empty)
+    checkEvaluation(
+      LeastNullIntolerant(Seq(Literal(true), Literal(false))), false, InternalRow.empty)
+
+    LeastNullIntolerant(Seq(Literal(1), Literal("1"))).checkInputDataTypes() match {
+      case TypeCheckResult.DataTypeMismatch(errorSubClass, messageParameters) =>
+        assert(errorSubClass == "DATA_DIFF_TYPES")
+        assert(messageParameters === Map(
+          "functionName" -> "`leastnullintolerant`",
+          "dataType" -> "[\"INT\", \"STRING\"]"))
+    }
+
+    DataTypeTestUtils.ordered.foreach { dt =>
+      checkConsistencyBetweenInterpretedAndCodegen(LeastNullIntolerant, dt, 2)
+    }
+
+    val least = LeastNullIntolerant(Seq(
+      Literal.create(Seq(1, 2), ArrayType(IntegerType, containsNull = false)),
+      Literal.create(Seq(1, 3, null), ArrayType(IntegerType, containsNull = true))))
+    assert(least.dataType === ArrayType(IntegerType, containsNull = true))
+    checkEvaluation(least, Seq(1, 2))
+  }
+
+  test("function GreatestNullIntolerant") {
+    val row = create_row(1, 2, "a", "b", "c")
+    val c1 = $"a".int.at(0)
+    val c2 = $"a".int.at(1)
+    val c3 = $"a".string.at(2)
+    val c4 = $"a".string.at(3)
+    val c5 = $"a".string.at(4)
+    checkEvaluation(GreatestNullIntolerant(Seq(c4, c5, c3)), "c", row)
+    checkEvaluation(GreatestNullIntolerant(Seq(c2, c1)), 2, row)
+    checkEvaluation(GreatestNullIntolerant(Seq(c1, c2, Literal(2))), 2, row)
+
+    // Unlike `Greatest`, a single null input makes the whole expression null.
+    checkEvaluation(
+      GreatestNullIntolerant(Seq(Literal.create(null, IntegerType), Literal(2))), null, row)
+    checkEvaluation(GreatestNullIntolerant(Seq(c1, Literal.create(null, IntegerType))), null, row)
+    checkEvaluation(
+      GreatestNullIntolerant(Seq(Literal(null), Literal(null))), null, InternalRow.empty)
+
+    checkEvaluation(
+      GreatestNullIntolerant(Seq(Literal(-1.0), Literal(2.5))), 2.5, InternalRow.empty)
+    checkEvaluation(GreatestNullIntolerant(Seq(Literal(-1), Literal(2))), 2, InternalRow.empty)
+    checkEvaluation(
+      GreatestNullIntolerant(Seq(Literal("abc"), Literal("aaaa"))), "abc", InternalRow.empty)
+    checkEvaluation(
+      GreatestNullIntolerant(Seq(Literal(true), Literal(false))), true, InternalRow.empty)
+
+    GreatestNullIntolerant(Seq(Literal(1), Literal("1"))).checkInputDataTypes() match {
+      case TypeCheckResult.DataTypeMismatch(errorSubClass, messageParameters) =>
+        assert(errorSubClass == "DATA_DIFF_TYPES")
+        assert(messageParameters === Map(
+          "functionName" -> "`greatestnullintolerant`",
+          "dataType" -> "[\"INT\", \"STRING\"]"))
+    }
+
+    DataTypeTestUtils.ordered.foreach { dt =>
+      checkConsistencyBetweenInterpretedAndCodegen(GreatestNullIntolerant, dt, 2)
+    }
+
+    val greatest = GreatestNullIntolerant(Seq(
+      Literal.create(Seq(1, 2), ArrayType(IntegerType, containsNull = false)),
+      Literal.create(Seq(1, 3, null), ArrayType(IntegerType, containsNull = true))))
+    assert(greatest.dataType === ArrayType(IntegerType, containsNull = true))
+    checkEvaluation(greatest, Seq(1, 3, null))
+  }
+
+  test("LeastNullIntolerant and GreatestNullIntolerant should not generate codes beyond 64KB") {
+    val N = 2000
+    val strings = (1 to N).map(x => "s" * x)
+    val inputsExpr = strings.map(Literal.create(_, StringType))
+
+    checkEvaluation(LeastNullIntolerant(inputsExpr), "s" * 1, EmptyRow)
+    checkEvaluation(GreatestNullIntolerant(inputsExpr), "s" * N, EmptyRow)
+  }
+
+  test("LeastNullIntolerant and GreatestNullIntolerant use less global variables") {
+    val ctx1 = new CodegenContext()
+    LeastNullIntolerant(Seq(Literal(1), Literal(1))).genCode(ctx1)
+    assert(ctx1.inlinedMutableStates.size == 2)
+
+    val ctx2 = new CodegenContext()
+    GreatestNullIntolerant(Seq(Literal(1), Literal(1))).genCode(ctx2)
+    assert(ctx2.inlinedMutableStates.size == 2)
+  }
+
   test("SPARK-22499: Least and greatest should not generate codes beyond 64KB") {
     val N = 2000
     val strings = (1 to N).map(x => "s" * x)

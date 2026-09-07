@@ -20,6 +20,7 @@ package org.apache.spark.sql.execution.columnar
 import org.apache.commons.lang3.StringUtils
 
 import org.apache.spark.{SparkException, TaskContext}
+import org.apache.spark.internal.Logging
 import org.apache.spark.network.util.JavaUtils
 import org.apache.spark.rdd.RDD
 import org.apache.spark.sql.catalyst.InternalRow
@@ -316,7 +317,7 @@ case class CachedRDDBuilder(
   }
 }
 
-object InMemoryRelation {
+object InMemoryRelation extends Logging {
 
   private[this] var ser: Option[CachedBatchSerializer] = None
   private[this] def getSerializer(sqlConf: SQLConf): CachedBatchSerializer = synchronized {
@@ -364,6 +365,7 @@ object InMemoryRelation {
     val cacheBuilder = CachedRDDBuilder(serializer, storageLevel, child, tableName, qe.logical)
     val relation = new InMemoryRelation(child.output, cacheBuilder, optimizedPlan.outputOrdering)
     relation.statsOfPlanToCache = optimizedPlan.stats
+    logDebug(s"apply : ${relation.statsOfPlanToCache}")
     relation
   }
 
@@ -379,6 +381,7 @@ object InMemoryRelation {
     val cacheBuilder = CachedRDDBuilder(serializer, storageLevel, child, tableName, optimizedPlan)
     val relation = new InMemoryRelation(child.output, cacheBuilder, optimizedPlan.outputOrdering)
     relation.statsOfPlanToCache = optimizedPlan.stats
+    logDebug(s"apply : ${relation.statsOfPlanToCache}")
     relation
   }
 
@@ -392,6 +395,7 @@ object InMemoryRelation {
     val relation = new InMemoryRelation(
       newBuilder.cachedPlan.output, newBuilder, optimizedPlan.outputOrdering)
     relation.statsOfPlanToCache = optimizedPlan.stats
+    logDebug(s"apply : ${relation.statsOfPlanToCache}")
     relation
   }
 
@@ -402,6 +406,7 @@ object InMemoryRelation {
       statsOfPlanToCache: Statistics): InMemoryRelation = {
     val relation = InMemoryRelation(output, cacheBuilder, outputOrdering)
     relation.statsOfPlanToCache = statsOfPlanToCache
+    logDebug(s"apply : ${relation.statsOfPlanToCache}")
     relation
   }
 }
@@ -437,12 +442,17 @@ case class InMemoryRelation(
 
   override def computeStats(): Statistics = {
     if (!cacheBuilder.isCachedColumnBuffersLoaded) {
+      logDebug(s"computeStats - BuffersLoaded - true : $statsOfPlanToCache;" +
+        s" ${output.map(_.sql).mkString("[", ", ", "]")}")
       // Underlying columnar RDD hasn't been materialized, use the stats from the plan to cache.
       statsOfPlanToCache
     } else {
+      logDebug(s"computeStats - BuffersLoaded - false : $statsOfPlanToCache; " +
+        s"${output.map(_.sql).mkString("[", ", ", "]")}")
       statsOfPlanToCache.copy(
         sizeInBytes = cacheBuilder.sizeInBytesStats.value.longValue,
-        rowCount = Some(cacheBuilder.rowCountStats.value.longValue)
+        rowCount = Some(cacheBuilder.rowCountStats.value.longValue),
+        attributeStats = statsOfPlanToCache.attributeStats
       )
     }
   }

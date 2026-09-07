@@ -25,7 +25,7 @@ import org.apache.hadoop.fs._
 import org.apache.hadoop.mapred.{FileInputFormat, JobConf}
 
 import org.apache.spark.internal.{Logging, MDC}
-import org.apache.spark.internal.LogKeys.{COUNT, ELAPSED_TIME}
+import org.apache.spark.internal.LogKeys.{COUNT, ELAPSED_TIME, FILE_CACHE_HITS, PREFIX}
 import org.apache.spark.metrics.source.HiveCatalogMetrics
 import org.apache.spark.sql.SparkSession
 import org.apache.spark.sql.catalyst.FileSourceOptions
@@ -67,7 +67,7 @@ class InMemoryFileIndex(
   @volatile private var cachedLeafDirToChildrenFiles: Map[Path, Array[FileStatus]] = _
   @volatile private var cachedPartitionSpec: PartitionSpec = _
 
-  refresh0()
+  refresh0("construction ")
 
   override def partitionSpec(): PartitionSpec = {
     if (cachedPartitionSpec == null) {
@@ -94,8 +94,8 @@ class InMemoryFileIndex(
     refresh0()
   }
 
-  private def refresh0(): Unit = {
-    val files = listLeafFiles(rootPaths)
+  private def refresh0(logPrefix: String = ""): Unit = {
+    val files = listLeafFiles(rootPaths, logPrefix)
     cachedLeafFiles =
       new mutable.LinkedHashMap[Path, FileStatus]() ++= files.map(f => f.getPath -> f)
     cachedLeafDirToChildrenFiles = files.toArray.groupBy(_.getPath.getParent)
@@ -116,7 +116,9 @@ class InMemoryFileIndex(
    *
    * This is publicly visible for testing.
    */
-  def listLeafFiles(paths: Seq[Path]): mutable.LinkedHashSet[FileStatus] = {
+  def listLeafFiles(
+      paths: Seq[Path],
+      logPrefix: String = ""): mutable.LinkedHashSet[FileStatus] = {
     val startTime = System.nanoTime()
     val output = mutable.LinkedHashSet[FileStatus]()
     val pathsToFetch = mutable.ArrayBuffer[Path]()
@@ -137,8 +139,10 @@ class InMemoryFileIndex(
       fileStatusCache.putLeafFiles(path, leafFiles.toArray)
       output ++= leafFiles
     }
-    logInfo(log"It took ${MDC(ELAPSED_TIME, (System.nanoTime() - startTime) / (1000 * 1000))} ms" +
-      log" to list leaf files for ${MDC(COUNT, paths.length)} paths.")
+    logInfo(log"${MDC(PREFIX, logPrefix)}It took " +
+      log"${MDC(ELAPSED_TIME, (System.nanoTime() - startTime) / (1000 * 1000))} ms to list leaf " +
+      log"files for ${MDC(COUNT, paths.length)} paths. [incrementFileCacheHits] " +
+      log"${MDC(FILE_CACHE_HITS, HiveCatalogMetrics.METRIC_FILE_CACHE_HITS.getCount)}")
     output
   }
 }

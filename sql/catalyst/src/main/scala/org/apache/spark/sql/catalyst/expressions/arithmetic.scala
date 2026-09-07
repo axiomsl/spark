@@ -1053,7 +1053,7 @@ case class Pmod(
     } else {
       s"${eval2.value} == 0"
     }
-    val remainder = ctx.freshName("remainder")
+    val remainder = ctx.freshName("rmdr")
     val javaType = CodeGenerator.javaType(dataType)
     val errorContext = getContextOrNullCode(ctx)
     val result = dataType match {
@@ -1349,4 +1349,209 @@ case class Greatest(children: Seq[Expression]) extends ComplexTypeMergingExpress
   override lazy val canonicalized: Expression = {
     Greatest(orderCommutative({ case Greatest(children) => children }))
   }
+}
+
+/**
+ * A function that returns the least value of all parameters. Unlike [[Least]], this variant is
+ * null intolerant: it returns null if ANY of the parameters is null, which matches the `LEAST`
+ * semantics of Oracle/DB2/MySQL. It takes at least 2 parameters.
+ */
+@ExpressionDescription(
+  usage = "_FUNC_(expr, ...) - Returns the least value of all parameters, or null if any of " +
+    "the parameters is null.",
+  examples = """
+    Examples:
+      > SELECT _FUNC_(10, 9, 2, 4, 3);
+       2
+      > SELECT _FUNC_(null, 9, 2, 4, 3);
+       NULL
+  """,
+  since = "4.0.0",
+  group = "math_funcs")
+case class LeastNullIntolerant(children: Seq[Expression]) extends ComplexTypeMergingExpression {
+
+  override def nullable: Boolean = children.exists(_.nullable)
+  override def foldable: Boolean = children.forall(_.foldable)
+  override def nullIntolerant: Boolean = true
+
+  private lazy val ordering = TypeUtils.getInterpretedOrdering(dataType)
+
+  override def checkInputDataTypes(): TypeCheckResult = {
+    if (children.length <= 1) {
+      throw QueryCompilationErrors.wrongNumArgsError(
+        toSQLId(prettyName), Seq("> 1"), children.length
+      )
+    } else if (!TypeCoercion.haveSameType(inputTypesForMerging)) {
+      DataTypeMismatch(
+        errorSubClass = "DATA_DIFF_TYPES",
+        messageParameters = Map(
+          "functionName" -> toSQLId(prettyName),
+          "dataType" -> children.map(_.dataType).map(toSQLType).mkString("[", ", ", "]")
+        )
+      )
+    } else {
+      TypeUtils.checkForOrderingExpr(dataType, prettyName)
+    }
+  }
+
+  override def eval(input: InternalRow): Any = {
+    var result: Any = null
+    var i = 0
+    while (i < children.length) {
+      val value = children(i).eval(input)
+      if (value == null) {
+        return null
+      }
+      if (result == null || ordering.lt(value, result)) {
+        result = value
+      }
+      i += 1
+    }
+    result
+  }
+
+  override def doGenCode(ctx: CodegenContext, ev: ExprCode): ExprCode = {
+    val hasNull = ctx.addMutableState(CodeGenerator.JAVA_BOOLEAN, "hasNull")
+    ev.isNull = JavaCode.isNullGlobal(ctx.addMutableState(CodeGenerator.JAVA_BOOLEAN, ev.isNull))
+    val evals = children.map(_.genCode(ctx)).map(eval =>
+      s"""
+         |if (!$hasNull) {
+         |  ${eval.code}
+         |  if (${eval.isNull}) {
+         |    $hasNull = true;
+         |  }
+         |  ${ctx.reassignIfSmaller(dataType, ev, eval)}
+         |}
+      """.stripMargin
+    )
+
+    val resultType = CodeGenerator.javaType(dataType)
+    val codes = ctx.splitExpressionsWithCurrentInputs(
+      expressions = evals,
+      funcName = "leastNullIntolerant",
+      extraArguments = Seq(resultType -> ev.value),
+      returnType = resultType,
+      makeSplitFunction = body =>
+        s"""
+           |$body
+           |return ${ev.value};
+        """.stripMargin,
+      foldFunctions = _.map(funcCall => s"${ev.value} = $funcCall;").mkString("\n"))
+    ev.copy(code =
+      code"""
+         |${ev.isNull} = true;
+         |$hasNull = false;
+         |$resultType ${ev.value} = ${CodeGenerator.defaultValue(dataType)};
+         |$codes
+         |if ($hasNull) {
+         |  ${ev.isNull} = true;
+         |}
+      """.stripMargin)
+  }
+
+  override protected def withNewChildrenInternal(
+      newChildren: IndexedSeq[Expression]): LeastNullIntolerant = copy(children = newChildren)
+}
+
+/**
+ * A function that returns the greatest value of all parameters. Unlike [[Greatest]], this variant
+ * is null intolerant: it returns null if ANY of the parameters is null, which matches the
+ * `GREATEST` semantics of Oracle/DB2/MySQL. It takes at least 2 parameters.
+ */
+@ExpressionDescription(
+  usage = "_FUNC_(expr, ...) - Returns the greatest value of all parameters, or null if any " +
+    "of the parameters is null.",
+  examples = """
+    Examples:
+      > SELECT _FUNC_(10, 9, 2, 4, 3);
+       10
+      > SELECT _FUNC_(null, 9, 2, 4, 3);
+       NULL
+  """,
+  since = "4.0.0",
+  group = "math_funcs")
+case class GreatestNullIntolerant(children: Seq[Expression])
+  extends ComplexTypeMergingExpression {
+
+  override def nullable: Boolean = children.exists(_.nullable)
+  override def foldable: Boolean = children.forall(_.foldable)
+  override def nullIntolerant: Boolean = true
+
+  private lazy val ordering = TypeUtils.getInterpretedOrdering(dataType)
+
+  override def checkInputDataTypes(): TypeCheckResult = {
+    if (children.length <= 1) {
+      throw QueryCompilationErrors.wrongNumArgsError(
+        toSQLId(prettyName), Seq("> 1"), children.length
+      )
+    } else if (!TypeCoercion.haveSameType(inputTypesForMerging)) {
+      DataTypeMismatch(
+        errorSubClass = "DATA_DIFF_TYPES",
+        messageParameters = Map(
+          "functionName" -> toSQLId(prettyName),
+          "dataType" -> children.map(_.dataType).map(toSQLType).mkString("[", ", ", "]")
+        )
+      )
+    } else {
+      TypeUtils.checkForOrderingExpr(dataType, prettyName)
+    }
+  }
+
+  override def eval(input: InternalRow): Any = {
+    var result: Any = null
+    var i = 0
+    while (i < children.length) {
+      val value = children(i).eval(input)
+      if (value == null) {
+        return null
+      }
+      if (result == null || ordering.gt(value, result)) {
+        result = value
+      }
+      i += 1
+    }
+    result
+  }
+
+  override def doGenCode(ctx: CodegenContext, ev: ExprCode): ExprCode = {
+    val hasNull = ctx.addMutableState(CodeGenerator.JAVA_BOOLEAN, "hasNull")
+    ev.isNull = JavaCode.isNullGlobal(ctx.addMutableState(CodeGenerator.JAVA_BOOLEAN, ev.isNull))
+    val evals = children.map(_.genCode(ctx)).map(eval =>
+      s"""
+         |if (!$hasNull) {
+         |  ${eval.code}
+         |  if (${eval.isNull}) {
+         |    $hasNull = true;
+         |  }
+         |  ${ctx.reassignIfGreater(dataType, ev, eval)}
+         |}
+      """.stripMargin
+    )
+
+    val resultType = CodeGenerator.javaType(dataType)
+    val codes = ctx.splitExpressionsWithCurrentInputs(
+      expressions = evals,
+      funcName = "greatestNullIntolerant",
+      extraArguments = Seq(resultType -> ev.value),
+      returnType = resultType,
+      makeSplitFunction = body =>
+        s"""
+           |$body
+           |return ${ev.value};
+        """.stripMargin,
+      foldFunctions = _.map(funcCall => s"${ev.value} = $funcCall;").mkString("\n"))
+    ev.copy(code =
+      code"""
+         |${ev.isNull} = true;
+         |$hasNull = false;
+         |$resultType ${ev.value} = ${CodeGenerator.defaultValue(dataType)};
+         |$codes
+         |if ($hasNull) {
+         |  ${ev.isNull} = true;
+         |}
+      """.stripMargin)
+  }
+
+  override protected def withNewChildrenInternal(
+      newChildren: IndexedSeq[Expression]): GreatestNullIntolerant = copy(children = newChildren)
 }

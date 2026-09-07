@@ -492,7 +492,7 @@ case class AtLeastNNonNulls(n: Int, children: Seq[Expression]) extends Predicate
   }
 
   override def doGenCode(ctx: CodegenContext, ev: ExprCode): ExprCode = {
-    val nonnull = ctx.freshName("nonnull")
+    val nonnull = ctx.freshName("nnull")
     // all evals are meant to be inside a do { ... } while (false); loop
     val evals = children.map { e =>
       val eval = e.genCode(ctx)
