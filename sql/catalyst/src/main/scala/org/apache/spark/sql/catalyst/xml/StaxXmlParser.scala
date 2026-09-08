@@ -113,7 +113,8 @@ class StaxXmlParser(
       input => doParseColumn(input, options.parseMode, xsdSchema),
       options.parseMode,
       schema,
-      options.columnNameOfCorruptRecord)
+      options.columnNameOfCorruptRecord,
+      "")
 
     val xmlTokenizer = new XmlTokenizer(inputStream, options)
     convertStream(xmlTokenizer) { tokens =>
@@ -206,7 +207,8 @@ class StaxXmlParser(
       input => doParseColumnOptimized(input, streamLiteral),
       options.parseMode,
       schema,
-      options.columnNameOfCorruptRecord
+      options.columnNameOfCorruptRecord,
+      ""
     )
 
     convertStream(inputStream, options) { reader =>

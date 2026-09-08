@@ -50,7 +50,8 @@ case class JsonPartitionReaderFactory(
 
   override def buildReader(partitionedFile: PartitionedFile): PartitionReader[InternalRow] = {
     val actualSchema =
-      StructType(readDataSchema.filterNot(_.name == options.columnNameOfCorruptRecord))
+      StructType(readDataSchema.filterNot(_.name == options.columnNameOfCorruptRecord)
+        .filterNot(_.name == options.columnNameOfCorruptRecordCause))
     val parser = new JacksonParser(
       actualSchema,
       options,

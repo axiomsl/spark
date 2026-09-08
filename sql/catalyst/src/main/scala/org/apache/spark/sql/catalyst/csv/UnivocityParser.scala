@@ -600,7 +600,8 @@ private[sql] object UnivocityParser {
       input => parser.convert(input),
       parser.options.parseMode,
       schema,
-      parser.options.columnNameOfCorruptRecord)
+      parser.options.columnNameOfCorruptRecord,
+      parser.options.columnNameOfCorruptRecordCause)
 
     val handleHeader: () => Unit =
       () => headerChecker.checkHeaderColumnNames(tokenizer)
@@ -653,7 +654,8 @@ private[sql] object UnivocityParser {
       input => parser.parse(input),
       parser.options.parseMode,
       schema,
-      parser.options.columnNameOfCorruptRecord)
+      parser.options.columnNameOfCorruptRecord,
+      parser.options.columnNameOfCorruptRecordCause)
     filteredLines.flatMap(safeParser.parse)
   }
 }

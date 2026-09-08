@@ -158,7 +158,8 @@ case class XmlToStructsEvaluator(
       input => rawParser.doParseColumn(input, mode, xsdSchema),
       mode,
       schema,
-      parsedOptions.columnNameOfCorruptRecord)
+      parsedOptions.columnNameOfCorruptRecord,
+      "")
   }
 
   final def evaluate(xml: UTF8String): Any = {
