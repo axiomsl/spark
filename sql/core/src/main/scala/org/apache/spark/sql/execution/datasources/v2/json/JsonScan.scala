@@ -68,9 +68,14 @@ case class JsonScan(
   override def createReaderFactory(): PartitionReaderFactory = {
     // Check a field requirement for corrupt records here to throw an exception in a driver side
     ExprUtils.verifyColumnNameOfCorruptRecord(dataSchema, parsedOptions.columnNameOfCorruptRecord)
+    ExprUtils.verifyColumnNameOfCorruptRecordCause(
+      dataSchema, parsedOptions.columnNameOfCorruptRecordCause)
 
-    if (readDataSchema.length == 1 &&
-      readDataSchema.head.name == parsedOptions.columnNameOfCorruptRecord) {
+    if (readDataSchema.exists(_.name == parsedOptions.columnNameOfCorruptRecord) &&
+      readDataSchema.forall { f =>
+        f.name == parsedOptions.columnNameOfCorruptRecord ||
+          f.name == parsedOptions.columnNameOfCorruptRecordCause
+      }) {
       throw QueryCompilationErrors.queryFromRawFilesIncludeCorruptRecordColumnError()
     }
     val caseSensitiveMap = options.asCaseSensitiveMap.asScala.toMap

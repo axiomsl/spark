@@ -50,9 +50,11 @@ case class CSVPartitionReaderFactory(
   override def buildReader(file: PartitionedFile): PartitionReader[InternalRow] = {
     val conf = broadcastedConf.value.value
     val actualDataSchema = StructType(
-      dataSchema.filterNot(_.name == options.columnNameOfCorruptRecord))
+      dataSchema.filterNot(_.name == options.columnNameOfCorruptRecord)
+        .filterNot(_.name == options.columnNameOfCorruptRecordCause))
     val actualReadDataSchema = StructType(
-      readDataSchema.filterNot(_.name == options.columnNameOfCorruptRecord))
+      readDataSchema.filterNot(_.name == options.columnNameOfCorruptRecord)
+        .filterNot(_.name == options.columnNameOfCorruptRecordCause))
     val parser = new UnivocityParser(
       actualDataSchema,
       actualReadDataSchema,

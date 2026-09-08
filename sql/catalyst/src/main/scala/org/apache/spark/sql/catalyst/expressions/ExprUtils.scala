@@ -91,6 +91,21 @@ object ExprUtils extends EvalHelper with QueryErrorsBase {
     }
   }
 
+  /**
+   * A convenient function for schema validation in datasources supporting
+   * `columnNameOfCorruptRecordCause` as an option. The cause column holds a string rendering of
+   * the parse failure, or null for well-formed records, so it has the same requirements as the
+   * corrupt record column itself. An empty name means the datasource has no cause column, in which
+   * case there is nothing to validate.
+   */
+  def verifyColumnNameOfCorruptRecordCause(
+      schema: StructType,
+      columnNameOfCorruptRecordCause: String): Unit = {
+    if (columnNameOfCorruptRecordCause != null && columnNameOfCorruptRecordCause.nonEmpty) {
+      verifyColumnNameOfCorruptRecord(schema, columnNameOfCorruptRecordCause)
+    }
+  }
+
   def getDecimalParser(locale: Locale): String => java.math.BigDecimal = {
     if (locale == Locale.US) { // Special handling the default locale for backward compatibility
       (s: String) => new java.math.BigDecimal(s.replaceAll(",", ""))

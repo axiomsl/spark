@@ -176,8 +176,11 @@ class DataFrameReader private[sql](sparkSession: SparkSession)
     }
 
     ExprUtils.verifyColumnNameOfCorruptRecord(schema, parsedOptions.columnNameOfCorruptRecord)
+    ExprUtils.verifyColumnNameOfCorruptRecordCause(
+      schema, parsedOptions.columnNameOfCorruptRecordCause)
     val actualSchema =
-      StructType(schema.filterNot(_.name == parsedOptions.columnNameOfCorruptRecord))
+      StructType(schema.filterNot(_.name == parsedOptions.columnNameOfCorruptRecord)
+        .filterNot(_.name == parsedOptions.columnNameOfCorruptRecordCause))
 
     val createParser = CreateJacksonParser.string _
     val parsed = jsonDataset.rdd.mapPartitions { iter =>
@@ -186,7 +189,8 @@ class DataFrameReader private[sql](sparkSession: SparkSession)
         input => rawParser.parse(input, createParser, UTF8String.fromString),
         parsedOptions.parseMode,
         schema,
-        parsedOptions.columnNameOfCorruptRecord)
+        parsedOptions.columnNameOfCorruptRecord,
+        parsedOptions.columnNameOfCorruptRecordCause)
       iter.flatMap(parser.parse)
     }
     sparkSession.internalCreateDataFrame(parsed, schema, isStreaming = jsonDataset.isStreaming)
@@ -230,8 +234,11 @@ class DataFrameReader private[sql](sparkSession: SparkSession)
     }
 
     ExprUtils.verifyColumnNameOfCorruptRecord(schema, parsedOptions.columnNameOfCorruptRecord)
+    ExprUtils.verifyColumnNameOfCorruptRecordCause(
+      schema, parsedOptions.columnNameOfCorruptRecordCause)
     val actualSchema =
-      StructType(schema.filterNot(_.name == parsedOptions.columnNameOfCorruptRecord))
+      StructType(schema.filterNot(_.name == parsedOptions.columnNameOfCorruptRecord)
+        .filterNot(_.name == parsedOptions.columnNameOfCorruptRecordCause))
 
     val linesWithoutHeader: RDD[String] = maybeFirstLine.map { firstLine =>
       val headerChecker = new CSVHeaderChecker(
@@ -248,7 +255,8 @@ class DataFrameReader private[sql](sparkSession: SparkSession)
         input => rawParser.parse(input),
         parsedOptions.parseMode,
         schema,
-        parsedOptions.columnNameOfCorruptRecord)
+        parsedOptions.columnNameOfCorruptRecord,
+        parsedOptions.columnNameOfCorruptRecordCause)
       iter.flatMap(parser.parse)
     }
     sparkSession.internalCreateDataFrame(parsed, schema, isStreaming = csvDataset.isStreaming)
@@ -292,7 +300,8 @@ class DataFrameReader private[sql](sparkSession: SparkSession)
         input => rawParser.parse(input),
         parsedOptions.parseMode,
         schema,
-        parsedOptions.columnNameOfCorruptRecord)
+        parsedOptions.columnNameOfCorruptRecord,
+        "")
       iter.flatMap(parser.parse)
     }
     sparkSession.internalCreateDataFrame(parsed, schema, isStreaming = xmlDataset.isStreaming)

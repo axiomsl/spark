@@ -112,7 +112,8 @@ object TextInputXmlDataSource extends XmlDataSource {
       input => parser.parse(input),
       parser.options.parseMode,
       schema,
-      parser.options.columnNameOfCorruptRecord)
+      parser.options.columnNameOfCorruptRecord,
+      "")
 
     lines.flatMap(safeParser.parse)
   }

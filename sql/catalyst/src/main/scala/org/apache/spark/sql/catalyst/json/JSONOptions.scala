@@ -92,6 +92,10 @@ class JSONOptions(
     parameters.get(MODE).map(ParseMode.fromString).getOrElse(PermissiveMode)
   val columnNameOfCorruptRecord =
     parameters.getOrElse(COLUMN_NAME_OF_CORRUPTED_RECORD, defaultColumnNameOfCorruptRecord)
+  val columnNameOfCorruptRecordCause =
+    parameters.getOrElse(
+      COLUMN_NAME_OF_CORRUPTED_RECORD_CAUSE,
+      defaultColumnNameOfCorruptRecord + "Cause")
 
   // Whether to ignore column of all null values or empty array/struct during schema inference
   val dropFieldIfAllNull = parameters.get(DROP_FIELD_IF_ALL_NULL).map(_.toBoolean).getOrElse(false)
@@ -285,6 +289,7 @@ object JSONOptions extends DataSourceOptions {
   val PRETTY = newOption("pretty")
   val INFER_TIMESTAMP = newOption("inferTimestamp")
   val COLUMN_NAME_OF_CORRUPTED_RECORD = newOption("columnNameOfCorruptRecord")
+  val COLUMN_NAME_OF_CORRUPTED_RECORD_CAUSE = newOption("columnNameOfCorruptRecordCause")
   val TIME_ZONE = newOption("timeZone")
   val WRITE_NON_ASCII_CHARACTER_AS_CODEPOINT = newOption("writeNonAsciiCharacterAsCodePoint")
   val SINGLE_VARIANT_COLUMN = newOption(DataSourceOptions.SINGLE_VARIANT_COLUMN)

@@ -109,7 +109,8 @@ case class XmlToStructs(
       input => rawParser.doParseColumn(input, mode, xsdSchema),
       mode,
       nullableSchema,
-      parsedOptions.columnNameOfCorruptRecord)
+      parsedOptions.columnNameOfCorruptRecord,
+      "")
   }
 
   override def dataType: DataType = nullableSchema

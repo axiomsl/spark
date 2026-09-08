@@ -136,7 +136,10 @@ case class JsonToStructsEvaluator(
     val (parserSchema, actualSchema) = nullableSchema match {
       case s: StructType =>
         ExprUtils.verifyColumnNameOfCorruptRecord(s, parsedOptions.columnNameOfCorruptRecord)
-        (s, StructType(s.filterNot(_.name == parsedOptions.columnNameOfCorruptRecord)))
+        ExprUtils.verifyColumnNameOfCorruptRecordCause(
+          s, parsedOptions.columnNameOfCorruptRecordCause)
+        (s, StructType(s.filterNot(_.name == parsedOptions.columnNameOfCorruptRecord)
+          .filterNot(_.name == parsedOptions.columnNameOfCorruptRecordCause)))
       case other =>
         (StructType(Array(StructField("value", other))), other)
     }
@@ -148,7 +151,8 @@ case class JsonToStructsEvaluator(
       input => rawParser.parse(input, createParser, identity[UTF8String]),
       mode,
       parserSchema,
-      parsedOptions.columnNameOfCorruptRecord)
+      parsedOptions.columnNameOfCorruptRecord,
+      parsedOptions.columnNameOfCorruptRecordCause)
   }
 
   final def evaluate(json: UTF8String): Any = {
