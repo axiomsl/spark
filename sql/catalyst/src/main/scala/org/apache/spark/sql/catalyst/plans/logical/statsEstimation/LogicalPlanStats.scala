@@ -24,6 +24,32 @@ import org.apache.spark.sql.catalyst.plans.logical._
  */
 trait LogicalPlanStats { self: LogicalPlan =>
 
+  def updateStatsCache(
+      sizeInBytes: BigInt,
+      rowCount: Option[BigInt],
+      metadata: Map[String, String]): Unit = {
+    if (statsCache.isDefined) {
+      statsCache = Some(statsCache.get.copy(sizeInBytes = sizeInBytes, rowCount = rowCount,
+        metadata = metadata))
+    } else {
+      statsCache = Some(Statistics(sizeInBytes = sizeInBytes, rowCount = rowCount,
+        metadata = metadata))
+    }
+  }
+
+  def updateStatsCache(sizeInBytes: BigInt, rowCount: Option[BigInt]): Unit = {
+    updateStatsCache(sizeInBytes, rowCount, Map.empty)
+  }
+
+  def updateStatsCache(stats: Statistics): Unit = {
+    statsCache = Some(stats)
+  }
+
+  def updateStatsCache(rowCount: BigInt, metadata: Map[String, String] = Map.empty): Unit = {
+    val outputRowSize = EstimationUtils.getSizePerRow(this.output)
+    updateStatsCache(outputRowSize * rowCount, Some(rowCount), metadata)
+  }
+
   /**
    * Returns the estimated statistics for the current logical plan node. Under the hood, this
    * method caches the return value, which is computed based on the configuration passed in the
@@ -36,6 +62,14 @@ trait LogicalPlanStats { self: LogicalPlan =>
     } else {
       statsCache = Option(LogicalPlanVisitor.nonCbo.visit(self))
     }
+    // `org.slf4j.MDC` is fully qualified on purpose: `org.apache.spark.internal.MDC` is an
+    // unrelated case class used by the structured logging framework.
+    val id = org.slf4j.MDC.get("statsCalcId")
+    val value = statsCache.get
+    if (id != null && !value.metadata.contains("statsCalcId")) {
+      statsCache = Some(value.copy(metadata = Map("statsCalcId" -> id)))
+    }
+
     statsCache.get
   }
 
