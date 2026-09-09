@@ -18,6 +18,7 @@
 package org.apache.spark.sql.catalyst.optimizer
 
 import scala.annotation.tailrec
+import scala.util.Random
 import scala.util.control.NonFatal
 
 import org.apache.spark.internal.{Logging, MDC}
@@ -357,13 +358,27 @@ trait JoinSelectionHelper extends Logging {
    * Matches a plan whose output should be small enough to be used in broadcast join.
    */
   def canBroadcastBySize(plan: LogicalPlan, conf: SQLConf): Boolean = {
-    val autoBroadcastJoinThreshold = if (plan.stats.isRuntime) {
+    // `org.slf4j.MDC` is fully qualified on purpose: `org.apache.spark.internal.MDC`, imported
+    // above for structured logging, is an unrelated case class.
+    val id = Random.alphanumeric.take(6).mkString
+    org.slf4j.MDC.put("statsCalcId", s"[statsCalcId=$id]")
+    val isRuntime = plan.stats.isRuntime
+    val autoBroadcastJoinThreshold = if (isRuntime) {
       conf.getConf(SQLConf.ADAPTIVE_AUTO_BROADCASTJOIN_THRESHOLD)
         .getOrElse(conf.autoBroadcastJoinThreshold)
     } else {
       conf.autoBroadcastJoinThreshold
     }
-    plan.stats.sizeInBytes >= 0 && plan.stats.sizeInBytes <= autoBroadcastJoinThreshold
+    val r = plan.stats.sizeInBytes >= 0 && plan.stats.sizeInBytes <= autoBroadcastJoinThreshold
+    if (r) {
+      if (log.isDebugEnabled) {
+        val fields = plan.schema.fields.map(_.name).mkString("[", ", ", "]")
+        logDebug(s"plan stats: ${plan.stats}; canBroadcastBySize: $r;" +
+          s" isRuntime: $isRuntime; fields: $fields")
+      }
+    }
+    org.slf4j.MDC.remove("statsCalcId")
+    r
   }
 
   def canBuildBroadcastLeft(joinType: JoinType): Boolean = {
