@@ -362,23 +362,29 @@ trait JoinSelectionHelper extends Logging {
     // above for structured logging, is an unrelated case class.
     val id = Random.alphanumeric.take(6).mkString
     org.slf4j.MDC.put("statsCalcId", s"[statsCalcId=$id]")
-    val isRuntime = plan.stats.isRuntime
-    val autoBroadcastJoinThreshold = if (isRuntime) {
-      conf.getConf(SQLConf.ADAPTIVE_AUTO_BROADCASTJOIN_THRESHOLD)
-        .getOrElse(conf.autoBroadcastJoinThreshold)
-    } else {
-      conf.autoBroadcastJoinThreshold
-    }
-    val r = plan.stats.sizeInBytes >= 0 && plan.stats.sizeInBytes <= autoBroadcastJoinThreshold
-    if (r) {
-      if (log.isDebugEnabled) {
-        val fields = plan.schema.fields.map(_.name).mkString("[", ", ", "]")
-        logDebug(s"plan stats: ${plan.stats}; canBroadcastBySize: $r;" +
-          s" isRuntime: $isRuntime; fields: $fields")
+    // The removal has to be in a `finally`: statistics estimation can throw, and the optimizer
+    // runs on pooled threads, so an id left behind would be stamped on every later estimation
+    // made by this thread and on the work it submits to other pools.
+    try {
+      val isRuntime = plan.stats.isRuntime
+      val autoBroadcastJoinThreshold = if (isRuntime) {
+        conf.getConf(SQLConf.ADAPTIVE_AUTO_BROADCASTJOIN_THRESHOLD)
+          .getOrElse(conf.autoBroadcastJoinThreshold)
+      } else {
+        conf.autoBroadcastJoinThreshold
       }
+      val r = plan.stats.sizeInBytes >= 0 && plan.stats.sizeInBytes <= autoBroadcastJoinThreshold
+      if (r) {
+        if (log.isDebugEnabled) {
+          val fields = plan.schema.fields.map(_.name).mkString("[", ", ", "]")
+          logDebug(s"plan stats: ${plan.stats}; canBroadcastBySize: $r;" +
+            s" isRuntime: $isRuntime; fields: $fields")
+        }
+      }
+      r
+    } finally {
+      org.slf4j.MDC.remove("statsCalcId")
     }
-    org.slf4j.MDC.remove("statsCalcId")
-    r
   }
 
   def canBuildBroadcastLeft(joinType: JoinType): Boolean = {
