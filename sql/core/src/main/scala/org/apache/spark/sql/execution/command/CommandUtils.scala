@@ -21,6 +21,7 @@ import java.net.URI
 import java.util.concurrent.TimeUnit
 
 import scala.collection.mutable
+import scala.jdk.CollectionConverters._
 import scala.util.control.NonFatal
 
 import com.google.common.cache.{Cache, CacheBuilder}
@@ -61,6 +62,8 @@ object CommandUtils extends Logging {
 
   /** Change statistics after changing data by commands. */
   def updateTableStats(sparkSession: SparkSession, table: CatalogTable): Unit = {
+    // The data has just changed, so any size computed before this point is stale.
+    invalidateCachedTotalSize(table.identifier)
     val catalog = sparkSession.sessionState.catalog
     if (sparkSession.sessionState.conf.autoSizeUpdateEnabled) {
       val newTable = catalog.getTableMetadata(table.identifier)
@@ -99,12 +102,30 @@ object CommandUtils extends Logging {
     builder.build[TotalSizeCacheKey, (BigInt, Seq[CatalogTablePartition])]()
   }
 
+  /**
+   * Drops every cached size of the given table, so that the next computation lists its files
+   * again. Data written from outside this JVM cannot be noticed here, which is why callers that
+   * must not see a stale size pass `useCache = false` instead of relying on this.
+   */
+  def invalidateCachedTotalSize(identifier: TableIdentifier): Unit = {
+    val staleKeys = tableCacheTotalSize.asMap().keySet().asScala.filter(_._1 == identifier).toSeq
+    tableCacheTotalSize.invalidateAll(staleKeys.asJava)
+  }
+
+  /**
+   * @param useCache whether a size computed up to the cache's expiry ago may be returned. Commands
+   *                 whose contract is to recompute the statistics now, such as `ANALYZE TABLE`,
+   *                 must pass false: they would otherwise persist a stale size into the metastore,
+   *                 where it outlives the cache entry that produced it.
+   */
   def calculateTotalSize(
       spark: SparkSession,
       catalogTable: CatalogTable,
-      partitionRowCount: Option[Map[TablePartitionSpec, BigInt]] = None):
+      partitionRowCount: Option[Map[TablePartitionSpec, BigInt]] = None,
+      useCache: Boolean = true):
   (BigInt, Seq[CatalogTablePartition]) = {
-    tableCacheTotalSize.get((catalogTable.identifier, partitionRowCount), () => {
+    val cacheKey = (catalogTable.identifier, partitionRowCount)
+    def computeTotalSize(): (BigInt, Seq[CatalogTablePartition]) = {
       val sessionState = spark.sessionState
       val startTime = System.nanoTime()
       val (totalSize, newPartitions) = if (catalogTable.partitionColumnNames.isEmpty) {
@@ -121,7 +142,16 @@ object CommandUtils extends Logging {
       logInfo(log"It took ${MDC(TIME, (System.nanoTime() - startTime) / (1000 * 1000))} ms to " +
         log"calculate the total size for table ${MDC(TABLE_NAME, catalogTable.identifier)}.")
       (totalSize, newPartitions)
-    })
+    }
+    if (useCache) {
+      tableCacheTotalSize.get(cacheKey, () => computeTotalSize())
+    } else {
+      // Replace rather than merely bypass the entry, so that a caller which does accept a cached
+      // size is not served the value this computation has just superseded.
+      val result = computeTotalSize()
+      tableCacheTotalSize.put(cacheKey, result)
+      result
+    }
   }
 
   def calculatePartitionStats(
@@ -280,7 +310,7 @@ object CommandUtils extends Logging {
           calculateRowCountsPerPartition(sparkSession, tableMeta, None)
         }
       val (newTotalSize, newPartitions) = CommandUtils.calculateTotalSize(
-        sparkSession, tableMeta, Some(rowCounts))
+        sparkSession, tableMeta, Some(rowCounts), useCache = false)
 
       val newRowCount =
         if (noScan) None else Some(BigInt(sparkSession.table(tableIdentWithDB).count()))
