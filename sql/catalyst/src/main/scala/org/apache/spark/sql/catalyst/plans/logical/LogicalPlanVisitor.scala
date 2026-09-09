@@ -17,6 +17,48 @@
 
 package org.apache.spark.sql.catalyst.plans.logical
 
+import org.apache.spark.SparkConf
+import org.apache.spark.internal.Logging
+import org.apache.spark.sql.catalyst.plans.logical.statsEstimation.{BasicStatsPlanVisitor, SizeInBytesOnlyStatsPlanVisitor}
+import org.apache.spark.sql.internal.SQLConf
+import org.apache.spark.util.Utils
+
+/**
+ * Resolves the [[LogicalPlanStatisticsVisitor]] used to compute plan statistics. The visitor can
+ * be replaced by setting `spark.sql.cbo.planStats.class` (when the cost-based optimizer is
+ * enabled) or `spark.sql.planStats.class` (when it is not) to the name of a class implementing
+ * [[LogicalPlanStatisticsVisitor]]. An empty value, the default, keeps the built-in visitor.
+ */
+object LogicalPlanVisitor extends Logging {
+
+  lazy val cbo: LogicalPlanStatisticsVisitor = loadOrDefault(
+    SQLConf.get.getConfString("spark.sql.cbo.planStats.class", defaultValue = ""),
+    BasicStatsPlanVisitor(SizeInBytesOnlyStatsPlanVisitor()))
+
+  lazy val nonCbo: LogicalPlanStatisticsVisitor = loadOrDefault(
+    SQLConf.get.getConfString("spark.sql.planStats.class", defaultValue = ""),
+    SizeInBytesOnlyStatsPlanVisitor())
+
+  private def loadOrDefault(
+      conf: => String,
+      default: => LogicalPlanStatisticsVisitor): LogicalPlanStatisticsVisitor = {
+    if (conf.isEmpty) {
+      default
+    } else {
+      instantiate(conf, new SparkConf())
+    }
+  }
+
+  private def instantiate(className: String, conf: SparkConf): LogicalPlanStatisticsVisitor = {
+    logDebug(s"Creating LogicalPlanVisitor[Statistics] $className")
+    val evaluators = Utils.loadExtensions(classOf[LogicalPlanStatisticsVisitor], Seq(className),
+      conf)
+    require(evaluators.nonEmpty, "A valid PlanStats evaluator must be specified by config, " +
+      s"but $className resulted in zero valid evaluator.")
+    evaluators.head
+  }
+}
+
 /**
  * A visitor pattern for traversing a [[LogicalPlan]] tree and computing some properties.
  */
@@ -100,3 +142,10 @@ trait LogicalPlanVisitor[T] {
 
   def visitWithCTE(p: WithCTE): T
 }
+
+/**
+ * A [[LogicalPlanVisitor]] that computes [[Statistics]] for a plan. Implementations can be
+ * injected through `spark.sql.cbo.planStats.class` / `spark.sql.planStats.class`; see
+ * [[LogicalPlanVisitor$]].
+ */
+trait LogicalPlanStatisticsVisitor extends LogicalPlanVisitor[Statistics]

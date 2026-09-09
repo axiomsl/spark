@@ -17,18 +17,27 @@
 
 package org.apache.spark.sql.catalyst.plans.logical.statsEstimation
 
+import org.apache.spark.internal.Logging
 import org.apache.spark.sql.catalyst.plans.logical._
 
 /**
  * A [[LogicalPlanVisitor]] that computes the statistics for the cost-based optimizer.
+ *
+ * @param delegate the visitor the estimation falls back to when no cost-based estimate is
+ *                 available. Normally [[SizeInBytesOnlyStatsPlanVisitor]].
  */
-object BasicStatsPlanVisitor extends LogicalPlanVisitor[Statistics] {
+case class BasicStatsPlanVisitor(delegate: LogicalPlanStatisticsVisitor)
+  extends LogicalPlanStatisticsVisitor with Logging {
 
-  /** Falls back to the estimation computed by [[SizeInBytesOnlyStatsPlanVisitor]]. */
-  private def fallback(p: LogicalPlan): Statistics = SizeInBytesOnlyStatsPlanVisitor.visit(p)
+  /** Falls back to the estimation computed by the delegate visitor. */
+  private def fallback(p: LogicalPlan): Statistics = delegate.visit(p)
 
   override def default(p: LogicalPlan): Statistics = p match {
-    case p: LeafNode => p.computeStats()
+    case p: LeafNode =>
+      val statistics = p.computeStats()
+      logDebug(s"default - LeafNode (${p.nodeName}) : $statistics; " +
+        s"${p.schema.fields.map(_.name).mkString("[", ", ", "]")}")
+      statistics
     case _: LogicalPlan =>
       val stats = p.children.map(_.stats)
       val rowCount = if (stats.exists(_.rowCount.isEmpty)) {
@@ -36,11 +45,18 @@ object BasicStatsPlanVisitor extends LogicalPlanVisitor[Statistics] {
       } else {
         Some(stats.map(_.rowCount.get).filter(_ > 0L).product)
       }
-      Statistics(sizeInBytes = stats.map(_.sizeInBytes).filter(_ > 0L).product, rowCount = rowCount)
+      val statistics = Statistics(sizeInBytes = stats.map(_.sizeInBytes).filter(_ > 0L).product,
+        rowCount = rowCount)
+      logDebug(s"default - LogicalPlan  (${p.nodeName}) : $statistics; " +
+        s"${p.schema.fields.map(_.name).mkString("[", ", ", "]")}")
+      statistics
   }
 
   override def visitAggregate(p: Aggregate): Statistics = {
-    AggregateEstimation.estimate(p).getOrElse(fallback(p))
+    val statistics = AggregateEstimation.estimate(p).getOrElse(fallback(p))
+    logDebug(s"visitAggregate : $statistics; " +
+      s"${p.schema.fields.map(_.name).mkString("[", ", ", "]")}")
+    statistics
   }
 
   override def visitDistinct(p: Distinct): Statistics = {
@@ -53,7 +69,10 @@ object BasicStatsPlanVisitor extends LogicalPlanVisitor[Statistics] {
   override def visitExpand(p: Expand): Statistics = fallback(p)
 
   override def visitFilter(p: Filter): Statistics = {
-    FilterEstimation(p).estimate.getOrElse(fallback(p))
+    val statistics = FilterEstimation(p).estimate.getOrElse(fallback(p))
+    logDebug(s"visitFilter : $statistics; " +
+      s"${p.schema.fields.map(_.name).mkString("[", ", ", "]")}")
+    statistics
   }
 
   override def visitGenerate(p: Generate): Statistics = default(p)
@@ -75,7 +94,10 @@ object BasicStatsPlanVisitor extends LogicalPlanVisitor[Statistics] {
   }
 
   override def visitJoin(p: Join): Statistics = {
-    JoinEstimation(p).estimate.getOrElse(fallback(p))
+    val statistics = JoinEstimation(p).estimate.getOrElse(fallback(p))
+    logDebug(s"visitJoin : $statistics; " +
+      s"${p.schema.fields.map(_.name).mkString("[", ", ", "]")}")
+    statistics
   }
 
   override def visitLocalLimit(p: LocalLimit): Statistics = fallback(p)
@@ -83,7 +105,10 @@ object BasicStatsPlanVisitor extends LogicalPlanVisitor[Statistics] {
   override def visitPivot(p: Pivot): Statistics = default(p)
 
   override def visitProject(p: Project): Statistics = {
-    ProjectEstimation.estimate(p).getOrElse(fallback(p))
+    val statistics = ProjectEstimation.estimate(p).getOrElse(fallback(p))
+    logDebug(s"visitProject : $statistics; " +
+      s"${p.schema.fields.map(_.name).mkString("[", ", ", "]")}")
+    statistics
   }
 
   override def visitRepartition(p: Repartition): Statistics = fallback(p)
@@ -97,7 +122,10 @@ object BasicStatsPlanVisitor extends LogicalPlanVisitor[Statistics] {
   override def visitScriptTransform(p: ScriptTransformation): Statistics = default(p)
 
   override def visitUnion(p: Union): Statistics = {
-    UnionEstimation.estimate(p).getOrElse(fallback(p))
+    val statistics = UnionEstimation.estimate(p).getOrElse(fallback(p))
+    logDebug(s"visitUnion : $statistics; " +
+      s"${p.schema.fields.map(_.name).mkString("[", ", ", "]")}")
+    statistics
   }
 
   override def visitWindow(p: Window): Statistics = fallback(p)
