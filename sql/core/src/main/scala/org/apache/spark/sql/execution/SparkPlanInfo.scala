@@ -38,15 +38,21 @@ class SparkPlanInfo(
     val metadata: Map[String, String],
     val metrics: Seq[SQLMetricInfo]) {
 
-  override def hashCode(): Int = {
-    // hashCode of simpleString should be good enough to distinguish the plans from each other
-    // within a plan
-    simpleString.hashCode
-  }
+  private def accumulatorIds: Seq[Long] = metrics.map(_.accumulatorId)
+
+  // `simpleString` is deliberately not part of the identity of a plan info. It is empty unless
+  // `spark.ui.debugString.isEnabled` is set, so identifying a node by it would make structurally
+  // different nodes compare equal whenever the debug strings are turned off, which in turn makes
+  // `SparkPlanGraph` draw reuse edges to the wrong node and drop whole subtrees, together with
+  // their metrics, from the SQL tab. The metric accumulator ids replace it: a genuinely reused
+  // plan node yields a plan info built from the very same `SQLMetric` instances and therefore the
+  // same ids, while two distinct nodes never share an accumulator id.
+  override def hashCode(): Int = (nodeName, accumulatorIds).hashCode()
 
   override def equals(other: Any): Boolean = other match {
     case o: SparkPlanInfo =>
-      nodeName == o.nodeName && simpleString == o.simpleString && children == o.children
+      nodeName == o.nodeName && metadata == o.metadata &&
+        accumulatorIds == o.accumulatorIds && children == o.children
     case _ => false
   }
 }
