@@ -25,6 +25,7 @@ import org.scalatest.PrivateMethodTester
 import org.scalatest.time.SpanSugar._
 
 import org.apache.spark.SparkException
+import org.apache.spark.internal.config.UI.UI_DEBUG_STRING_ENABLED
 import org.apache.spark.rdd.RDD
 import org.apache.spark.scheduler.{SparkListener, SparkListenerEvent, SparkListenerJobStart}
 import org.apache.spark.shuffle.sort.SortShuffleManager
@@ -64,6 +65,10 @@ class AdaptiveQueryExecSuite
   with PrivateMethodTester {
 
   import testImplicits._
+
+  // `SparkPlanInfo.simpleString` is only filled in when debug strings are enabled, and the
+  // verification below recognises the final adaptive plan by that string.
+  override protected def sparkConf = super.sparkConf.set(UI_DEBUG_STRING_ENABLED, true)
 
   setupTestData()
 
