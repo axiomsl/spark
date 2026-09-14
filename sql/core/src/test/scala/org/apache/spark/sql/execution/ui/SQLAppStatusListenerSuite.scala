@@ -32,6 +32,7 @@ import org.apache.spark.LocalSparkContext._
 import org.apache.spark.executor.ExecutorMetrics
 import org.apache.spark.internal.config
 import org.apache.spark.internal.config.Status._
+import org.apache.spark.internal.config.UI.UI_DEBUG_STRING_ENABLED
 import org.apache.spark.rdd.RDD
 import org.apache.spark.resource.ResourceProfile
 import org.apache.spark.scheduler._
@@ -67,7 +68,10 @@ abstract class SQLAppStatusListenerSuite extends SharedSparkSession with JsonTes
   import testImplicits._
 
   override protected def sparkConf = {
+    // The plan description posted with `SparkListenerSQLExecutionStart` is only built when debug
+    // strings are enabled, and this suite asserts on that description.
     super.sparkConf.set(LIVE_ENTITY_UPDATE_PERIOD, 0L).set(ASYNC_TRACKING_ENABLED, false)
+      .set(UI_DEBUG_STRING_ENABLED, true)
   }
 
   protected var kvstore: ElementTrackingStore = _
