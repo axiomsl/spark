@@ -156,8 +156,9 @@ class AggregateEstimationSuite extends StatsEstimationTestBase with PlanTest {
       val hasGroupAgg = Aggregate(groupingExpressions = attributes,
         aggregateExpressions = attributes :+ Alias(Count(Literal(1)), "cnt")(), child)
       assert(hasGroupAgg.stats ==
-        // From UnaryNode.computeStats, childSize * outputRowSize / childRowSize
-        Statistics(sizeInBytes = 48 * (8 + 4 + 8) / (8 + 4)))
+        // From visitUnaryNode, childRowCount * outputRowSize, and the child's row count is kept
+        // because the node does not add or drop rows.
+        Statistics(sizeInBytes = 4 * (8 + 4 + 8), rowCount = Some(4)))
     }
   }
 
