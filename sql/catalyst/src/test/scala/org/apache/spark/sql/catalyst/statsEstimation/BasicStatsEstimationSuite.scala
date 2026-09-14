@@ -195,7 +195,9 @@ test("range with invalid long value") {
 
   test("windows") {
     val windows = plan.window(Seq(min(attribute).as("sum_attr")), Seq(attribute), Nil)
-    val windowsStats = Statistics(sizeInBytes = plan.size.get * (4 + 4 + 8) / (4 + 8))
+    // A unary node keeps the row count of its child, since the node does not add or drop rows.
+    val windowsStats = Statistics(
+      sizeInBytes = plan.size.get * (4 + 4 + 8) / (4 + 8), rowCount = Some(plan.rowCount))
     checkStats(
       windows,
       expectedStatsCboOn = windowsStats,
@@ -343,7 +345,8 @@ test("range with invalid long value") {
     checkStats(
       distinct,
       expectedStatsCboOn = Statistics(sizeInBytes, Some(plan.rowCount), plan.attributeStats),
-      expectedStatsCboOff = Statistics(sizeInBytes = sizeInBytes))
+      expectedStatsCboOff =
+        Statistics(sizeInBytes = sizeInBytes, rowCount = Some(plan.rowCount)))
   }
 
   test("SPARK-39851: Improve join stats estimation if one side can keep uniqueness") {
@@ -374,7 +377,10 @@ test("range with invalid long value") {
     checkStats(
       join,
       expectedStatsCboOn = Statistics(4871880, Some(tableRowCnt), join.stats.attributeStats),
-      expectedStatsCboOff = Statistics(sizeInBytes = 4059900 * 2))
+      // The right side is an aggregate. Its size is derived from the exact row count of its child
+      // rather than from a row count guessed out of the child's size, so it is `tableRowCnt` rows
+      // of two four-byte columns plus the per-row overhead instead of the whole `tableSize`.
+      expectedStatsCboOff = Statistics(sizeInBytes = tableSize + tableRowCnt * (8 + 4 + 4)))
   }
 
   test("row size and column stats estimation for sort") {
