@@ -351,6 +351,22 @@
   </properties>
   <repositories>
     <repository>
+      <!--
+        AxiomSL Nexus. Needed to resolve artifacts that are published only internally, such as the
+        `strip-margin-remover` scala compiler plugin. The Nexus under <distributionManagement> is a
+        deploy target and is never consulted for resolution, so it does not serve this purpose.
+      -->
+      <id>il-axiomsl-internal</id>
+      <name>AXIOM internal</name>
+      <url>https://il-spark-nexus.axiomsl.nasdaq.com/nexus/content/repositories/internal/</url>
+      <releases>
+        <enabled>true</enabled>
+      </releases>
+      <snapshots>
+        <enabled>false</enabled>
+      </snapshots>
+    </repository>
+    <repository>
       <id>gcs-maven-central-mirror</id>
       <!--
         Google Mirror of Maven Central, placed first so that it's used instead of flaky Maven Central.
@@ -2806,6 +2822,20 @@
               <javacArg>${java.version}</javacArg>
               <javacArg>-Xlint:all,-serial,-path,-try</javacArg>
             </javacArgs>
+            <!--
+              Rewrites `stripMargin` on interpolated string literals at compile time, so that the
+              margin is removed from the literal instead of from the interpolated result. Codegen
+              builds Java source with `s"""...|...""".stripMargin`, where a runtime `stripMargin`
+              also eats a `|` that arrived from an interpolated value. Resolved from the
+              `il-axiomsl-internal` repository declared in <repositories>.
+            -->
+            <compilerPlugins>
+              <compilerPlugin>
+                <groupId>com.adenza.scalaplugin</groupId>
+                <artifactId>strip-margin-remover_${scala.binary.version}</artifactId>
+                <version>2.0</version>
+              </compilerPlugin>
+            </compilerPlugins>
           </configuration>
         </plugin>
         <plugin>
