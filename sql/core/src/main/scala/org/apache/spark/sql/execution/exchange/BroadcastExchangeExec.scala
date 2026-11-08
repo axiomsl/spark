@@ -206,6 +206,8 @@ case class BroadcastExchangeExec(
                   s"type: ${relation.getClass.getName}")
             }
 
+            logDebug(s"dataSize: $dataSize; child: [${child.output.map(_.name).mkString(", ")}];")
+
             longMetric("dataSize") += dataSize
             val maxBroadcastTableSizeInBytes = conf.maxBroadcastTableSizeInBytes
             if (dataSize >= maxBroadcastTableSizeInBytes) {
