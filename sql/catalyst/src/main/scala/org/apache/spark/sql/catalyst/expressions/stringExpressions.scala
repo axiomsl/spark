@@ -355,7 +355,7 @@ case class Elt(
     val indexVal = ctx.freshName("idx")
     val indexMatched = ctx.freshName("eltIdxMtc")
 
-    val inputVal = ctx.addMutableState(CodeGenerator.javaType(dataType), "inputVal")
+    val inputVal = ctx.addMutableState(CodeGenerator.javaType(dataType), "inVal")
 
     val assignInputValue = inputs.zipWithIndex.map { case (eval, index) =>
       s"""
