@@ -20,6 +20,7 @@ package org.apache.spark.deploy.history
 import java.io._
 import java.net.URI
 import java.nio.charset.StandardCharsets
+import java.util.concurrent.{ArrayBlockingQueue, BlockingQueue, TimeUnit}
 
 import org.apache.commons.io.output.CountingOutputStream
 import org.apache.hadoop.conf.Configuration
@@ -79,6 +80,27 @@ abstract class EventLogFileWriter(
   protected var hadoopDataStream: Option[FSDataOutputStream] = None
   protected var writer: Option[PrintWriter] = None
 
+  private var stopped = false
+
+  trait WithLock {
+    def lock: BlockingQueue[Boolean]
+  }
+
+  private val syncThread = new Thread("event-log-sync") with WithLock {
+    val lock = new ArrayBlockingQueue[Boolean](1)
+    override def run(): Unit = {
+      while (!isInterrupted) {
+        lock.take()
+        TimeUnit.MILLISECONDS.sleep(sparkConf.getTimeAsMs("spark.eventLog.sync.interval", "5m"))
+        if (!stopped) {
+          logInfo("Flushing events to disk.")
+          flush()
+        }
+      }
+    }
+  }
+  syncThread.setDaemon(true)
+
   protected def requireLogBaseDirAsDirectory(): Unit = {
     if (!fileSystem.getFileStatus(new Path(logBaseDir)).isDirectory) {
       throw new IllegalArgumentException(s"Log directory $logBaseDir is not a directory.")
@@ -110,6 +132,12 @@ abstract class EventLogFileWriter(
         .getOrElse(dstream)
       val bstream = new BufferedOutputStream(cstream, outputBufferSize)
       fileSystem.setPermission(path, EventLogFileWriter.LOG_FILE_PERMISSIONS)
+
+      // A rolled-over writer opens a new file after closeWriter(): resume the periodic flush.
+      stopped = false
+      if (!syncThread.isAlive) {
+        syncThread.start()
+      }
       logInfo(log"Logging events to ${MDC(PATH, path)}")
       writer = Some(fnSetupWriter(bstream))
     } catch {
@@ -125,18 +153,25 @@ abstract class EventLogFileWriter(
     writer.foreach(_.println(line))
     // scalastyle:on println
     if (flushLogger) {
-      writer.foreach(_.flush())
-      hadoopDataStream.foreach(_.hflush())
+      flush()
+    } else {
+      syncThread.lock.offer(true)
     }
   }
 
   protected def closeWriter(): Unit = {
+    stopped = true
     // 1. Flush first to check the errors
     writer.foreach(_.flush())
     if (writer.exists(_.checkError())) {
       logError("Spark detects errors while flushing event logs.")
     }
-    hadoopDataStream.foreach(_.hflush())
+    // Like flush(), a failing hflush must not stop the writer from being closed below.
+    try {
+      hadoopDataStream.foreach(_.hflush())
+    } catch {
+      case e: Exception => logTrace(e.toString, e)
+    }
 
     // 2. Try to close and check the errors
     writer.foreach(_.close())
@@ -177,6 +212,15 @@ abstract class EventLogFileWriter(
 
   /** stops writer - indicating the application has been completed */
   def stop(): Unit
+
+  def flush(): Unit = {
+    try {
+      writer.foreach(_.flush())
+      hadoopDataStream.foreach(_.hflush())
+    } catch {
+      case e: Exception => logTrace(e.toString, e)
+    }
+  }
 
   /** returns representative path of log. for tests only. */
   def logPath: String
