@@ -1506,6 +1506,10 @@ object ByteCodeStats {
 
 object CodeGenerator extends Logging {
 
+  final val JANINO_DEBUG_ENABLED = sys.props
+    .getOrElse("org.codehaus.janino.source_debugging.enable", "false")
+    .toBoolean
+
   // This is the default value of HugeMethodLimit in the OpenJDK HotSpot JVM,
   // beyond which methods will be rejected from JIT compilation
   final val DEFAULT_JVM_HUGE_METHOD_LIMIT = 8000
@@ -1585,7 +1589,9 @@ object CodeGenerator extends Logging {
     val parentClassLoader = new ParentClassLoader(Utils.getContextOrSparkClassLoader)
     evaluator.setParentClassLoader(parentClassLoader)
     // Cannot be under package codegen, or fail with java.lang.InstantiationException
-    evaluator.setClassName("org.apache.spark.sql.catalyst.expressions.GeneratedClass")
+    if (!JANINO_DEBUG_ENABLED) {
+      evaluator.setClassName("org.apache.spark.sql.catalyst.expressions.GeneratedClass")
+    }
     evaluator.setDefaultImports(
       classOf[Platform].getName,
       classOf[InternalRow].getName,
@@ -1618,7 +1624,12 @@ object CodeGenerator extends Logging {
     }
 
     val codeStats = try {
-      evaluator.cook("generated.java", code.body)
+      if (JANINO_DEBUG_ENABLED) {
+        evaluator.setDebuggingInformation(true, true, true)
+        evaluator.cook(code.body)
+      } else {
+        evaluator.cook("generated.java", code.body)
+      }
       updateAndGetCompilationStats(evaluator)
     } catch {
       case e: InternalCompilerException =>
