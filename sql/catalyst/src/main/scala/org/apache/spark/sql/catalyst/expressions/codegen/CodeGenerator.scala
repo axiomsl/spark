@@ -825,11 +825,17 @@ class CodegenContext extends Logging {
    */
   def nullSafeExec(nullable: Boolean, isNull: String)(execute: String): String = {
     if (nullable) {
-      s"""
-        if (!$isNull) {
-          $execute
-        }
-      """
+      if (isNull == "false") {
+        execute
+      } else if (isNull == "true") {
+        ""
+      } else {
+        s"""
+          if (!$isNull) {
+            $execute
+          }
+        """
+      }
     } else {
       "\n" + execute
     }
@@ -1848,21 +1854,33 @@ object CodeGenerator extends Logging {
       // Can't call setNullAt on DecimalType/CalendarIntervalType, because we need to keep the
       // offset
       if (!isVectorized && UnsafeRowUtils.avoidSetNullAt(dataType)) {
-        s"""
-           |if (!${ev.isNull}) {
-           |  ${setColumn(row, dataType, ordinal, ev.value)};
-           |} else {
-           |  ${setColumn(row, dataType, ordinal, "null")};
-           |}
-         """.stripMargin
+        if (ev.isNull.toString == "false") {
+          s"""${setColumn(row, dataType, ordinal, ev.value)};"""
+        } else if (ev.isNull.toString == "true") {
+          s"""${setColumn(row, dataType, ordinal, "null")};"""
+        } else {
+          s"""
+             |if (!${ev.isNull}) {
+             |  ${setColumn(row, dataType, ordinal, ev.value)};
+             |} else {
+             |  ${setColumn(row, dataType, ordinal, "null")};
+             |}
+           """.stripMargin
+        }
       } else {
-        s"""
-           |if (!${ev.isNull}) {
-           |  ${setColumn(row, dataType, ordinal, ev.value)};
-           |} else {
-           |  $row.setNullAt($ordinal);
-           |}
-         """.stripMargin
+        if (ev.isNull.toString == "false") {
+          s"""${setColumn(row, dataType, ordinal, ev.value)};"""
+        } else if (ev.isNull.toString == "true") {
+          s"""$row.setNullAt($ordinal);"""
+        } else {
+          s"""
+             |if (!${ev.isNull}) {
+             |  ${setColumn(row, dataType, ordinal, ev.value)};
+             |} else {
+             |  $row.setNullAt($ordinal);
+             |}
+           """.stripMargin
+        }
       }
     } else {
       s"""${setColumn(row, dataType, ordinal, ev.value)};"""
@@ -1903,13 +1921,19 @@ object CodeGenerator extends Logging {
       "update"
     }
     if (isNull.isDefined && isPrimitiveType) {
-      s"""
-         |if (${isNull.get}) {
-         |  $array.setNullAt($i);
-         |} else {
-         |  $array.$setFunc($i, $value);
-         |}
-       """.stripMargin
+      if (isNull.get == "false") {
+        s"""$array.$setFunc($i, $value);"""
+      } else if (isNull.get == "true") {
+        s"""$array.setNullAt($i);"""
+      } else {
+        s"""
+           |if (${isNull.get}) {
+           |  $array.setNullAt($i);
+           |} else {
+           |  $array.$setFunc($i, $value);
+           |}
+         """.stripMargin
+      }
     } else {
       s"$array.$setFunc($i, $value);"
     }
@@ -1926,13 +1950,19 @@ object CodeGenerator extends Logging {
       ev: ExprCode,
       nullable: Boolean): String = {
     if (nullable) {
-      s"""
-         |if (!${ev.isNull}) {
-         |  ${setValue(vector, rowId, dataType, ev.value)}
-         |} else {
-         |  $vector.putNull($rowId);
-         |}
-       """.stripMargin
+      if (ev.isNull.toString == "false") {
+        s"""${setValue(vector, rowId, dataType, ev.value)}"""
+      } else if (ev.isNull.toString == "true") {
+        s"""$vector.putNull($rowId);"""
+      } else {
+        s"""
+           |if (!${ev.isNull}) {
+           |  ${setValue(vector, rowId, dataType, ev.value)}
+           |} else {
+           |  $vector.putNull($rowId);
+           |}
+         """.stripMargin
+      }
     } else {
       s"""${setValue(vector, rowId, dataType, ev.value)};"""
     }

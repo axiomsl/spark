@@ -86,7 +86,7 @@ case class Coalesce(children: Seq[Expression])
   override def eval(input: InternalRow): Any = {
     var result: Any = null
     val childIterator = children.iterator
-    while (childIterator.hasNext && result == null) {
+    while (result == null && childIterator.hasNext) {
       result = childIterator.next().eval(input)
     }
     result
@@ -96,17 +96,36 @@ case class Coalesce(children: Seq[Expression])
     ev.isNull = JavaCode.isNullGlobal(ctx.addMutableState(CodeGenerator.JAVA_BOOLEAN, ev.isNull))
 
     // all the evals are meant to be in a do { ... } while (false); loop
-    val evals = children.map { e =>
-      val eval = e.genCode(ctx)
-      s"""
-         |${eval.code}
-         |if (!${eval.isNull}) {
-         |  ${ev.isNull} = false;
-         |  ${ev.value} = ${eval.value};
-         |  continue;
-         |}
-       """.stripMargin
-    }
+    // Children whose null-check is a compile-time literal are specialised: a child known to be
+    // non-null ends the chain (nothing after it is emitted), a child known to be null only
+    // emits its code.
+    var foundNotNull = false
+    val evals = children
+      .map(_.genCode(ctx))
+      .map {
+        case ExprCode(code, FalseLiteral, value) if !foundNotNull =>
+          foundNotNull = true
+          s"""
+             |$code
+             |${ev.isNull} = false;
+             |${ev.value} = $value;
+             |continue;
+           """.stripMargin
+        case ExprCode(code, TrueLiteral, _) if !foundNotNull =>
+          s"""
+             |$code
+           """.stripMargin
+        case ExprCode(code, isNull, value) if !foundNotNull =>
+          s"""
+             |$code
+             |if (!$isNull) {
+             |  ${ev.isNull} = false;
+             |  ${ev.value} = $value;
+             |  continue;
+             |}
+           """.stripMargin
+        case _ => ""
+      }
 
     val resultType = CodeGenerator.javaType(dataType)
     val codes = ctx.splitExpressionsWithCurrentInputs(
