@@ -17,7 +17,7 @@
 
 package org.apache.spark.sql.catalyst.rules
 
-import org.apache.spark.SparkException
+import org.apache.spark.{SparkContext, SparkException}
 import org.apache.spark.internal.{Logging, MessageWithContext}
 import org.apache.spark.internal.LogKeys._
 import org.apache.spark.sql.catalyst.QueryPlanningTracker
@@ -36,6 +36,11 @@ object RuleExecutor {
     queryExecutionMeter.dumpTimeSpent()
   }
 
+  /** Dump statistics about time spent running specific rules for the given job group. */
+  def dumpPerPlanTimeSpent(groupId: String): String = {
+    queryExecutionMeter.dumpPerPlanTimeSpent(groupId)
+  }
+
   /** Resets statistics about time spent running specific rules */
   def resetMetrics(): Unit = {
     queryExecutionMeter.resetMetrics()
@@ -43,6 +48,11 @@ object RuleExecutor {
 
   def getCurrentMetrics(): QueryExecutionMetrics = {
     queryExecutionMeter.getMetrics()
+  }
+
+  /** Resets statistics about time spent running specific rules for the given job group */
+  def resetMetricsByGroupId(groupId: String): Unit = {
+    queryExecutionMeter.resetMetricsByGroupId(groupId)
   }
 }
 
@@ -214,6 +224,10 @@ abstract class RuleExecutor[TreeType <: TreeNode[_]] extends Logging {
    */
   def execute(plan: TreeType): TreeType = {
     var curPlan = plan
+
+    val groupId = SparkContext
+      .getActive.map(s => Option(s.getLocalProperty("jobGroupId")).getOrElse("")).getOrElse("")
+
     val queryExecutionMetrics = RuleExecutor.queryExecutionMeter
     val planChangeLogger = new PlanChangeLogger[TreeType]()
     val tracker: Option[QueryPlanningTracker] = QueryPlanningTracker.get
@@ -250,8 +264,8 @@ abstract class RuleExecutor[TreeType <: TreeNode[_]] extends Logging {
             val effective = !result.fastEquals(plan)
 
             if (effective) {
-              queryExecutionMetrics.incNumEffectiveExecution(rule.ruleName)
-              queryExecutionMetrics.incTimeEffectiveExecutionBy(rule.ruleName, runTime)
+              queryExecutionMetrics.incNumEffectiveExecution(rule.ruleName, groupId)
+              queryExecutionMetrics.incTimeEffectiveExecutionBy(rule.ruleName, runTime, groupId)
               planChangeLogger.logRule(rule.ruleName, plan, result)
               // Run the plan changes validation after each rule.
               if (fullValidation || lightweightValidation) {
@@ -274,8 +288,8 @@ abstract class RuleExecutor[TreeType <: TreeNode[_]] extends Logging {
                 }
               }
             }
-            queryExecutionMetrics.incExecutionTimeBy(rule.ruleName, runTime)
-            queryExecutionMetrics.incNumExecution(rule.ruleName)
+            queryExecutionMetrics.incExecutionTimeBy(rule.ruleName, runTime, groupId)
+            queryExecutionMetrics.incNumExecution(rule.ruleName, groupId)
 
             // Record timing information using QueryPlanningTracker
             tracker.foreach(_.recordRuleInvocation(rule.ruleName, runTime, effective))
