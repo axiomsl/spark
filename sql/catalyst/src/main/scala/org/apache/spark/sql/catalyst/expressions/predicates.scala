@@ -557,16 +557,36 @@ case class In(value: Expression, list: Seq[Expression]) extends Predicate {
       val valueArg = ctx.freshName("valArg")
       // All the blocks are meant to be inside a do { ... } while (false); loop.
       // The evaluation of variables can be stopped when we find a matching value.
-      val listCode = listGen.map(x =>
+      // A list element whose null-ness is known at compile time (e.g. a literal) gets only the
+      // branch that can actually run, which keeps the generated code smaller.
+      val listCode = listGen.map { x =>
+        val ifPart = x.isNull match {
+          case FalseLiteral =>
+            s"""
+               |if (${ctx.genEqual(value.dataType, valueArg, x.value)}) {
+               |  $tmpResult = $MATCHED; // ${ev.isNull} = false; ${ev.value} = true;
+               |  continue;
+               |}
+             """.stripMargin
+          case TrueLiteral =>
+            s"""
+               |$tmpResult = $HAS_NULL; // ${ev.isNull} = true;
+             """.stripMargin
+          case _ =>
+            s"""
+               |if (${x.isNull}) {
+               |  $tmpResult = $HAS_NULL; // ${ev.isNull} = true;
+               |} else if (${ctx.genEqual(value.dataType, valueArg, x.value)}) {
+               |  $tmpResult = $MATCHED; // ${ev.isNull} = false; ${ev.value} = true;
+               |  continue;
+               |}
+             """.stripMargin
+        }
         s"""
            |${x.code}
-           |if (${x.isNull}) {
-           |  $tmpResult = $HAS_NULL; // ${ev.isNull} = true;
-           |} else if (${ctx.genEqual(value.dataType, valueArg, x.value)}) {
-           |  $tmpResult = $MATCHED; // ${ev.isNull} = false; ${ev.value} = true;
-           |  continue;
-           |}
-         """.stripMargin)
+           |$ifPart
+         """.stripMargin
+      }
 
       val codes = ctx.splitExpressionsWithCurrentInputs(
         expressions = listCode,
