@@ -29,12 +29,40 @@ case class QueryExecutionMetering() {
   private val numEffectiveRunsMap = AtomicLongMap.create[String]()
   private val timeEffectiveRunsMap = AtomicLongMap.create[String]()
 
+  // Per job group copies of the maps above, keyed by "[<groupId>]<ruleName>".
+  private val perPlanTimeMap = AtomicLongMap.create[String]()
+  private val perPlanNumRunsMap = AtomicLongMap.create[String]()
+  private val perPlanNumEffectiveRunsMap = AtomicLongMap.create[String]()
+  private val perPlanTimeEffectiveRunsMap = AtomicLongMap.create[String]()
+
+  @inline
+  private def groupIdPrefix(groupId: String): String = s"[$groupId]"
+
   /** Resets statistics about time spent running specific rules */
   def resetMetrics(): Unit = {
     timeMap.clear()
     numRunsMap.clear()
     numEffectiveRunsMap.clear()
     timeEffectiveRunsMap.clear()
+
+    perPlanTimeMap.clear()
+    perPlanNumRunsMap.clear()
+    perPlanNumEffectiveRunsMap.clear()
+    perPlanTimeEffectiveRunsMap.clear()
+  }
+
+  /** Resets statistics about time spent running specific rules for the given job group */
+  def resetMetricsByGroupId(groupId: String): Unit = {
+    val prefix = groupIdPrefix(groupId)
+
+    def clearGroup(map: AtomicLongMap[String]): Unit = {
+      map.asMap().asScala.keys.filter(_.startsWith(prefix)).toSeq.foreach(key => map.remove(key))
+    }
+
+    clearGroup(perPlanTimeMap)
+    clearGroup(perPlanNumRunsMap)
+    clearGroup(perPlanNumEffectiveRunsMap)
+    clearGroup(perPlanTimeEffectiveRunsMap)
   }
 
   def getMetrics(): QueryExecutionMetrics = {
@@ -57,20 +85,86 @@ case class QueryExecutionMetering() {
     timeEffectiveRunsMap.sum()
   }
 
-  def incExecutionTimeBy(ruleName: String, delta: Long): Unit = {
+  def incExecutionTimeBy(ruleName: String, delta: Long, groupId: String = ""): Unit = {
     timeMap.addAndGet(ruleName, delta)
+    if (groupId.nonEmpty) {
+      perPlanTimeMap.addAndGet(s"${groupIdPrefix(groupId)}$ruleName", delta)
+    }
   }
 
-  def incTimeEffectiveExecutionBy(ruleName: String, delta: Long): Unit = {
+  def incTimeEffectiveExecutionBy(ruleName: String, delta: Long, groupId: String = ""): Unit = {
     timeEffectiveRunsMap.addAndGet(ruleName, delta)
+    if (groupId.nonEmpty) {
+      perPlanTimeEffectiveRunsMap.addAndGet(s"${groupIdPrefix(groupId)}$ruleName", delta)
+    }
   }
 
-  def incNumEffectiveExecution(ruleName: String): Unit = {
+  def incNumEffectiveExecution(ruleName: String, groupId: String = ""): Unit = {
     numEffectiveRunsMap.incrementAndGet(ruleName)
+    if (groupId.nonEmpty) {
+      perPlanNumEffectiveRunsMap.incrementAndGet(s"${groupIdPrefix(groupId)}$ruleName")
+    }
   }
 
-  def incNumExecution(ruleName: String): Unit = {
+  def incNumExecution(ruleName: String, groupId: String = ""): Unit = {
     numRunsMap.incrementAndGet(ruleName)
+    if (groupId.nonEmpty) {
+      perPlanNumRunsMap.incrementAndGet(s"${groupIdPrefix(groupId)}$ruleName")
+    }
+  }
+
+  private def dump(
+      maxLengthRuleNames: Int,
+      totalNumRuns: Long,
+      totalTime: Long,
+      ruleMetrics: String,
+      prefix: String = ""): String = {
+    val colRuleName = "Rule".padTo(maxLengthRuleNames, " ").mkString
+    val colRunTime = "Effective Time / Total Time".padTo(len = 47, " ").mkString
+    val colNumRuns = "Effective Runs / Total Runs".padTo(len = 47, " ").mkString
+
+    val header =
+      if (prefix.isEmpty) "=== Metrics of Analyzer/Optimizer Rules ==="
+      else s"=== $prefix Metrics of Analyzer/Optimizer Rules ==="
+
+    s"""
+       |$header
+       |Total number of runs: $totalNumRuns
+       |Total time: ${totalTime / NANOS_PER_SECOND.toDouble} seconds
+       |
+       |$colRuleName $colRunTime $colNumRuns
+       |$ruleMetrics
+     """.stripMargin
+  }
+
+  /** Dump statistics about time spent running specific rules for the given job group. */
+  def dumpPerPlanTimeSpent(groupId: String): String = {
+    val prefix = groupIdPrefix(groupId)
+    val map = perPlanTimeMap.asMap().asScala.filter { case (k, _) => k.startsWith(prefix) }
+    if (map.nonEmpty) {
+      val maxLengthRuleNames = map.keys.map(_.length).max - prefix.length
+
+      val ruleMetrics = map.toSeq.sortBy(_._2).reverseIterator.map { case (name, time) =>
+        val timeEffectiveRun = perPlanTimeEffectiveRunsMap.get(name)
+        val numRuns = perPlanNumRunsMap.get(name)
+        val numEffectiveRun = perPlanNumEffectiveRunsMap.get(name)
+
+        val ruleName = name.substring(prefix.length).padTo(maxLengthRuleNames, " ").mkString
+        val runtimeValue = s"$timeEffectiveRun / $time".padTo(len = 47, " ").mkString
+        val numRunValue = s"$numEffectiveRun / $numRuns".padTo(len = 47, " ").mkString
+        s"$ruleName $runtimeValue $numRunValue"
+      }.mkString("\n", "\n", "")
+
+      val groupTotalNumRuns: Long = perPlanNumRunsMap.asMap().asScala
+        .filter { case (k, _) => k.startsWith(prefix) }
+        .map(_._2.longValue())
+        .sum
+      val groupTotalTime: Long = map.map(_._2.longValue()).sum
+
+      dump(maxLengthRuleNames, groupTotalNumRuns, groupTotalTime, ruleMetrics, prefix)
+    } else {
+      "Empty Metrics of Analyzer/Optimizer Rules"
+    }
   }
 
   /** Dump statistics about time spent running specific rules. */
@@ -81,10 +175,6 @@ case class QueryExecutionMetering() {
     } else {
       map.keys.map(_.length).max
     }
-
-    val colRuleName = "Rule".padTo(maxLengthRuleNames, " ").mkString
-    val colRunTime = "Effective Time / Total Time".padTo(len = 47, " ").mkString
-    val colNumRuns = "Effective Runs / Total Runs".padTo(len = 47, " ").mkString
 
     val ruleMetrics = map.toSeq.sortBy(_._2).reverseIterator.map { case (name, time) =>
       val timeEffectiveRun = timeEffectiveRunsMap.get(name)
@@ -97,14 +187,7 @@ case class QueryExecutionMetering() {
       s"$ruleName $runtimeValue $numRunValue"
     }.mkString("\n", "\n", "")
 
-    s"""
-       |=== Metrics of Analyzer/Optimizer Rules ===
-       |Total number of runs: $totalNumRuns
-       |Total time: ${totalTime / NANOS_PER_SECOND.toDouble} seconds
-       |
-       |$colRuleName $colRunTime $colNumRuns
-       |$ruleMetrics
-     """.stripMargin
+    dump(maxLengthRuleNames, totalNumRuns, totalTime, ruleMetrics)
   }
 }
 
