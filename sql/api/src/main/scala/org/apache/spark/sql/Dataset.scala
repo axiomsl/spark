@@ -3034,6 +3034,22 @@ abstract class Dataset[T] extends Serializable {
 
   /**
    * Mark the Dataset as non-persistent, and remove all blocks for it from memory and disk. This
+   * will un-persist any cached data that is built upon this Dataset when `cascade` is true.
+   *
+   * Only the classic (non-Connect) implementation supports this method.
+   *
+   * @param blocking
+   *   Whether to block until all blocks are deleted.
+   * @param cascade
+   *   Whether to also un-persist cached data that is built upon this Dataset.
+   * @group basic
+   * @since 3.4.2-2-AX
+   */
+  def unpersist(blocking: Boolean, cascade: Boolean): Dataset[T] =
+    throw new UnsupportedOperationException("unpersist(blocking, cascade) is not supported")
+
+  /**
+   * Mark the Dataset as non-persistent, and remove all blocks for it from memory and disk. This
    * will not un-persist any cached data that is built upon this Dataset.
    *
    * @param blocking

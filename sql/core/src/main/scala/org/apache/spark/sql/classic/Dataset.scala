@@ -1559,6 +1559,12 @@ class Dataset[T] private[sql](
   }
 
   /** @inheritdoc */
+  override def unpersist(blocking: Boolean, cascade: Boolean): this.type = {
+    sparkSession.sharedState.cacheManager.uncacheQuery(this, cascade, blocking)
+    this
+  }
+
+  /** @inheritdoc */
   def unpersist(blocking: Boolean): this.type = {
     sparkSession.sharedState.cacheManager.uncacheQuery(this, cascade = false, blocking)
     this
