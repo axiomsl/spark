@@ -272,14 +272,16 @@ class SessionCatalog(
 
   private def requireTableExists(name: TableIdentifier): Unit = {
     if (!tableExists(name)) {
+      val db = name.database.getOrElse(currentDb)
       throw new NoSuchTableException(
-        Seq(name.catalog.get, name.database.get, name.table))
+        Seq(name.catalog.getOrElse(SESSION_CATALOG_NAME), db, name.table))
     }
   }
 
   private def requireTableNotExists(name: TableIdentifier): Unit = {
     if (tableExists(name)) {
-      throw new TableAlreadyExistsException(db = name.database.get, table = name.table)
+      val db = name.database.getOrElse(currentDb)
+      throw new TableAlreadyExistsException(db = db, table = name.table)
     }
   }
 
@@ -348,7 +350,7 @@ class SessionCatalog(
     externalCatalog.listDatabases(pattern)
   }
 
-  def getCurrentDatabase: String = synchronized { currentDb }
+  def getCurrentDatabase: String = currentDb
 
   def setCurrentDatabase(db: String): Unit = {
     setCurrentDatabaseWithNameCheck(db, requireDbExists)
