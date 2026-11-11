@@ -154,7 +154,7 @@ class CodegenContext extends Logging {
     val idx = references.length
     references += obj
     val clsName = Option(className).getOrElse(CodeGenerator.typeName(obj.getClass))
-    s"(($clsName) references[$idx] /* $objName */)"
+    s"(($clsName) refs[$idx] /* $objName */)"
   }
 
   /**
