@@ -55,7 +55,7 @@
     <repository>
       <id>il-axiomsl</id>
       <name>AXIOM</name>
-      <url>http://il-nexus.axiomsl.nasdaq.com:8081/nexus/content/repositories/spark-releases/</url>
+      <url>https://il-spark-nexus.axiomsl.nasdaq.com/nexus/content/repositories/spark-releases/</url>
     </repository>
   </distributionManagement>
 
@@ -1187,7 +1187,7 @@
         <exclusions>
           <exclusion>
             <groupId>org.scala-lang.modules</groupId>
-            <artifactId>scala-xml_2.13</artifactId>
+            <artifactId>scala-xml_${scala.binary.version}</artifactId>
           </exclusion>
         </exclusions>
       </dependency>
