@@ -2755,6 +2755,14 @@
               <goals>
                 <goal>testCompile</goal>
               </goals>
+              <configuration>
+                <!--
+                  The strip-margin-remover plugin below is for main sources only. Test sources
+                  rely on the runtime `stripMargin`, and the plugin exits the compiler on a
+                  `stripMargin` it cannot rewrite, such as `("""...""" + (if ...)).stripMargin`.
+                -->
+                <compilerPlugins combine.self="override"/>
+              </configuration>
             </execution>
             <execution>
               <id>attach-scaladocs</id>
