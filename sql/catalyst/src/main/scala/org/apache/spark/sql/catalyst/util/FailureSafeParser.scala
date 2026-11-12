@@ -17,13 +17,12 @@
 
 package org.apache.spark.sql.catalyst.util
 
-import org.apache.commons.lang3.exception.ExceptionUtils
-
 import org.apache.spark.sql.catalyst.InternalRow
 import org.apache.spark.sql.catalyst.expressions.GenericInternalRow
 import org.apache.spark.sql.errors.QueryExecutionErrors
 import org.apache.spark.sql.types.StructType
 import org.apache.spark.unsafe.types.UTF8String
+import org.apache.spark.util.SparkErrorUtils
 
 class FailureSafeParser[IN](
     rawParser: IN => Iterable[InternalRow],
@@ -134,7 +133,7 @@ class FailureSafeParser[IN](
       case other => other
     }
     if (cause != null) {
-      val causeString = Option(ExceptionUtils.getRootCause(cause))
+      val causeString = Option(SparkErrorUtils.getRootCause(cause))
         .map(_.toString)
         .getOrElse(cause.toString)
       UTF8String.fromString(causeString)
