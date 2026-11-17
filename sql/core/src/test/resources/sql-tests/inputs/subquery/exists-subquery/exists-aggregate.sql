@@ -118,3 +118,40 @@ WHERE  NOT EXISTS (SELECT 1
                                       FROM   dept 
                                       WHERE  emp.dept_id = dept.dept_id 
                                       GROUP  BY dept.dept_id));
+
+-- Plain exists subquery with a top-level aggregation
+SELECT
+  emp.dept_id,
+  EXISTS (SELECT dept.dept_id FROM dept)
+FROM emp
+GROUP BY emp.dept_id ORDER BY emp.dept_id;
+
+-- Correlated exists subquery with a top-level aggregation
+SELECT
+  emp.dept_id,
+  EXISTS (SELECT dept.dept_id FROM dept)
+FROM emp
+GROUP BY emp.dept_id ORDER BY emp.dept_id;
+
+-- Correlated exists subquery with a top-level aggregation
+SELECT
+  emp.dept_id,
+  NOT EXISTS (SELECT dept.dept_id FROM dept)
+FROM emp
+GROUP BY emp.dept_id ORDER BY emp.dept_id;
+
+-- Correlated exists subquery with a top-level aggregation
+SELECT
+  emp.dept_id,
+  SUM(
+    CASE WHEN EXISTS (SELECT dept.dept_id FROM dept WHERE dept.dept_id = emp.dept_id) THEN 1
+    ELSE 0 END)
+FROM emp
+GROUP BY emp.dept_id ORDER BY emp.dept_id;
+
+---- Grouping expression contains a subquery
+SELECT
+ cast(EXISTS (SELECT id FROM dept where dept.dept_id = emp.dept_id) AS int)
+FROM emp
+GROUP BY
+ cast(EXISTS (SELECT id FROM dept where dept.dept_id = emp.dept_id) AS int)

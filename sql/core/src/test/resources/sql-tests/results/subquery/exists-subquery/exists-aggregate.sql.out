@@ -178,3 +178,99 @@ struct<emp_name:string,bonus_amt:double>
 -- !query output
 emp 5	1000.0
 emp 6 - no dept	500.0
+
+
+-- !query
+SELECT
+  emp.dept_id,
+  EXISTS (SELECT dept.dept_id FROM dept)
+FROM emp
+GROUP BY emp.dept_id ORDER BY emp.dept_id
+-- !query schema
+struct<dept_id:int,exists():boolean>
+-- !query output
+NULL	true
+10	true
+20	true
+30	true
+70	true
+100	true
+
+
+-- !query
+SELECT
+  emp.dept_id,
+  EXISTS (SELECT dept.dept_id FROM dept)
+FROM emp
+GROUP BY emp.dept_id ORDER BY emp.dept_id
+-- !query schema
+struct<dept_id:int,exists():boolean>
+-- !query output
+NULL	true
+10	true
+20	true
+30	true
+70	true
+100	true
+
+
+-- !query
+SELECT
+  emp.dept_id,
+  NOT EXISTS (SELECT dept.dept_id FROM dept)
+FROM emp
+GROUP BY emp.dept_id ORDER BY emp.dept_id
+-- !query schema
+struct<dept_id:int,(NOT exists()):boolean>
+-- !query output
+NULL	false
+10	false
+20	false
+30	false
+70	false
+100	false
+
+
+-- !query
+SELECT
+  emp.dept_id,
+  SUM(
+    CASE WHEN EXISTS (SELECT dept.dept_id FROM dept WHERE dept.dept_id = emp.dept_id) THEN 1
+    ELSE 0 END)
+FROM emp
+GROUP BY emp.dept_id ORDER BY emp.dept_id
+-- !query schema
+struct<dept_id:int,sum(CASE WHEN exists(dept_id) THEN 1 ELSE 0 END):bigint>
+-- !query output
+NULL	0
+10	3
+20	1
+30	1
+70	1
+100	0
+
+
+-- !query
+SELECT
+ cast(EXISTS (SELECT id FROM dept where dept.dept_id = emp.dept_id) AS int)
+FROM emp
+GROUP BY
+ cast(EXISTS (SELECT id FROM dept where dept.dept_id = emp.dept_id) AS int)
+-- !query schema
+struct<>
+-- !query output
+org.apache.spark.sql.catalyst.ExtendedAnalysisException
+{
+  "errorClass" : "UNSUPPORTED_SUBQUERY_EXPRESSION_CATEGORY.CORRELATED_REFERENCE",
+  "sqlState" : "0A000",
+  "messageParameters" : {
+    "sqlExprs" : "\"id\""
+  },
+  "queryContext" : [ {
+    "objectType" : "",
+    "objectName" : "",
+    "startIndex" : 22,
+    "stopIndex" : 73,
+    "fragment" : "SELECT id FROM dept where dept.dept_id = emp.dept_id"
+  } ]
+}
