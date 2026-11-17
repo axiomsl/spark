@@ -21,7 +21,7 @@ import scala.collection.mutable.ArrayBuffer
 
 import org.apache.spark.SparkRuntimeException
 import org.apache.spark.sql.catalyst.expressions.SubqueryExpression
-import org.apache.spark.sql.catalyst.plans.{LeftAnti, LeftSemi}
+import org.apache.spark.sql.catalyst.plans.{ExistenceJoin, LeftAnti, LeftSemi}
 import org.apache.spark.sql.catalyst.plans.logical.{Aggregate, Filter, Join, LogicalPlan, Project, Sort, Union}
 import org.apache.spark.sql.execution._
 import org.apache.spark.sql.execution.adaptive.{AdaptiveSparkPlanHelper, DisableAdaptiveExecution}
@@ -2845,5 +2845,85 @@ class SubquerySuite extends QueryTest
       Row(false) :: Row(false) :: Row(false) :: Row(false) :: Row(false)
         :: Row(true) :: Row(true) :: Row(true) :: Nil
     )
+  }
+
+  test("SPARK-37131: IN/EXISTS subquery inside CASE WHEN in Project and Aggregate") {
+    withView("sss", "t2") {
+      Seq[java.lang.Integer](1, 2, 3, 4, null).toDF("a").createOrReplaceTempView("sss")
+      Seq[java.lang.Integer](2, 3, 3, null).toDF("b").createOrReplaceTempView("t2")
+
+      val df1 = sql(
+        """SELECT a,
+          |  CASE WHEN a IN (SELECT b FROM t2)
+          |       THEN 1
+          |       ELSE 0
+          |  END
+          |FROM sss""".stripMargin)
+      checkAnswer(df1,
+        Row(1, 0) :: Row(2, 1) :: Row(3, 1) :: Row(4, 0) :: Row(null, 0) :: Nil)
+      val joins = df1.queryExecution.optimizedPlan.collect { case j: Join => j.joinType }
+      assert(joins.size == 1 && joins.head.isInstanceOf[ExistenceJoin], joins)
+
+      // NOT IN is null-aware: NULL NOT IN (...) is NULL, so it falls into ELSE.
+      val df2 = sql(
+        """SELECT a,
+          |  CASE WHEN a NOT IN (SELECT b FROM t2 WHERE b IS NOT NULL) THEN 1 ELSE 0 END
+          |FROM sss""".stripMargin)
+      checkAnswer(df2,
+        Row(1, 1) :: Row(2, 0) :: Row(3, 0) :: Row(4, 1) :: Row(null, 0) :: Nil)
+
+      val df3 = sql(
+        """SELECT a,
+          |  CASE WHEN EXISTS (SELECT 1 FROM t2 WHERE t2.b = sss.a) THEN 1 ELSE 0 END
+          |FROM sss""".stripMargin)
+      checkAnswer(df3,
+        Row(1, 0) :: Row(2, 1) :: Row(3, 1) :: Row(4, 0) :: Row(null, 0) :: Nil)
+
+      val df4 = sql(
+        """SELECT count(1),
+          |  CASE WHEN a IN (SELECT b FROM t2) THEN 'A' ELSE 'B' END AS tag
+          |FROM sss
+          |GROUP BY CASE WHEN a IN (SELECT b FROM t2) THEN 'A' ELSE 'B' END""".stripMargin)
+      checkAnswer(df4, Row(2, "A") :: Row(3, "B") :: Nil)
+    }
+  }
+
+  test("SPARK-37131: IN subquery in ORDER BY is rejected; select-list IN gives false, not NULL") {
+    withView("sss", "t2") {
+      Seq[java.lang.Integer](1, 2, 3, 4, null).toDF("a").createOrReplaceTempView("sss")
+      Seq[java.lang.Integer](2, 3, 3, null).toDF("b").createOrReplaceTempView("t2")
+
+      // Sort is not one of the operators allowed to host an IN/EXISTS subquery.
+      val e = intercept[AnalysisException] {
+        sql("SELECT a FROM sss ORDER BY a IN (SELECT b FROM t2)").collect()
+      }
+      assert(e.getMessage.contains("UNSUPPORTED_IN_EXISTS_SUBQUERY"), e.getMessage)
+      // Ordering by a projected alias of the same predicate is allowed.
+      checkAnswer(
+        sql("SELECT a, a IN (SELECT b FROM t2) AS x FROM sss ORDER BY x, a"),
+        Row(null, false) :: Row(1, false) :: Row(4, false) :: Row(2, true) :: Row(3, true) :: Nil)
+
+      // The rewrite to an ExistenceJoin yields a non-nullable boolean, so rows that SQL
+      // three-valued logic makes NULL (a is NULL, or no match while t2 has a NULL) become false.
+      checkAnswer(
+        sql("SELECT a, a IN (SELECT b FROM t2) FROM sss"),
+        Row(1, false) :: Row(2, true) :: Row(3, true) :: Row(4, false) :: Row(null, false) :: Nil)
+      // isin over the same values follows three-valued logic.
+      val isinExpected =
+        Row(1, null) :: Row(2, true) :: Row(3, true) :: Row(4, null) :: Row(null, null) :: Nil
+      checkAnswer(
+        spark.table("sss").select($"a", $"a".isin(2, 3, null)),
+        isinExpected)
+
+      // Wrapping the subquery predicate restores the NULLs.
+      checkAnswer(
+        sql(
+          """SELECT a,
+            |  IF(a IN (SELECT b FROM t2), true,
+            |     IF((a IS NULL AND EXISTS (SELECT 1 FROM t2))
+            |          OR EXISTS (SELECT 1 FROM t2 WHERE b IS NULL), NULL, false))
+            |FROM sss""".stripMargin),
+        isinExpected)
+    }
   }
 }
